@@ -184,8 +184,9 @@ class System:
                          stderr=subprocess.DEVNULL, start_new_session=True, close_fds=True)
 
     def open_url(self, url):
-        ok_game = any(url.startswith(p) and url[len(p):].isdigit() and 0 < len(url[len(p):]) <= 10
-                      for p in ("steam://rungameid/", "steam://uninstall/"))
+        # rungameid takes a 64-bit game id (non-Steam shortcuts: appid << 32 | 0x02000000)
+        ok_game = (url.startswith("steam://rungameid/") and url[18:].isdigit() and len(url) <= 18 + 20) or \
+                  (url.startswith("steam://uninstall/") and url[18:].isdigit() and len(url) <= 18 + 10)
         if not ok_game and url not in STEAM_URLS.values():
             raise ValueError("url not allowed")
         self.spawn(url)

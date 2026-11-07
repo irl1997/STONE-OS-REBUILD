@@ -115,7 +115,7 @@ dnf5 -y install webkitgtk6.0 gtk4 gobject-introspection chromium   # cairo-1.0 t
 ## STONE IMAGE looks (stone_games/look.py) use the vkBasalt Vulkan layer. Without it the looks show
 ## "no disponible" and nothing else changes, so a missing package is a warning, not a failure.
 dnf5 -y install --skip-unavailable vkBasalt
-ls /usr/share/vulkan/implicit_layer.d/ | grep -i basalt || echo "WARNING: vkBasalt layer not installed; STONE IMAGE looks unavailable"
+compgen -G "/usr/share/vulkan/implicit_layer.d/*[Bb]asalt*" || echo "WARNING: vkBasalt layer not installed; STONE IMAGE looks unavailable"
 python3 -c "import gi; gi.require_version('Gtk', '4.0'); gi.require_version('WebKit', '6.0'); from gi.repository import Gtk, WebKit" \
     || { echo "ERROR: WebKitGTK 6 / GTK 4 bindings missing; STONE Home fallback cannot run"; exit 1; }
 CHROMIUM_BIN=""

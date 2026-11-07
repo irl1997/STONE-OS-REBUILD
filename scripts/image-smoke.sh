@@ -16,7 +16,7 @@ for b in stone-home stone-session stonectl stoned stone-doctor stone-cu40 stone-
     check "program $b" "command -v $b"
 done
 check "chromium" "command -v chromium-browser || command -v chromium"
-[ -x /usr/share/gamescope-session-plus/gamescope-session-plus ] && ok "gamescope-session-plus" || bad "gamescope-session-plus"
+check "gamescope-session-plus" "test -x /usr/share/gamescope-session-plus/gamescope-session-plus"
 
 # STONE files
 for f in /usr/lib/stone-release /usr/share/stone-home/index.html /usr/share/gamescope-session-plus/sessions.d/stone \
@@ -37,7 +37,7 @@ for u in stoned.service stoned-recover.service stone-cu40-guard.service stone-se
 done
 
 # Python: every STONE module imports with the system Python and the image's own libraries
-python3 -I - <<'PY' && ok "python imports (stone_home, stoned, stone_display, stone_games, gi, Xlib, evdev)" || bad "python imports"
+if python3 -I - <<'PY'; then ok "python imports (stone_home, stoned, stone_display, stone_games, gi, Xlib, evdev)"; else bad "python imports"; fi
 import sys
 sys.path[0:0] = ["/usr/lib/stone"]
 import importlib, pkgutil
@@ -61,8 +61,8 @@ PY
 check "stone-doctor --json answers" "stone-doctor --json | python3 -c 'import json,sys; d=json.load(sys.stdin); assert d[\"checks\"]'"
 
 # Optional pieces: their feature says "no disponible" without them
-ls /usr/share/vulkan/implicit_layer.d/ 2>/dev/null | grep -qi basalt && ok "vkBasalt (STONE IMAGE)" || warn "vkBasalt missing: STONE IMAGE looks unavailable"
-command -v mangohud >/dev/null && ok "MangoHud (measurements)" || warn "MangoHud missing: OPTIMIZAR cannot measure"
+if compgen -G "/usr/share/vulkan/implicit_layer.d/*[Bb]asalt*" >/dev/null; then ok "vkBasalt (STONE IMAGE)"; else warn "vkBasalt missing: STONE IMAGE looks unavailable"; fi
+if command -v mangohud >/dev/null; then ok "MangoHud (measurements)"; else warn "MangoHud missing: OPTIMIZAR cannot measure"; fi
 
 echo
 if [ "$fail" = 0 ]; then echo "IMAGE SMOKE: PASS"; else echo "IMAGE SMOKE: FAIL"; fi
