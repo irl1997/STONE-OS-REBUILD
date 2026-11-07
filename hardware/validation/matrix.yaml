@@ -58,12 +58,14 @@ tests:
   - {id: "T-SESS-01", title: "Encendido a STONE Home x5 sin ninguna pantalla de Steam", phase: F2, kind: P, status: NOT TESTED, runs: [], observed: []}
   - {id: "T-SESS-02", title: "JUGAR, juego al frente, salir y volver a Home", phase: F2, kind: P, status: NOT TESTED, runs: [], observed: []}
   - {id: "T-SESS-03", title: "Mando y Steam Input dentro del juego en la sesion STONE", phase: F2, kind: P, status: NOT TESTED, runs: [], observed: []}
-  - {id: "T-SESS-04", title: "Quick Menu de STONE durante el juego", phase: F2, kind: P, status: NOT TESTED, runs: [], observed: []}
+  - {id: "T-SESS-04", title: "Boton guia durante el juego: Home al frente, el juego sigue; REANUDAR lo devuelve; Steam no reacciona", phase: F2, kind: P, status: NOT TESTED, runs: [], observed: []}
   - {id: "T-SESS-05", title: "Fallo provocado de la sesion: recuperacion tras N intentos", phase: F2, kind: S+V, status: NOT TESTED, runs: [], observed: []}
   - {id: "T-SESS-06", title: "Steam se actualiza sin mostrar su interfaz", phase: F2, kind: P, status: NOT TESTED, runs: [], observed: []}
   - {id: "T-SESS-07", title: "Primer inicio de sesion de Steam desde FIRST RUN", phase: F2, kind: P, status: NOT TESTED, runs: [], observed: []}
   - {id: "T-HOME-01", title: "Fondo del juego seleccionado nitido a la resolucion de la pantalla", phase: F2, kind: P, status: NOT TESTED, runs: [], observed: []}
   - {id: "T-HOME-02", title: "Con un juego abierto, Home no cambia los FPS medidos", phase: F2, kind: P, status: NOT TESTED, runs: [], observed: []}
+  - {id: "T-UPD-01", title: "En la sesion STONE, una version nueva aparece preparada y se aplica con Reiniciar y actualizar", phase: F2, kind: P, status: NOT TESTED, runs: [], observed: []}
+  - {id: "T-SESS-08", title: "Las filas Abrir en Steam de Ajustes se ven delante de Home en la sesion STONE", phase: F2, kind: P, status: NOT TESTED, runs: [], observed: []}
   - {id: "T-FR-01", title: "De la instalacion a Home operable solo con el mando", phase: F2, kind: P, status: NOT TESTED, runs: [], observed: []}
   - {id: "T-HLTH-01", title: "Cada valor medido de STONE HEALTH coincide con sysfs/hwmon", phase: F3, kind: P, status: NOT TESTED, runs: [], observed: []}
   - {id: "T-IMG-01", title: "Coste de cada preset de STONE IMAGE registrado", phase: F4, kind: P, status: NOT TESTED, runs: [], observed: []}
