@@ -26,7 +26,7 @@ LOW_GB = 20
 def _du(path, limit=200000):
     """Bytes under path (files only, symlinks not followed); stops counting after `limit` entries."""
     total, n = 0, 0
-    for root, dirs, files in os.walk(path, followlinks=False):
+    for root, _dirs, files in os.walk(path, followlinks=False):
         for f in files:
             try:
                 total += os.lstat(os.path.join(root, f)).st_size
