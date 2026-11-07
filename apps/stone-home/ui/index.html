@@ -1552,7 +1552,7 @@ function catRows() {
       if (!S.emu) { if (!S.emuLoading) loadEmulators(); return { d: 'Emuladores de otras consolas, desde Flathub.', rows: [{ l: 'Leyendo…', s: 'Buscando qué emuladores están instalados', v: '', ro: true }] }; }
       return { d: 'Se instalan desde Flathub y aparecen en tu biblioteca como accesos directos. Los juegos y BIOS los pones tú. RetroDECK reúne la mayoría de consolas en una sola app.',
         rows: S.emu.map(e => { const st = EMU_STATE[e.key]; const busy = st && st.state === 'installing';
-          return { l: e.name, s: busy ? st.text : e.plays, v: e.installed ? 'Instalado' : busy ? 'Instalando…' : 'Instalar', act: 'emu', emu: e }; }) };
+          return { l: e.name, s: busy ? st.text : e.plays, v: e.installed ? 'Instalado' : busy ? 'Instalando…' : 'Instalar', act: 'emu', emu: e }; }).concat(romRows()) };
     }
     case 'Rendimiento': return { d: `Perfil activo: ${profOf(S.prof).n}. Elige entre silencio y rendimiento, o ajusta tu propio perfil.`, rows: [
       { l: 'Performance Center', s: 'SILENT, BALANCED, PERFORMANCE y CUSTOM', v: 'Abrir', act: 'perf' },
@@ -1761,6 +1761,26 @@ function storeAct(r, ri) {
       m.catch(e => { play('error'); toast((e && e.message) || 'No se pudo', false); }).then(() => cxReset('storage', 'Almacenamiento', ri));
     }, onB: back });
 }
+
+/* ---------- STONE EMULATION: your games for other consoles (roms.py) ---------- */
+function romRows() {
+  const R = CX.roms;
+  if (!R) { cxLoad('roms', () => Bridge.call('roms.scan'), 'Emuladores'); return [{ l: 'Buscando tus juegos…', s: '~/Emulation/roms', v: '' }]; }
+  if (R.error) return [{ l: 'Tus juegos', s: R.error, v: '' }];
+  const found = R.systems.filter(s => s.games.length);
+  const rows = [{ l: 'Carpeta de tus juegos', s: `${R.base}/roms/<consola> · BIOS en ${R.base}/bios`, v: 'Preparar', act: 'roms-folders' }];
+  found.forEach(s => rows.push({ l: `${s.name}: ${s.games.length} juego${s.games.length === 1 ? '' : 's'}`, s: s.installed ? `Se abren con ${s.emulator}` : `Falta instalar ${s.emulator} (arriba)`, v: s.installed ? 'Listo' : 'Falta emulador', act: 'info', where: s.games.slice(0, 5).map(g => g.name).join(', ') }));
+  if (found.length) rows.push({ l: 'Añadir juegos a la biblioteca', s: 'Los juegos con su emulador instalado aparecen en STONE como cualquier juego', v: 'Añadir', act: 'roms-add' });
+  else rows.push({ l: 'Todavía no hay juegos', s: 'Copia tus juegos en las carpetas de cada consola (por ejemplo desde el escritorio con un pendrive)', v: '', act: 'info', where: `${R.base}/roms/ps2, ${R.base}/roms/gc…` });
+  return rows;
+}
+function romAct(r, ri) {
+  play('select');
+  if (r.act === 'roms-folders') return Bridge.call('roms.folders').then(x => toast(`Carpetas listas en ${x.base}/roms`, false), e => toast((e && e.message) || 'No se pudo', false)).then(() => cxReset('roms', 'Emuladores', ri));
+  toast('Añadiendo…', false);
+  return Bridge.call('roms.add').then(x => toast(x.new === 0 ? 'Ya estaban todos en la biblioteca' : x.queued ? `${x.added} añadidos ahora; ${x.queued} aparecerán al reiniciar la consola` : `${x.added} juegos añadidos a la biblioteca`, false),
+    e => toast((e && e.message) || 'No se pudo', false)).then(() => { cxReset('roms', 'Emuladores', ri); loadLibrary(); });
+}
 function enterSettings(opts = {}) {
   S.screen = 'settings';
   const c = catRows();
@@ -1838,6 +1858,7 @@ function settingsA(el) {
   if (r.act === 'info') { play('select'); return toast(r.where, false); }
   if (['audio-out', 'wifi', 'wifi-scan', 'wifi-off', 'bt', 'bt-scan'].includes(r.act)) return cxAct(r, NAV.c);
   if (['storage-again', 'steam-dl', 'game-store'].includes(r.act)) return storeAct(r, NAV.c);
+  if (['roms-folders', 'roms-add'].includes(r.act)) return romAct(r, NAV.c);
   if (r.act === 'cu40') { play('select'); return cu40Dlg(NAV.c); }
   if (r.act === 'health') { play('select'); S.health = null; return enterSettings({ pane: true, ri: NAV.c }); }
   if (r.act === 'reboot') { play('select'); return shutdown(true); }

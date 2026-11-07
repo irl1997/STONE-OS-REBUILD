@@ -138,6 +138,8 @@ const Bridge = (() => {
     'storage.status': async () => { await wait(400); return { libraries: [{ path: '/var/home/stone/.local/share/Steam', free: 412 * 2 ** 30, total: 476 * 2 ** 30, low: false }],
       downloads: [{ appid: '1091500', name: 'Cyberpunk 2077', downloaded: 3.2 * 2 ** 30, total: 12 * 2 ** 30, progress: 0.27, installed: true }],
       games: [{ appid: '1091500', name: 'Cyberpunk 2077', size: 71 * 2 ** 30, shader_cache: 1.4 * 2 ** 30, prefix: 0.3 * 2 ** 30 }], alerts: [] }; },
+    'roms.scan': async () => { await wait(300); return { base: '/var/home/stone/Emulation', systems: [{ key: 'ps2', name: 'PlayStation 2', emulator: 'PCSX2', emulator_key: 'pcsx2', installed: true, games: [{ name: 'Juego de ejemplo', path: '/x.iso' }] }] }; },
+    'roms.folders': () => ({ base: '/var/home/stone/Emulation' }), 'roms.add': async () => { await wait(500); return { found: 1, new: 1, added: 1, queued: 0 }; },
     'storage.clearShaderCache': () => ({ ok: true, freed: 1.4 * 2 ** 30 }), 'storage.uninstall': () => ({ ok: true }),
     'game.experience': () => ({ confidence: { level: 'medium', text: 'Medido en esta consola', detail: '2 mediciones limpias' }, last: { avg_fps: 58.4, low1_fps: 41.2, stutters_per_min: 0.6, verdict: 'fluido', gpu_temp_max: 74, config: 'x' }, regression: [], autopilot: { quality: 'a', balanced: 'b', fluid: 'c' } }),
     'firstrun.status': () => ({ done: true, steam_account: true }), 'firstrun.complete': () => ({ done: true }),

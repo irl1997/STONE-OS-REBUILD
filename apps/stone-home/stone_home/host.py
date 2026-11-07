@@ -23,6 +23,7 @@ from . import emulators
 from . import firstrun
 from . import health
 from . import library
+from . import roms
 from . import shortcuts
 from . import steamcef
 from . import steamsettings
@@ -571,6 +572,25 @@ class Host:
             if name in Host.CONNECT:
                 return lambda args, done: self._connect(name, args, done)
         raise AttributeError(attr)
+
+    # ---- STONE EMULATION (M14): the person's games for other consoles (roms.py) ---------------
+    def _bg(self, done, fn, what):
+        def work():
+            try:
+                res = (fn(), None, "")
+            except Exception as e:  # noqa: BLE001
+                res = (None, "HardwareError", f"{what}: {e!r}")
+            GLib.idle_add(lambda: (done(*res), False)[1])
+        threading.Thread(target=work, daemon=True).start()
+
+    def m_roms_scan(self, args, done):
+        self._bg(done, roms.scan, "roms")
+
+    def m_roms_folders(self, args, done):
+        self._bg(done, lambda: {"base": roms.folders()}, "roms")
+
+    def m_roms_add(self, args, done):
+        self._bg(done, lambda: roms.add_to_library(steam_ui=self.steam_ui), "roms")
 
     # ---- STONE STORAGE and DOWNLOADS (M20, M13) ---------------------------------------------
     def m_storage_status(self, args, done):

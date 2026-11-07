@@ -128,3 +128,23 @@ function storeAct(r, ri) {
       m.catch(e => { play('error'); toast((e && e.message) || 'No se pudo', false); }).then(() => cxReset('storage', 'Almacenamiento', ri));
     }, onB: back });
 }
+
+/* ---------- STONE EMULATION: your games for other consoles (roms.py) ---------- */
+function romRows() {
+  const R = CX.roms;
+  if (!R) { cxLoad('roms', () => Bridge.call('roms.scan'), 'Emuladores'); return [{ l: 'Buscando tus juegos…', s: '~/Emulation/roms', v: '' }]; }
+  if (R.error) return [{ l: 'Tus juegos', s: R.error, v: '' }];
+  const found = R.systems.filter(s => s.games.length);
+  const rows = [{ l: 'Carpeta de tus juegos', s: `${R.base}/roms/<consola> · BIOS en ${R.base}/bios`, v: 'Preparar', act: 'roms-folders' }];
+  found.forEach(s => rows.push({ l: `${s.name}: ${s.games.length} juego${s.games.length === 1 ? '' : 's'}`, s: s.installed ? `Se abren con ${s.emulator}` : `Falta instalar ${s.emulator} (arriba)`, v: s.installed ? 'Listo' : 'Falta emulador', act: 'info', where: s.games.slice(0, 5).map(g => g.name).join(', ') }));
+  if (found.length) rows.push({ l: 'Añadir juegos a la biblioteca', s: 'Los juegos con su emulador instalado aparecen en STONE como cualquier juego', v: 'Añadir', act: 'roms-add' });
+  else rows.push({ l: 'Todavía no hay juegos', s: 'Copia tus juegos en las carpetas de cada consola (por ejemplo desde el escritorio con un pendrive)', v: '', act: 'info', where: `${R.base}/roms/ps2, ${R.base}/roms/gc…` });
+  return rows;
+}
+function romAct(r, ri) {
+  play('select');
+  if (r.act === 'roms-folders') return Bridge.call('roms.folders').then(x => toast(`Carpetas listas en ${x.base}/roms`, false), e => toast((e && e.message) || 'No se pudo', false)).then(() => cxReset('roms', 'Emuladores', ri));
+  toast('Añadiendo…', false);
+  return Bridge.call('roms.add').then(x => toast(x.new === 0 ? 'Ya estaban todos en la biblioteca' : x.queued ? `${x.added} añadidos ahora; ${x.queued} aparecerán al reiniciar la consola` : `${x.added} juegos añadidos a la biblioteca`, false),
+    e => toast((e && e.message) || 'No se pudo', false)).then(() => { cxReset('roms', 'Emuladores', ri); loadLibrary(); });
+}

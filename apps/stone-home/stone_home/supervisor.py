@@ -201,6 +201,11 @@ def run():
     home = Child("stone-home", _cmd("STONE_SESSION_HOME", HOME_CMD))
     started = time.time()
     _write_state({"started": started, "fallback": None})
+    try:                                          # Steam's interface flag and waiting shortcuts
+        from . import shortcuts
+        log(f"prepare: {shortcuts.prepare_session()}")
+    except Exception as e:  # noqa: BLE001  (never keeps the session from starting)
+        log(f"prepare: {e}")
     steam.start()
     home.start()
     focus = FocusKeeper()
