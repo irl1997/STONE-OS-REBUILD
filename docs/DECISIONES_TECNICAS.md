@@ -306,6 +306,7 @@ Ninguna fila de esta tabla se marca como validada sin haberla ejecutado en la BC
 | --- | --- | --- |
 | 1 | 2026-11-06 | Primera versión: respuestas del propietario a las preguntas del inventario, hechos documentados, auditoría de motores y clasificación de pruebas |
 | 2 | 2026-11-06 | R-01 a R-12 aprobadas por el propietario; copia de seguridad R-12 realizada |
+| 11 | 2026-11-07 | Código de F2 completo en el PR #6, con CI en verde (run 21). Incluye: sesión STONE con supervisor; foco de Gamescope; botón guía como plan B de V-13; FIRST RUN; métricas de arranque; pantalla de actualizaciones para la sesión STONE; WebKit, Chromium y e2e en el CI. Abiertos V-18 y V-19. Todo en CODE TESTED: falta la placa (ver `docs/fases/F2_PLAN.md` §5) |
 | 10 | 2026-11-07 | F1 fusionado en `main` (PR #5; CI en el contenedor: validación sin omisiones y suite de `stoned` 91/91); imagen F1 publicada. ISO de F0 construida (SHA-256 `f9d22f5b…cf88`). F2 iniciado: plan con la investigación de la sesión; D-27 |
 | 9 | 2026-11-07 | F0 fusionado en `main` (PR #1, CI con 0 omisiones y 38 pruebas). F1 iniciado bajo D-20: `stoned` portado y configuración de referencia en `stoned` (ver `docs/fases/F1_PLAN.md`) |
 | 8 | 2026-11-07 | D-26: firma sin clave; el flujo del instalador usa por defecto la etiqueta `dev` |
