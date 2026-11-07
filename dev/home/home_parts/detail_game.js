@@ -6,7 +6,7 @@ function enterDetail(i, opts = {}) {
   const canPlay = g.inst || g.src === 'shortcut';
   const prim = running ? 'REANUDAR' : canPlay ? 'JUGAR' : 'INSTALAR';
   const sec = [[g.fav ? 'Quitar de favoritos' : 'Favorito', 'fav'], [`Rendimiento: ${g.perf ? profOf(g.perf).n : 'Global'}`, 'perf'], ['Propiedades', 'opt']];
-  if (g.src === 'steam' && g.inst) sec.splice(2, 0, [imgLabel(g), 'img'], [preLabel(g), 'pre'], [lookLabel(g), 'look'], [optLabel(g), 'ins'], ['Instalar HelixSR', 'hlx'], [optzLabel(g), 'opz']);
+  if (g.src === 'steam' && g.inst) sec.splice(2, 0, [imgLabel(g), 'img'], [preLabel(g), 'pre'], [lookLabel(g), 'look'], ['Experiencia', 'xp'], [optLabel(g), 'ins'], ['Instalar HelixSR', 'hlx'], [optzLabel(g), 'opz']);
   $('#detail').innerHTML = `
     <div class="col"><div class="origin">${esc(g.o)}</div><h1${g.n.length > 22 ? ' class="long"' : ''}>${esc(g.n.toUpperCase())}</h1>
       <div class="stats">${playText(g)} · Última sesión: ${running ? 'ahora' : g.last}</div>
@@ -137,6 +137,7 @@ function detailA(el) {
   if (a === 'opz') { play('select'); return optimizar(g, curG); }
   if (a === 'ins') { play('select'); return insOpti(g, curG); }
   if (a === 'hlx') { play('select'); return insHelix(g, curG); }
+  if (a === 'xp') { play('select'); return xpDlg(g); }
   if (a === 'look') {
     if (!g.look) { play('error'); return toast('Leyendo los aspectos…', false); }
     if (!g.look.available) { play('error'); return toast(g.look.reason || 'No disponible', false); }
@@ -266,4 +267,20 @@ function setMetrics(on) {
   $('#metrics').hidden = !on;
   if (on) metricsTick();
   telemetrySync();        /* the overlay subscribes at 0.5 s; closed, nothing is read */
+}
+
+/* EXPERIENCE ENGINE (experience.py): what STONE knows about this game, from its own measurements. */
+const CONF_TXT = { high: 'Alta', medium: 'Media', low: 'Baja' };
+const GOAL_TXT = { quality: 'CALIDAD', balanced: 'EQUILIBRIO', fluid: 'FLUIDEZ' };
+async function xpDlg(g) {
+  let r;
+  try { r = await Sys.gameExperience(g.appid); } catch (e) { play('error'); return toast('No se pudo leer la experiencia de este juego', false); }
+  const back = () => { closeDlg(); play('back'); enterDetail(curG, { r: 1, c: 0 }); };
+  const L = r.last, c = r.confidence;
+  const rows = [`<p>Confianza: <b>${CONF_TXT[c.level] || c.level}</b> · ${esc(c.text)} · ${esc(c.detail)}</p>`];
+  rows.push(L ? `<p>Última medición: <b>${L.avg_fps} FPS</b> de media · 1 % más lento ${L.low1_fps} FPS · ${L.verdict ? esc(L.verdict) + ` (${L.stutters_per_min} tirones/min)` : 'tirones sin datos'}${L.gpu_temp_max ? ` · GPU hasta ${L.gpu_temp_max} °C` : ''}</p>`
+    : '<p>Todavía no hay mediciones de este juego. «Optimizar» mide cada combinación con MangoHud.</p>');
+  if (r.regression.length) rows.push(`<p>Desde la última medición ${esc(r.regression.join(', '))}: conviene volver a medir.</p>`);
+  if (r.autopilot) rows.push(`<p>Mejor medido: ${Object.entries(r.autopilot).filter(([, v]) => v).map(([k]) => GOAL_TXT[k]).join(' · ') || '—'}. STONE RECOMMENDED usa el de EQUILIBRIO.</p>`);
+  openDlg(`<h2>EXPERIENCIA</h2>${rows.join('')}<div class="btns"><span class="txt-f" data-f data-b="ok">VOLVER</span></div>`, { onA: back, onB: back });
 }

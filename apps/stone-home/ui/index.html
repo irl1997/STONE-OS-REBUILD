@@ -479,7 +479,7 @@ const Sys = {
   firstrunComplete: () => Bridge.call('firstrun.complete'),
   sessionResume: () => Bridge.call('session.resume'), sessionDesktop: () => Bridge.call('session.desktop'),
   health: () => Bridge.call('health.status'), cu40: op => Bridge.call('gpu.cu40', op),
-  gameLook: appid => Bridge.call('game.look', appid), gameSetLook: (appid, k) => Bridge.call('game.setLook', appid, k)
+  gameExperience: appid => Bridge.call('game.experience', appid), gameLook: appid => Bridge.call('game.look', appid), gameSetLook: (appid, k) => Bridge.call('game.setLook', appid, k)
 };
 async function sys(method, ...a) {
   try { return await Sys[method](...a); }
@@ -536,7 +536,7 @@ function telemetrySync() {
 }
 PerfAPI.on('state', st => adopt(st));
 PerfAPI.on('metrics', m => {
-  S.metrics = m;
+  S.metrics = m; thermPush(m);
   const r = $('#pread'); if (r) r.textContent = readingsText(m);
   const tr = $('#tread'); if (tr) tr.innerHTML = tuningReadings(m);
   if (S.tech && !$('#metrics').hidden) metricsTick();
@@ -913,6 +913,24 @@ function section(d) {
   if (n === 1) enterLibrary(); else { if (NAV) NAV.id = ''; enterHome({ r: 0, c: 0 }); }
 }
 
+/* EXPERIENCE ENGINE · Thermal Forecast (experience.py thermal_forecast, same rule): least squares over
+   the last 5 minutes of stoned's GPU temperature; minutes to the profile's limit at this pace. */
+const THERM = [];
+function thermPush(m) {
+  if (!m || m.gpu_temp_c == null) return;
+  const t = Date.now() / 1000; THERM.push([t, m.gpu_temp_c]);
+  while (THERM.length && t - THERM[0][0] > 300) THERM.shift();
+}
+function thermalForecast(limit) {
+  if (!limit || THERM.length < 6 || THERM[THERM.length - 1][0] - THERM[0][0] < 60) return null;
+  const n = THERM.length, mt = THERM.reduce((a, p) => a + p[0], 0) / n, mc = THERM.reduce((a, p) => a + p[1], 0) / n;
+  const v = THERM.reduce((a, p) => a + (p[0] - mt) ** 2, 0); if (!v) return null;
+  const slope = THERM.reduce((a, p) => a + (p[0] - mt) * (p[1] - mc), 0) / v * 60;
+  if (slope < 0.2) return null;
+  const now = mc + slope / 60 * (THERM[n - 1][0] - mt);
+  return Math.max(0, (limit - now) / slope);
+}
+
 /* ---------- LIBRARY ---------- */
 const FILTERS = ['Todos', 'Steam', 'Accesos directos', 'Favoritos'];
 function libList() {
@@ -985,7 +1003,7 @@ function enterDetail(i, opts = {}) {
   const canPlay = g.inst || g.src === 'shortcut';
   const prim = running ? 'REANUDAR' : canPlay ? 'JUGAR' : 'INSTALAR';
   const sec = [[g.fav ? 'Quitar de favoritos' : 'Favorito', 'fav'], [`Rendimiento: ${g.perf ? profOf(g.perf).n : 'Global'}`, 'perf'], ['Propiedades', 'opt']];
-  if (g.src === 'steam' && g.inst) sec.splice(2, 0, [imgLabel(g), 'img'], [preLabel(g), 'pre'], [lookLabel(g), 'look'], [optLabel(g), 'ins'], ['Instalar HelixSR', 'hlx'], [optzLabel(g), 'opz']);
+  if (g.src === 'steam' && g.inst) sec.splice(2, 0, [imgLabel(g), 'img'], [preLabel(g), 'pre'], [lookLabel(g), 'look'], ['Experiencia', 'xp'], [optLabel(g), 'ins'], ['Instalar HelixSR', 'hlx'], [optzLabel(g), 'opz']);
   $('#detail').innerHTML = `
     <div class="col"><div class="origin">${esc(g.o)}</div><h1${g.n.length > 22 ? ' class="long"' : ''}>${esc(g.n.toUpperCase())}</h1>
       <div class="stats">${playText(g)} · Última sesión: ${running ? 'ahora' : g.last}</div>
@@ -1116,6 +1134,7 @@ function detailA(el) {
   if (a === 'opz') { play('select'); return optimizar(g, curG); }
   if (a === 'ins') { play('select'); return insOpti(g, curG); }
   if (a === 'hlx') { play('select'); return insHelix(g, curG); }
+  if (a === 'xp') { play('select'); return xpDlg(g); }
   if (a === 'look') {
     if (!g.look) { play('error'); return toast('Leyendo los aspectos…', false); }
     if (!g.look.available) { play('error'); return toast(g.look.reason || 'No disponible', false); }
@@ -1239,12 +1258,29 @@ function metricsTick() {
   const id = effective(), m = S.metrics;
   const lim = S.actual && !S.actual.error ? `Límite ${S.actual.max} MHz · ${S.actual.temp} °C (regulador)` : noLimitText();
   $('#metrics').textContent = `STONE ${profOf(id).n}\n${lim}\n` + (m ? `GPU ${nv(m.gpu_temp_c, ' °C')}   ${nv(m.gpu_clock_mhz, ' MHz')}   uso ${nv(m.gpu_busy_pct, ' %')}\nCPU ${nv(m.cpu_temp_c, ' °C')}   uso ${nv(m.cpu_pct, ' %')}   GPU ${nv(m.gpu_power_w, ' W')}\nVentilador ${nv(m.fan_rpm, ' RPM')} · curva de la BIOS\n` : 'Leyendo…\n')
-    + 'FPS y frametime: botón ··· → Rendimiento (Steam)';
+    + 'FPS y frametime: botón ··· → Rendimiento (Steam)'
+    + (() => { const f = thermalForecast(S.actual && S.actual.temp); return f === null ? '' : `\nA este ritmo, la GPU llega a ${S.actual.temp} °C en ~${Math.round(f)} min`; })();
 }
 function setMetrics(on) {
   $('#metrics').hidden = !on;
   if (on) metricsTick();
   telemetrySync();        /* the overlay subscribes at 0.5 s; closed, nothing is read */
+}
+
+/* EXPERIENCE ENGINE (experience.py): what STONE knows about this game, from its own measurements. */
+const CONF_TXT = { high: 'Alta', medium: 'Media', low: 'Baja' };
+const GOAL_TXT = { quality: 'CALIDAD', balanced: 'EQUILIBRIO', fluid: 'FLUIDEZ' };
+async function xpDlg(g) {
+  let r;
+  try { r = await Sys.gameExperience(g.appid); } catch (e) { play('error'); return toast('No se pudo leer la experiencia de este juego', false); }
+  const back = () => { closeDlg(); play('back'); enterDetail(curG, { r: 1, c: 0 }); };
+  const L = r.last, c = r.confidence;
+  const rows = [`<p>Confianza: <b>${CONF_TXT[c.level] || c.level}</b> · ${esc(c.text)} · ${esc(c.detail)}</p>`];
+  rows.push(L ? `<p>Última medición: <b>${L.avg_fps} FPS</b> de media · 1 % más lento ${L.low1_fps} FPS · ${L.verdict ? esc(L.verdict) + ` (${L.stutters_per_min} tirones/min)` : 'tirones sin datos'}${L.gpu_temp_max ? ` · GPU hasta ${L.gpu_temp_max} °C` : ''}</p>`
+    : '<p>Todavía no hay mediciones de este juego. «Optimizar» mide cada combinación con MangoHud.</p>');
+  if (r.regression.length) rows.push(`<p>Desde la última medición ${esc(r.regression.join(', '))}: conviene volver a medir.</p>`);
+  if (r.autopilot) rows.push(`<p>Mejor medido: ${Object.entries(r.autopilot).filter(([, v]) => v).map(([k]) => GOAL_TXT[k]).join(' · ') || '—'}. STONE RECOMMENDED usa el de EQUILIBRIO.</p>`);
+  openDlg(`<h2>EXPERIENCIA</h2>${rows.join('')}<div class="btns"><span class="txt-f" data-f data-b="ok">VOLVER</span></div>`, { onA: back, onB: back });
 }
 
 /* ---------- QUICK MENU ---------- */

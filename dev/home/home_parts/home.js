@@ -114,3 +114,21 @@ function section(d) {
   play('nav'); S.section = n;
   if (n === 1) enterLibrary(); else { if (NAV) NAV.id = ''; enterHome({ r: 0, c: 0 }); }
 }
+
+/* EXPERIENCE ENGINE · Thermal Forecast (experience.py thermal_forecast, same rule): least squares over
+   the last 5 minutes of stoned's GPU temperature; minutes to the profile's limit at this pace. */
+const THERM = [];
+function thermPush(m) {
+  if (!m || m.gpu_temp_c == null) return;
+  const t = Date.now() / 1000; THERM.push([t, m.gpu_temp_c]);
+  while (THERM.length && t - THERM[0][0] > 300) THERM.shift();
+}
+function thermalForecast(limit) {
+  if (!limit || THERM.length < 6 || THERM[THERM.length - 1][0] - THERM[0][0] < 60) return null;
+  const n = THERM.length, mt = THERM.reduce((a, p) => a + p[0], 0) / n, mc = THERM.reduce((a, p) => a + p[1], 0) / n;
+  const v = THERM.reduce((a, p) => a + (p[0] - mt) ** 2, 0); if (!v) return null;
+  const slope = THERM.reduce((a, p) => a + (p[0] - mt) * (p[1] - mc), 0) / v * 60;
+  if (slope < 0.2) return null;
+  const now = mc + slope / 60 * (THERM[n - 1][0] - mt);
+  return Math.max(0, (limit - now) / slope);
+}

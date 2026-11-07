@@ -127,6 +127,7 @@ const Bridge = (() => {
     'boot.mark': () => null, 'boot.history': () => [],
     'game.look': () => ({ available: true, reason: null, chosen: null, looks: ['NATURAL', 'CLARITY', 'CINEMA', 'VIVID', 'RETRO'].map(l => ({ key: l.toLowerCase(), label: l, description: 'Aspecto ' + l })) }),
     'game.setLook': () => ({ ok: true }),
+    'game.experience': () => ({ confidence: { level: 'medium', text: 'Medido en esta consola', detail: '2 mediciones limpias' }, last: { avg_fps: 58.4, low1_fps: 41.2, stutters_per_min: 0.6, verdict: 'fluido', gpu_temp_max: 74, config: 'x' }, regression: [], autopilot: { quality: 'a', balanced: 'b', fluid: 'c' } }),
     'firstrun.status': () => ({ done: true, steam_account: true }), 'firstrun.complete': () => ({ done: true }),
     'prefs.set': ([p]) => (prefs = Object.assign({}, prefs, p)),
     emulators: () => ['RetroDECK|Todo en uno: la mayoría de consolas clásicas en una sola app|1', 'RetroArch|Consolas clásicas con núcleos de libretro|0', 'Dolphin|GameCube y Wii|0',

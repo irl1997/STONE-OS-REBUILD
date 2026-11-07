@@ -32,7 +32,7 @@ import json
 import os
 import time
 
-from . import detect, graphics, look, metrics, schema, score, store
+from . import detect, experience, graphics, look, metrics, schema, score, store
 
 ENGINE_VERSION = 1
 ABNORMAL_S = 60          # a game gone this soon after it appeared did not end normally
@@ -469,6 +469,11 @@ class Engine:
             c["gamescope"]["scaling_filter"] = "fsr" if key == "gamescope" else c["gamescope"]["scaling_filter"]
         return self.apply(appid, "custom", c)
 
+    def experience(self, appid):
+        """EXPERIENCE ENGINE report of one game (experience.py)."""
+        p = self.profile(appid)
+        return experience.report(p, p.get("environment"))
+
     def look_options(self, appid):
         """STONE IMAGE choices for a game (look.py)."""
         p = self.profile(appid)
@@ -544,6 +549,7 @@ class Engine:
         sess = {"appid": appid, "mode": mode, "config": c, "key": schema.config_key(c), "gkey": gkey(c),
                 "t_prepared": self.clock(), "t_started": None, "measure": mstate, "graphics_applied": graphics_ok,
                 "perf_profile": pid, "perf_set": perf_set, "display": p["display"], "environment": p["environment"],
+                "look": lenv.get("STONE_LOOK"),
                 "target": rec["target"]}
         self._save_session(sess)
         return {"ok": True, "config": c, "settings": settings_hint(c, p["game"]), "graphics_applied": graphics_ok,
@@ -617,6 +623,14 @@ class Engine:
                 f["p:" + s["perf_profile"]] = f.get("p:" + s["perf_profile"], 0) + 1
                 auto["safety"]["next_safe_perf"] = s["perf_profile"]
             changed = True
+            # Self-healing (EXPERIENCE ENGINE, non-destructive): a look on when the game ended badly is
+            # turned off for this game; the person can choose it again on the game's page.
+            if s.get("look"):
+                try:
+                    look.set_look(s["appid"], None)
+                    result["healed"] = f"look {s['look']} turned off"
+                except (OSError, ValueError):
+                    pass
             result["collected"] = {"config": s["config"], "graphics_applied": s["graphics_applied"],
                                    "performance": s.get("perf_profile"), "environment": s.get("environment"),
                                    "blamed": [x for x, b in (("graphics", g_blame), ("performance", p_blame)) if b]}

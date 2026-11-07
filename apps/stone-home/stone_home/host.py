@@ -303,6 +303,11 @@ class Host:
         preset = args[2] if len(args) == 3 else None
         self._opt_call(done, lambda: self.optimized.set_image(appid, args[1], preset))
 
+    def m_game_experience(self, args, done):
+        """EXPERIENCE ENGINE report of one game."""
+        appid, _ = self._game_args(args, 1, 1)
+        self._opt_call(done, lambda: self.optimized.experience(appid))
+
     def m_game_look(self, args, done):
         """lookOptions(appid): STONE IMAGE looks of one game and the chosen one."""
         appid, _ = self._game_args(args, 1, 1)
