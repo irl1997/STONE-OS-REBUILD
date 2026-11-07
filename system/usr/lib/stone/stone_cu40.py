@@ -12,6 +12,8 @@ itself except the boot check, and that one can only turn the unlock off.
                                temperature, clock and the kernel log. Passed: 40 CU is kept.
                                Failed: 40 CU is turned off again (back to 24 CU on reboot).
   sudo stone-cu40 disable      removes the kernel argument; 24 CU from the next boot
+  enable --yes / disable --yes the same, confirmed in STONE Home's own dialog (run through pkexec,
+                               polkit action org.stonemachine.cu40, console administrator only)
   stone-cu40 guard             (systemd, at boot) GPU errors in the previous 40 CU boot ->
                                turned off again
 
@@ -255,7 +257,7 @@ def confirm(word):
         return False
 
 
-def cmd_enable():
+def cmd_enable(yes=False):
     need_root()
     st, mode, dev = load(), module_mode(), gpu_device()
     if dev is None:
@@ -286,7 +288,7 @@ def cmd_enable():
         "  · Si no arranca: en el menú de arranque elige la entrada anterior, o pulsa e y",
         "    agrega amdgpu.bc250_cc_write_mode=0 al final de la línea linux; luego Ctrl+X.",
         "")
-    if not confirm("ACTIVAR"):
+    if not yes and not confirm("ACTIVAR"):
         say("Cancelado. No se cambió nada.")
         return 1
     ok, msg = kargs("add")
@@ -419,9 +421,9 @@ def main(argv=None):
     cmd = argv[0] if argv else "status"
     if cmd == "status":
         return cmd_status()
-    if cmd == "enable":
-        return cmd_enable()
-    if cmd == "disable":
+    if cmd == "enable" and argv[1:] in ([], ["--yes"]):
+        return cmd_enable(yes=argv[1:] == ["--yes"])
+    if cmd == "disable" and argv[1:] in ([], ["--yes"]):
         return cmd_disable()
     if cmd == "test":
         return cmd_test(argv[1:])

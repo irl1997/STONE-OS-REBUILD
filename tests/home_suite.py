@@ -638,6 +638,25 @@ def H08_escritorio_only_in_the_stone_session_through_stone_session_switch():
 
 
 @test
+def H09_cu40_only_three_operations_through_pkexec_and_health():
+    with Tmp() as d:
+        calls = os.path.join(d, "calls")
+        h = host_mod.Host(lambda *a: None, stoned=FakeStoned(), sysapi=system.System(spawn=lambda u: None), steam_root="/nonexistent")
+        h.cu40_cmd = ["sh", "-c", f'echo "$*" >> {calls}; echo Listo', "stone-cu40"]
+        for bad in ({"method": "gpu.cu40", "args": []}, {"method": "gpu.cu40", "args": ["guard"]},
+                    {"method": "gpu.cu40", "args": ["enable; reboot"]}):
+            assert run_host(h, bad)[1] == "InvalidValue", bad
+        r = run_host(h, {"method": "gpu.cu40", "args": ["enable"]}, timeout=15)
+        assert r[0] == {"ok": True, "code": 0, "text": "Listo"}, r
+        run_host(h, {"method": "gpu.cu40", "args": ["test"]}, timeout=15)
+        assert open(calls).read().split("\n")[:2] == ["enable --yes", "test --minutes 3"]
+        h.cu40_cmd = ["sh", "-c", "exit 126"]
+        assert run_host(h, {"method": "gpu.cu40", "args": ["disable"]}, timeout=15)[1] == "PermissionDenied"
+        r = run_host(h, {"method": "health.status", "args": []}, timeout=30)
+        assert r[1] is None and any(c[1] == "Memoria" for c in r[0]["checks"]), r
+
+
+@test
 def H02_launch_only_games_from_the_last_library_scan():
     with Tmp() as d:
         root = FX.build(os.path.join(d, "Steam"))

@@ -13,6 +13,14 @@ polkit.addRule(function (action, subject) {
         subject.isInGroup("wheel")) {
         return polkit.Result.YES;
     }
+    // 40 CU from STONE Home: only these exact command lines (Home asked for confirmation first)
+    if (action.id == "org.stonemachine.cu40" && subject.isInGroup("wheel")) {
+        var cl = action.lookup("command_line");
+        if (cl == "/usr/bin/stone-cu40 enable --yes" || cl == "/usr/bin/stone-cu40 disable --yes" ||
+            cl == "/usr/bin/stone-cu40 test --minutes 3") {
+            return polkit.Result.YES;
+        }
+    }
     if (action.id == "org.stonemachine.session.select" && subject.isInGroup("wheel")) {
         return polkit.Result.YES;
     }

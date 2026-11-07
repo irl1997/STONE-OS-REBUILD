@@ -42,6 +42,7 @@ class Host:
         self.steam_ui = steamcef                              # Steam's interface (replaced in tests)
         self.session_focus = None                             # gamescope_x11.Focus in the STONE session (tests: a fake)
         self.session_switch = ["/usr/bin/stone-session", "switch"]   # tests: a fake
+        self.cu40_cmd = ["pkexec", "/usr/bin/stone-cu40"]             # tests: a fake
         cef = _SteamUIProxy(self)
         # STONE DISPLAY: display model and the game resolution environment (stone_display/).
         self.display = stone_display.Display(game_policy=self.game_policy, cef=cef,
@@ -492,6 +493,26 @@ class Host:
             try:
                 r = subprocess.run(self.session_switch + ["desktop"], capture_output=True, text=True, timeout=90)
                 res = ({"ok": True}, None, "") if r.returncode == 0 else (None, "PermissionDenied", r.stdout.strip() or r.stderr.strip())
+            except (OSError, subprocess.SubprocessError) as e:
+                res = (None, "Unsupported", str(e))
+            GLib.idle_add(lambda: (done(*res), False)[1])
+        threading.Thread(target=work, daemon=True).start()
+
+    # ---- 40 CU from STONE Home (M04): the page confirms, pkexec + polkit allow these lines only --
+    CU40_OPS = {"enable": ["enable", "--yes"], "disable": ["disable", "--yes"], "test": ["test", "--minutes", "3"]}
+
+    def m_gpu_cu40(self, args, done):
+        if len(args) != 1 or args[0] not in self.CU40_OPS:
+            return done(None, "InvalidValue", "operation")
+        argv = self.cu40_cmd + self.CU40_OPS[args[0]]
+
+        def work():
+            try:
+                r = subprocess.run(argv, capture_output=True, text=True, timeout=600)
+                text = (r.stdout + r.stderr).strip()
+                res = ({"ok": r.returncode == 0, "code": r.returncode, "text": text[-2000:]}, None, "")
+                if r.returncode in (126, 127):              # pkexec: refused or dismissed
+                    res = (None, "PermissionDenied", text[-500:] or "refused")
             except (OSError, subprocess.SubprocessError) as e:
                 res = (None, "Unsupported", str(e))
             GLib.idle_add(lambda: (done(*res), False)[1])

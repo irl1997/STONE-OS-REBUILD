@@ -234,16 +234,41 @@ function catRows() {
    unlocked report 8; the BC-250's stock firmware 6. */
 function cores() { const t = navigator.hardwareConcurrency || 12; return Math.max(1, Math.round(t / 2)); }
 
-/* 40 CU: shown, never switched from here. It changes how the kernel starts, so it is done by
-   hand with sudo stone-cu40 (confirmation, GPU test, automatic way back). */
+/* 40 CU (M04, D-31): switched from here with STONE's own confirmation; stone-cu40 does the work
+   through pkexec (polkit allows these three command lines to the console administrator only). The
+   kernel uses it from the next boot; the boot guard turns it off by itself after GPU errors. */
 function cu40Row() {
-  const c = S.caps && S.caps.cu40;
-  const how = 'En una terminal (Konsole o Ctrl+Alt+F3): sudo stone-cu40 enable → reinicia → sudo stone-cu40 test. '
-    + 'Si la prueba falla, STONE vuelve sola a 24 CU. Para apagarlo: sudo stone-cu40 disable';
-  if (!S.caps) return { l: 'GPU · unidades de cálculo', s: 'Leyendo…', v: '' };
-  if (!c || !c.available) return { l: 'GPU · unidades de cálculo', s: 'Esta versión de STONE OS no trae el desbloqueo de 40 CU', v: '24 CU' };
-  if (c.active) return { l: 'GPU · unidades de cálculo', s: `40 CU en uso · máximo validado de esta consola: ${c.ceiling_mhz} MHz`, v: '40 CU', act: 'info', where: 'Para buscar el máximo estable de esta consola: stonectl calibrate (terminal). Estado: stonectl calibration. 40 CU: sudo stone-cu40 status' };
-  return { l: 'GPU · unidades de cálculo', s: '24 CU en uso · 40 CU disponible, se activa a mano con prueba de estabilidad', v: '24 CU', act: 'info', where: how };
+  const c = S.caps && S.caps.cu40, L = 'GPU · unidades de cálculo';
+  if (!S.caps) return { l: L, s: 'Leyendo…', v: '' };
+  if (!c || !c.available) return { l: L, s: 'Esta versión de STONE OS no trae el desbloqueo de 40 CU', v: '24 CU' };
+  if (c.active) return { l: L, s: `40 CU en uso · máximo validado de esta consola: ${c.ceiling_mhz} MHz`, v: '40 CU', act: 'cu40' };
+  return { l: L, s: '24 CU en uso · 40 CU disponible (la configuración de STONE MACHINE)', v: 'Activar 40 CU', act: 'cu40' };
+}
+const CU40_WARN = `<p>Es un cambio de la comunidad, no de AMD: no todas las placas lo aguantan. Con 40 CU la GPU consume unos 30 W más y se calienta más.</p>
+  <p>STONE empieza con un máximo prudente y la calibración busca después el máximo estable de tu consola. Si aparecen errores de GPU, STONE vuelve sola a 24 CU en el siguiente arranque.</p>`;
+function cu40Dlg(ri) {
+  const c = S.caps && S.caps.cu40, on = c && c.active;
+  const back = () => { closeDlg(); play('back'); enterSettings({ pane: true, ri }); };
+  if (on) {
+    return openDlg(`<h2>40 CU</h2><p>Las 40 unidades de cálculo están en uso.</p><p>La prueba de 3 minutos comprueba que la GPU calcula bien a plena carga. Apagar 40 CU vuelve a 24 desde el próximo arranque.</p>
+      <div class="btns"><span class="txt-f" data-f data-b="test">PROBAR</span><span class="txt-f" data-f data-b="off">APAGAR 40 CU</span><span class="txt-f" data-f data-b="no">VOLVER</span></div>`, {
+      onA: el => { if (el.dataset.b === 'no') return back(); play('select'); closeDlg(); cu40Run(el.dataset.b === 'test' ? 'test' : 'disable', ri); }, onB: back });
+  }
+  openDlg(`<h2>ACTIVAR 40 CU</h2>${CU40_WARN}<p>Se aplica al reiniciar.</p>
+    <div class="btns"><span class="txt-f" data-f data-b="yes">ACTIVAR</span><span class="txt-f" data-f data-b="no">CANCELAR</span></div>`, {
+    onA: el => { if (el.dataset.b !== 'yes') return back(); play('select'); closeDlg(); cu40Run('enable', ri); }, onB: back });
+}
+async function cu40Run(op, ri) {
+  toast(op === 'test' ? 'Probando la GPU durante 3 minutos…' : 'Cambiando el arranque…', false);
+  let r = null;
+  try { r = await Sys.cu40(op); } catch (e) { play('error'); toast(e.code === 'PermissionDenied' ? 'Hace falta ser el administrador de la consola' : `No se pudo: ${e.message}`, false); return enterSettings({ pane: true, ri }); }
+  if (!r.ok) { play('error'); toast((r.text.split('\n').filter(Boolean).slice(-2).join(' ')) || 'No se pudo', false); return enterSettings({ pane: true, ri }); }
+  if (op === 'test') { toast('Prueba aprobada: las 40 CU calcularon bien', false); return enterSettings({ pane: true, ri }); }
+  rebootDlg(op === 'enable' ? '40 CU se usará desde el próximo arranque.' : 'La GPU vuelve a 24 CU desde el próximo arranque.', () => enterSettings({ pane: true, ri }));
+}
+function rebootDlg(msg, later) {
+  openDlg(`<h2>REINICIAR</h2><p>${msg}</p><div class="btns"><span class="txt-f" data-f data-b="now">REINICIAR AHORA</span><span class="txt-f" data-f data-b="later">MÁS TARDE</span></div>`, {
+    onA: el => { closeDlg(); if (el.dataset.b === 'now') { play('select'); return shutdown(true); } play('back'); later(); }, onB: () => { closeDlg(); later(); } });
 }
 
 /* Game resolution environment (Juegos ven): Televisor = every game sees the display's own

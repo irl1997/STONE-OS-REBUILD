@@ -161,6 +161,17 @@ async function firstRun(fr) {
     : bad.length ? `<p>Comprobación del sistema: <b>${bad.length} fallo${bad.length > 1 ? 's' : ''}</b> (${esc(bad.map(c => c[1]).join(', '))}). Detalle en Ajustes → Salud.</p>`
     : `<p>Comprobación del sistema: <b>${warn.length ? warn.length + ' aviso' + (warn.length > 1 ? 's' : '') : 'todo bien'}</b>.</p>`;
   await frStep(`<div class="brand" style="font-size:40px">STONE</div><h2>BIENVENIDO</h2><p>Primer encendido de STONE MACHINE. Si has llegado aquí con el botón A, el mando funciona.</p>${cfgHtml}${docHtml}`, [['next', 'CONTINUAR']]);
+  /* 40 CU: STONE MACHINE's configuration (D-16). Offered, never switched without the person (D-31). */
+  let reboot = false;
+  const c40 = S.caps && S.caps.board && S.caps.cu40;
+  if (c40 && c40.available && !c40.active) {
+    const b = await frStep(`<h2>40 CU</h2><p>Esta consola usa ahora 24 de las 40 unidades de cálculo de su GPU. STONE MACHINE está pensada para las 40.</p>${CU40_WARN}`, [['on', 'ACTIVAR'], ['later', 'AHORA NO']]);
+    if (b === 'on') {
+      const r = await Sys.cu40('enable').catch(e => ({ ok: false, text: e.message }));
+      reboot = !!(r && r.ok);
+      await frStep(`<h2>40 CU</h2><p>${reboot ? 'Listo: se usará desde el próximo arranque. Al terminar la bienvenida podrás reiniciar.' : 'No se pudo activar ahora. Puedes hacerlo después en Ajustes → Rendimiento.'}</p>`, [['next', 'CONTINUAR']]);
+    }
+  }
   const dsp = await Sys.display(true).catch(() => null);
   await frStep(`<h2>PANTALLA</h2>${dsp && dsp.connected
     ? `<p>${esc(dsp.name || 'Pantalla')}${dsp.connection ? ' · ' + esc(dsp.connection) : ''}</p><p>Resolución nativa: <b>${resTxt(dsp.native)}</b></p><p>Salida actual: <b>${resTxt(dsp.output)}</b>${dsp.max_hz ? ` · hasta ${dsp.max_hz} Hz` : ''}</p>`
@@ -174,4 +185,5 @@ async function firstRun(fr) {
   if (NAV) NAV.id = ''; NAV = null;
   enterHome({ r: 0, c: 0, slow: true });
   armIdleOff();
+  if (reboot) setTimeout(() => rebootDlg('40 CU se usará desde el próximo arranque.', () => enterHome({ r: 0, c: 0 })), 900);
 }

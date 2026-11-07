@@ -121,6 +121,15 @@ def C02_enable_needs_the_typed_confirmation(b):
     assert "falta la prueba" in out and "próximo arranque" in out, out
 
 
+@box(mode=0, karg=False)
+def C02b_enable_yes_is_the_confirmation_given_in_stone_home(b):
+    rc, out = b.run("enable", "--force", stdin="")
+    assert rc == 1 and b.calls() == [], out                       # only --yes, nothing else
+    rc, out = b.run("enable", "--yes", stdin="")
+    assert rc == 0 and b.calls() == ["kargs --append-if-missing=amdgpu.bc250_cc_write_mode=3"], (out, b.calls())
+    assert b.state()["state"] == "trial"
+
+
 @box(mode=0, karg=False, temp=80)
 def C03_enable_refuses_a_hot_gpu(b):
     rc, out = b.run("enable", stdin="ACTIVAR\n")
