@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# STONE · paso 4 · Comprobaciones tras el primer arranque de 0.3.0-dev.1. SOLO LEE.
+# STONE · paso 4 · Comprobaciones tras el primer arranque de 0.4.0-dev.1. SOLO LEE.
 # Escribe el informe en la carpeta desde la que se ejecuta (el pendrive) y dice si se puede seguir.
 set -uo pipefail
 here="$(cd "$(dirname "$0")" && pwd)"
@@ -26,16 +26,17 @@ fail=0
 check() { if eval "$2"; then echo "  OK    $1"; else echo "  FALLO $1"; fail=1; fi; }
 echo "Comprobaciones (informe: ${out})"
 booted="$(bootc status --format=json 2>/dev/null | python3 -c 'import sys,json; b=json.load(sys.stdin)["status"]["booted"]["image"]; print(b["image"]["image"], b["imageDigest"])' 2>/dev/null)"
-check "arrancada STONE OS 0.3.0-dev.1" '[[ "${booted}" == *stone-os-rebuild:0.3.0-dev.1* ]]'
+check "arrancada STONE OS 0.4.0-dev.1" '[[ "${booted}" == *stone-os-rebuild:0.4.0-dev.1* ]]'
 check "es la imagen firmada" '[[ "${booted}" == *"${EXPECTED}"* ]]'
 check "fase F2" 'grep -q "^STONE_PHASE=\"F2\"" /usr/lib/stone-release'
 check "stoned en marcha" '[ "$(systemctl is-active stoned)" = active ]'
 check "stoned responde" 'timeout 30 stonectl status >/dev/null 2>&1'
 check "rc23 sigue fijada como versión anterior" 'ostree admin status | grep -q "Pinned: yes"'
+check "sesión STONE automática" '[ -e /etc/sddm.conf.d/zz-stone-session.conf ]'
 echo
 if [ "${fail}" = 0 ]; then
-    echo "TODO BIEN: sigue con el paso 5."
+    echo "TODO BIEN: vuelve a STONE y sigue con las pruebas."
 else
-    echo "PARA: algo no cuadra. No sigas con el paso 5. Lleva el pendrive al Mac y avisa a Claude."
+    echo "PARA: algo no cuadra. No sigas con las pruebas. Lleva el pendrive al Mac y avisa a Claude."
 fi
 exit "${fail}"

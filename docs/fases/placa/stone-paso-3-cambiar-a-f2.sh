@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# STONE · paso 3 · Cambia a STONE OS (rebuild) 0.3.0-dev.1 sin borrar nada (bootc switch).
+# STONE · paso 3 · Cambia a STONE OS (rebuild) 0.4.0-dev.1 sin borrar nada (bootc switch).
 # CAMBIA la imagen del próximo arranque. La actual queda como versión anterior en el menú de arranque.
 # /home (juegos, partidas, ajustes) no se toca. Vuelta atrás: sudo bootc rollback y reiniciar.
 set -euo pipefail
-IMAGE="ghcr.io/irl1997/stone-os-rebuild:0.3.0-dev.1"
+IMAGE="ghcr.io/irl1997/stone-os-rebuild:0.4.0-dev.1"
 here="$(cd "$(dirname "$0")" && pwd)"
 # digest-esperado.txt (next to this script, written by Claude after checking the release's signature)
 EXPECTED="$(tr -d '[:space:]' < "${here}/digest-esperado.txt" 2>/dev/null || true)"
