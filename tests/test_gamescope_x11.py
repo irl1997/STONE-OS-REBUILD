@@ -94,6 +94,11 @@ def test_properties_land_on_the_home_window_and_the_root():
         assert f.get(f.root, "GAMESCOPECTRL_BASELAYER_WINDOW") == [0]
         f.front(None)
         assert f.get(f.root, "GAMESCOPECTRL_BASELAYER_APPID") == [413091, 769]
+        assert f.home_front() is False
+        f.set_home_front(True)
+        assert f.home_front() is True and GX.Focus(disp).home_front() is True     # another client sees it
+        f.set_home_front(False)
+        assert f.home_front() is False
     finally:
         xvfb.terminate()
         xvfb.wait(timeout=10)

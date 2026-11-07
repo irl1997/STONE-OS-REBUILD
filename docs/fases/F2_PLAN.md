@@ -70,7 +70,8 @@ Estados según D-23. Nada de esto se ha observado todavía en la placa.
 | 2 | Host de Home, puente, biblioteca, Chromium | CODE TESTED | `stone_home/`, `tests/home_suite.py`, `tests/server_suite.py` |
 | 3 | Interfaz de rc23 | CODE TESTED (portada) | `dev/home/` → `apps/stone-home/ui/index.html` |
 | 4 | Foco de Gamescope: Home como interfaz principal y el juego delante | CODE TESTED (Xvfb en CI) | `gamescope_x11.py`, `tests/test_gamescope_x11.py` |
-| 4 | Quick Menu encima del juego | Pendiente | Plan B (V-13) mientras tanto: el botón guía vuelve a Home |
+| 4 | Botón guía durante un juego: Home al frente, el juego sigue detrás; REANUDAR lo devuelve (plan B de V-13) | CODE TESTED | `guide.py`, `supervisor.FocusKeeper`, `host.m_session_resume`; `tests/test_guide.py`; placa T-SESS-04 |
+| 4 | Quick Menu superpuesto y transparente encima del juego (plan A de V-13) | Pendiente de la placa | Se decide después de T-SESS-04 |
 | 5 | Métricas de arranque | CODE TESTED | `bootmetrics.py`, `stone-session boot`; prueba en placa T-BOOT-01 |
 | 5 | FIRST RUN | CODE TESTED | `firstrun.py`, `home_parts/power_boot.js`; prueba en placa T-FR-01 |
 | 5 | Pantalla de actualizaciones | CODE TESTED | `system.update_timer`, `home_parts/catrows.js`; V-18, T-UPD-01 |
@@ -98,3 +99,20 @@ FIRST RUN no sube frecuencias, no calibra y no activa nada experimental (A2). Co
 Dentro de la sesión STONE ya no remite al botón STEAM, que ahí no está a la vista. La búsqueda manual queda abierta en V-18.
 
 **Pendiente conocido (V-19).** Las filas «Abrir en Steam» de Ajustes asumen la interfaz de Steam al frente. En la sesión STONE hay que comprobarlas en la placa (T-SESS-08).
+
+**Botón guía en la sesión STONE (plan B de V-13).** El supervisor lee el botón guía directamente de los mandos con python-evdev, así que no depende de cómo trate Steam ese botón (V-14).
+
+Con un juego al frente, pulsarlo pone STONE Home delante y el juego sigue abierto detrás. Home muestra entonces su pantalla de juego:
+- A reanuda la partida.
+- ☰ abre el menú de STONE.
+- B vuelve al inicio.
+
+REANUDAR quita la marca `STONE_HOME_FRONT` de la ventana raíz y el supervisor vuelve a poner el juego al frente. La marca también se quita sola cuando el juego termina o empieza otro.
+
+Una misma pulsación puede llegar por dos dispositivos, el mando y el mando virtual de Steam; las pulsaciones con menos de 0,6 s de diferencia cuentan una sola vez.
+
+Queda por comprobar en la placa (T-SESS-04):
+- si Steam también reacciona al botón;
+- si Chromium recibe el mando al volver al frente.
+
+El plan A, con el menú superpuesto y transparente como hace OpenGamepadUI (`STEAM_OVERLAY` y `STEAM_INPUT_FOCUS` en su ventana), se decide después de esa prueba.

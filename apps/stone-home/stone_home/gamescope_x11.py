@@ -13,6 +13,9 @@ core/ui/card_ui/card_ui.gd, core/systems/launcher/running_app.gd, extensions/cor
 STONE Home is marked as the main interface. While Steam runs a game (seen in /proc as
 `reaper SteamLaunch AppId=<id>`, as stoned does), the game's id is put in front; when it ends,
 Home comes back. Behaviour on the board is [V-13]: until then this is CODE TESTED only.
+
+  STONE_HOME_FRONT = 1           on the root, STONE's own: Home stays in front of the running game
+                                 (guide button, guide.py); STONE Home's REANUDAR sets it back to 0
 """
 
 import os
@@ -20,7 +23,8 @@ import re
 
 STEAM_APPID = 769                 # Gamescope's hard-coded main-interface id (Steam's)
 EXTRA_UNKNOWN_APPID = 413091      # the extra id Steam always writes first
-HOME_WM_CLASS = "STONE"           # chromium.py starts Chromium with --class=STONE
+HOME_WM_CLASS = "STONE"
+HOME_FRONT = "STONE_HOME_FRONT"           # chromium.py starts Chromium with --class=STONE
 REAPER = re.compile(rb"(?:^|/)reaper\x00SteamLaunch\x00AppId=(\d+)\x00")
 
 
@@ -103,3 +107,10 @@ class Focus:
     def front(self, game_appid):
         self._set(self.root, "GAMESCOPECTRL_BASELAYER_APPID", baselayer_for(game_appid))
         self._set(self.root, "GAMESCOPECTRL_BASELAYER_WINDOW", [0])
+
+    def home_front(self):
+        """True while Home was asked to stay in front of the running game."""
+        return (self.get(self.root, HOME_FRONT) or [0])[0] == 1
+
+    def set_home_front(self, on):
+        self._set(self.root, HOME_FRONT, [1 if on else 0])

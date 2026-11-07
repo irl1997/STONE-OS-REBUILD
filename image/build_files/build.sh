@@ -150,6 +150,9 @@ test -s /usr/share/gamescope-session-plus/sessions.d/stone || { echo "ERROR: ses
 ## Gamescope focus (Home as the main interface, the game in front) is written with python-xlib.
 python3 -c "import Xlib" 2>/dev/null || dnf5 -y install python3-xlib
 python3 -c "import Xlib" || { echo "ERROR: python3-xlib missing; the STONE session cannot keep Gamescope's focus"; exit 1; }
+## The guide button during a game (Home in front, plan B of V-13) is read with python-evdev.
+python3 -c "import evdev" 2>/dev/null || dnf5 -y install python3-evdev
+python3 -c "import evdev" || { echo "ERROR: python3-evdev missing; the guide button cannot bring STONE Home back"; exit 1; }
 test -s /usr/share/gamescope-session-plus/sessions.d/steam \
     || echo "WARNING: sessions.d/steam not found; the STONE session runs without Steam's Gamescope settings"
 ls /usr/share/gamescope-session-plus/sessions.d/ /usr/share/wayland-sessions/

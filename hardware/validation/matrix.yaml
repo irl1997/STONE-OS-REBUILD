@@ -58,7 +58,7 @@ tests:
   - {id: "T-SESS-01", title: "Encendido a STONE Home x5 sin ninguna pantalla de Steam", phase: F2, kind: P, status: NOT TESTED, runs: [], observed: []}
   - {id: "T-SESS-02", title: "JUGAR, juego al frente, salir y volver a Home", phase: F2, kind: P, status: NOT TESTED, runs: [], observed: []}
   - {id: "T-SESS-03", title: "Mando y Steam Input dentro del juego en la sesion STONE", phase: F2, kind: P, status: NOT TESTED, runs: [], observed: []}
-  - {id: "T-SESS-04", title: "Quick Menu de STONE durante el juego", phase: F2, kind: P, status: NOT TESTED, runs: [], observed: []}
+  - {id: "T-SESS-04", title: "Boton guia durante el juego: Home al frente, el juego sigue; REANUDAR lo devuelve; Steam no reacciona", phase: F2, kind: P, status: NOT TESTED, runs: [], observed: []}
   - {id: "T-SESS-05", title: "Fallo provocado de la sesion: recuperacion tras N intentos", phase: F2, kind: S+V, status: NOT TESTED, runs: [], observed: []}
   - {id: "T-SESS-06", title: "Steam se actualiza sin mostrar su interfaz", phase: F2, kind: P, status: NOT TESTED, runs: [], observed: []}
   - {id: "T-SESS-07", title: "Primer inicio de sesion de Steam desde FIRST RUN", phase: F2, kind: P, status: NOT TESTED, runs: [], observed: []}

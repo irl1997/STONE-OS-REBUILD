@@ -9,7 +9,8 @@ user, inside the session's Gamescope. It:
      when STONE Home keeps failing, the console falls back to Steam's own Game Mode interface in
      this same session (the recovery path of D-21), and the reason is recorded.
   4. keeps Gamescope's focus: Home marked as the main interface, the running game in front of it
-     (gamescope_x11.py) [V-13].
+     (gamescope_x11.py) [V-13]; the guide button during a game brings Home to the front, the game
+     still running behind it, until Home's REANUDAR (guide.py, plan B of V-13).
 
 Commands:
   stone-session run                 the session client (never returns while the session lives)
@@ -39,7 +40,8 @@ HOME_CMD = "/usr/bin/stone-home"
 FALLBACK_CMD = "steam -gamepadui -steamos3 -steampal -steamdeck"       # sessions.d/steam's CLIENTCMD
 RESTART_LIMIT = 3
 RESTART_WINDOW_S = 120
-POLL_S = 1.0
+POLL_S = 0.2                 # children and the guide button
+GAME_EVERY = 5               # ticks between /proc scans for the running game (1 s)
 SESSION_DESKTOP = "gamescope-session-stone.desktop"
 SDDM_DROPIN = "zz-stone-session.conf"
 
@@ -83,40 +85,64 @@ def read_state():
 
 
 class FocusKeeper:
-    """Home as Gamescope's main interface and the running game in front (gamescope_x11.py).
-    Never fatal: without python-xlib or $DISPLAY the session runs and the fact is logged once."""
+    """Home as Gamescope's main interface and the running game in front (gamescope_x11.py); the
+    guide button brings Home in front of the game (guide.py). Never fatal: without python-xlib,
+    $DISPLAY or python-evdev the session runs and the fact is logged once."""
 
-    def __init__(self):
-        self.gx = None
-        self.focus = None
+    def __init__(self, focus=None, running_game=None, guide=None):
+        self.focus = focus
+        self.running_game = running_game
         self.marked = set()
-        self.game = "unset"
-        self.disabled = None
-        try:
-            from . import gamescope_x11 as GX
-            self.gx = GX
-            if not os.environ.get("DISPLAY"):
-                raise RuntimeError("no DISPLAY")
-            self.focus = GX.Focus()
-        except Exception as e:  # noqa: BLE001  (no Xlib, no display: focus is left to Gamescope)
-            self.disabled = str(e)
-            log(f"gamescope focus not managed: {e}")
+        self.game = None             # the running game (None: no game)
+        self.shown = "unset"         # what Gamescope was last told to show in front
+        self.ticks = 0
+        self.guide = guide
+        if self.focus is None:
+            try:
+                from . import gamescope_x11 as GX
+                self.running_game = self.running_game or GX.running_game
+                if not os.environ.get("DISPLAY"):
+                    raise RuntimeError("no DISPLAY")
+                self.focus = GX.Focus()
+            except Exception as e:  # noqa: BLE001  (no Xlib, no display: focus is left to Gamescope)
+                log(f"gamescope focus not managed: {e}")
+                return
+        if self.guide is None:
+            try:
+                from .guide import GuideWatcher
+                self.guide = GuideWatcher(self.on_guide)
+            except Exception as e:  # noqa: BLE001  (no python-evdev: the guide button is Steam's)
+                log(f"guide button not watched: {e}")
+
+    def on_guide(self):
+        if self.game is not None and not self.focus.home_front():
+            self.focus.set_home_front(True)
+            log(f"guide button: STONE Home in front, game {self.game} keeps running")
 
     def tick(self):
         if self.focus is None:
             return
         try:
-            for win in self.focus.find_home():
-                if win.id not in self.marked:
-                    self.focus.mark_home(win)
-                    self.marked.add(win.id)
-                    log(f"STONE Home window {win.id:#x} marked as the main interface")
-            game = self.gx.running_game()
-            if game != self.game:
-                self.focus.front(game)
-                log("in front: " + ("STONE Home" if game is None else f"game {game}"))
-                self.game = game
-        except Exception as e:  # noqa: BLE001  (a window that vanished, a lost display)
+            if self.ticks % GAME_EVERY == 0:
+                for win in self.focus.find_home():
+                    if win.id not in self.marked:
+                        self.focus.mark_home(win)
+                        self.marked.add(win.id)
+                        log(f"STONE Home window {win.id:#x} marked as the main interface")
+                game = self.running_game()
+                if game != self.game:
+                    if self.focus.home_front():        # a new game, or none: Home's hold ends
+                        self.focus.set_home_front(False)
+                    self.game = game
+            self.ticks += 1
+            if self.guide is not None:
+                self.guide.poll()
+            want = None if self.game is None or self.focus.home_front() else self.game
+            if want != self.shown:
+                self.focus.front(want)
+                log("in front: " + ("STONE Home" if want is None else f"game {want}"))
+                self.shown = want
+        except Exception as e:  # noqa: BLE001  (a window that vanished, a lost display, an unplugged pad)
             log(f"gamescope focus: {e}")
 
 

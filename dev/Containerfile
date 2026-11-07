@@ -6,7 +6,7 @@ RUN dnf -y install --setopt=install_weak_deps=False \
         bash git-core findutils diffutils which \
         python3 python3-pip python3-pytest python3-pyyaml \
         ShellCheck systemd dbus-broker dbus-daemon python3-gobject libxml2 procps-ng \
-        python3-xlib xorg-x11-server-Xvfb xorg-x11-xauth \
+        python3-xlib python3-evdev xorg-x11-server-Xvfb xorg-x11-xauth \
         chromium webkitgtk6.0 gtk4 gobject-introspection mesa-dri-drivers nodejs npm \
     && dnf clean all \
     && command -v xvfb-run chromium-browser node

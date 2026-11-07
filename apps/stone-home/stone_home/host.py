@@ -38,6 +38,7 @@ class Host:
         self.selftest = None                                  # set by app.py --selftest
         self.restart = None                                   # set by app.py: restart STONE Home
         self.steam_ui = steamcef                              # Steam's interface (replaced in tests)
+        self.session_focus = None                             # gamescope_x11.Focus in the STONE session (tests: a fake)
         cef = _SteamUIProxy(self)
         # STONE DISPLAY: display model and the game resolution environment (stone_display/).
         self.display = stone_display.Display(game_policy=self.game_policy, cef=cef,
@@ -463,6 +464,21 @@ class Host:
 
     def m_systemInfo(self, args, done):
         self.sys.info(done)
+
+    # ---- STONE session (M24): the game back in front after the guide button -----------------
+    def m_session_resume(self, args, done):
+        """REANUDAR in the STONE session: Home lets the running game in front again (guide.py)."""
+        if os.environ.get("STONE_SESSION") != "stone":
+            return done({"managed": False})
+        try:
+            if self.session_focus is None:
+                from . import gamescope_x11
+                self.session_focus = gamescope_x11.Focus()
+            self.session_focus.set_home_front(False)
+        except Exception as e:  # noqa: BLE001  (no Xlib or display: the supervisor keeps Home in front)
+            self.session_focus = None
+            return done(None, "Unsupported", f"gamescope focus: {e}")
+        done({"managed": True})
 
     # ---- boot metrics (M02) and FIRST RUN (M22) -----------------------------------------
     def m_boot_mark(self, args, done):

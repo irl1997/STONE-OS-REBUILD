@@ -49,7 +49,8 @@ const Sys = {
   gameStatus: () => Bridge.call('game.status'), gameRestore: appid => Bridge.call('game.restoreRecommended', appid),
   /* M02 boot metrics and M22 FIRST RUN */
   bootMark: stage => Bridge.call('boot.mark', stage), firstrunStatus: () => Bridge.call('firstrun.status'),
-  firstrunComplete: () => Bridge.call('firstrun.complete')
+  firstrunComplete: () => Bridge.call('firstrun.complete'),
+  sessionResume: () => Bridge.call('session.resume')
 };
 async function sys(method, ...a) {
   try { return await Sys[method](...a); }

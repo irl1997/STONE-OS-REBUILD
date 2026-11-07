@@ -229,11 +229,13 @@ function showGame(g, fresh) {
   setMetrics(S.tech);
   gameMode();
 }
-/* Steam brings a running game back to the front when it is asked to start it again. [VERIFICAR EN PLACA] */
+/* In the STONE session the session puts the game back in front (guide button, plan B of V-13);
+   elsewhere Steam does it when it is asked to start the game again. [VERIFICAR EN PLACA] */
 function resumeGame() {
   closeQuick(true);
   const g = G[S.running]; if (!g) return returnHome();
-  sys('launch', g.appid);
+  if (S.info && S.info.session === 'stone') Sys.sessionResume().catch(() => sys('launch', g.appid));
+  else sys('launch', g.appid);
   $('#black').classList.add('fast', 'on');
   setTimeout(() => showGame(g, true), S.rm ? 120 : 450);
 }

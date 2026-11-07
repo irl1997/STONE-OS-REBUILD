@@ -604,6 +604,23 @@ def H06_host_boot_and_first_run_methods():
 
 
 @test
+def H07_reanudar_in_the_stone_session_gives_the_game_back():
+    class F:
+        hold = True
+
+        def set_home_front(self, on):
+            F.hold = on
+    h = host_mod.Host(lambda *a: None, stoned=FakeStoned(), sysapi=system.System(spawn=lambda u: None), steam_root="/nonexistent")
+    assert run_host(h, {"method": "session.resume", "args": []})[0] == {"managed": False}
+    os.environ["STONE_SESSION"] = "stone"
+    try:
+        h.session_focus = F()
+        assert run_host(h, {"method": "session.resume", "args": []})[0] == {"managed": True} and F.hold is False
+    finally:
+        del os.environ["STONE_SESSION"]
+
+
+@test
 def H02_launch_only_games_from_the_last_library_scan():
     with Tmp() as d:
         root = FX.build(os.path.join(d, "Steam"))
