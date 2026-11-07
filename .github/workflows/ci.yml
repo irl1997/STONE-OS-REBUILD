@@ -20,7 +20,7 @@ jobs:
   validate-and-test:
     name: Validate and test
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    timeout-minutes: 45
     env:
       # Also outside the container: if anything ever runs on the runner by mistake, a missing
       # tool fails the job instead of being skipped (it happened once, commit 270e135).

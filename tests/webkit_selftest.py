@@ -28,7 +28,7 @@ import steam_fixture as FX  # noqa: E402
 def main():
     if not shutil.which("xvfb-run"):
         print("SKIP  webkit self-test: xvfb-run not installed")
-        return 0
+        return 1 if os.environ.get("STONE_REQUIRE_ALL") == "1" else 0
     env = RT.Env()
     tmp = tempfile.mkdtemp(prefix="stone-webkit-")
     try:

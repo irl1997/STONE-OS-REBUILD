@@ -9,7 +9,7 @@ const errors = [];
 const log = m => console.log(m);
 const fail = m => { throw new Error(m); };
 
-const browser = await chromium.launch();
+const browser = await chromium.launch(process.env.STONE_CHROMIUM ? { executablePath: process.env.STONE_CHROMIUM } : {});
 const page = await browser.newPage({ viewport: { width: 1920, height: 1080 } });
 page.on('pageerror', e => errors.push(String(e)));
 page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });

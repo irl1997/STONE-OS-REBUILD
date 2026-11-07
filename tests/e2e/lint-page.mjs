@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { ESLint } from 'eslint';
 import globals from 'globals';
 
-const page = new URL('../../system_files/usr/share/stone-home/index.html', import.meta.url);
+const page = process.env.STONE_HOME_PAGE || new URL('../../apps/stone-home/ui/index.html', import.meta.url);
 const html = readFileSync(page, 'utf8');
 const code = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m => m[1]).join('\n');
 const eslint = new ESLint({

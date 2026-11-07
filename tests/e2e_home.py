@@ -5,7 +5,8 @@ folder and dev/home/stone_home_devserver.py with fake Steam and fake power, then
 tests/e2e/home.e2e.mjs in headless Chromium (Playwright). Afterwards it checks what reached
 the governor, Steam and logind.
 
-    python3 tests/e2e_home.py        (needs node and the playwright package, see tests/e2e/package.json)
+    python3 tests/e2e_home.py        (needs node and dev/e2e's packages: npm ci --prefix dev/e2e,
+                                      or STONE_E2E_MODULES=<node_modules>; the dev container has them)
 """
 
 import json
@@ -32,10 +33,29 @@ def free_port():
         return s.getsockname()[1]
 
 
+def node_modules():
+    for p in (os.environ.get("STONE_E2E_MODULES"), os.path.join(REPO, "dev", "e2e", "node_modules")):
+        if p and os.path.isdir(os.path.join(p, "playwright")):
+            return p
+    return None
+
+
+def staged_scripts(tmp):
+    """tests/e2e/*.mjs next to a node_modules link: ES modules resolve packages from their own
+    folder (NODE_PATH does not apply), and the repository may be mounted read only."""
+    d = os.path.join(tmp, "e2e")
+    os.makedirs(d)
+    for name in os.listdir(os.path.join(HERE, "e2e")):
+        if name.endswith(".mjs"):
+            shutil.copy(os.path.join(HERE, "e2e", name), d)
+    os.symlink(node_modules(), os.path.join(d, "node_modules"))
+    return d
+
+
 def main():
-    if not shutil.which("node"):
-        print("SKIP  e2e: node not installed")
-        return 0
+    if not shutil.which("node") or not node_modules():
+        print("SKIP  e2e: node or the e2e packages not installed")
+        return 1 if os.environ.get("STONE_REQUIRE_ALL") == "1" else 0
     env = RT.Env()
     tmp = tempfile.mkdtemp(prefix="stone-e2e-")
     srv = None
@@ -60,10 +80,14 @@ def main():
                 break
             except OSError:
                 time.sleep(0.1)
-        node_env = dict(e, STONE_HOME_URL=url, STONE_E2E_SHOT=os.path.join(REPO, "e2e-failure.png"),
-                        NODE_PATH=os.environ.get("NODE_PATH", os.path.join(HERE, "e2e", "node_modules")))
-        p = subprocess.run(["node", os.path.join(HERE, "e2e", "home.e2e.mjs")], env=node_env, timeout=300,
-                           cwd=os.path.join(HERE, "e2e"))
+        scripts = staged_scripts(tmp)
+        node_env = dict(e, STONE_HOME_URL=url, STONE_E2E_SHOT=os.path.join(tmp, "e2e-failure.png"),
+                        STONE_HOME_PAGE=os.path.join(REPO, "apps", "stone-home", "ui", "index.html"))
+        lint = subprocess.run(["node", os.path.join(scripts, "lint-page.mjs")], env=node_env, timeout=120, cwd=scripts)
+        if lint.returncode != 0:
+            print("FAIL  e2e: ESLint found errors in the STONE Home page")
+            return 1
+        p = subprocess.run(["node", os.path.join(scripts, "home.e2e.mjs")], env=node_env, timeout=300, cwd=scripts)
         if p.returncode != 0:
             print("FAIL  e2e (browser part)")
             return 1
