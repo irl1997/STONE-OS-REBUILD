@@ -4,7 +4,7 @@ Each integration test gets its own private D-Bus daemon, fake sysfs tree, state
 directory and fake journalctl, then talks to a real `stoned` process over D-Bus.
 Nothing here touches real hardware. Passing means CODE TESTED, never HARDWARE VERIFIED.
 
-    python3 tests/stoned_suite.py        (pytest runs it through tests/test_stoned.py)
+    python3 tests/stoned_suite.py        (pytest runs it through tests/test_suites.py)
 """
 
 import json

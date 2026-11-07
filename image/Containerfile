@@ -13,6 +13,8 @@ COPY image/build_files /
 COPY image/config/build.env /build.env
 COPY system /system_files
 COPY services /services
+COPY apps /apps
+COPY modules /modules
 COPY VERSION /VERSION
 
 FROM ${BASE_IMAGE} AS base

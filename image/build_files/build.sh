@@ -6,7 +6,8 @@
 # F0 (docs/fases/F0_PLAN.md): STONE files, kernel check, pinned GPU governor, no sleep, Handheld
 # Daemon off, BC-250 40 CU module and boot guard, Plymouth, provenance.
 # F1: stoned (STONE System Service) with its recovery, units, D-Bus and polkit policy.
-# STONE Home and the other modules arrive in later phases; this image declares them absent.
+# F2: STONE Home, STONE DISPLAY and STONE OPTIMIZED (ported, D-27) and the STONE session (M24).
+# The other modules arrive in later phases; this image declares them absent.
 set -ouex pipefail
 
 # shellcheck source=/dev/null
@@ -100,6 +101,44 @@ command -v vkmark >/dev/null 2>&1 || echo "WARNING: vkmark not available; no sta
 python3 -m compileall -q /usr/lib/stone/stoned
 systemctl enable stoned-recover.service stoned.service
 
+### 6c. STONE Home, STONE DISPLAY, STONE OPTIMIZED: user side, ported from rc23 (F2, D-27)
+## Python packages next to stoned; the page, fonts, artwork and boot movie; the built-in game profiles.
+cp -a /ctx/apps/stone-home/stone_home /usr/lib/stone/stone_home
+cp -a /ctx/modules/display/stone_display /usr/lib/stone/stone_display
+cp -a /ctx/modules/games/stone_games /usr/lib/stone/stone_games
+mkdir -p /usr/share/stone-home /usr/share/stone/game-profiles
+cp -a /ctx/apps/stone-home/ui/. /usr/share/stone-home/
+cp -a /ctx/modules/games/game-profiles/. /usr/share/stone/game-profiles/
+## Both engines stay until board test 26 passes (R-02, D-06): Chromium draws on the GPU; the
+## GTK 4 + WebKitGTK 6 shell is the software fallback. The build fails without either.
+dnf5 -y install webkitgtk6.0 gtk4 chromium
+python3 -c "import gi; gi.require_version('Gtk', '4.0'); gi.require_version('WebKit', '6.0'); from gi.repository import Gtk, WebKit" \
+    || { echo "ERROR: WebKitGTK 6 / GTK 4 bindings missing; STONE Home fallback cannot run"; exit 1; }
+CHROMIUM_BIN=""
+for c in /usr/bin/chromium-browser /usr/bin/chromium; do [ -x "$c" ] && CHROMIUM_BIN="$c" && break; done
+test -n "${CHROMIUM_BIN}" || { echo "ERROR: chromium not installed; STONE Home would have no GPU drawing"; exit 1; }
+"${CHROMIUM_BIN}" --version || echo "WARNING: ${CHROMIUM_BIN} --version failed in the build container (root, no display)"
+python3 -c "import gi; gi.require_version('GUdev', '1.0'); from gi.repository import GUdev" \
+    || dnf5 -y install --skip-unavailable libgudev
+python3 -c "import gi; gi.require_version('GUdev', '1.0'); from gi.repository import GUdev" \
+    || echo "WARNING: GUdev not available; STONE DISPLAY will not see display hotplug events"
+python3 -m compileall -q /usr/lib/stone/stone_home /usr/lib/stone/stone_display /usr/lib/stone/stone_games
+## Built-in game profiles pass the same checks as at run time.
+python3 -c "
+import glob, json, sys
+sys.path.insert(0, '/usr/lib/stone')
+from stone_games import schema
+for p in glob.glob('/usr/share/stone/game-profiles/steam/*.json'):
+    schema.clean_profile(json.load(open(p)), 'builtin')
+" || { echo "ERROR: a built-in STONE game profile is invalid"; exit 1; }
+command -v mangohud >/dev/null 2>&1 || ls /usr/lib64/mangohud/libMangoHud*.so >/dev/null 2>&1 \
+    || echo "WARNING: MangoHud not found; STONE OPTIMIZED cannot measure games on this image"
+test -x /usr/libexec/stone-home || { echo "ERROR: /usr/libexec/stone-home missing"; exit 1; }
+test -x /usr/bin/steam || { echo "ERROR: /usr/bin/steam missing; STONE Home launches games through Steam"; exit 1; }
+for f in index.html icon.png fonts/jost-latin-300-normal.woff2 grid/capsule.png boot/stone-startup.webm; do
+    test -s "/usr/share/stone-home/${f}" || { echo "ERROR: STONE Home file missing: ${f}"; exit 1; }
+done
+
 ### 7. STONE boot screen (Plymouth script theme; the base does not ship the script plugin)
 dnf5 -y install plymouth-plugin-script
 test -e /usr/lib64/plymouth/script.so || { echo "ERROR: Plymouth script plugin missing"; exit 1; }
@@ -116,8 +155,8 @@ rpmfile() { local v; v="$(rpm -qf --qf '%{NAME} %{VERSION}-%{RELEASE}\n' "$1" 2>
 {
     echo "STONE_NAME=\"STONE OS\""
     echo "STONE_VERSION=\"${STONE_VERSION}\""
-    echo "STONE_PHASE=\"F1\""
-    echo "STONE_MODULES_ABSENT=\"stone-home session display graphics optimized connect downloads emulation desktop\""
+    echo "STONE_PHASE=\"F2\""
+    echo "STONE_MODULES_ABSENT=\"session connect downloads emulation desktop\""
     echo "STONE_CHANNEL=\"${STONE_CHANNEL:-dev}\""
     echo "STONE_COMMIT=\"${STONE_COMMIT:-unknown}\""
     echo "STONE_BUILD_DATE=\"${STONE_BUILD_DATE:-unknown}\""
@@ -138,4 +177,4 @@ rpmfile() { local v; v="$(rpm -qf --qf '%{NAME} %{VERSION}-%{RELEASE}\n' "$1" 2>
 } > /usr/lib/stone-release
 cat /usr/lib/stone-release
 
-echo "STONE OS ${STONE_VERSION} (F1): build completed."
+echo "STONE OS ${STONE_VERSION} (F2): build completed."

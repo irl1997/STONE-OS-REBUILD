@@ -63,17 +63,21 @@ def test_40_cu_module_is_required():
     assert "systemctl enable stone-cu40-guard.service" in build
 
 
-def test_image_ships_nothing_of_later_phases():
-    # F1: stoned is in; STONE Home, the session and the user-side modules are not yet (F2+).
+def test_image_ships_f2_without_the_rc23_game_mode_autostart():
+    # F2 (D-21): STONE Home runs in its own session; rc23's autostart through a Steam shortcut in
+    # Game Mode (drop-in on gamescope-session-plus@ and its user units) must not come back.
     tree = []
     for root, _, files in os.walk(os.path.join(REPO, "system")):
         tree += [os.path.relpath(os.path.join(root, f), REPO) for f in files]
-    for later in ("stone_home", "stone-home", "stone_display", "stone_games", "gamescope-session-plus"):
-        assert not [p for p in tree if later in p], (later, tree)
+    for rc23 in ("gamescope-session-plus@.service.d", "stone-home-autostart", "stone-home-register"):
+        assert not [p for p in tree if rc23 in p], (rc23, tree)
     build = _read("image", "build_files", "build.sh")
-    for pkg in ("chromium", "webkitgtk6.0"):
-        assert f"install {pkg}" not in build, pkg
-    assert 'STONE_PHASE=\\"F1\\"' in build
+    assert 'STONE_PHASE=\\"F2\\"' in build
+    for step in ("cp -a /ctx/apps/stone-home/stone_home /usr/lib/stone/stone_home",
+                 "cp -a /ctx/modules/display/stone_display /usr/lib/stone/stone_display",
+                 "cp -a /ctx/modules/games/stone_games /usr/lib/stone/stone_games",
+                 "dnf5 -y install webkitgtk6.0 gtk4 chromium"):
+        assert step in build, step
     assert "cp -a /ctx/services/stoned/stoned /usr/lib/stone/stoned" in build
     assert "systemctl enable stoned-recover.service stoned.service" in build
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Structure and configuration checks before any build (F0-F1). Prints PASS, SKIP or FAIL per check.
+# Structure and configuration checks before any build (F0-F2). Prints PASS, SKIP or FAIL per check.
 #   scripts/validate.sh
 #   PYTHON=python3.12 scripts/validate.sh     (an interpreter with tomllib and PyYAML)
 # Tools: python3 (3.11+, PyYAML), shellcheck, ruff, systemd-analyze, actionlint.
@@ -27,6 +27,10 @@ for f in VERSION LICENSE README.md pyproject.toml \
          system/usr/lib/sysusers.d/stoned.conf system/usr/lib/tmpfiles.d/stoned.conf system/usr/lib/stone/stability.json \
          system/usr/share/dbus-1/system.d/org.stonemachine.Performance1.conf \
          system/usr/share/polkit-1/actions/org.stonemachine.performance.policy system/usr/share/polkit-1/rules.d/50-stone.rules \
+         apps/stone-home/stone_home/host.py apps/stone-home/stone_home/chromium.py apps/stone-home/ui/index.html \
+         modules/display/stone_display/model.py modules/games/stone_games/optimizer.py modules/games/game-profiles/index.json \
+         system/usr/bin/stone-home system/usr/bin/stone-home-session system/usr/bin/stone-game system/usr/libexec/stone-home \
+         dev/home/build_home.py dev/home/stone-os-prototipo.html \
          system/usr/share/plymouth/themes/stone/stone.plymouth system/usr/share/plymouth/themes/stone/stone.script \
          system/usr/share/plymouth/themes/stone/line.png \
          hardware/bc250.yaml hardware/validation/matrix.yaml \
@@ -47,7 +51,7 @@ if out="$(bash -c 'set -euo pipefail; eval "$(scripts/release-info.sh "v$(tr -d 
 # 3. executables
 nonexec=0
 for f in image/build_files/*.sh image/build_files/*.py image/build_files/cu40/*.sh image/build_files/cu40/*.py \
-         scripts/*.sh system/usr/bin/* dev/run-tests.sh; do
+         scripts/*.sh system/usr/bin/* system/usr/libexec/* dev/run-tests.sh; do
     [[ -x "$f" ]] || { bad "not executable: $f"; nonexec=1; }
 done
 [[ $nonexec == 0 ]] && ok "executable bits"
@@ -63,10 +67,11 @@ else skip "shellcheck"; fi
 # 5. python
 # compiled in memory: nothing is written next to the sources (the dev container mounts them read only)
 if $PY -c 'import sys; [compile(open(p, encoding="utf-8").read(), p, "exec") for p in sys.argv[1:]]' \
-        system/usr/lib/stone/*.py services/stoned/stoned/*.py image/build_files/*.py image/build_files/cu40/*.py tests/*.py; then
+        system/usr/lib/stone/*.py services/stoned/stoned/*.py apps/stone-home/stone_home/*.py modules/display/stone_display/*.py \
+        modules/games/stone_games/*.py dev/home/*.py image/build_files/*.py image/build_files/cu40/*.py tests/*.py; then
     ok "python compiles"; else bad "python compile"; fi
 if have ruff; then
-    if ruff check system/usr/lib/stone services image/build_files tests; then ok "ruff"; else bad "ruff"; fi
+    if ruff check system/usr/lib/stone services apps modules dev/home image/build_files tests; then ok "ruff"; else bad "ruff"; fi
 else skip "ruff"; fi
 
 # 6. TOML / YAML / JSON
@@ -117,8 +122,21 @@ pol=system/usr/share/polkit-1/actions/org.stonemachine.performance.policy
 n_act=$(grep -c '<action id=' "$pol"); n_own=$(grep -c 'org.freedesktop.policykit.owner">unix-user:stoned<' "$pol")
 if [[ "$n_act" -gt 0 && "$n_act" == "$n_own" ]]; then ok "polkit actions owned by stoned"; else bad "every polkit action needs org.freedesktop.policykit.owner = unix-user:stoned"; fi
 
+# 7c. STONE Home page: generated from the prototype and up to date; built-in game profiles valid
+if $PY dev/home/build_home.py --check; then ok "STONE Home page up to date"; else bad "STONE Home page out of date (python3 dev/home/build_home.py)"; fi
+if $PY - <<'PY'
+import glob, json, sys
+sys.path.insert(0, "modules/games")
+from stone_games import schema
+idx = json.load(open("modules/games/game-profiles/index.json"))
+for p in glob.glob("modules/games/game-profiles/steam/*.json"):
+    prof = schema.clean_profile(json.load(open(p)), "builtin")
+    assert prof["appid"] in idx["profiles"]["steam"], p
+PY
+then ok "built-in game profiles"; else bad "built-in game profiles"; fi
+
 # 8. nothing simulated or unfinished in what the image ships
-if grep -rnE "SimStoned|fake_governor|FAKE_GOV" system image; then bad "simulation code in the image"; else ok "no simulated hardware in the image"; fi
+if grep -rnE "SimStoned|fake_governor|FAKE_GOV" system image services apps modules; then bad "simulation code in the image"; else ok "no simulated hardware in the image"; fi
 if grep -rnE "\b(TODO|FIXME|XXX)\b|CAMBIAR-POR|PLACEHOLDER" system image .github 2>/dev/null | grep -v '@IMAGE_REF@\|@UPDATE_REF@'; then
     bad "placeholders in shipped files"; else ok "no placeholders in shipped files"; fi
 
