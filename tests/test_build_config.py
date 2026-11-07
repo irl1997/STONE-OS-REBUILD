@@ -76,8 +76,11 @@ def test_image_ships_f2_without_the_rc23_game_mode_autostart():
     for step in ("cp -a /ctx/apps/stone-home/stone_home /usr/lib/stone/stone_home",
                  "cp -a /ctx/modules/display/stone_display /usr/lib/stone/stone_display",
                  "cp -a /ctx/modules/games/stone_games /usr/lib/stone/stone_games",
-                 "dnf5 -y install webkitgtk6.0 gtk4 chromium"):
+                 "dnf5 -y install webkitgtk6.0 gtk4 chromium",
+                 "test -s /usr/share/gamescope-session-plus/sessions.d/stone"):
         assert step in build, step
+    # the STONE session is installed but never made automatic by the build (T-SESS-01 first)
+    assert "sddm.conf.d" not in build
     assert "cp -a /ctx/services/stoned/stoned /usr/lib/stone/stoned" in build
     assert "systemctl enable stoned-recover.service stoned.service" in build
 

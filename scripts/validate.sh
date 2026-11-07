@@ -30,7 +30,8 @@ for f in VERSION LICENSE README.md pyproject.toml \
          apps/stone-home/stone_home/host.py apps/stone-home/stone_home/chromium.py apps/stone-home/ui/index.html \
          modules/display/stone_display/model.py modules/games/stone_games/optimizer.py modules/games/game-profiles/index.json \
          system/usr/bin/stone-home system/usr/bin/stone-home-session system/usr/bin/stone-game system/usr/libexec/stone-home \
-         dev/home/build_home.py dev/home/stone-os-prototipo.html \
+         dev/home/build_home.py dev/home/stone-os-prototipo.html system/usr/bin/stone-session \
+         system/usr/share/gamescope-session-plus/sessions.d/stone system/usr/share/wayland-sessions/gamescope-session-stone.desktop \
          system/usr/share/plymouth/themes/stone/stone.plymouth system/usr/share/plymouth/themes/stone/stone.script \
          system/usr/share/plymouth/themes/stone/line.png \
          hardware/bc250.yaml hardware/validation/matrix.yaml \
@@ -60,7 +61,8 @@ done
 if have shellcheck; then
     # docs/diagnostico/stone-diag-readonly.sh is left out on purpose: it is the owner-approved file,
     # checked by its SHA-256, and any edit (even a shellcheck directive) would change that hash.
-    if shellcheck -x image/build_files/*.sh image/build_files/cu40/*.sh scripts/*.sh dev/run-tests.sh; then
+    if shellcheck -x image/build_files/*.sh image/build_files/cu40/*.sh scripts/*.sh dev/run-tests.sh system/usr/bin/stone-home \
+            system/usr/share/gamescope-session-plus/sessions.d/stone; then
         ok "shellcheck"; else bad "shellcheck"; fi
 else skip "shellcheck"; fi
 

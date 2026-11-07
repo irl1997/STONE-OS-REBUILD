@@ -139,6 +139,18 @@ for f in index.html icon.png fonts/jost-latin-300-normal.woff2 grid/capsule.png 
     test -s "/usr/share/stone-home/${f}" || { echo "ERROR: STONE Home file missing: ${f}"; exit 1; }
 done
 
+### 6d. STONE session (M24, D-21): gamescope-session-plus@stone, selectable in SDDM. It does NOT
+## become the automatic session here: `sudo stone-session default on` does that on the board after
+## T-SESS-01, and `default off` undoes it (Bazzite's Game Mode stays the automatic session meanwhile).
+test -x /usr/share/gamescope-session-plus/gamescope-session-plus \
+    || { echo "ERROR: gamescope-session-plus not found; the STONE session cannot run"; exit 1; }
+test -e /usr/lib/systemd/user/gamescope-session-plus@.service \
+    || { echo "ERROR: gamescope-session-plus@.service not found"; exit 1; }
+test -s /usr/share/gamescope-session-plus/sessions.d/stone || { echo "ERROR: sessions.d/stone missing"; exit 1; }
+test -s /usr/share/gamescope-session-plus/sessions.d/steam \
+    || echo "WARNING: sessions.d/steam not found; the STONE session runs without Steam's Gamescope settings"
+ls /usr/share/gamescope-session-plus/sessions.d/ /usr/share/wayland-sessions/
+
 ### 7. STONE boot screen (Plymouth script theme; the base does not ship the script plugin)
 dnf5 -y install plymouth-plugin-script
 test -e /usr/lib64/plymouth/script.so || { echo "ERROR: Plymouth script plugin missing"; exit 1; }
@@ -156,7 +168,8 @@ rpmfile() { local v; v="$(rpm -qf --qf '%{NAME} %{VERSION}-%{RELEASE}\n' "$1" 2>
     echo "STONE_NAME=\"STONE OS\""
     echo "STONE_VERSION=\"${STONE_VERSION}\""
     echo "STONE_PHASE=\"F2\""
-    echo "STONE_MODULES_ABSENT=\"session connect downloads emulation desktop\""
+    echo "STONE_MODULES_ABSENT=\"connect downloads emulation desktop\""
+    echo "STONE_SESSION_DEFAULT=\"off (sudo stone-session default on)\""
     echo "STONE_CHANNEL=\"${STONE_CHANNEL:-dev}\""
     echo "STONE_COMMIT=\"${STONE_COMMIT:-unknown}\""
     echo "STONE_BUILD_DATE=\"${STONE_BUILD_DATE:-unknown}\""
