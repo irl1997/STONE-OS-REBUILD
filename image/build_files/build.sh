@@ -190,8 +190,8 @@ rpmfile() { local v; v="$(rpm -qf --qf '%{NAME} %{VERSION}-%{RELEASE}\n' "$1" 2>
 {
     echo "STONE_NAME=\"STONE OS\""
     echo "STONE_VERSION=\"${STONE_VERSION}\""
-    echo "STONE_PHASE=\"F2\""
-    echo "STONE_MODULES_ABSENT=\"connect downloads emulation desktop\""
+    echo "STONE_PHASE=\"1.0\""
+    echo "STONE_MODULES_ABSENT=\"\""
     echo "STONE_SESSION_DEFAULT=\"on (sudo stone-session default off)\""
     echo "STONE_CHANNEL=\"${STONE_CHANNEL:-dev}\""
     echo "STONE_COMMIT=\"${STONE_COMMIT:-unknown}\""
@@ -213,4 +213,4 @@ rpmfile() { local v; v="$(rpm -qf --qf '%{NAME} %{VERSION}-%{RELEASE}\n' "$1" 2>
 } > /usr/lib/stone-release
 cat /usr/lib/stone-release
 
-echo "STONE OS ${STONE_VERSION} (F2): build completed."
+echo "STONE OS ${STONE_VERSION} (1.0): build completed."

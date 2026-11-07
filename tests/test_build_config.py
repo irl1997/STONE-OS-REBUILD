@@ -76,7 +76,7 @@ def test_image_ships_f2_without_the_rc23_game_mode_autostart():
     for rc23 in ("gamescope-session-plus@.service.d", "stone-home-autostart", "stone-home-register"):
         assert not [p for p in tree if rc23 in p], (rc23, tree)
     build = _read("image", "build_files", "build.sh")
-    assert 'STONE_PHASE=\\"F2\\"' in build
+    assert 'STONE_PHASE=\\"1.0\\"' in build
     for step in ("cp -a /ctx/apps/stone-home/stone_home /usr/lib/stone/stone_home",
                  "cp -a /ctx/modules/display/stone_display /usr/lib/stone/stone_display",
                  "cp -a /ctx/modules/games/stone_games /usr/lib/stone/stone_games",

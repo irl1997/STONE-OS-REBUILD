@@ -28,7 +28,7 @@ echo "Comprobaciones (informe: ${out})"
 booted="$(bootc status --format=json 2>/dev/null | python3 -c 'import sys,json; b=json.load(sys.stdin)["status"]["booted"]["image"]; print(b["image"]["image"], b["imageDigest"])' 2>/dev/null)"
 check "arrancada STONE OS 0.4.0-dev.1" '[[ "${booted}" == *stone-os-rebuild:0.4.0-dev.1* ]]'
 check "es la imagen firmada" '[[ "${booted}" == *"${EXPECTED}"* ]]'
-check "fase F2" 'grep -q "^STONE_PHASE=\"F2\"" /usr/lib/stone-release'
+check "fase F2 o posterior" 'grep -qE "^STONE_PHASE=\"(F2|1\.0)\"" /usr/lib/stone-release'
 check "stoned en marcha" '[ "$(systemctl is-active stoned)" = active ]'
 check "stoned responde" 'timeout 30 stonectl status >/dev/null 2>&1'
 check "rc23 sigue fijada como versión anterior" 'ostree admin status | grep -q "Pinned: yes"'
