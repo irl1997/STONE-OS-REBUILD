@@ -1,0 +1,12 @@
+# local builds and test byproducts
+output/
+dist/
+*.iso
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+# signing key: never commit (docs/FIRMA_COSIGN.md)
+cosign.key
+# macOS Finder
+.DS_Store

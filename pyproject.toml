@@ -1,0 +1,15 @@
+# Tooling configuration only (STONE OS is an image, not a Python package).
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# Test ids of rc23 are kept (C01..., B01...) next to pytest's own test_* names.
+python_functions = ["test_*", "[A-Z][0-9][0-9]_*"]
+addopts = "-ra -p no:cacheprovider"
+
+[tool.ruff]
+target-version = "py311"
+line-length = 130
+
+[tool.ruff.lint]
+select = ["E4", "E9", "F", "W", "B"]
+ignore = ["B008"]

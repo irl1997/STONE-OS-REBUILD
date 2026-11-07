@@ -1,0 +1,182 @@
+# STONE MACHINE board profile: AMD BC-250 (R-05, D-16, D-18).
+#
+# What STONE knows about the board, each fact with its origin and its state. Nothing here is a
+# STONE design limit: frequencies, voltages and thermal limits are read from the governor or come
+# from this console's calibration (D-18). Values from rc23 are kept as observations or inherited
+# constants and must be revalidated on the board.
+#
+# state:
+#   owner-confirmed   stated by the owner, physical check pending
+#   observed          seen on this board in an earlier version, no formal test (OBSERVED ON BOARD)
+#   documented        from project or community documentation, not seen on this board
+#   inherited         a constant in rc23 code, kept unchanged, to be revalidated
+#   unknown           nobody knows yet
+#   verified          a HARDWARE_VALIDATION test passed on this board (none yet)
+#
+# Validated by tests/test_hardware_profile.py: every fact needs value, source and state.
+schema: 1
+board: AMD BC-250
+
+reference:
+  cpu_cores:
+    value: 8
+    source: owner, 2026-11-06 (D-16)
+    state: owner-confirmed
+  gpu_compute_units:
+    value: 40
+    source: owner, 2026-11-06 (D-16); 40 CU seen during the rc15 calibration
+    state: owner-confirmed
+
+cpu:
+  architecture:
+    value: Zen 2
+    source: rc23 docs; audit v1.0 section 1
+    state: documented
+  frequency_control:
+    value: none (fixed clock, no cpufreq interface)
+    source: audit v1.0 section 1 ("3,5 GHz fijos sin interfaz cpufreq")
+    state: documented
+
+gpu:
+  pci_id:
+    value: "1002:13fe"
+    source: rc23 backend_bc250.py, CYAN_SKILLFISH_IDS
+    state: documented
+  family:
+    value: Cyan Skillfish, gfx1013 (RADV GFX1013)
+    source: audit v1.0 section 1
+    state: documented
+  cu40_mechanism:
+    value: amdgpu with bc250_cc_write_mode (STONE build), kernel argument amdgpu.bc250_cc_write_mode=3, boot guard
+    source: rc8-rc23 (stone_cu40.py, build_files/cu40); kept as is (D-17)
+    state: observed
+  memory:
+    value: 16 GB GDDR6 shared; BIOS UMA frame buffer 512 MB
+    source: rc23 docs/FIRMWARE.md
+    state: documented
+
+governor:
+  package:
+    value: cyan-skillfish-governor-smu v0.4.14-1.20260619120402457887.update.deps.3.g14080b4.fc44
+    source: build-metadata of rc14, rc15, rc16 (02_AUDIT/evidencia); COPR build 11067195
+    state: observed
+  dbus_ranges:
+    value: Allowed 500-2000 MHz; Initial and Current 1000-1850 MHz
+    source: board, rc14 (STONE_PERFORMANCE.md)
+    state: observed
+  thermal_thresholds:
+    value: 75 / 85 C (recovery / throttling, factory file)
+    source: board, rc14; build-metadata STONE_GOV_THROTTLING=85
+    state: observed
+  load_targets:
+    value: 0.5-0.65
+    source: board, rc14
+    state: observed
+  safe_points:
+    value: 500@700, 1000@800, 1175@850, 1500@900, 1600@910, 1700@920, 1850@930, 2000@960 (MHz@mV)
+    source: build-metadata rc14-rc23 (STONE_GOV_SAFE_POINTS), the package's own file
+    state: observed
+  reports_current_clock:
+    value: false
+    source: board, rc14
+    state: observed
+  enabled_property:
+    value: "false (meaning unknown)"
+    source: board, rc14
+    state: unknown
+
+sensors:
+  gpu_temperature:
+    value: amdgpu hwmon temp1_input (edge)
+    source: rc23 telemetry; audit v1.0 section 6
+    state: documented
+  cpu_temperature:
+    value: k10temp temp1_input (Tctl)
+    source: rc23 telemetry; audit v1.0 section 6
+    state: documented
+  gpu_power:
+    value: amdgpu power1_average (GPU chip only, slow to settle)
+    source: audit v1.0 section 6
+    state: documented
+  fan:
+    value: NCT6686D fan2_input (nct6683 read only)
+    source: audit v1.0 section 6
+    state: documented
+  gpu_clock_pp_dpm_sclk:
+    value: 'not reliable (shows "1: 5Mhz *" under load)'
+    source: board, rc14
+    state: observed
+  gpu_activity_gpu_metrics:
+    value: not reported (governor fix-metrics not active)
+    source: board, rc14
+    state: observed
+  gpu_busy_percent:
+    value: does not work on the BC-250
+    source: audit v1.0 section 1
+    state: documented
+
+performance_observations:
+  calibration_rc15_40cu:
+    value: quick calibration, 90 s per step; 1500-1950 MHz passed (GPU 59-71 C, real speed x1.30 at 1950); total hang at the 2000 MHz step; validated maximum computed as 1900 MHz
+    source: board, 2026-11-02, rc15 (STONE_PERFORMANCE.md)
+    state: observed
+
+inherited_constants:
+  cu40_baseline_ceiling_mhz:
+    value: 1500
+    source: rc23 stone_cu40.py CEILING_MHZ (community recommendation for 40 CU before calibration)
+    state: inherited
+  cu40_test_stop_c:
+    value: 90
+    source: rc23 stone_cu40.py TEST_STOP_C
+    state: inherited
+  cu40_enable_max_idle_c:
+    value: 75
+    source: rc23 stone_cu40.py ENABLE_MAX_IDLE_C
+    state: inherited
+  governor_config_sanity_range:
+    value: frequency-range within 1000-2000 MHz; throttling within 65-90 C (build fails outside)
+    source: rc23 build_files/governor-config.py
+    state: inherited
+
+platform:
+  sleep:
+    value: does not resume from s2idle; all sleep targets masked
+    source: audit v1.0 section 1; Bazzite BC-250 guide
+    state: documented
+  broken_kernels:
+    value: 6.15.0-6.15.6, 6.17.8-6.17.10
+    source: community documentation (check-kernel.sh)
+    state: documented
+  kernel_measured:
+    value: 7.2.11-ogc4.1.fc44 (Bazzite 44.20261026.0)
+    source: build-metadata rc14-rc16
+    state: observed
+  hardware_watchdog:
+    value: unknown (sp5100_tco not checked)
+    source: audit v1.0 P3-1
+    state: unknown
+
+video:
+  link:
+    value: DisplayPort to HDMI adapter, about 300 MHz pixel clock (4K60 does not fit; 1440p60 and 4K30 do)
+    source: board, rc18 (RELEASE_NOTES)
+    state: observed
+  display_model:
+    value: unknown (4K television)
+    source: rc18 notes; P-05
+    state: unknown
+  adapter_model:
+    value: unknown
+    source: P-06
+    state: unknown
+
+connectivity:
+  ethernet_usb_bluetooth_wifi:
+    value: unknown
+    source: P-17
+    state: unknown
+  storage:
+    value: unknown
+    source: P-17
+    state: unknown

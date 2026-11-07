@@ -1,0 +1,13 @@
+# STONE OS (rebuild) development container: the same tools as CI, on Fedora 44 (the base of the
+# image), so every software test also runs on a Mac. Never part of the console image.
+#   dev/run-tests.sh            builds this container and runs validate + all tests inside it
+FROM registry.fedoraproject.org/fedora:44
+RUN dnf -y install --setopt=install_weak_deps=False \
+        bash git-core findutils diffutils which \
+        python3 python3-pip python3-pytest python3-pyyaml \
+        ShellCheck systemd dbus-broker \
+    && dnf clean all
+# Pinned like CI (.github/workflows/ci.yml).
+RUN python3 -m pip install --no-cache-dir --break-system-packages ruff==0.16.9 actionlint-py==1.7.11.24
+ENV PYTHONDONTWRITEBYTECODE=1 STONE_REQUIRE_ALL=1
+WORKDIR /src

@@ -1,0 +1,304 @@
+# STONE OS — Registro de decisiones técnicas
+
+Proyecto: reconstrucción integral de STONE OS para STONE MACHINE (AMD BC-250).
+Versión del documento: 1 · Fecha: 2026-11-06 · Estado: **antes de empezar la reconstrucción**. Todavía no hay código en este repositorio.
+
+Este documento separa tres cosas que no deben mezclarse:
+
+- **Sección 1. Decisiones confirmadas:** las tomó el propietario y son de obligado cumplimiento.
+- **Sección 3. Recomendaciones técnicas:** son propuestas. Cada una necesita aprobación antes de aplicarse.
+- **Sección 4. Datos pendientes de verificación:** nada de esto se puede dar por cierto hasta comprobarlo.
+
+La sección 2 recoge hechos documentados, con su evidencia.
+
+Documentos relacionados:
+
+- `../../02_AUDIT/STONE OS — Hardware Performance  Overclock Audit v1.0.docx`: la auditoría original.
+- `../../02_AUDIT/STONE_OS_Auditoria_Tecnica_v2.0_rc23.md`: auditoría de continuidad sobre rc23.
+- `../../INVENTARIO_TECNICO_STONE_OS.md`: inventario del proyecto anterior.
+
+---
+
+## 1. Decisiones confirmadas
+
+| ID | Decisión | Consecuencia práctica |
+| --- | --- | --- |
+| D-01 | **Plataforma única: AMD BC-250.** No se desarrolla para otras generaciones de hardware. El objetivo es la placa con **8 núcleos de CPU y 40 CU de GPU**. | El backend y los perfiles están escritos para la BC-250. Otros equipos sólo sirven para pruebas de software y deben quedar con todo en «no disponible». |
+| D-02 | **Alcance integral.** STONE OS se reconstruye como sistema completo, no como versión básica permanente. | La arquitectura contempla desde el principio todos los módulos de la sección 5. |
+| D-03 | **Implementación por fases.** F0–F3 forman la base estable y funcional; los demás módulos se añaden después, uno a uno. | La primera imagen de validación no necesita todos los módulos, pero cada módulo ausente se declara como tal y no se simula. |
+| D-04 | **40 CU contemplado desde el inicio.** Todo desbloqueo, ajuste de frecuencia u overclock se verifica primero y tiene mecanismos de seguridad y recuperación. | Detección de CU, techo por calibración, guardia de arranque y vuelta atrás forman parte del núcleo, no son un añadido. |
+| D-05 | **No fijar el regulador por suposición.** No se sustituye el regulador ni se adopta una versión nueva sin justificar su compatibilidad. | Ver H-02, R-03 y P-01. |
+| D-06 | **No eliminar dependencias sin auditoría previa.** En particular, WebKit y Chromium siguen hasta que se apruebe la recomendación R-02. | Ninguna dependencia de rc23 se retira por ahora. |
+| D-07 | **Idioma.** Código, nombres de variables, funciones y módulos, y comentarios técnicos: inglés. Documentación de usuario y manuales de instalación y configuración: español. Arquitectura técnica: preferentemente español, con los términos técnicos originales en inglés. | Este documento sigue ese criterio. |
+| D-08 | **Nada se declara HARDWARE VERIFIED sin ejecutar su prueba en la BC-250.** | Sólo hay cuatro estados: `CODE TESTED`, `READY FOR HARDWARE TEST`, `OBSERVED ON BOARD` (dato visto, sin prueba formal) y `HARDWARE VERIFIED`. |
+| D-09 | **Los datos de pantalla, conexión de vídeo y adaptadores** que no estén documentados quedan como pendientes. | Ver P-05 a P-07. |
+| D-10 | **El repositorio anterior queda intacto.** No se empieza ninguna implementación que pueda comprometer funcionalidades existentes. | `01_STONE_OLD/` y `~/Downloads/stone-os/` se usan sólo para leer. |
+| D-11 | **Si falta la auditoría, se genera una nueva sin inventar contenido.** | La v1.0 apareció (H-01). Se escribió además la v2.0 sobre rc23. |
+| D-12 | (Sustituida por D-16 y D-17) **8 núcleos: verificar antes de tocar nada.** No se modifica la BIOS ni se aplica ningún desbloqueo por ahora. Primero se identifica cuántos núcleos están activos, qué método de desbloqueo hay y qué configuración tiene la placa. Si los 8 núcleos ya están activos, se documenta el procedimiento existente sin modificarlo. | P-03 se resuelve con el diagnóstico; P-04 queda sin acción hasta conocer el resultado. |
+| D-13 | **La arquitectura STONE MACHINE se define antes de F0** y contempla todos los módulos del producto final. F0–F3 son etapas de construcción, no el producto. | `docs/ARQUITECTURA_STONE_MACHINE.md` v1.0, pendiente de aprobación. Los vacíos están marcados [P] o [V]. |
+| D-14 | **Diagnóstico físico autorizado, sólo lectura.** Prohibido durante esa etapa: modificar BIOS o firmware, cambiar frecuencias o voltajes, activar o desactivar núcleos o CU, instalar o desinstalar paquetes, modificar servicios o configuraciones, y ejecutar pruebas de estrés. El procedimiento se aprueba antes de ejecutarlo. | `docs/diagnostico/PROCEDIMIENTO_DIAGNOSTICO_BC250.md` + `stone-diag-readonly.sh`, **aprobados el 2026-11-06**; pendientes de ejecución en la placa. |
+| D-16 | **Configuración de hardware definitiva de STONE MACHINE: CPU con 8 núcleos desbloqueados y GPU con 40 CU habilitadas.** Lo confirma el propietario (2026-11-06) y es la referencia de diseño. La comprobación física queda diferida hasta que la consola vuelva a encenderse | STONE PERFORMANCE, STONE GRAPHICS y STONE OPTIMIZED se diseñan para 8 núcleos y 40 CU. Si STONE detecta otra configuración, lo muestra y funciona en modo conservador; nunca la da por buena (A3) |
+| D-17 | **El desbloqueo de núcleos y CU no es una tarea pendiente.** No se investiga de nuevo ni se proponen cambios de BIOS o firmware para conseguirlo | Sustituye a D-12 y cierra P-04. El mecanismo de software de rc23 que la imagen necesita para arrancar con 40 CU (`amdgpu` con la opción `bc250_cc_write_mode`, guardia de arranque) se **conserva tal cual**, para no perder la configuración actual |
+| D-18 | **No se inventan frecuencias máximas, voltajes ni límites térmicos.** Se determinan con documentación y validación posterior | Toda cifra del proyecto lleva su origen: leída del regulador, de fábrica, observada en placa o tomada de la documentación comunitaria. Ninguna es una constante de diseño de STONE |
+| D-19 | **P-14 y la preparación de F0 siguen sin la consola encendida.** La validación física se programa para una fase posterior | Sustituye en parte a D-15: F0 se prepara y construye con verificación de software; su puerta de placa queda diferida y registrada (sección 6) |
+| D-15 | **F0 no empieza** (sustituida en parte por D-19) hasta que P-14 esté resuelto documentalmente y el diagnóstico de hardware esté hecho, o hasta que las verificaciones físicas pendientes queden identificadas explícitamente. No se asume ninguna característica del hardware que no se haya comprobado. | Puerta previa a F0. |
+
+---
+
+## 2. Hechos documentados (con evidencia)
+
+| ID | Hecho | Evidencia |
+| --- | --- | --- |
+| H-01 | La auditoría v1.0 existe. Es del 23-10-2026, cubre el prototipo anterior a rc1 y propone el plan P0–P3. Estaba en `~/Downloads`; se copió a `02_AUDIT/` | SHA-256 `d1673fb8…385ea4`, idéntico en origen y copia |
+| H-02 | **Versión del regulador durante rc14–rc16:** `cyan-skillfish-governor-smu` **`v0.4.14-1.20260619120402457887.update.deps.3.g14080b4.fc44`**. Es la misma en todas las releases publicadas de rc2 a rc16 | `02_AUDIT/evidencia/build-metadata/build-metadata-v0.1.0-rc{14,15,16}.json`, campo `STONE_GOVERNOR_VERSION` |
+| H-03 | **rc23 trae otra versión del regulador:** `v0.4.15-1.…g14080b4.fc44`. No tiene validación ni nota en las release notes | `build-metadata-v0.1.0-rc23.json` |
+| H-04 | Entorno de rc14–rc16: kernel `7.2.11-ogc4.1.fc44`, Bazzite `44.20261026.0`, base `sha256:278941ea…bdf4e`, Mesa `26.2.4-1.fc44`, Gamescope `terra-gamescope 3.17.0^1-1.fc44`, WebKitGTK `2.54.1`, Chromium `156.0.8078.73`, 40 CU `ok` (OGC `v7.2.11-ogc4`) | build-metadata rc14–rc16 |
+| H-05 | Digests de imagen: rc14 `sha256:b10bb52c…2d17`, rc15 `sha256:a99b860d…3391`, rc16 `sha256:4974e3da…baa` | build-metadata |
+| H-06 | Curva del regulador (rc14–rc23): `500@700, 1000@800, 1175@850, 1500@900, 1600@910, 1700@920, 1850@930, 2000@960` (MHz@mV); rango inicial 1000–1850; corte térmico 85 °C | build-metadata |
+| H-07 | Observaciones en placa: con 40 CU, 1500→1950 MHz aprobados; **cuelgue total a 2000 MHz**; validado 1900 MHz; `pp_dpm_sclk` y `gpu_metrics` no fiables; el regulador no publica la frecuencia actual. Estado: `OBSERVED ON BOARD` | `STONE_PERFORMANCE.md` (rc14, rc15), RELEASE_NOTES rc16 |
+| H-08 | Conexión de vídeo: DisplayPort → HDMI con un adaptador de unos 300 MHz de reloj de píxel. Con él, 4K60 no cabe; 1440p60 y 4K30 sí. Estado: `OBSERVED ON BOARD` (sin modelo de adaptador) | RELEASE_NOTES rc18 |
+| H-09 | FIRMWARE.md descarta la BIOS MeiMeiDXE (desbloqueo a 8 núcleos) por ser la opción de mayor riesgo. RELEASE_NOTES rc8 dice que «el desbloqueo de 8 núcleos vive en el firmware». Ningún documento registra cuántos núcleos tiene esta placa | `docs/FIRMWARE.md`, RELEASE_NOTES rc8 |
+| H-10 | Existe historial git completo (rc2→rc23) en `~/Downloads/stone-os` (remoto `irl1997/stone-os`) y 12 releases publicadas por CI | `git log`, API de releases |
+| H-11 | El documento de arquitectura STONE MACHINE y los documentos de diseño originales no están en ninguna fuente disponible | `docs/AUDIT_STATUS.md` («fuera del repositorio») |
+
+---
+
+## 3. Recomendaciones técnicas
+
+> **Estado: R-01 a R-12 APROBADAS por el propietario el 2026-11-06.** Desde esa fecha son de obligado cumplimiento, igual que las decisiones de la sección 1. Las condiciones que cada una lleva siguen vigentes: R-02 retira WebKit sólo después de la prueba 26; R-03 fija la versión del regulador sólo después de P-01.
+
+### R-01. Base del sistema
+Mantener la imagen bootc derivada de `bazzite-deck` (Fedora 44) con el patrón `ublue-os/image-template`. Fijar el digest de la base en cada release. Reutilizar el build de rc23, que instala y arranca en la placa (H-10, observaciones de rc1).
+
+### R-02. Motor de STONE Home: auditoría WebKit / Chromium
+
+**Quién usa cada motor en rc23**
+
+| Componente | Motor | Dependencias | Papel |
+| --- | --- | --- | --- |
+| `stone_home/chromium.py` | Chromium (sistema, Fedora) | `chromium`; GTK 4 + Gdk **sólo para medir la pantalla** (`screen_size()`) | Motor por defecto desde rc9; GPU, kiosko, perfil propio, proxy nulo |
+| `stone_home/server.py` | — (HTTP local) | stdlib | Transporte de Chromium y del servidor de desarrollo |
+| `stone_home/app.py` | WebKitGTK 6 + GTK 4 | `webkitgtk6.0`, `gtk4`, `python3-gobject` | Respaldo sin GPU y `--selftest` |
+| `/usr/libexec/stone-home` | Ambos | — | Elige motor; pasa a WebKit si Chromium falta o cae 3 veces al arrancar |
+| `/usr/bin/stone-home` | WebKit | — | Fuerza dibujo por software (`GSK_RENDERER=cairo` …) para WebKit |
+| `stone_home/host.py` | Ninguno | — | Tabla de métodos independiente del transporte |
+| `build_files/build.sh` | Ambos | instala `webkitgtk6.0 gtk4 chromium`; **el build falla si falta cualquiera** | — |
+| `tests/webkit_selftest.py` / `chromium_selftest.py` / `e2e_home.py` / `test_server.py` | Cada uno el suyo | Xvfb, WebKitGTK, Chromium, Playwright | Pruebas |
+| `stone_home/session.py` (`diag`) | — | Imprime la versión de WebKitGTK | Diagnóstico |
+| Interfaz de Steam (Game Mode) | CEF de Steam (propio de Steam, no el Chromium del sistema) | Steam | No es de STONE |
+
+**Impacto de cada opción**
+
+| Opción | Ventajas | Inconvenientes |
+| --- | --- | --- |
+| A. Mantener ambos (como rc23) | Siempre hay interfaz aunque Chromium falle | Dos motores que mantener, probar y actualizar; mayor tamaño de imagen; el respaldo dibuja por software, lento a 4K |
+| B. Sólo Chromium | Un motor; GPU a resolución nativa; el mismo motor que Steam usa en el mismo Gamescope; menos superficie que mantener | Sin respaldo de STONE: si Chromium falla, se ve la interfaz de Steam (la consola sigue usable); GTK 4 sigue haciendo falta salvo que la medida de pantalla se haga con X11 (ya existe `stone_display/xwayland.py`) |
+| C. Sólo WebKit | Menos memoria esperable | En la placa, el dibujo por GPU parpadeó y salió transparente (rc2); por software no es fluido a 4K. **No viable** |
+| D. Interfaz nativa (Qt/QML u otra) | Posible menor consumo | Reescritura completa del diseño y del mando; sin datos; mayor riesgo |
+
+**Recomendación:** objetivo **B (sólo Chromium)**, aplicado en dos pasos:
+
+1. En F0–F2 se mantienen los dos motores tal como están (D-06).
+2. WebKit se retira sólo cuando se cumplan las tres condiciones:
+   - la prueba 26 (Home con GPU a 4K) pasa en la placa;
+   - N arranques seguidos no activan el respaldo;
+   - está validado que, si Chromium falla, la consola cae en la interfaz de Steam y sigue usable.
+
+En ese momento, además, la medida de pantalla deja GTK y pasa a X11, para no arrastrar GTK 4. El consumo real de memoria y CPU de cada motor **está sin medir**: se medirá en la placa antes de decidir (P-10). No se elimina nada hasta aprobar esta recomendación.
+
+### R-03. Regulador de frecuencia
+
+- **Versión candidata para fijar:** `v0.4.14-1.20260619120402457887.update.deps.3.g14080b4.fc44` (H-02). Es la versión con la que se tomaron todas las mediciones de placa.
+- No se fija mientras no se confirme en la placa que esa era la imagen instalada (P-01).
+- **No adoptar v0.4.15** (H-03) sin prueba de contrato D-Bus (métodos, propiedades, curva) y sin repetir en placa las pruebas 0, 5 y 28.
+- Conservar el RPM exacto de la versión validada, porque el COPR puede retirarla.
+
+### R-04. Rendimiento con 40 CU
+- 40 CU es la configuración de referencia (D-16).
+- Techo por calibración propia de cada consola; nunca un número fijo.
+- Los únicos datos de frecuencia disponibles son observaciones de rc15, no límites de diseño (D-18):
+  - pasos aprobados hasta 1950 MHz;
+  - cuelgue total en el paso de 2000 MHz;
+  - máximo validado calculado: 1900 MHz.
+- Mientras no haya una nueva calibración, se conserva la regla de rc16: no repetir el paso donde se colgó la placa.
+- La validación definitiva del máximo requiere la calibración `standard` y una sesión larga de juego.
+- La única acción automática permitida sobre 40 CU es la de seguridad: la guardia de arranque vuelve a 24 CU ante errores de GPU y lo informa. Activar 40 CU nunca es automático.
+
+### R-05. Telemetría
+- Declarar la fiabilidad medida de cada sensor en un perfil de placa (`hardware/bc250.yaml`).
+- Mientras el regulador no publique la frecuencia real, usar la «velocidad real» de `stone-cu-verify` para la calibración y «—» en la interfaz.
+
+### R-06. Integración con Steam
+Crear un adaptador único con tres propiedades:
+- detecta qué capacidades ofrece la versión instalada de Steam;
+- tiene fallback (`steam://`, interfaz de Steam);
+- se prueba con grabaciones tomadas de la Steam real de la placa.
+
+Ningún módulo llama directamente a `SteamClient.*`. Hay que revisar también el riesgo del puerto CEF 127.0.0.1:8080.
+
+### R-07. Contrato de API versionado
+Definir `api/` con dos contratos: `stone-performance.v1` y `stone-home.v1`. De ellos salen la validación del host, el cliente JS y el *mock* del simulador. Así desaparecen las tres copias actuales de la misma API.
+
+### R-08. Interfaz
+Proyecto front-end modular con build reproducible. Conserva el diseño de rc23: THE LINE, navegación con mando, sonido. Sustituye la generación por anclas de texto.
+
+### R-09. Seguridad
+- Acotar la regla polkit al usuario de la consola, en lugar de todo `wheel`.
+- Descargas de componentes de terceros desactivadas por defecto.
+- Firma cosign obligatoria en las releases.
+
+### R-10. Estructura del repositorio
+```
+image/        Containerfile, build_files/, config/, disk_config/
+system/       rootfs (system_files)
+services/     stoned/ y futuros servicios de sistema
+apps/         stone-home/ (host + ui/)
+modules/      display, graphics, optimized, connect, downloads, emulation, desktop, boot
+api/          contratos versionados
+hardware/     bc250.yaml, validation/ (matriz y resultados con fecha)
+dev/          contenedor de desarrollo (Fedora 44), simulador, devserver
+docs/         usuario (es), instalación (es), arquitectura (es + términos en inglés)
+.github/
+```
+
+### R-11. Entorno de pruebas en macOS
+Crear un contenedor Fedora 44 con PyGObject, dbus, Xvfb, Chromium, WebKitGTK y Node, para correr las mismas suites que CI. Además, migrar el runner propio a pytest conservando los identificadores de los casos (R01, P17, G22…).
+
+### R-12. Copias de seguridad
+Antes de la primera línea de código:
+- copiar `01_STONE_OLD` y `~/Downloads/stone-os` (con `.git`) a `04_BACKUPS`, con su SHA-256;
+- guardar allí también los metadatos de build y la auditoría v1.0.
+
+---
+
+## 4. Datos pendientes de verificación
+
+| ID | Dato | Cómo se verifica | Requiere placa |
+| --- | --- | --- | --- |
+| P-01 | Que la placa ejecutó las imágenes rc14–rc16 publicadas (y por tanto el regulador v0.4.14) | En la placa: `rpm-ostree status` (digest) y `rpm -q cyan-skillfish-governor-smu` | Sí |
+| P-02 | Compatibilidad del regulador v0.4.15 (D-Bus, propiedades, curva, `Enabled`) | Prueba de contrato + pruebas 0, 5 y 28 | Parcial (contrato en software, comportamiento en placa) |
+| P-03 | **Confirmado por el propietario (D-16): 8 núcleos y 40 CU. Sólo queda la comprobación física diferida.** Antes: número de núcleos de CPU activos y BIOS instalada. Antecedentes: el prototipo asumía 6 núcleos y 24 CU; las notas de rc8 dicen que el desbloqueo vive en la BIOS; FIRMWARE.md descarta la BIOS MeiMeiDXE | Diagnóstico, secciones 02–03 (`lscpu`, `core_id`, `dmidecode -t processor`: Core Count frente a Core Enabled; versión de BIOS) | Sí |
+| P-04 | **Cerrado (D-17).** No es una tarea pendiente. El diagnóstico diferido sólo registrará la versión de BIOS y la línea de arranque como dato informativo | — | — |
+| P-05 | Modelo y capacidades de la pantalla (TV 4K, modelo, HDR, VRR, Hz) | `stonectl display diagnostics` (EDID sin número de serie) | Sí |
+| P-06 | Modelo del adaptador DP→HDMI (pasivo/activo, reloj máximo) y cable | Etiqueta del producto + `stonectl display` | Sí |
+| P-07 | Salida de vídeo usada en la placa (DP) y si existe alternativa | Inspección física | Sí |
+| P-08 | Significado de la propiedad `Enabled=false` del regulador | Documentación del regulador + prueba | Sí |
+| P-09 | Fuente fiable de frecuencia y carga de GPU (`fix-metrics`) | Prueba en placa | Sí |
+| P-10 | Consumo real de memoria y CPU de Chromium y WebKit en Gamescope a 4K | Medición en placa (prueba 26 ampliada) | Sí |
+| P-11 | Formato `reaper SteamLaunch AppId=` en la Steam actual | `ps -eo args \| grep SteamLaunch` | Sí |
+| P-12 | Watchdog de hardware (`sp5100_tco`) | Prueba 15 | Sí |
+| P-13 | Curva de ventilador de la BIOS (valores) y canal `fan2` | FIRMWARE.md + prueba 13 | Sí |
+| P-14 | Documento de arquitectura STONE MACHINE con la definición de todos los módulos | **Resuelto documentalmente:** `ARQUITECTURA_STONE_MACHINE.md` v1.0, pendiente de aprobación; sus vacíos van de V-01 a V-11 | No |
+| P-17 | Conectividad física (Ethernet, USB, Bluetooth, Wi-Fi) y almacenamiento | Diagnóstico, sección 10 | Sí |
+| P-18 | Sesión de escritorio disponible en la imagen y mecanismo para cambiar a ella | Diagnóstico, sección 12 | Sí |
+| P-15 | 1900 MHz con 40 CU en calibración `standard` y sesión larga | Prueba 28 | Sí |
+| P-16 | Mando dentro de STONE Home, foco al volver de un juego | Prueba 17 | Sí |
+
+---
+
+## 5. Módulos de STONE OS y fases
+
+Estado en rc23: **Existe** = hay código reutilizable · **Parcial** = existe una parte · **Nuevo** = no existe nada · **Sin especificar** = falta su definición (P-14).
+
+| Módulo | Estado en rc23 | Qué hay | Fase propuesta |
+| --- | --- | --- | --- |
+| Imagen base (Bazzite bootc, sin reposo, kernel check) | Existe | `Containerfile`, `build.sh` | F0 |
+| STONE BOOT ENGINE | Parcial | Plymouth, vídeo de arranque, `stoned-recover`, autoarranque de Home | F0 (base), F2 (Home) y ampliación posterior (sin especificar) |
+| STONE PERFORMANCE (gestión de frecuencias, recuperación, Safe Mode, térmico) | Existe | `stoned` | F1 |
+| Soporte 40 CU: configuración de referencia (D-16) | Existe | `stone_cu40.py`, `build_files/cu40` | F0 (módulo `amdgpu` con la opción, guardia de arranque y `stone-cu40 status`, para conservar los 40 CU actuales); F1 (detección en `stoned`); F3 (calibración y gestión desde STONE) |
+| STONE HOME + integración Steam (biblioteca, JUGAR, instalar) | Existe | `stone_home/` | F2 |
+| Performance Center + STONE CALIBRATION | Existe | `calibration.py`, UI | F3 |
+| STONE DISPLAY | Existe | `stone_display/` | F4 |
+| STONE GRAPHICS | Parcial | `stone_games/graphics.py` | F4 |
+| STONE OPTIMIZED + STONE GAME PROFILE | Existe (sin mediciones) | `stone_games/` | F5 |
+| STONE CONNECT (Bluetooth y mandos) | **Nuevo** (hoy lo hace Steam) | — | F6 |
+| STONE DOWNLOADS (instalar y desinstalar) | Parcial | Asistente de instalación de Steam, `stone_games/install.py`, Flatpak de emuladores | F7 |
+| STONE EMULATION | Parcial | `stone_home/emulators.py` (catálogo Flathub) | F8 |
+| STONE DESKTOP | **Nuevo** (Bazzite trae modo escritorio KDE) | — | F9 |
+| Otros módulos de la arquitectura STONE MACHINE | Sin especificar | — | Tras P-14 |
+
+El orden de F6–F9 es una recomendación. **La primera imagen de validación** sería F0 + F1, sin cambiar el comportamiento de la placa respecto a rc16. Su objetivo: cerrar P-01, P-03 y las pruebas 0–2, 14 y 16.
+
+Cada fase termina con una puerta: todas sus pruebas de software pasan en CI y todas sus pruebas de placa están ejecutadas y registradas.
+
+---
+
+## 6. Pruebas: qué se hace por software y qué exige la placa
+
+Leyenda:
+- **S**: software. Se hace en CI o en el contenedor, sin placa.
+- **S+V**: se hace parcialmente en una máquina virtual o en otro PC, pero la validación definitiva sigue siendo en la placa.
+- **P**: la placa física es obligatoria.
+
+### 6.1 Pruebas automáticas existentes (todas S)
+
+| Suite | Cubre |
+| --- | --- |
+| `scripts/validate.sh` | Estructura, shell, Python, XML/TOML/JSON, unidades, polkit, sin simulación en producción, workflows |
+| `tests/run_tests.py` (88) | `stoned` contra regulador D-Bus y sysfs falsos |
+| `tests/test_home.py` (26), `test_server.py` | Host, biblioteca, accesos directos, puente, transporte |
+| `tests/test_display.py` (24) | EDID, conectores, política de pantalla, presupuesto del enlace |
+| `tests/test_games.py` (22) | Perfiles de juego, rutas gráficas, métricas, puntuación |
+| `tests/test_cu40.py`, `test_cu40_patch.py` | Opt-in de 40 CU, guardia, anclas del parche |
+| `tests/chromium_selftest.py`, `webkit_selftest.py`, `e2e_home.py`, ESLint | Interfaz real en Xvfb (sin GPU real) |
+| Build de imagen + `bootc container lint` + ISO | Workflows de GitHub |
+| Prueba de contrato del regulador (nueva, R-03) | Interfaz D-Bus de cada versión del paquete |
+
+### 6.2 Matriz de `HARDWARE_VALIDATION.md`
+
+| Prueba | Tipo | Motivo |
+| --- | --- | --- |
+| 0 Inventario (ID PCI, D-Bus del regulador, sensores, permisos) | P | Sólo la placa tiene el hardware real |
+| 1 BOOT ×5 | P | — |
+| 2 IDLE | P | — |
+| 3 Carga de prueba (vkmark headless) | P | GPU real |
+| 4 GAME y detección de Steam | S+V | Formato del `reaper` se puede ver en otro PC con Steam; validación en placa |
+| 5 PROFILE SWITCH | P | Regulador real |
+| 6 OVERCLOCK | P | — |
+| 7 THERMAL | P | — |
+| 8 LONG SESSION | P | — |
+| 9 REBOOT | P | — |
+| 10 CRASH RECOVERY | S+V | Lógica cubierta en software; cuelgue real sólo en placa |
+| 11 POWER LOSS | P | — |
+| 12 SAFE MODE | S+V | Lógica en software; arranque con `stone.safe=1` en placa |
+| 13 FAN READ | P | — |
+| 14 SUSPEND | P | — |
+| 15 HW WATCHDOG | P | — |
+| 16 Instalador y primer arranque | S+V | ISO e instalación en VM; Game Mode y vídeo en placa |
+| 17 STONE HOME en Game Mode | P | Gamescope + mando reales |
+| 18 Perfil por juego | P | — |
+| 19 Apagar / reiniciar | S+V | logind en VM; marca de apagado limpio en placa |
+| 20 Apagar tras inactividad | S+V | — |
+| 21 Actualización atómica | S+V | `bootc switch` en VM; en placa con la imagen real |
+| 22 Rollback | S+V | Ídem |
+| 23 Autoarranque que falla | P | Game Mode real |
+| 24 Sin BC-250 | S+V | Otro PC o VM: todo debe quedar «no disponible» |
+| 25 40 CU | P | — |
+| 26 Home con GPU a 4K | P | Incluye P-10 |
+| 27 STONE DISPLAY 4K | P | Pantalla y adaptador reales (P-05, P-06) |
+| 28 PERFORMANCE 2.0 (calibración) | P | Incluye P-15 |
+| 29 STONE OPTIMIZED (Cyberpunk) | P | — |
+
+Ninguna fila de esta tabla se marca como validada sin haberla ejecutado en la BC-250 (D-08). Las observaciones previas (H-07, H-08) se registran como `OBSERVED ON BOARD`.
+
+---
+
+## 7. Próximos pasos (sin implementar todavía)
+
+1. ~~El propietario aprueba o corrige las recomendaciones R-01 a R-12~~. Hecho: aprobadas el 2026-11-06.
+2. Copia de seguridad (R-12). Ver `04_BACKUPS/MANIFIESTO.md`.
+2b. Quedan abiertas tres decisiones del propietario: el método para llegar a 8 núcleos (P-04), el documento de arquitectura STONE MACHINE (P-14) y la confirmación del orden de F6–F9.
+3. Se aporta el documento de arquitectura STONE MACHINE (P-14).
+4. Sesión de inventario en placa, sólo lectura y sin riesgo: P-01, P-03, P-05 a P-08, P-11.
+5. Con esos datos, empieza F0.
+
+## Registro de cambios
+
+| Versión | Fecha | Cambio |
+| --- | --- | --- |
+| 1 | 2026-11-06 | Primera versión: respuestas del propietario a las preguntas del inventario, hechos documentados, auditoría de motores y clasificación de pruebas |
+| 2 | 2026-11-06 | R-01 a R-12 aprobadas por el propietario; copia de seguridad R-12 realizada |
+| 6 | 2026-11-06 | Plan de F0 aprobado con F0-A (imagen `stone-os-rebuild`, canal `dev`), F0-B (F0 no se instala para uso diario; la primera imagen en la placa será F1), F0-C (firma obligatoria; el propietario crea `SIGNING_SECRET`) y F0-D (GitHub Actions) |
+| 5 | 2026-11-06 | D-16 a D-19: configuración definitiva de 8 núcleos y 40 CU, desbloqueo fuera de alcance, sin cifras inventadas, F0 sin esperar a la consola; P-04 cerrado; R-04 reescrita sin límites de diseño; regulador v0.4.14 sigue en el COPR (build 11067195) |
+| 4 | 2026-11-06 | Procedimiento de diagnóstico aprobado (D-14) |
+| 3 | 2026-11-06 | D-12 a D-15 (8 núcleos, arquitectura antes de F0, diagnóstico sólo lectura, puerta de F0); P-14 resuelto documentalmente; nuevos P-17 y P-18 |
