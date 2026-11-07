@@ -657,6 +657,23 @@ def H09_cu40_only_three_operations_through_pkexec_and_health():
 
 
 @test
+def H10_connect_methods_check_arguments_and_turn_errors_into_unsupported():
+    C = host_mod.connect
+    saved = (C.bt_devices, C.wifi_connect)
+    C.bt_devices = lambda: {"devices": []}
+    C.wifi_connect = lambda ssid, pw: {"error": "Contraseña incorrecta"} if pw == "mala1234" else {"ok": True}
+    try:
+        h = host_mod.Host(lambda *a: None, stoned=FakeStoned(), sysapi=system.System(spawn=lambda u: None), steam_root="/nonexistent")
+        assert run_host(h, {"method": "bt.devices", "args": []}, timeout=15)[0] == {"devices": []}
+        assert run_host(h, {"method": "bt.devices", "args": ["x"]})[1] == "InvalidValue"
+        assert run_host(h, {"method": "net.wifiConnect", "args": ["Casa", "buena123"]}, timeout=15)[0] == {"ok": True}
+        assert run_host(h, {"method": "net.wifiConnect", "args": ["Casa", "mala1234"]}, timeout=15)[1] == "Unsupported"
+        assert run_host(h, {"method": "net.reboot", "args": []})[1] == "InvalidValue"
+    finally:
+        C.bt_devices, C.wifi_connect = saved
+
+
+@test
 def H02_launch_only_games_from_the_last_library_scan():
     with Tmp() as d:
         root = FX.build(os.path.join(d, "Steam"))

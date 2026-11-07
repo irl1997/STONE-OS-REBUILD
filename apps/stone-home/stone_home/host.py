@@ -17,6 +17,7 @@ from stone_games import schema as games_schema
 from stone_games.perf import PerfAsync
 
 from . import bootmetrics
+from . import connect
 from . import bridge
 from . import emulators
 from . import firstrun
@@ -534,6 +535,41 @@ class Host:
                 res = (None, "Unsupported", str(e))
             GLib.idle_add(lambda: (done(*res), False)[1])
         threading.Thread(target=work, daemon=True).start()
+
+    # ---- STONE CONNECT and SETTINGS (M12, M16): Bluetooth, audio, network (connect.py) -----------
+    CONNECT = {
+        "bt.devices": (lambda: connect.bt_devices(), 0),
+        "bt.scan": (lambda: connect.bt_scan(), 0),
+        "bt.action": (lambda a, mac: connect.bt_action(a, mac), 2),
+        "audio.status": (lambda: connect.audio_status(), 0),
+        "audio.default": (lambda i: connect.audio_default(i), 1),
+        "audio.volume": (lambda v: connect.audio_volume(v), 1),
+        "net.status": (lambda: connect.net_status(), 0),
+        "net.wifiList": (lambda: connect.wifi_list(), 0),
+        "net.wifiConnect": (lambda ssid, pw: connect.wifi_connect(ssid, pw), 2),
+        "net.wifiDisconnect": (lambda dev: connect.wifi_disconnect(dev), 1),
+    }
+
+    def _connect(self, name, args, done):
+        fn, n = self.CONNECT[name]
+        if len(args) != n:
+            return done(None, "InvalidValue", "arguments")
+
+        def work():
+            try:
+                r = fn(*args)
+                res = (r, None, "") if "error" not in r else (None, "Unsupported", r["error"])
+            except Exception as e:  # noqa: BLE001  (a tool that misbehaves is reported, never fatal)
+                res = (None, "HardwareError", f"{name}: {e!r}")
+            GLib.idle_add(lambda: (done(*res), False)[1])
+        threading.Thread(target=work, daemon=True).start()
+
+    def __getattr__(self, attr):
+        if attr.startswith("m_"):
+            name = attr[2:].replace("_", ".", 1)
+            if name in Host.CONNECT:
+                return lambda args, done: self._connect(name, args, done)
+        raise AttributeError(attr)
 
     # ---- STONE HEALTH (M19) ---------------------------------------------------------------
     def m_health_status(self, args, done):

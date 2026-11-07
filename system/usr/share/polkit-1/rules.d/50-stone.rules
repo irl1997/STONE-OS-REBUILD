@@ -13,6 +13,11 @@ polkit.addRule(function (action, subject) {
         subject.isInGroup("wheel")) {
         return polkit.Result.YES;
     }
+    // Network from STONE Home (Ajustes → Red): NetworkManager asks polkit, and Home runs outside the
+    // logind session in the STONE session. The console administrator only, as for Bazzite's Game Mode.
+    if (action.id.indexOf("org.freedesktop.NetworkManager.") == 0 && subject.isInGroup("wheel")) {
+        return polkit.Result.YES;
+    }
     // 40 CU from STONE Home: only these exact command lines (Home asked for confirmation first)
     if (action.id == "org.stonemachine.cu40" && subject.isInGroup("wheel")) {
         var cl = action.lookup("command_line");

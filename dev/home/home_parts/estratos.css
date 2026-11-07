@@ -57,3 +57,8 @@
 /* FIRST RUN and full-screen dialogs: a stratum card on black */
 #dlg.solid .box{background:#121315;border-top:3px solid var(--vein);border-radius:2px;top:220px}
 #dlg.solid .brand{letter-spacing:.55em}
+/* On-screen keyboard (connect.js osk) */
+#dlg .krow{display:flex;gap:10px;justify-content:center}
+#dlg .key{min-width:56px;padding:10px 0;text-align:center;font-family:var(--f-mono);font-size:24px;background:#0e0f10;border-radius:2px}
+#dlg .key.wide{min-width:120px;font-size:16px;letter-spacing:.14em}
+#dlg .okbox{font-family:var(--f-mono);font-size:28px;color:var(--warm);border-bottom:2px solid var(--vein);padding-bottom:8px;min-height:40px;word-break:break-all}

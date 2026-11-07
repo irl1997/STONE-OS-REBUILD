@@ -191,10 +191,11 @@ function catRows() {
         where: 'Steam decide el tamaño de cada app. Botón STEAM → Biblioteca → STONE → ⚙ → Propiedades → General → Resolución del juego: Nativa. Luego reinicia STONE' },
       { l: 'Medir fluidez', s: S.smooth ? `Última medida, ${RENDER[S.smooth.mode]} a ${S.smooth.res}: ${S.smooth.fps} FPS · cuadro más lento ${S.smooth.p99} ms · ${S.smooth.slow} de ${S.smooth.n} cuadros lentos`
         : 'STONE recorre el inicio unos segundos y mide los cuadros por segundo del modo actual', v: 'Medir', act: 'measure' }] };
-    case 'Audio': return { d: 'Sonidos del sistema y volumen de la interfaz.', rows: [
-      { l: 'Sonidos del sistema', s: 'Botones, encendido y apagado', v: S.sound ? 'Activados' : 'Desactivados', key: 'sound' },
-      { l: 'Volumen de la interfaz', s: 'Independiente del volumen de los juegos', v: Math.round(S.vol * 100) + ' %', key: 'vol' },
-      steam('Salida de audio', 'Altavoces, auriculares, HDMI o DisplayPort', 'Botón ··· → Audio, o botón STEAM → Ajustes → Audio')] };
+    case 'Audio': return { d: 'La salida de sonido de la consola y su volumen. Izquierda y derecha cambian el volumen.', rows: [...audioRows(),
+      { l: 'Sonidos de STONE', s: 'Botones, encendido y apagado', v: S.sound ? 'Activados' : 'Desactivados', key: 'sound' },
+      { l: 'Volumen de la interfaz', s: 'Independiente del volumen de los juegos', v: Math.round(S.vol * 100) + ' %', key: 'vol' }] };
+    case 'Red': return { d: 'El cable de red se configura solo. Para Wi-Fi, elige una red y escribe su contraseña con el mando.', rows: netRows() };
+    case 'Bluetooth': return { d: 'Mandos, auriculares y teclados. Para emparejar, ponlos en modo emparejamiento y busca.', rows: btRows() };
     case 'Salud': return { d: 'El estado de STONE MACHINE, leído ahora. Nada de esta pantalla cambia la consola.', rows: healthRows() };
     case 'Steam': return { d: 'Los ajustes de Steam, con el aspecto de STONE. La lista sale de lo que ofrece este Steam; los de sí/no se cambian con A.', rows: steamSetRows() };
     case 'Emuladores': {
