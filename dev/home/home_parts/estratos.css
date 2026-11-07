@@ -41,3 +41,19 @@
 #power .h{font-family:var(--f-mono);font-size:16px;letter-spacing:.2em}
 #dlg .box{border-top:2px solid var(--vein)}
 #dlg.solid .box{border-top:0}
+/* Game page: the info strip is the deep stratum, its labels are samples; the vein under the actions */
+#detail::after{content:"";position:absolute;left:0;top:842px;width:1920px;height:238px;background:var(--st-deep);pointer-events:none}
+#detail .info{z-index:1;border-top:3px solid transparent;border-image:linear-gradient(90deg,var(--vein) 0%,var(--vein-deep) 50%,transparent 100%) 1;font-family:var(--f-mono);font-size:15px;letter-spacing:.14em;text-transform:uppercase}
+#detail .info b{font-family:var(--f-text);font-size:22px;letter-spacing:0;text-transform:none}
+#detail .origin{font-family:var(--f-mono);font-size:16px;letter-spacing:.2em;text-transform:uppercase;color:var(--vein)}
+/* Performance and tuning: strata background, profile tiles with a top vein of their own colour */
+#perf,#tuning{background:linear-gradient(180deg,#141517 0%,#141517 196px,#101113 196px,#0e0f10 100%)}
+#perf::before,#tuning::before{content:"";position:absolute;left:0;top:195px;width:1920px;height:1px;background:var(--st-rule)}
+.card.ptile{background:#0e0f10;border-top:3px solid var(--slate);border-radius:2px}
+.card.ptile.cur{border-top-color:var(--vein)}
+#perf .note{font-family:var(--f-text)}
+/* Game screen (a game is open): its label reads like a sample */
+#game .tag{font-family:var(--f-mono);font-size:17px;letter-spacing:.12em}
+/* FIRST RUN and full-screen dialogs: a stratum card on black */
+#dlg.solid .box{background:#121315;border-top:3px solid var(--vein);border-radius:2px;top:220px}
+#dlg.solid .brand{letter-spacing:.55em}
