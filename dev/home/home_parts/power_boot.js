@@ -153,7 +153,14 @@ async function firstRun(fr) {
   S.screen = 'transition';
   setTimeout(() => line.classList.remove('boot'), 1300);
   const [cfgHtml] = frConfigText();
-  await frStep(`<div class="brand" style="font-size:40px">STONE</div><h2>BIENVENIDO</h2><p>Primer encendido de STONE MACHINE. Si has llegado aquí con el botón A, el mando funciona.</p>${cfgHtml}`, [['next', 'CONTINUAR']]);
+  /* stone-doctor's checks (health.py): the first start says plainly if something of STONE is not running */
+  const hl = await Promise.race([Sys.health().catch(() => null), wait(5000).then(() => null)]);
+  S.health = hl;
+  const bad = hl ? hl.checks.filter(c => c[0] === 'fail') : [], warn = hl ? hl.checks.filter(c => c[0] === 'warn') : [];
+  const docHtml = !hl ? '<p>Comprobación del sistema: no respondió a tiempo. Puedes verla en Ajustes → Salud.</p>'
+    : bad.length ? `<p>Comprobación del sistema: <b>${bad.length} fallo${bad.length > 1 ? 's' : ''}</b> (${esc(bad.map(c => c[1]).join(', '))}). Detalle en Ajustes → Salud.</p>`
+    : `<p>Comprobación del sistema: <b>${warn.length ? warn.length + ' aviso' + (warn.length > 1 ? 's' : '') : 'todo bien'}</b>.</p>`;
+  await frStep(`<div class="brand" style="font-size:40px">STONE</div><h2>BIENVENIDO</h2><p>Primer encendido de STONE MACHINE. Si has llegado aquí con el botón A, el mando funciona.</p>${cfgHtml}${docHtml}`, [['next', 'CONTINUAR']]);
   const dsp = await Sys.display(true).catch(() => null);
   await frStep(`<h2>PANTALLA</h2>${dsp && dsp.connected
     ? `<p>${esc(dsp.name || 'Pantalla')}${dsp.connection ? ' · ' + esc(dsp.connection) : ''}</p><p>Resolución nativa: <b>${resTxt(dsp.native)}</b></p><p>Salida actual: <b>${resTxt(dsp.output)}</b>${dsp.max_hz ? ` · hasta ${dsp.max_hz} Hz` : ''}</p>`

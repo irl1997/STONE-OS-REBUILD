@@ -20,6 +20,7 @@ from . import bootmetrics
 from . import bridge
 from . import emulators
 from . import firstrun
+from . import health
 from . import library
 from . import shortcuts
 from . import steamcef
@@ -493,6 +494,17 @@ class Host:
                 res = ({"ok": True}, None, "") if r.returncode == 0 else (None, "PermissionDenied", r.stdout.strip() or r.stderr.strip())
             except (OSError, subprocess.SubprocessError) as e:
                 res = (None, "Unsupported", str(e))
+            GLib.idle_add(lambda: (done(*res), False)[1])
+        threading.Thread(target=work, daemon=True).start()
+
+    # ---- STONE HEALTH (M19) ---------------------------------------------------------------
+    def m_health_status(self, args, done):
+        def work():
+            try:
+                snap = health.snapshot()
+                res = ({"snapshot": snap, "checks": [list(c) for c in health.doctor(snap)]}, None, "")
+            except Exception as e:  # noqa: BLE001  (a reading that fails is reported, never fatal)
+                res = (None, "HardwareError", f"health: {e!r}")
             GLib.idle_add(lambda: (done(*res), False)[1])
         threading.Thread(target=work, daemon=True).start()
 

@@ -50,7 +50,8 @@ const Sys = {
   /* M02 boot metrics and M22 FIRST RUN */
   bootMark: stage => Bridge.call('boot.mark', stage), firstrunStatus: () => Bridge.call('firstrun.status'),
   firstrunComplete: () => Bridge.call('firstrun.complete'),
-  sessionResume: () => Bridge.call('session.resume'), sessionDesktop: () => Bridge.call('session.desktop')
+  sessionResume: () => Bridge.call('session.resume'), sessionDesktop: () => Bridge.call('session.desktop'),
+  health: () => Bridge.call('health.status')
 };
 async function sys(method, ...a) {
   try { return await Sys[method](...a); }

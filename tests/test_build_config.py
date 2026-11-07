@@ -63,7 +63,7 @@ def test_40_cu_module_is_required():
     assert "systemctl enable stone-cu40-guard.service" in build
     # D-29: the STONE session is the automatic one, with its boot guard
     assert "Session=gamescope-session-stone.desktop\" > /etc/sddm.conf.d/zz-stone-session.conf" in build
-    assert "systemctl enable stone-session-guard.service" in build
+    assert "systemctl enable stone-session-guard.service stone-blackbox.service" in build
     assert 'STONE_SESSION_DEFAULT=\\"on (sudo stone-session default off)\\"' in build
 
 

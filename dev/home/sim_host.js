@@ -119,6 +119,13 @@ const Bridge = (() => {
     systemInfo: () => ({ release: { STONE_VERSION: '0.1.0-rc23 (simulación)', STONE_BASE_IMAGE: 'bazzite-deck', STONE_KERNEL: 'simulado', STONE_MESA: 'simulado', STONE_GOVERNOR_VERSION: 'simulado' },
       boot_time: Math.round(now - 3600), deployments: { booted: { image: 'simulación', version: '0.1.0-rc23', timestamp: now }, staged: null, rollback: null } }),
     'prefs.get': () => prefs,
+    'health.status': async () => { await wait(300); return { snapshot: {}, checks: [
+      ['ok', 'CPU', '16 hilos en línea · AMD BC-250 (simulado)'], ['ok', 'Memoria', '14.6 GB'],
+      ['ok', 'Disco /', '412 GB libres de 476 GB'], ['ok', 'Servicio de rendimiento (stoned)', 'en marcha'],
+      ['ok', 'Regulador de GPU', 'en marcha'], ['ok', 'Guardia de arranque', 'en espera'], ['ok', 'Caja negra', 'en espera'],
+      ['ok', 'GPU', 'Sin errores en este arranque'], ['ok', 'Caja negra', 'Los arranques anteriores terminaron bien']] }; },
+    'boot.mark': () => null, 'boot.history': () => [],
+    'firstrun.status': () => ({ done: true, steam_account: true }), 'firstrun.complete': () => ({ done: true }),
     'prefs.set': ([p]) => (prefs = Object.assign({}, prefs, p)),
     emulators: () => ['RetroDECK|Todo en uno: la mayoría de consolas clásicas en una sola app|1', 'RetroArch|Consolas clásicas con núcleos de libretro|0', 'Dolphin|GameCube y Wii|0',
       'PCSX2|PlayStation 2|0', 'PPSSPP|PlayStation Portable|0', 'RPCS3|PlayStation 3|0', 'Cemu|Wii U|0', 'Azahar|Nintendo 3DS|0'].map(s => { const [name, plays, i] = s.split('|'); return { key: name.toLowerCase(), name, plays, installed: i === '1', busy: false }; }),

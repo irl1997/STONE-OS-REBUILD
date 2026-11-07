@@ -153,6 +153,27 @@ function updTimerText(u) {
   const t = s => new Date(s * 1000).toLocaleString('es', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
   return `Activa${u.last ? ' · última ' + t(u.last) : ''}${u.next ? ' · próxima ' + t(u.next) : ''}`;
 }
+/* STONE HEALTH (M19): read when Salud opens; nothing here changes the console. */
+function loadHealth() {
+  if (S.healthLoading) return;
+  S.healthLoading = true;
+  Sys.health().then(r => { S.health = r; }, () => { S.health = { error: true }; }).then(() => {
+    S.healthLoading = false;
+    if (S.screen === 'settings' && CATS[cat] === 'Salud') enterSettings({ pane: !!NAV.pane, ri: NAV.pane ? NAV.c : 0 });
+  });
+}
+const LVL = { ok: 'Bien', warn: 'Aviso', fail: 'Fallo' };
+function healthRows() {
+  const H = S.health;
+  if (!H) { loadHealth(); return [{ l: 'Leyendo…', s: 'CPU, memoria, discos, servicios y registros', v: '' }]; }
+  if (H.error) return [{ l: 'No se pudo leer el estado', s: 'Prueba de nuevo o usa stone-doctor en una terminal', v: '' }];
+  const st = S.st || {};
+  const rows = H.checks.map(([lvl, t, d]) => ({ l: t, s: d, v: LVL[lvl] || lvl, act: 'info', where: d }));
+  rows.push({ l: 'Estabilidad', s: st.safe_mode ? `Safe Mode activo (${SAFE_REASON[st.safe_reason] || st.safe_reason})` : st.last_failure ? 'Hubo un fallo reciente: STONE volvió a la última configuración buena' : 'Sin fallos de rendimiento recientes',
+    v: st.safe_mode ? 'Aviso' : 'Bien', act: 'info', where: 'Detalle en Ajustes → Rendimiento' });
+  rows.push({ l: 'Volver a comprobar', s: 'Lee todo de nuevo', v: '', act: 'health' });
+  return rows;
+}
 function catRows() {
   /* Settings Steam already handles open in Steam's own settings; if that fails, STONE says where. */
   const steam = (t, d, where) => ({ l: t, s: d, v: 'Abrir en Steam', act: 'steam', where, sec: STEAM_SEC[CATS[cat]] });
@@ -174,6 +195,7 @@ function catRows() {
       { l: 'Sonidos del sistema', s: 'Botones, encendido y apagado', v: S.sound ? 'Activados' : 'Desactivados', key: 'sound' },
       { l: 'Volumen de la interfaz', s: 'Independiente del volumen de los juegos', v: Math.round(S.vol * 100) + ' %', key: 'vol' },
       steam('Salida de audio', 'Altavoces, auriculares, HDMI o DisplayPort', 'Botón ··· → Audio, o botón STEAM → Ajustes → Audio')] };
+    case 'Salud': return { d: 'El estado de STONE MACHINE, leído ahora. Nada de esta pantalla cambia la consola.', rows: healthRows() };
     case 'Steam': return { d: 'Los ajustes de Steam, con el aspecto de STONE. La lista sale de lo que ofrece este Steam; los de sí/no se cambian con A.', rows: steamSetRows() };
     case 'Emuladores': {
       if (!S.emu) { if (!S.emuLoading) loadEmulators(); return { d: 'Emuladores de otras consolas, desde Flathub.', rows: [{ l: 'Leyendo…', s: 'Buscando qué emuladores están instalados', v: '', ro: true }] }; }

@@ -162,7 +162,7 @@ printf '%s\n' "# STONE OS: the STONE session is the automatic session (D-29)." \
     "[Autologin]" "Session=gamescope-session-stone.desktop" > /etc/sddm.conf.d/zz-stone-session.conf
 test -x /usr/libexec/stone/stone-session-select && test -x /usr/libexec/stone/stone-session-guard \
     || { echo "ERROR: STONE session helpers missing"; exit 1; }
-systemctl enable stone-session-guard.service
+systemctl enable stone-session-guard.service stone-blackbox.service
 command -v pkexec >/dev/null || { echo "ERROR: pkexec missing; Escritorio / Volver a STONE cannot switch sessions"; exit 1; }
 ls /usr/share/wayland-sessions/plasma.desktop /usr/share/wayland-sessions/plasmawayland.desktop 2>/dev/null \
     || echo "WARNING: no Plasma session file; Escritorio will look for gnome.desktop"
