@@ -32,7 +32,7 @@ import json
 import os
 import time
 
-from . import detect, experience, graphics, look, metrics, schema, score, store
+from . import detect, experience, framegen, graphics, look, metrics, schema, score, store
 
 ENGINE_VERSION = 1
 ABNORMAL_S = 60          # a game gone this soon after it appeared did not end normally
@@ -473,6 +473,18 @@ class Engine:
         """EXPERIENCE ENGINE report of one game (experience.py)."""
         p = self.profile(appid)
         return experience.report(p, p.get("environment"))
+
+    def frame_generation(self, appid):
+        """D-22, EXPERIMENTAL: OptiScaler's frame generation in this game (framegen.py)."""
+        p = self.profile(appid)
+        return framegen.status(appid, p["facts"], p["game"])
+
+    def set_frame_generation(self, appid, on):
+        p = self.profile(appid)
+        r = framegen.set_on(appid, p["facts"], p["game"], bool(on))
+        if "error" in r:
+            raise schema.ProfileError(r["error"])
+        return r
 
     def look_options(self, appid):
         """STONE IMAGE choices for a game (look.py)."""

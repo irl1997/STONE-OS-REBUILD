@@ -6,7 +6,7 @@ function enterDetail(i, opts = {}) {
   const canPlay = g.inst || g.src === 'shortcut';
   const prim = running ? 'REANUDAR' : canPlay ? 'JUGAR' : 'INSTALAR';
   const sec = [[g.fav ? 'Quitar de favoritos' : 'Favorito', 'fav'], [`Rendimiento: ${g.perf ? profOf(g.perf).n : 'Global'}`, 'perf'], ['Propiedades', 'opt']];
-  if (g.src === 'steam' && g.inst) sec.splice(2, 0, [imgLabel(g), 'img'], [preLabel(g), 'pre'], [lookLabel(g), 'look'], ['Experiencia', 'xp'], [optLabel(g), 'ins'], ['Instalar HelixSR', 'hlx'], [optzLabel(g), 'opz']);
+  if (g.src === 'steam' && g.inst) sec.splice(2, 0, [imgLabel(g), 'img'], [preLabel(g), 'pre'], [lookLabel(g), 'look'], [fgLabel(g), 'fg'], ['Experiencia', 'xp'], [optLabel(g), 'ins'], ['Instalar HelixSR', 'hlx'], [optzLabel(g), 'opz']);
   $('#detail').innerHTML = `
     <div class="col"><div class="origin">${esc(g.o)}</div><h1${g.n.length > 22 ? ' class="long"' : ''}>${esc(g.n.toUpperCase())}</h1>
       <div class="stats">${playText(g)} · Última sesión: ${running ? 'ahora' : g.last}</div>
@@ -33,6 +33,8 @@ const imgSel = g => g.img && g.img.choices.find(c => c.selected);
 const imgLabel = g => 'Imagen: ' + (g.img ? (imgSel(g) ? imgSel(g).label : 'STONE decide') : '…');
 /* STONE IMAGE (look.py): a look per game through vkBasalt; Original = none. */
 const lookLabel = g => 'Aspecto: ' + (g.look ? (g.look.chosen ? g.look.looks.find(l => l.key === g.look.chosen).label : 'Original') : '…');
+/* D-22 frame generation (framegen.py): EXPERIMENTAL, only with OptiScaler installed by STONE. */
+const fgLabel = g => 'Fotogramas: ' + (g.fg ? (g.fg.on ? 'generados (exp.)' : 'normales') : '…');
 const optzLabel = g => 'Optimizar' + (g.opz ? ` (${g.opz.done}/${g.opz.total})` : '');
 const optLabel = g => g.img && g.img.by_stone ? 'Quitar FSR (OptiScaler)' : 'Instalar FSR (OptiScaler)';
 const preLabel = g => 'Calidad: ' + (g.img && g.img.preset ? PRESET_TXT[g.img.preset] || g.img.preset : 'según el juego');
@@ -41,6 +43,8 @@ function imgRefresh(g) {
   const a = d.querySelector('[data-act="img"]'), b = d.querySelector('[data-act="pre"]');
   if (a) a.textContent = imgLabel(g);
   if (b) b.textContent = preLabel(g);
+  const fgEl = d.querySelector('[data-act="fg"]');
+  if (fgEl) fgEl.textContent = fgLabel(g);
   const lk = d.querySelector('[data-act="look"]');
   if (lk) lk.textContent = lookLabel(g);
   const z = d.querySelector('[data-act="opz"]');
@@ -52,6 +56,7 @@ async function imgLoad(g, i) {
   try { g.img = await Sys.gameImage(g.appid); } catch (e) { return; }
   try { g.opz = await Sys.gameOptStatus(g.appid); } catch (e) { g.opz = null; }
   try { g.look = await Sys.gameLook(g.appid); } catch (e) { g.look = null; }
+  try { g.fg = await Sys.gameFrameGen(g.appid); } catch (e) { g.fg = null; }
   if (curG === i && S.screen === 'detail') imgRefresh(g);
 }
 async function imgSet(g, key, preset) {
@@ -138,6 +143,15 @@ function detailA(el) {
   if (a === 'ins') { play('select'); return insOpti(g, curG); }
   if (a === 'hlx') { play('select'); return insHelix(g, curG); }
   if (a === 'xp') { play('select'); return xpDlg(g); }
+  if (a === 'fg') {
+    if (!g.fg) { play('error'); return toast('Leyendo…', false); }
+    if (!g.fg.available) { play('error'); return toast(g.fg.reason, false); }
+    play('nav');
+    return Sys.gameSetFrameGen(g.appid, !g.fg.on).then(r => {
+      g.fg.on = r.on; imgRefresh(g);
+      toast(r.on ? 'Generación de fotogramas activada (experimental): más fluidez, algo más de latencia. El contador de FPS incluye los fotogramas generados' : 'Generación de fotogramas desactivada', false);
+    }, e => { play('error'); toast('No se pudo: ' + ((e && e.message) || 'sin respuesta'), false); });
+  }
   if (a === 'look') {
     if (!g.look) { play('error'); return toast('Leyendo los aspectos…', false); }
     if (!g.look.available) { play('error'); return toast(g.look.reason || 'No disponible', false); }

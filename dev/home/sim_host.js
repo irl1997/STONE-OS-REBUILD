@@ -127,6 +127,7 @@ const Bridge = (() => {
     'boot.mark': () => null, 'boot.history': () => [],
     'game.look': () => ({ available: true, reason: null, chosen: null, looks: ['NATURAL', 'CLARITY', 'CINEMA', 'VIVID', 'RETRO'].map(l => ({ key: l.toLowerCase(), label: l, description: 'Aspecto ' + l })) }),
     'game.setLook': () => ({ ok: true }),
+    'game.frameGen': () => ({ available: false, reason: 'Solo con FSR (OptiScaler) instalado por STONE en este juego', on: false, experimental: true }), 'game.setFrameGen': ([, on]) => ({ ok: true, on }),
     'audio.status': () => ({ outputs: [{ id: 51, name: 'HDMI · Televisor', default: true }, { id: 52, name: 'Auriculares USB', default: false }], volume: 0.6, muted: false }),
     'audio.volume': () => ({ ok: true }), 'audio.default': () => ({ ok: true }),
     'net.status': () => ({ devices: [{ device: 'enp1s0', type: 'ethernet', state: 'connected', connection: 'Cable' }, { device: 'wlan0', type: 'wifi', state: 'disconnected', connection: null }], online: true }),

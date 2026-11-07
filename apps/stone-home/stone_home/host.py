@@ -312,6 +312,16 @@ class Host:
         appid, _ = self._game_args(args, 1, 1)
         self._opt_call(done, lambda: self.optimized.experience(appid))
 
+    def m_game_frameGen(self, args, done):
+        appid, _ = self._game_args(args, 1, 1)
+        self._opt_call(done, lambda: self.optimized.frame_generation(appid))
+
+    def m_game_setFrameGen(self, args, done):
+        if len(args) != 2 or not isinstance(args[1], bool):
+            return done(None, "InvalidValue", "arguments")
+        appid, _ = self._game_args(args[:1], 1, 1)
+        self._opt_call(done, lambda: self.optimized.set_frame_generation(appid, args[1]))
+
     def m_game_look(self, args, done):
         """lookOptions(appid): STONE IMAGE looks of one game and the chosen one."""
         appid, _ = self._game_args(args, 1, 1)
