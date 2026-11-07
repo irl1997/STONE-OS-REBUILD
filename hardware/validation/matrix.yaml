@@ -1,0 +1,73 @@
+# STONE MACHINE board validation matrix (machine readable; X3, R-11).
+#
+# One entry per board test. Numbers 0-29 are the tests of rc23 HARDWARE_VALIDATION.md; T-* are
+# new (ARQUITECTURA_STONE_MACHINE.md). kind: S+V = partly testable in a VM or another PC, P =
+# board only (DECISIONES_TECNICAS.md section 6).
+#
+# status: NOT TESTED | PASS | FAIL | BLOCKED. Only a run on the BC-250 can set PASS (D-08); a run
+# records image (digest), date and result. "observed" lists earlier sightings that are NOT a pass.
+# Validated by tests/test_hardware_profile.py.
+schema: 1
+tests:
+  - {id: "0", title: "Inventario", phase: F0, kind: P, status: NOT TESTED, runs: [], observed: ["rc14: governor D-Bus ranges, thresholds and load targets read"]}
+  - {id: "1", title: "BOOT x5", phase: F0, kind: P, status: NOT TESTED, runs: [], observed: ["rc1: installer, Plymouth and Game Mode seen"]}
+  - {id: "2", title: "IDLE", phase: F0, kind: P, status: NOT TESTED, runs: [], observed: []}
+  - {id: "3", title: "Carga de la prueba de estabilidad", phase: F1, kind: P, status: NOT TESTED, runs: [], observed: ["rc14: stone-cu-verify kept the GPU ~87 % busy, 0 errors"]}
+  - {id: "4", title: "GAME y deteccion de Steam", phase: F1, kind: S+V, status: NOT TESTED, runs: [], observed: []}
+  - {id: "5", title: "PROFILE SWITCH", phase: F1, kind: P, status: NOT TESTED, runs: [], observed: []}
+  - {id: "6", title: "OVERCLOCK", phase: F1, kind: P, status: NOT TESTED, runs: [], observed: []}
+  - {id: "7", title: "THERMAL", phase: F1, kind: P, status: NOT TESTED, runs: [], observed: []}
+  - {id: "8", title: "LONG SESSION", phase: F1, kind: P, status: NOT TESTED, runs: [], observed: []}
+  - {id: "9", title: "REBOOT", phase: F1, kind: P, status: NOT TESTED, runs: [], observed: []}
+  - {id: "10", title: "CRASH RECOVERY", phase: F1, kind: S+V, status: NOT TESTED, runs: [], observed: ["rc15: automatic recovery after the 2000 MHz hang"]}
+  - {id: "11", title: "POWER LOSS", phase: F1, kind: P, status: NOT TESTED, runs: [], observed: []}
+  - {id: "12", title: "SAFE MODE", phase: F1, kind: S+V, status: NOT TESTED, runs: [], observed: []}
+  - {id: "13", title: "FAN READ", phase: F1, kind: P, status: NOT TESTED, runs: [], observed: []}
+  - {id: "14", title: "SUSPEND", phase: F0, kind: P, status: NOT TESTED, runs: [], observed: []}
+  - {id: "15", title: "HW WATCHDOG", phase: F1, kind: P, status: NOT TESTED, runs: [], observed: []}
+  - {id: "16", title: "Instalador y primer arranque", phase: F0, kind: S+V, status: NOT TESTED, runs: [], observed: ["rc1: installed from the ISO"]}
+  - {id: "17", title: "STONE HOME en Game Mode", phase: F2, kind: P, status: NOT TESTED, runs: [], observed: ["rc3-rc5: opens through SteamClient.Apps.RunGame"]}
+  - {id: "18", title: "Perfil por juego", phase: F3, kind: P, status: NOT TESTED, runs: [], observed: []}
+  - {id: "19", title: "Apagar y reiniciar desde STONE", phase: F2, kind: S+V, status: NOT TESTED, runs: [], observed: []}
+  - {id: "20", title: "Apagar tras inactividad", phase: F2, kind: S+V, status: NOT TESTED, runs: [], observed: ["rc16: shut down during a calibration (fixed in rc17)"]}
+  - {id: "21", title: "Actualizacion atomica", phase: F0, kind: S+V, status: NOT TESTED, runs: [], observed: []}
+  - {id: "22", title: "Rollback", phase: F0, kind: S+V, status: NOT TESTED, runs: [], observed: []}
+  - {id: "23", title: "Autoarranque que falla", phase: F2, kind: P, status: NOT TESTED, runs: [], observed: []}
+  - {id: "24", title: "Sin BC-250", phase: F1, kind: S+V, status: NOT TESTED, runs: [], observed: []}
+  - {id: "25", title: "40 CU", phase: F0, kind: P, status: NOT TESTED, runs: [], observed: ["rc15: 40 CU active during calibration"]}
+  - {id: "26", title: "STONE HOME con GPU a 4K", phase: F2, kind: P, status: NOT TESTED, runs: [], observed: []}
+  - {id: "27", title: "STONE DISPLAY 4K", phase: F4, kind: P, status: NOT TESTED, runs: [], observed: ["rc18: DP to HDMI adapter of about 300 MHz"]}
+  - {id: "28", title: "STONE PERFORMANCE 2.0 (calibracion)", phase: F3, kind: P, status: NOT TESTED, runs: [], observed: ["rc15: quick calibration 1500-1950 passed, hang at 2000"]}
+  - {id: "29", title: "STONE OPTIMIZED (Cyberpunk 2077)", phase: F5, kind: P, status: NOT TESTED, runs: [], observed: []}
+  - {id: "REF-01", title: "Comprobacion fisica de 8 nucleos y 40 CU (D-16)", phase: F0, kind: P, status: NOT TESTED, runs: [], observed: ["owner, 2026-11-06: 8 cores and 40 CU"]}
+  - {id: "DIAG-01", title: "Diagnostico de solo lectura (D-14)", phase: F0, kind: P, status: NOT TESTED, runs: [], observed: []}
+  - {id: "T-PLAT-01", title: "stone-release coincide con build-metadata de la imagen instalada", phase: F0, kind: P, status: NOT TESTED, runs: [], observed: []}
+  - {id: "T-BOOT-01", title: "BOOT TO VISUAL y BOOT TO READY (x5), sin pantallas de Steam ni escritorio", phase: F2, kind: P, status: NOT TESTED, runs: [], observed: []}
+  - {id: "T-PERF-01", title: "Configuracion detectada distinta de la de referencia desactiva CUSTOM", phase: F1, kind: S+V, status: NOT TESTED, runs: [], observed: []}
+  - {id: "T-STEAM-01", title: "Sin adaptador CEF, JUGAR y biblioteca siguen funcionando", phase: F2, kind: P, status: NOT TESTED, runs: [], observed: []}
+  - {id: "T-DISP-01", title: "Modelo de pantalla coincide con el EDID real", phase: F4, kind: P, status: NOT TESTED, runs: [], observed: []}
+  - {id: "T-GFX-01", title: "Opciones de lanzamiento restauradas tras salir, cuelgue y reinicio", phase: F4, kind: P, status: NOT TESTED, runs: [], observed: []}
+  - {id: "T-CONN-01", title: "Emparejar y reconectar un mando tras reiniciar", phase: F6, kind: P, status: NOT TESTED, runs: [], observed: []}
+  - {id: "T-CONN-02", title: "Steam Input sigue funcionando", phase: F6, kind: P, status: NOT TESTED, runs: [], observed: []}
+  - {id: "T-CONN-03", title: "Sin adaptador Bluetooth, no disponible", phase: F6, kind: S+V, status: NOT TESTED, runs: [], observed: []}
+  - {id: "T-DL-01", title: "Instalar y desinstalar un juego de Steam desde STONE", phase: F7, kind: P, status: NOT TESTED, runs: [], observed: []}
+  - {id: "T-DL-02", title: "Instalar y quitar OptiScaler deja la carpeta identica", phase: F7, kind: P, status: NOT TESTED, runs: [], observed: []}
+  - {id: "T-EMU-01", title: "Emulador desde STONE con vuelta a Home y al perfil global", phase: F8, kind: P, status: NOT TESTED, runs: [], observed: []}
+  - {id: "T-DESK-01", title: "Ida y vuelta al escritorio x5", phase: F9, kind: P, status: NOT TESTED, runs: [], observed: []}
+  - {id: "T-DESK-02", title: "Reinicio desde el escritorio vuelve a STONE", phase: F9, kind: P, status: NOT TESTED, runs: [], observed: []}
+  - {id: "T-SESS-01", title: "Encendido a STONE Home x5 sin ninguna pantalla de Steam", phase: F2, kind: P, status: NOT TESTED, runs: [], observed: []}
+  - {id: "T-SESS-02", title: "JUGAR, juego al frente, salir y volver a Home", phase: F2, kind: P, status: NOT TESTED, runs: [], observed: []}
+  - {id: "T-SESS-03", title: "Mando y Steam Input dentro del juego en la sesion STONE", phase: F2, kind: P, status: NOT TESTED, runs: [], observed: []}
+  - {id: "T-SESS-04", title: "Quick Menu de STONE durante el juego", phase: F2, kind: P, status: NOT TESTED, runs: [], observed: []}
+  - {id: "T-SESS-05", title: "Fallo provocado de la sesion: recuperacion tras N intentos", phase: F2, kind: S+V, status: NOT TESTED, runs: [], observed: []}
+  - {id: "T-SESS-06", title: "Steam se actualiza sin mostrar su interfaz", phase: F2, kind: P, status: NOT TESTED, runs: [], observed: []}
+  - {id: "T-SESS-07", title: "Primer inicio de sesion de Steam desde FIRST RUN", phase: F2, kind: P, status: NOT TESTED, runs: [], observed: []}
+  - {id: "T-HOME-01", title: "Fondo del juego seleccionado nitido a la resolucion de la pantalla", phase: F2, kind: P, status: NOT TESTED, runs: [], observed: []}
+  - {id: "T-HOME-02", title: "Con un juego abierto, Home no cambia los FPS medidos", phase: F2, kind: P, status: NOT TESTED, runs: [], observed: []}
+  - {id: "T-FR-01", title: "De la instalacion a Home operable solo con el mando", phase: F2, kind: P, status: NOT TESTED, runs: [], observed: []}
+  - {id: "T-HLTH-01", title: "Cada valor medido de STONE HEALTH coincide con sysfs/hwmon", phase: F3, kind: P, status: NOT TESTED, runs: [], observed: []}
+  - {id: "T-IMG-01", title: "Coste de cada preset de STONE IMAGE registrado", phase: F4, kind: P, status: NOT TESTED, runs: [], observed: []}
+  - {id: "T-AUD-01", title: "La salida de audio elegida persiste tras reiniciar y reconectar", phase: F6, kind: P, status: NOT TESTED, runs: [], observed: []}
+  - {id: "T-DL-03", title: "Pausar y reanudar una descarga desde STONE", phase: F7, kind: P, status: NOT TESTED, runs: [], observed: []}
+  - {id: "T-STOR-01", title: "Tamanos de juegos coinciden con los de Steam", phase: F7, kind: P, status: NOT TESTED, runs: [], observed: []}
+  - {id: "T-INST-01", title: "Instalar sobre un disco con datos pide confirmacion explicita", phase: F9, kind: S+V, status: NOT TESTED, runs: [], observed: []}

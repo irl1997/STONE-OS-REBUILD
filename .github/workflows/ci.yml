@@ -1,0 +1,29 @@
+name: CI
+
+# Every pull request and every push: structure checks and every software test, inside the same
+# Fedora 44 development container as dev/run-tests.sh (so CI and a Mac run the same thing).
+# Also called by the image and release workflows, so nothing is built from a failing tree.
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# No concurrency group: this workflow is also called from build-image.yml and release.yml, and a
+# group shared with the caller's run left a re-run queued forever (rc23, first GitHub run).
+
+jobs:
+  validate-and-test:
+    name: Validate and test
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Validate and test in the development container (Fedora 44)
+        run: dev/run-tests.sh

@@ -1,0 +1,12 @@
+# local builds and test byproducts
+output/
+dist/
+*.iso
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+# images are signed keyless (docs/FIRMA.md); never commit a private key
+cosign.key
+# macOS Finder
+.DS_Store
