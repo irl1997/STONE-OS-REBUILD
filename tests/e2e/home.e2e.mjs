@@ -12,7 +12,10 @@ const fail = m => { throw new Error(m); };
 const browser = await chromium.launch(process.env.STONE_CHROMIUM ? { executablePath: process.env.STONE_CHROMIUM } : {});
 const page = await browser.newPage({ viewport: { width: 1920, height: 1080 } });
 page.on('pageerror', e => errors.push(String(e)));
-page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
+// A failed request is reported with its URL (the console line has none). The browser's own
+// /favicon.ico request is not the page's (the system Chromium makes it, Playwright's shell does not).
+page.on('console', m => { if (m.type() === 'error' && !m.text().startsWith('Failed to load resource')) errors.push(m.text()); });
+page.on('response', r => { if (r.status() >= 400 && new URL(r.url()).pathname !== '/favicon.ico') errors.push(`HTTP ${r.status()} ${r.url()}`); });
 
 const key = async (k, n = 1, pause = 260) => { for (let i = 0; i < n; i++) { await page.keyboard.press(k); await page.waitForTimeout(pause); } };
 const text = sel => page.$eval(sel, e => e.textContent);

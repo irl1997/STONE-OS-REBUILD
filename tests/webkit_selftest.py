@@ -55,7 +55,7 @@ def main():
         print(json.dumps(result, ensure_ascii=False, indent=1))
         if p.returncode != 0 or not result or not result.get("pass"):
             print("FAIL  webkit self-test", p.returncode)
-            print(p.stderr[-3000:])
+            print((p.stderr + p.stdout)[-3000:])
             return 1
         if result["checks"].get("library") != 4:
             print("FAIL  webkit self-test: expected 4 games from the fixture")
