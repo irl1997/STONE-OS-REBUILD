@@ -1,11 +1,12 @@
 #!/usr/bin/bash
-# STONE OS (rebuild) - F0: customisation of the Bazzite (bazzite-deck) image for STONE MACHINE.
+# STONE OS (rebuild): customisation of the Bazzite (bazzite-deck) image for STONE MACHINE.
 # Runs inside the container build (image/Containerfile). Any error stops the build: an image that
 # would boot without a critical STONE layer is never produced.
 #
-# F0 scope (docs/fases/F0_PLAN.md): STONE files, kernel check, pinned GPU governor, no sleep,
-# Handheld Daemon off, BC-250 40 CU module and boot guard, Plymouth, provenance. stoned, STONE
-# Home and the other modules arrive in later phases; this image declares them absent.
+# F0 (docs/fases/F0_PLAN.md): STONE files, kernel check, pinned GPU governor, no sleep, Handheld
+# Daemon off, BC-250 40 CU module and boot guard, Plymouth, provenance.
+# F1: stoned (STONE System Service) with its recovery, units, D-Bus and polkit policy.
+# STONE Home and the other modules arrive in later phases; this image declares them absent.
 set -ouex pipefail
 
 # shellcheck source=/dev/null
@@ -84,6 +85,21 @@ install -Dm644 /cu40/stone-cu-verify.spv /usr/libexec/stone/stone-cu-verify.spv
 python3 -m compileall -q /usr/lib/stone
 systemctl enable stone-cu40-guard.service
 
+### 6b. STONE System Service (stoned), F1
+## Unprivileged service (user `stoned`, sysusers.d) that talks to the governor over D-Bus.
+## Source: services/stoned (R-10), installed where the launchers expect it.
+mkdir -p /usr/lib/stone
+cp -a /ctx/services/stoned/stoned /usr/lib/stone/stoned
+python3 -c "import gi; gi.require_version('Gio', '2.0'); from gi.repository import Gio" \
+    || dnf5 -y install python3-gobject
+python3 -c "import gi; gi.require_version('Gio', '2.0'); from gi.repository import Gio" \
+    || { echo "ERROR: python3-gobject missing; stoned cannot run"; exit 1; }
+## Stability test workload (vkmark). Without it stoned reports the test as unsupported.
+dnf5 -y install --skip-unavailable vkmark
+command -v vkmark >/dev/null 2>&1 || echo "WARNING: vkmark not available; no stability test on this image"
+python3 -m compileall -q /usr/lib/stone/stoned
+systemctl enable stoned-recover.service stoned.service
+
 ### 7. STONE boot screen (Plymouth script theme; the base does not ship the script plugin)
 dnf5 -y install plymouth-plugin-script
 test -e /usr/lib64/plymouth/script.so || { echo "ERROR: Plymouth script plugin missing"; exit 1; }
@@ -100,8 +116,8 @@ rpmfile() { local v; v="$(rpm -qf --qf '%{NAME} %{VERSION}-%{RELEASE}\n' "$1" 2>
 {
     echo "STONE_NAME=\"STONE OS\""
     echo "STONE_VERSION=\"${STONE_VERSION}\""
-    echo "STONE_PHASE=\"F0\""
-    echo "STONE_MODULES_ABSENT=\"stoned stone-home display graphics optimized connect downloads emulation desktop\""
+    echo "STONE_PHASE=\"F1\""
+    echo "STONE_MODULES_ABSENT=\"stone-home session display graphics optimized connect downloads emulation desktop\""
     echo "STONE_CHANNEL=\"${STONE_CHANNEL:-dev}\""
     echo "STONE_COMMIT=\"${STONE_COMMIT:-unknown}\""
     echo "STONE_BUILD_DATE=\"${STONE_BUILD_DATE:-unknown}\""
@@ -122,4 +138,4 @@ rpmfile() { local v; v="$(rpm -qf --qf '%{NAME} %{VERSION}-%{RELEASE}\n' "$1" 2>
 } > /usr/lib/stone-release
 cat /usr/lib/stone-release
 
-echo "STONE OS ${STONE_VERSION} (F0): build completed."
+echo "STONE OS ${STONE_VERSION} (F1): build completed."

@@ -63,16 +63,19 @@ def test_40_cu_module_is_required():
     assert "systemctl enable stone-cu40-guard.service" in build
 
 
-def test_f0_ships_nothing_of_later_phases():
+def test_image_ships_nothing_of_later_phases():
+    # F1: stoned is in; STONE Home, the session and the user-side modules are not yet (F2+).
     tree = []
     for root, _, files in os.walk(os.path.join(REPO, "system")):
         tree += [os.path.relpath(os.path.join(root, f), REPO) for f in files]
-    for later in ("stoned", "stone_home", "stone-home", "stone_display", "stone_games", "polkit-1", "dbus-1"):
+    for later in ("stone_home", "stone-home", "stone_display", "stone_games", "gamescope-session-plus"):
         assert not [p for p in tree if later in p], (later, tree)
     build = _read("image", "build_files", "build.sh")
-    for pkg in ("chromium", "webkitgtk6.0", "vkmark"):
-        assert f"install {pkg}" not in build and f"install --skip-unavailable {pkg}" not in build, pkg
-    assert 'STONE_PHASE=\\"F0\\"' in build
+    for pkg in ("chromium", "webkitgtk6.0"):
+        assert f"install {pkg}" not in build, pkg
+    assert 'STONE_PHASE=\\"F1\\"' in build
+    assert "cp -a /ctx/services/stoned/stoned /usr/lib/stone/stoned" in build
+    assert "systemctl enable stoned-recover.service stoned.service" in build
 
 
 def test_no_sleep_and_no_hhd():

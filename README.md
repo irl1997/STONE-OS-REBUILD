@@ -2,13 +2,13 @@
 
 Reconstrucción integral de STONE OS para **STONE MACHINE**: AMD BC-250 con 8 núcleos de CPU y 40 CU de GPU.
 
-**Estado:** F0 (imagen base) en construcción. Es una imagen de validación, no para uso diario. Nada está verificado en hardware.
+**Estado:** F0 (imagen base) terminada en software; F1 (`stoned`) en construcción. Imagen de validación, no para uso diario. Nada está verificado en hardware.
 
 | Documento | Contenido |
 | --- | --- |
 | [docs/ARQUITECTURA_STONE_MACHINE.md](docs/ARQUITECTURA_STONE_MACHINE.md) | Arquitectura integral: módulos, interfaces y fases F0–F9 |
 | [docs/DECISIONES_TECNICAS.md](docs/DECISIONES_TECNICAS.md) | Decisiones confirmadas, recomendaciones aprobadas y datos pendientes |
-| [docs/fases/F0_PLAN.md](docs/fases/F0_PLAN.md) | Plan de F0 |
+| [docs/fases/F0_PLAN.md](docs/fases/F0_PLAN.md) · [F1_PLAN.md](docs/fases/F1_PLAN.md) | Planes de F0 y F1 |
 | [docs/CONSTRUIR.md](docs/CONSTRUIR.md) | Construir y probar |
 | [docs/FIRMA.md](docs/FIRMA.md) | Firma de las imágenes (sin clave) y cómo verificarla |
 | [docs/diagnostico/](docs/diagnostico/) | Diagnóstico de solo lectura de la BC-250 |
