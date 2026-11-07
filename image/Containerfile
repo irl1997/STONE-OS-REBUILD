@@ -1,4 +1,4 @@
-# STONE OS (rebuild) - F0 base image for STONE MACHINE (AMD BC-250: 8 CPU cores, 40 GPU CU).
+# STONE OS (rebuild) - base image for STONE MACHINE (AMD BC-250: 8 CPU cores, 40 GPU CU).
 # Derived from Bazzite (Steam Game Mode variant) with the ublue-os/image-template method: one
 # Containerfile, scripts run from a build context that never lands in the image, and
 # `bootc container lint` at the end.
@@ -12,6 +12,7 @@ FROM scratch AS ctx
 COPY image/build_files /
 COPY image/config/build.env /build.env
 COPY system /system_files
+COPY services /services
 COPY VERSION /VERSION
 
 FROM ${BASE_IMAGE} AS base

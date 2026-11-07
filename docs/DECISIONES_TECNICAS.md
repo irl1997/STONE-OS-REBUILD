@@ -305,6 +305,7 @@ Ninguna fila de esta tabla se marca como validada sin haberla ejecutado en la BC
 | --- | --- | --- |
 | 1 | 2026-11-06 | Primera versión: respuestas del propietario a las preguntas del inventario, hechos documentados, auditoría de motores y clasificación de pruebas |
 | 2 | 2026-11-06 | R-01 a R-12 aprobadas por el propietario; copia de seguridad R-12 realizada |
+| 9 | 2026-11-07 | F0 fusionado en `main` (PR #1, CI con 0 omisiones y 38 pruebas). F1 iniciado bajo D-20: `stoned` portado y configuración de referencia en `stoned` (ver `docs/fases/F1_PLAN.md`) |
 | 8 | 2026-11-07 | D-26: firma sin clave; el flujo del instalador usa por defecto la etiqueta `dev` |
 | 7 | 2026-11-07 | Prompt maestro revisado e integrado: D-20 (autonomía total), D-21 (sesión propia), D-22 (generación de fotogramas con condiciones), D-23 (vocabulario de estados), D-24 (recomendaciones aplicadas), D-25 (objetivo de producto). CI de F0 en verde en el Pull Request #1 |
 | 6 | 2026-11-06 | Plan de F0 aprobado con F0-A (imagen `stone-os-rebuild`, canal `dev`), F0-B (F0 no se instala para uso diario; la primera imagen en la placa será F1), F0-C (firma obligatoria; el propietario crea `SIGNING_SECRET`) y F0-D (GitHub Actions) |

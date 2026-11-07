@@ -1,0 +1,220 @@
+"""stonectl: STONE performance from a terminal (desktop mode, SSH or a TTY).
+
+For when the interface cannot be used. Commands:
+
+  stonectl status
+  stonectl safe-mode on|off
+  stonectl restore-defaults
+  stonectl display [--json | diagnostics]   (STONE DISPLAY, see stone_display/cli.py)
+  stonectl calibration                     STONE PERFORMANCE: range, validated maximum, last result
+  stonectl calibrate [quick|standard]      search THIS machine's highest stable GPU ceiling
+                                           (progress on screen; Ctrl+C cancels and keeps the old result)
+
+It asks stoned over D-Bus first. If stoned does not answer, or polkit refuses (a remote
+session), and stonectl runs as root, it leaves a request in /var/lib/stone/flags that
+`stoned --recover` applies at the next boot. It never touches the GPU itself.
+"""
+
+import json
+import os
+import pwd
+import sys
+
+from . import state as S
+
+NAME = "org.stonemachine.Performance1"
+PATH = "/org/stonemachine/Performance1"
+USAGE = ("uso: stonectl status | safe-mode on|off | restore-defaults | display [--json | diagnostics] | "
+         "calibration | calibrate [quick|standard]")
+
+TEXT = {
+    "failures": "dos arranques seguidos sin terminar bien",
+    "kernel": "pedido en el arranque (stone.safe=1)",
+    "manual": "activado por el usuario",
+}
+
+
+def _bus():
+    from gi.repository import Gio
+    kind = Gio.BusType.SESSION if os.environ.get("STONE_BUS") == "session" else Gio.BusType.SYSTEM
+    return Gio.bus_get_sync(kind, None)
+
+
+def _call(method, args=None):
+    from gi.repository import Gio, GLib
+    bus = _bus()
+    try:
+        r = bus.call_sync(NAME, PATH, NAME, method, args, GLib.VariantType("(a{sv})"),
+                          Gio.DBusCallFlags.NONE, 10000, None)
+        return r.unpack()[0], None
+    except GLib.Error as e:
+        return None, Gio.DBusError.get_remote_error(e) or e.message
+
+
+def _offline(flag):
+    """Leave a request for the next boot. Root only: the state directory is 0700 stoned."""
+    if os.geteuid() != 0 and os.environ.get("STONE_CTL_ALLOW_USER") != "1":   # test harness only
+        return False
+    store = S.Store()
+    store.set_flag(flag, {"by": "stonectl"})
+    try:
+        pw = pwd.getpwnam("stoned")
+        os.chown(os.path.join(store.flags, flag), pw.pw_uid, pw.pw_gid)
+    except (KeyError, PermissionError):
+        pass
+    return True
+
+
+def status(out):
+    st, err = _call("GetState")
+    if st is None:
+        out.write(f"stoned no responde ({err}).\n")
+        out.write("La GPU sigue con la configuración de fábrica del regulador.\n")
+        return 1
+    a = st.get("actual", {})
+    lines = [
+        f"Perfil: {st['profile']}" + (" (provisional)" if st.get("provisional") else ""),
+        f"Safe Mode: {'sí — ' + TEXT.get(st.get('safe_reason'), '') if st['safe_mode'] else 'no'}",
+        f"Regulador: GPU {a['min']}–{a['max']} MHz, límite {a['temp']} °C" if "max" in a else f"Regulador: no disponible ({a.get('error')})",
+        f"Fallos seguidos: {st['fail_count']}",
+    ]
+    th = st.get("thermal") or {}
+    if th.get("reduced"):
+        lines.append("Temperatura: rendimiento reducido a SILENT")
+    out.write("\n".join(lines) + "\n")
+    return 0
+
+
+def safe_mode(on, out):
+    st, err = _call("EnterSafeMode" if on else "ExitSafeMode")
+    if st is not None:
+        out.write("Safe Mode activado.\n" if on else "Safe Mode desactivado.\n")
+        return 0
+    if err and err.endswith("SafeMode") and not on:
+        out.write("Safe Mode está pedido en el arranque (stone.safe=1). Quítalo de los parámetros de arranque.\n")
+        return 1
+    if _offline(S.FLAG_SAFE_REQUEST if on else S.FLAG_SAFE_EXIT):
+        out.write(f"stoned no respondió ({err}). Se aplicará en el próximo arranque.\n")
+        return 0
+    out.write(f"No se pudo ({err}). Ejecútalo con sudo para dejarlo pedido para el próximo arranque.\n")
+    return 1
+
+
+def restore_defaults(out):
+    st, err = _call("RestoreDefaults")
+    if st is not None:
+        out.write("Valores de fábrica restaurados: BALANCED, sin perfiles por juego, fuera de Safe Mode.\n")
+        return 0
+    if _offline(S.FLAG_SAFE_EXIT):
+        out.write(f"stoned no respondió ({err}). En el próximo arranque se sale de Safe Mode; "
+                  "la GPU ya arranca siempre con la configuración de fábrica.\n")
+        return 0
+    out.write(f"No se pudo ({err}). Ejecútalo con sudo.\n")
+    return 1
+
+
+SOURCE = {"calibration": "calibración de esta consola"}
+RESULT = {"complete": "completa: llegó al máximo del regulador", "partial": "falló un paso: se guardó el anterior con margen",
+          "thermal": "se detuvo por temperatura", "failed": "no pasó ni la línea base",
+          "invalid": "no válida: la carga de prueba no hizo trabajar a la GPU (no es una falla de la GPU)"}
+
+
+def calibration(out):
+    c, err = _call("GetCalibration")
+    if c is None:
+        out.write(f"stoned no responde ({err}).\n")
+        return 1
+    r = c.get("range") or {}
+    cal = r.get("calibration") or {}
+    hw = r.get("hardware") or [None, None]
+    lines = ["STONE PERFORMANCE",
+             f"  GPU:              {r.get('cu', '?')} CU",
+             f"  Rango del regulador (hardware): {hw[0]}–{hw[1]} MHz",
+             f"  Línea base:       {r.get('baseline')} MHz",
+             f"  Máximo validado:  {r.get('validated_max')} MHz ({SOURCE.get(r.get('validated_source'), r.get('validated_source'))})",
+             f"  Calibración:      {cal.get('state')}" + (f" ({', '.join(cal.get('reasons') or [])})" if cal.get("reasons") else "")]
+    last = c.get("last")
+    if last:
+        steps = last.get("steps") or []
+        res = last.get("result")
+        if res == "partial" and not any(s.get("passed") for s in steps):
+            res = "failed"
+        lines += [f"  Último resultado: {RESULT.get(res, res)}"
+                  + (f", falló a {last['failed_at']} MHz" if last.get("failed_at") else "")
+                  + (f", máx {last['max_temp_c']} °C" if last.get("max_temp_c") else ""),
+                  "  Pasos:            " + " ".join(f"{s['mhz']}{'✓' if s['passed'] else '✗'}" for s in steps)]
+        timed = [s for s in steps if s.get("pass_s")]
+        if len(timed) >= 2:
+            # fixed work per pass: a higher clock must make it faster (the clock sensor of the BC-250 is not readable)
+            lines.append("  Velocidad real:   " + " ".join(f"{s['mhz']}:{timed[0]['pass_s'] / s['pass_s']:.2f}x" for s in timed)
+                         + "  (trabajo fijo; debe subir con los MHz)")
+    if c.get("crash_mhz"):
+        lines.append(f"  Apagado en:       {c['crash_mhz']} MHz: la consola se colgó o apagó en ese paso; no se vuelve a probar"
+                     f" y el máximo queda al menos 100 MHz por debajo")
+    run = c.get("running")
+    if run:
+        lines.append(f"  EN CURSO: paso {run['step']}/{run['of']} a {run['step_mhz']} MHz, {run['seconds']}/{run['step_seconds']} s")
+    out.write("\n".join(lines) + "\n")
+    return 0
+
+
+def calibrate(level, out, poll=2.0):
+    from gi.repository import GLib
+    import time
+    st, err = _call("StartCalibration", GLib.Variant("(s)", (level,)))
+    if st is None:
+        out.write(f"No se pudo empezar ({err}).\n")
+        return 1
+    out.write(f"Calibración {level}: STONE sube la GPU de 50 en 50 MHz y prueba cada paso con carga y comprobación de resultados.\n"
+              "Se detiene sola ante el primer error o calor. Ctrl+C cancela (se conserva el resultado anterior).\n")
+    try:
+        while True:
+            c, err = _call("GetCalibration")
+            if c is None:
+                out.write(f"stoned dejó de responder ({err}).\n")
+                return 1
+            run = c.get("running")
+            if not run:
+                break
+            out.write(f"\r  paso {run['step']}/{run['of']}: {run['step_mhz']} MHz · {run['seconds']}/{run['step_seconds']} s"
+                      f" · máx {run.get('max_temp_c') or '?'} °C · GPU {run['clock_mhz'] if (run.get('clock_mhz') or 0) >= 200 else '?'} MHz"
+                      f" {run.get('busy_pct') if run.get('busy_pct') is not None else '?'} % · pasados: {len(run.get('passed') or [])}   ")
+            out.flush()
+            time.sleep(poll)
+    except KeyboardInterrupt:
+        _call("CancelCalibration")
+        out.write("\nCancelada. Se conserva el resultado anterior.\n")
+        return 1
+    out.write("\n")
+    return calibration(out)
+
+
+def main(argv, out=sys.stdout):
+    if argv == ["calibration"]:
+        return calibration(out)
+    if argv[:1] == ["calibrate"] and len(argv) <= 2:
+        level = argv[1] if len(argv) == 2 else "standard"
+        if level not in ("quick", "standard"):
+            out.write(USAGE + "\n")
+            return 2
+        return calibrate(level, out)
+    if argv[:1] == ["display"]:
+        # STONE DISPLAY (the console user's view: Steam's display state comes from their Steam)
+        try:
+            from stone_display.cli import main as display_main
+        except ImportError:
+            out.write("STONE DISPLAY no está en esta imagen (llega en la fase F4).\n")
+            return 2
+        return display_main(argv[1:], out)
+    if argv == ["status"]:
+        return status(out)
+    if len(argv) == 2 and argv[0] == "safe-mode" and argv[1] in ("on", "off"):
+        return safe_mode(argv[1] == "on", out)
+    if argv == ["restore-defaults"]:
+        return restore_defaults(out)
+    if argv == ["--json", "status"]:
+        st, err = _call("GetState")
+        out.write(json.dumps(st if st is not None else {"error": err}, default=str) + "\n")
+        return 0 if st is not None else 1
+    out.write(USAGE + "\n")
+    return 2
