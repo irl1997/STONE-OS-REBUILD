@@ -303,6 +303,18 @@ class Host:
         preset = args[2] if len(args) == 3 else None
         self._opt_call(done, lambda: self.optimized.set_image(appid, args[1], preset))
 
+    def m_game_look(self, args, done):
+        """lookOptions(appid): STONE IMAGE looks of one game and the chosen one."""
+        appid, _ = self._game_args(args, 1, 1)
+        self._opt_call(done, lambda: self.optimized.look_options(appid))
+
+    def m_game_setLook(self, args, done):
+        """setLook(appid, key|null)."""
+        if len(args) != 2 or not (args[1] is None or isinstance(args[1], str)):
+            return done(None, "InvalidValue", "arguments")
+        appid, _ = self._game_args(args[:1], 1, 1)
+        self._opt_call(done, lambda: self.optimized.set_look(appid, args[1]))
+
     def m_components(self, args, done):
         """components(kind?): without kind, what is downloaded; with kind, download the newest official release."""
         if not args:

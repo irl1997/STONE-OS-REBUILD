@@ -6,7 +6,7 @@ function enterDetail(i, opts = {}) {
   const canPlay = g.inst || g.src === 'shortcut';
   const prim = running ? 'REANUDAR' : canPlay ? 'JUGAR' : 'INSTALAR';
   const sec = [[g.fav ? 'Quitar de favoritos' : 'Favorito', 'fav'], [`Rendimiento: ${g.perf ? profOf(g.perf).n : 'Global'}`, 'perf'], ['Propiedades', 'opt']];
-  if (g.src === 'steam' && g.inst) sec.splice(2, 0, [imgLabel(g), 'img'], [preLabel(g), 'pre'], [optLabel(g), 'ins'], ['Instalar HelixSR', 'hlx'], [optzLabel(g), 'opz']);
+  if (g.src === 'steam' && g.inst) sec.splice(2, 0, [imgLabel(g), 'img'], [preLabel(g), 'pre'], [lookLabel(g), 'look'], [optLabel(g), 'ins'], ['Instalar HelixSR', 'hlx'], [optzLabel(g), 'opz']);
   $('#detail').innerHTML = `
     <div class="col"><div class="origin">${esc(g.o)}</div><h1${g.n.length > 22 ? ' class="long"' : ''}>${esc(g.n.toUpperCase())}</h1>
       <div class="stats">${playText(g)} · Última sesión: ${running ? 'ahora' : g.last}</div>
@@ -31,6 +31,8 @@ function enterDetail(i, opts = {}) {
 const PRESET_TXT = { quality: 'Calidad', balanced: 'Equilibrado', performance: 'Rendimiento', ultra_performance: 'Ultra rendimiento' };
 const imgSel = g => g.img && g.img.choices.find(c => c.selected);
 const imgLabel = g => 'Imagen: ' + (g.img ? (imgSel(g) ? imgSel(g).label : 'STONE decide') : '…');
+/* STONE IMAGE (look.py): a look per game through vkBasalt; Original = none. */
+const lookLabel = g => 'Aspecto: ' + (g.look ? (g.look.chosen ? g.look.looks.find(l => l.key === g.look.chosen).label : 'Original') : '…');
 const optzLabel = g => 'Optimizar' + (g.opz ? ` (${g.opz.done}/${g.opz.total})` : '');
 const optLabel = g => g.img && g.img.by_stone ? 'Quitar FSR (OptiScaler)' : 'Instalar FSR (OptiScaler)';
 const preLabel = g => 'Calidad: ' + (g.img && g.img.preset ? PRESET_TXT[g.img.preset] || g.img.preset : 'según el juego');
@@ -39,6 +41,8 @@ function imgRefresh(g) {
   const a = d.querySelector('[data-act="img"]'), b = d.querySelector('[data-act="pre"]');
   if (a) a.textContent = imgLabel(g);
   if (b) b.textContent = preLabel(g);
+  const lk = d.querySelector('[data-act="look"]');
+  if (lk) lk.textContent = lookLabel(g);
   const z = d.querySelector('[data-act="opz"]');
   if (z) z.textContent = optzLabel(g);
   const c = d.querySelector('[data-act="ins"]');
@@ -47,6 +51,7 @@ function imgRefresh(g) {
 async function imgLoad(g, i) {
   try { g.img = await Sys.gameImage(g.appid); } catch (e) { return; }
   try { g.opz = await Sys.gameOptStatus(g.appid); } catch (e) { g.opz = null; }
+  try { g.look = await Sys.gameLook(g.appid); } catch (e) { g.look = null; }
   if (curG === i && S.screen === 'detail') imgRefresh(g);
 }
 async function imgSet(g, key, preset) {
@@ -132,6 +137,17 @@ function detailA(el) {
   if (a === 'opz') { play('select'); return optimizar(g, curG); }
   if (a === 'ins') { play('select'); return insOpti(g, curG); }
   if (a === 'hlx') { play('select'); return insHelix(g, curG); }
+  if (a === 'look') {
+    if (!g.look) { play('error'); return toast('Leyendo los aspectos…', false); }
+    if (!g.look.available) { play('error'); return toast(g.look.reason || 'No disponible', false); }
+    play('nav');
+    const keys = [null, ...g.look.looks.map(l => l.key)], next = keys[(keys.indexOf(g.look.chosen ?? null) + 1) % keys.length];
+    return Sys.gameSetLook(g.appid, next).then(() => {
+      g.look.chosen = next; imgRefresh(g);
+      const l = g.look.looks.find(x => x.key === next);
+      toast(l ? `${l.label}: ${l.description}. Se aplica al jugar` : 'Original: sin cambios de aspecto', false);
+    }, e => { play('error'); toast('No se pudo cambiar: ' + ((e && e.message) || 'sin respuesta'), false); });
+  }
   if (a === 'img' || a === 'pre') {
     if (!g.img) { play('error'); return toast('Leyendo las opciones de imagen…', false); }
     play('nav');

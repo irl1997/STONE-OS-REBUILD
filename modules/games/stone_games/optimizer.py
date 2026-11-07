@@ -32,7 +32,7 @@ import json
 import os
 import time
 
-from . import detect, graphics, metrics, schema, score, store
+from . import detect, graphics, look, metrics, schema, score, store
 
 ENGINE_VERSION = 1
 ABNORMAL_S = 60          # a game gone this soon after it appeared did not end normally
@@ -469,6 +469,20 @@ class Engine:
             c["gamescope"]["scaling_filter"] = "fsr" if key == "gamescope" else c["gamescope"]["scaling_filter"]
         return self.apply(appid, "custom", c)
 
+    def look_options(self, appid):
+        """STONE IMAGE choices for a game (look.py)."""
+        p = self.profile(appid)
+        return look.options(appid, p["facts"], p["game"])
+
+    def set_look(self, appid, key):
+        """The person's look for a game; None = no look. Refused where looks cannot be used."""
+        if key is not None and not self.look_options(appid)["available"]:
+            raise schema.ProfileError(self.look_options(appid)["reason"] or "not available")
+        try:
+            return look.set_look(appid, key)
+        except ValueError:
+            raise schema.ProfileError("look") from None
+
     def restore_recommended(self, appid):
         """restoreRecommended: the person's own choices go; measurements stay."""
         removed = store.delete_layer("user", appid)
@@ -504,7 +518,10 @@ class Engine:
         env = graphics.env_for(c, p["facts"], metrics.mangohud_env(mstate["folder"], mstate["delay"], mstate["duration"]) if mstate else None)
         if env is None:
             return {"ok": False, "error": "graphics path not possible"}
-        applied, err = self.ov.apply(appid, env, schema.config_key(c))
+        # STONE IMAGE (look.py): the person's look for this game, never while measuring
+        lenv = look.env_for_game(appid, p["facts"], p["game"], measuring=bool(mstate))
+        env.update(lenv)
+        applied, err = self.ov.apply(appid, env, schema.config_key(c) + (f":look_{lenv['STONE_LOOK']}" if lenv else ""))
         graphics_ok = applied is not None
         if not graphics_ok:                                # SAFE: launch as the person left it
             self.log(f"[stone] optimized: graphics not applied for {appid}: {err}; launching unchanged")

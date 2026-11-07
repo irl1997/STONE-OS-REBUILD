@@ -125,6 +125,8 @@ const Bridge = (() => {
       ['ok', 'Regulador de GPU', 'en marcha'], ['ok', 'Guardia de arranque', 'en espera'], ['ok', 'Caja negra', 'en espera'],
       ['ok', 'GPU', 'Sin errores en este arranque'], ['ok', 'Caja negra', 'Los arranques anteriores terminaron bien']] }; },
     'boot.mark': () => null, 'boot.history': () => [],
+    'game.look': () => ({ available: true, reason: null, chosen: null, looks: ['NATURAL', 'CLARITY', 'CINEMA', 'VIVID', 'RETRO'].map(l => ({ key: l.toLowerCase(), label: l, description: 'Aspecto ' + l })) }),
+    'game.setLook': () => ({ ok: true }),
     'firstrun.status': () => ({ done: true, steam_account: true }), 'firstrun.complete': () => ({ done: true }),
     'prefs.set': ([p]) => (prefs = Object.assign({}, prefs, p)),
     emulators: () => ['RetroDECK|Todo en uno: la mayoría de consolas clásicas en una sola app|1', 'RetroArch|Consolas clásicas con núcleos de libretro|0', 'Dolphin|GameCube y Wii|0',

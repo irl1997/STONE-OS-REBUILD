@@ -51,7 +51,8 @@ const Sys = {
   bootMark: stage => Bridge.call('boot.mark', stage), firstrunStatus: () => Bridge.call('firstrun.status'),
   firstrunComplete: () => Bridge.call('firstrun.complete'),
   sessionResume: () => Bridge.call('session.resume'), sessionDesktop: () => Bridge.call('session.desktop'),
-  health: () => Bridge.call('health.status'), cu40: op => Bridge.call('gpu.cu40', op)
+  health: () => Bridge.call('health.status'), cu40: op => Bridge.call('gpu.cu40', op),
+  gameLook: appid => Bridge.call('game.look', appid), gameSetLook: (appid, k) => Bridge.call('game.setLook', appid, k)
 };
 async function sys(method, ...a) {
   try { return await Sys[method](...a); }

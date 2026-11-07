@@ -112,6 +112,10 @@ cp -a /ctx/modules/games/game-profiles/. /usr/share/stone/game-profiles/
 ## Both engines stay until board test 26 passes (R-02, D-06): Chromium draws on the GPU; the
 ## GTK 4 + WebKitGTK 6 shell is the software fallback. The build fails without either.
 dnf5 -y install webkitgtk6.0 gtk4 gobject-introspection chromium   # cairo-1.0 typelib: GTK from Python
+## STONE IMAGE looks (stone_games/look.py) use the vkBasalt Vulkan layer. Without it the looks show
+## "no disponible" and nothing else changes, so a missing package is a warning, not a failure.
+dnf5 -y install --skip-unavailable vkBasalt
+ls /usr/share/vulkan/implicit_layer.d/ | grep -i basalt || echo "WARNING: vkBasalt layer not installed; STONE IMAGE looks unavailable"
 python3 -c "import gi; gi.require_version('Gtk', '4.0'); gi.require_version('WebKit', '6.0'); from gi.repository import Gtk, WebKit" \
     || { echo "ERROR: WebKitGTK 6 / GTK 4 bindings missing; STONE Home fallback cannot run"; exit 1; }
 CHROMIUM_BIN=""
