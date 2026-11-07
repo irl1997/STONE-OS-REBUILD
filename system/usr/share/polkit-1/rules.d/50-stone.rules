@@ -13,6 +13,9 @@ polkit.addRule(function (action, subject) {
         subject.isInGroup("wheel")) {
         return polkit.Result.YES;
     }
+    if (action.id == "org.stonemachine.session.select" && subject.isInGroup("wheel")) {
+        return polkit.Result.YES;
+    }
     if ((action.id == "org.freedesktop.login1.power-off" ||
          action.id == "org.freedesktop.login1.reboot") &&
         subject.isInGroup("wheel")) {

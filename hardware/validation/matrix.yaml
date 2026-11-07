@@ -66,6 +66,9 @@ tests:
   - {id: "T-HOME-02", title: "Con un juego abierto, Home no cambia los FPS medidos", phase: F2, kind: P, status: NOT TESTED, runs: [], observed: []}
   - {id: "T-UPD-01", title: "En la sesion STONE, una version nueva aparece preparada y se aplica con Reiniciar y actualizar", phase: F2, kind: P, status: NOT TESTED, runs: [], observed: []}
   - {id: "T-SESS-08", title: "Las filas Abrir en Steam de Ajustes se ven delante de Home en la sesion STONE", phase: F2, kind: P, status: NOT TESTED, runs: [], observed: []}
+  - {id: "T-SESS-09", title: "Instalacion nueva: arranca directamente en la sesion STONE (D-29)", phase: F2, kind: P, status: NOT TESTED, runs: [], observed: []}
+  - {id: "T-SESS-10", title: "Guardia: dos arranques sin Home operable devuelven el Game Mode de Bazzite y stone-session status lo explica", phase: F2, kind: P, status: NOT TESTED, runs: [], observed: []}
+  - {id: "T-DESK-03", title: "Escritorio desde Home y Volver a STONE desde el escritorio, sin contrasena", phase: F2, kind: P, status: NOT TESTED, runs: [], observed: []}
   - {id: "T-FR-01", title: "De la instalacion a Home operable solo con el mando", phase: F2, kind: P, status: NOT TESTED, runs: [], observed: []}
   - {id: "T-HLTH-01", title: "Cada valor medido de STONE HEALTH coincide con sysfs/hwmon", phase: F3, kind: P, status: NOT TESTED, runs: [], observed: []}
   - {id: "T-IMG-01", title: "Coste de cada preset de STONE IMAGE registrado", phase: F4, kind: P, status: NOT TESTED, runs: [], observed: []}

@@ -61,6 +61,10 @@ def test_40_cu_module_is_required():
     assert '[[ "${CU40_STATUS}" == ok ]] || { echo "ERROR: 40 CU module not built' in build
     assert 'echo "ERROR: stone-cu-verify not built"; exit 1' in build
     assert "systemctl enable stone-cu40-guard.service" in build
+    # D-29: the STONE session is the automatic one, with its boot guard
+    assert "Session=gamescope-session-stone.desktop\" > /etc/sddm.conf.d/zz-stone-session.conf" in build
+    assert "systemctl enable stone-session-guard.service" in build
+    assert 'STONE_SESSION_DEFAULT=\\"on (sudo stone-session default off)\\"' in build
 
 
 def test_image_ships_f2_without_the_rc23_game_mode_autostart():
@@ -79,8 +83,10 @@ def test_image_ships_f2_without_the_rc23_game_mode_autostart():
                  "dnf5 -y install webkitgtk6.0 gtk4 gobject-introspection chromium",
                  "test -s /usr/share/gamescope-session-plus/sessions.d/stone"):
         assert step in build, step
-    # the STONE session is installed but never made automatic by the build (T-SESS-01 first)
-    assert "sddm.conf.d" not in build
+    # D-29: the build writes one SDDM file, its own, with the session only (the user stays Bazzite's)
+    import re
+    assert re.findall(r"/etc/sddm\.conf\.d/[\w.-]+", build) == ["/etc/sddm.conf.d/zz-stone-session.conf"]
+    assert "User=" not in build
     assert "cp -a /ctx/services/stoned/stoned /usr/lib/stone/stoned" in build
     assert "systemctl enable stoned-recover.service stoned.service" in build
 

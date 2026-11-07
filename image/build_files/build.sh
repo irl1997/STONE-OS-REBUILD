@@ -139,9 +139,9 @@ for f in index.html icon.png fonts/jost-latin-300-normal.woff2 grid/capsule.png 
     test -s "/usr/share/stone-home/${f}" || { echo "ERROR: STONE Home file missing: ${f}"; exit 1; }
 done
 
-### 6d. STONE session (M24, D-21): gamescope-session-plus@stone, selectable in SDDM. It does NOT
-## become the automatic session here: `sudo stone-session default on` does that on the board after
-## T-SESS-01, and `default off` undoes it (Bazzite's Game Mode stays the automatic session meanwhile).
+### 6d. STONE session (M24, D-21): gamescope-session-plus@stone, the console's automatic session
+## (D-29, "llegar y jugar"). `sudo stone-session default off` goes back to Bazzite's Game Mode; the
+## boot guard does it by itself after two STONE boots that never reach "Home operable".
 test -x /usr/share/gamescope-session-plus/gamescope-session-plus \
     || { echo "ERROR: gamescope-session-plus not found; the STONE session cannot run"; exit 1; }
 test -e /usr/lib/systemd/user/gamescope-session-plus@.service \
@@ -153,6 +153,19 @@ python3 -c "import Xlib" || { echo "ERROR: python3-xlib missing; the STONE sessi
 ## The guide button during a game (Home in front, plan B of V-13) is read with python-evdev.
 python3 -c "import evdev" 2>/dev/null || dnf5 -y install python3-evdev
 python3 -c "import evdev" || { echo "ERROR: python3-evdev missing; the guide button cannot bring STONE Home back"; exit 1; }
+## The automatic session: an /etc drop-in that sorts after Bazzite's zz-holo-autologin.conf (SDDM
+## reads /etc/sddm.conf.d in name order, the last file wins). /etc in the image is the default of a
+## new installation; on an existing one ostree keeps a removed file removed (`default off` holds).
+mkdir -p /etc/sddm.conf.d
+printf '%s\n' "# STONE OS: the STONE session is the automatic session (D-29)." \
+    "# Back to Bazzite's Game Mode: sudo stone-session default off" \
+    "[Autologin]" "Session=gamescope-session-stone.desktop" > /etc/sddm.conf.d/zz-stone-session.conf
+test -x /usr/libexec/stone/stone-session-select && test -x /usr/libexec/stone/stone-session-guard \
+    || { echo "ERROR: STONE session helpers missing"; exit 1; }
+systemctl enable stone-session-guard.service
+command -v pkexec >/dev/null || { echo "ERROR: pkexec missing; Escritorio / Volver a STONE cannot switch sessions"; exit 1; }
+ls /usr/share/wayland-sessions/plasma.desktop /usr/share/wayland-sessions/plasmawayland.desktop 2>/dev/null \
+    || echo "WARNING: no Plasma session file; Escritorio will look for gnome.desktop"
 test -s /usr/share/gamescope-session-plus/sessions.d/steam \
     || echo "WARNING: sessions.d/steam not found; the STONE session runs without Steam's Gamescope settings"
 ls /usr/share/gamescope-session-plus/sessions.d/ /usr/share/wayland-sessions/
@@ -175,7 +188,7 @@ rpmfile() { local v; v="$(rpm -qf --qf '%{NAME} %{VERSION}-%{RELEASE}\n' "$1" 2>
     echo "STONE_VERSION=\"${STONE_VERSION}\""
     echo "STONE_PHASE=\"F2\""
     echo "STONE_MODULES_ABSENT=\"connect downloads emulation desktop\""
-    echo "STONE_SESSION_DEFAULT=\"off (sudo stone-session default on)\""
+    echo "STONE_SESSION_DEFAULT=\"on (sudo stone-session default off)\""
     echo "STONE_CHANNEL=\"${STONE_CHANNEL:-dev}\""
     echo "STONE_COMMIT=\"${STONE_COMMIT:-unknown}\""
     echo "STONE_BUILD_DATE=\"${STONE_BUILD_DATE:-unknown}\""

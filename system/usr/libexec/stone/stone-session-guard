@@ -1,0 +1,7 @@
+#!/usr/bin/python3 -I
+# STONE session boot guard (D-29), run as root before the display manager. See
+# /usr/lib/stone/stone_home/guard.py.
+import sys
+sys.path.insert(0, "/usr/lib/stone")
+from stone_home.guard import main
+sys.exit(main())

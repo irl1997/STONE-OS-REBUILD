@@ -29,7 +29,8 @@ class Box:
         self.state = os.path.join(self.tmp, "state")
         self.env = dict(os.environ, XDG_STATE_HOME=self.state, STONE_SESSION_STEAM=steam,
                         STONE_SESSION_HOME=home, STONE_SESSION_FALLBACK=fallback,
-                        STONE_SESSION_SDDM_DIR=os.path.join(self.tmp, "sddm.conf.d"), PYTHONPATH=HOME_LIB)
+                        STONE_SESSION_SDDM_DIR=os.path.join(self.tmp, "sddm.conf.d"), PYTHONPATH=HOME_LIB,
+                        STONE_SESSION_GUARD_DIR=os.path.join(self.tmp, "guard"))
         self.env.pop("DISPLAY", None)        # no X server here: focus management stays off (logged)
 
     def path(self, *p):

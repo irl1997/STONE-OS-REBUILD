@@ -1,0 +1,32 @@
+#!/usr/bin/bash
+# STONE OS: the session of the NEXT login only (M24, M15). Run by `stone-session switch` through
+# pkexec (polkit action org.stonemachine.session.select). Argument: desktop | stone.
+#
+# SDDM reads /etc/sddm.conf.d in name order and the last file wins:
+#   zz-holo-autologin.conf    Bazzite / steamos-manager default session
+#   zz-stone-session.conf     STONE's default (the STONE session, D-29)
+#   zzt-holo-temp-login.conf  steamos-manager's next-login-only session (Steam's "Switch to desktop")
+#   zzz-stone-temp-login.conf this file: STONE's next-login-only session
+# stone-session-guard removes this file at every boot, so a reboot always returns to the default.
+set -euo pipefail
+SDDM_DIR="${STONE_SDDM_DIR:-/etc/sddm.conf.d}"
+SESSIONS_DIR="${STONE_SESSIONS_DIR:-/usr/share/wayland-sessions}"
+case "${1:-}" in
+    desktop)
+        session=""
+        for c in plasma.desktop plasmawayland.desktop gnome.desktop; do
+            if [ -e "${SESSIONS_DIR}/${c}" ]; then session="${c}"; break; fi
+        done
+        [ -n "${session}" ] || { echo "no desktop session in ${SESSIONS_DIR}" >&2; exit 2; } ;;
+    stone)
+        session="gamescope-session-stone.desktop"
+        [ -e "${SESSIONS_DIR}/${session}" ] || { echo "${session} missing in ${SESSIONS_DIR}" >&2; exit 2; } ;;
+    *)
+        echo "uso: stone-session-select desktop|stone" >&2; exit 2 ;;
+esac
+mkdir -p "${SDDM_DIR}"
+tmp="${SDDM_DIR}/.zzz-stone-temp-login.conf.tmp"
+printf '# STONE OS: next login only (stone-session switch); removed at every boot.\n[Autologin]\nSession=%s\n' \
+    "${session}" > "${tmp}"
+mv -f "${tmp}" "${SDDM_DIR}/zzz-stone-temp-login.conf"
+echo "${session}"

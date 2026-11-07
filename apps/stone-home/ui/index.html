@@ -418,7 +418,7 @@ const Sys = {
   /* M02 boot metrics and M22 FIRST RUN */
   bootMark: stage => Bridge.call('boot.mark', stage), firstrunStatus: () => Bridge.call('firstrun.status'),
   firstrunComplete: () => Bridge.call('firstrun.complete'),
-  sessionResume: () => Bridge.call('session.resume')
+  sessionResume: () => Bridge.call('session.resume'), sessionDesktop: () => Bridge.call('session.desktop')
 };
 async function sys(method, ...a) {
   try { return await Sys[method](...a); }
@@ -1839,6 +1839,7 @@ function openPower() {
   box.innerHTML = `<div class="h">ENERGÍA</div>
     <div class="main txt-f" data-f data-act="off">APAGAR</div>
     <div class="txt-f" style="font-size:26px" data-f data-act="reboot">Reiniciar</div>
+    ${S.info && S.info.session === 'stone' ? '<div class="txt-f" style="font-size:26px" data-f data-act="desktop">Escritorio</div>' : ''}
     ${S.running !== null && G[S.running] ? `<div class="warn">${esc(G[S.running].n)} se cerrará al apagar o reiniciar.</div>` : ''}`;
   $('#power').classList.add('on'); line.classList.remove('off');
   const items = [...box.querySelectorAll('[data-f]')];
@@ -1859,6 +1860,21 @@ async function powerA(el) {
   $('#power').classList.remove('on');
   if (a === 'off') return shutdown(false);
   if (a === 'reboot') return shutdown(true);
+  if (a === 'desktop') return toDesktop();
+}
+/* M15: Bazzite's desktop for this login only; "Volver a STONE" on the desktop (or a reboot) comes back. */
+async function toDesktop() {
+  S.screen = 'transition'; $('#hints').classList.add('hide'); play('stop');
+  $('#black').classList.remove('fast'); $('#black').classList.add('on');
+  setLine(960, 886, 0, { slow: true }); await wait(900);
+  try {
+    await Sys.sessionDesktop();
+    $('#offmsg').textContent = 'Abriendo el escritorio… Para volver: «Volver a STONE» en el escritorio, o reiniciar.'; $('#offmsg').classList.add('on');
+  } catch (e) {
+    $('#black').classList.remove('on'); line.classList.remove('off');
+    S.section = 0; if (NAV) NAV.id = ''; enterHome({ r: 1, c: 3 });
+    play('error'); toast(`No se pudo abrir el escritorio (${ERR_TEXT[e.code] || e.message})`, false);
+  }
 }
 /* The animation plays, then logind powers off. stoned's clean-shutdown marker is written by
    systemd when its unit stops, whatever started the shutdown. */

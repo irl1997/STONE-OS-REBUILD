@@ -621,6 +621,23 @@ def H07_reanudar_in_the_stone_session_gives_the_game_back():
 
 
 @test
+def H08_escritorio_only_in_the_stone_session_through_stone_session_switch():
+    with Tmp() as d:
+        calls = os.path.join(d, "calls")
+        h = host_mod.Host(lambda *a: None, stoned=FakeStoned(), sysapi=system.System(spawn=lambda u: None), steam_root="/nonexistent")
+        h.session_switch = ["sh", "-c", f'echo "$0" >> {calls}']
+        assert run_host(h, {"method": "session.desktop", "args": []})[1] == "Unsupported"
+        os.environ["STONE_SESSION"] = "stone"
+        try:
+            assert run_host(h, {"method": "session.desktop", "args": []}, timeout=15)[0] == {"ok": True}
+            assert open(calls).read().split() == ["desktop"]
+            h.session_switch = ["sh", "-c", "echo refused; exit 1"]
+            assert run_host(h, {"method": "session.desktop", "args": []}, timeout=15)[1] == "PermissionDenied"
+        finally:
+            del os.environ["STONE_SESSION"]
+
+
+@test
 def H02_launch_only_games_from_the_last_library_scan():
     with Tmp() as d:
         root = FX.build(os.path.join(d, "Steam"))
