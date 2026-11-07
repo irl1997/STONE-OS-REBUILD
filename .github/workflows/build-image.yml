@@ -138,10 +138,18 @@ jobs:
           set -euo pipefail
           source image/config/build.env
           echo "${REGISTRY_TOKEN}" | podman login ghcr.io -u "${GITHUB_ACTOR}" --password-stdin
-          for tag in ${TAGS}; do
-            podman push --digestfile=/tmp/digest "localhost/${IMAGE_NAME}:build" "${IMAGE}:${tag}"
-          done
+          # One push, then every other tag points at that same manifest: a second `podman push`
+          # re-serializes it and gives the tag a different digest that nothing signed (F1, F2 run 3).
+          read -r first rest <<< "${TAGS}"
+          podman push --digestfile=/tmp/digest "localhost/${IMAGE_NAME}:build" "${IMAGE}:${first}"
           digest="$(cat /tmp/digest)"
+          for tag in ${rest}; do
+            skopeo copy --retry-times 3 --preserve-digests "docker://${IMAGE}@${digest}" "docker://${IMAGE}:${tag}"
+          done
+          for tag in ${TAGS}; do
+            got="$(skopeo inspect --retry-times 3 --raw "docker://${IMAGE}:${tag}" | sha256sum | cut -d' ' -f1)"
+            [ "sha256:${got}" = "${digest}" ] || { echo "ERROR: ${tag} is sha256:${got}, not the signed ${digest}"; exit 1; }
+          done
           echo "digest=${digest}" >> "$GITHUB_OUTPUT"
           {
             echo "### STONE OS (rebuild) image"
