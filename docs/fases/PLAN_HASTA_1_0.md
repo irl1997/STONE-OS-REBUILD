@@ -18,9 +18,9 @@ Fecha: 2026-11-07. Decisiones de partida:
 
 | Versión | Bloque | Contenido | Módulos |
 | --- | --- | --- | --- |
-| 0.4.0-dev.1 | **Llegar y jugar** | Sesión STONE automática en la imagen; guardia de arranque (dos arranques sin Home operable → vuelve el Game Mode y se explica); «Cambiar a escritorio» y «Volver a STONE» desde Home, porque en la sesión STONE no hay menú de Steam; FIRST RUN con red (Wi-Fi), mando y audio básicos; ISO que instala sin preguntas técnicas | M24, M02, M05, M15 (base), M22, M21 (base) |
-| — | **Direcciones de diseño** | 2 o 3 direcciones visuales sobre piedra, basalto y THE LINE, con Home, Ficha de juego y Menú rápido de ejemplo. El propietario elige una | D-30 |
-| 0.5.0-dev.1 | **Nuevo diseño + Home modular** | Reconstrucción modular de la interfaz (R-08) con el lenguaje elegido: componentes, temas, sonido, movimiento; Plymouth y FIRST RUN a juego; sin perder nada de lo que hay | M07, M02 |
+| 0.4.0-dev.1 | **Llegar y jugar** | Sesión STONE automática en la imagen; guardia de arranque (dos arranques sin Home operable → vuelve el Game Mode y se explica); «Escritorio» desde Home y «Volver a STONE» desde el escritorio, porque en la sesión STONE no hay menú de Steam. Red: el cable Ethernet funciona solo; el Wi-Fi y el audio desde STONE pasan a F6 (CONNECT y SETTINGS) | M24, M02, M05, M15 (base), M22, M21 (base) |
+| — | **Direcciones de diseño** | Hecho: Monolito, Estratos y Forja. Elegida **B · Estratos** | D-30 |
+| 0.5.0-dev.1 | **Nuevo diseño + Home modular** | Reconstrucción modular de la interfaz (R-08) con el lenguaje Estratos: componentes, temas, sonido, movimiento; Plymouth y FIRST RUN a juego; sin perder nada de lo que hay | M07, M02 |
 | 0.6.0-dev.1 | **F3 · Rendimiento y salud** | Performance Center completo, STONE TUNING, CALIBRATION desde la interfaz, 40 CU gestionados desde STONE (activar, probar, desactivar con confirmación), STONE HEALTH con Crash Black Box | M04, M06, M19 |
 | 0.7.0-dev.1 | **F4 · Imagen** | DISPLAY ampliado, GRAPHICS (rutas por juego, OptiScaler, HelixSR, generación de fotogramas con las condiciones de D-22), STONE IMAGE (presets NATURAL, CLARITY, CINEMA, VIVID, RETRO, CUSTOM) | M09, M10, M17 |
 | 0.8.0-dev.1 | **F5 · Inteligencia** | STONE OPTIMIZED ampliado y EXPERIENCE ENGINE: Autopilot, Thermal Forecast, Stutter Hunter, Regression Guard, Self-Healing, Confidence System… Reglas deterministas, sin IA generativa | M11, M23 |
