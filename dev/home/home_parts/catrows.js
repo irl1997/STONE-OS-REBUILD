@@ -153,6 +153,27 @@ function updTimerText(u) {
   const t = s => new Date(s * 1000).toLocaleString('es', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
   return `Activa${u.last ? ' · última ' + t(u.last) : ''}${u.next ? ' · próxima ' + t(u.next) : ''}`;
 }
+/* STONE HEALTH (M19): read when Salud opens; nothing here changes the console. */
+function loadHealth() {
+  if (S.healthLoading) return;
+  S.healthLoading = true;
+  Sys.health().then(r => { S.health = r; }, () => { S.health = { error: true }; }).then(() => {
+    S.healthLoading = false;
+    if (S.screen === 'settings' && CATS[cat] === 'Salud') enterSettings({ pane: !!NAV.pane, ri: NAV.pane ? NAV.c : 0 });
+  });
+}
+const LVL = { ok: 'Bien', warn: 'Aviso', fail: 'Fallo' };
+function healthRows() {
+  const H = S.health;
+  if (!H) { loadHealth(); return [{ l: 'Leyendo…', s: 'CPU, memoria, discos, servicios y registros', v: '' }]; }
+  if (H.error) return [{ l: 'No se pudo leer el estado', s: 'Prueba de nuevo o usa stone-doctor en una terminal', v: '' }];
+  const st = S.st || {};
+  const rows = H.checks.map(([lvl, t, d]) => ({ l: t, s: d, v: LVL[lvl] || lvl, act: 'info', where: d }));
+  rows.push({ l: 'Estabilidad', s: st.safe_mode ? `Safe Mode activo (${SAFE_REASON[st.safe_reason] || st.safe_reason})` : st.last_failure ? 'Hubo un fallo reciente: STONE volvió a la última configuración buena' : 'Sin fallos de rendimiento recientes',
+    v: st.safe_mode ? 'Aviso' : 'Bien', act: 'info', where: 'Detalle en Ajustes → Rendimiento' });
+  rows.push({ l: 'Volver a comprobar', s: 'Lee todo de nuevo', v: '', act: 'health' });
+  return rows;
+}
 function catRows() {
   /* Settings Steam already handles open in Steam's own settings; if that fails, STONE says where. */
   const steam = (t, d, where) => ({ l: t, s: d, v: 'Abrir en Steam', act: 'steam', where, sec: STEAM_SEC[CATS[cat]] });
@@ -170,16 +191,19 @@ function catRows() {
         where: 'Steam decide el tamaño de cada app. Botón STEAM → Biblioteca → STONE → ⚙ → Propiedades → General → Resolución del juego: Nativa. Luego reinicia STONE' },
       { l: 'Medir fluidez', s: S.smooth ? `Última medida, ${RENDER[S.smooth.mode]} a ${S.smooth.res}: ${S.smooth.fps} FPS · cuadro más lento ${S.smooth.p99} ms · ${S.smooth.slow} de ${S.smooth.n} cuadros lentos`
         : 'STONE recorre el inicio unos segundos y mide los cuadros por segundo del modo actual', v: 'Medir', act: 'measure' }] };
-    case 'Audio': return { d: 'Sonidos del sistema y volumen de la interfaz.', rows: [
-      { l: 'Sonidos del sistema', s: 'Botones, encendido y apagado', v: S.sound ? 'Activados' : 'Desactivados', key: 'sound' },
-      { l: 'Volumen de la interfaz', s: 'Independiente del volumen de los juegos', v: Math.round(S.vol * 100) + ' %', key: 'vol' },
-      steam('Salida de audio', 'Altavoces, auriculares, HDMI o DisplayPort', 'Botón ··· → Audio, o botón STEAM → Ajustes → Audio')] };
+    case 'Audio': return { d: 'La salida de sonido de la consola y su volumen. Izquierda y derecha cambian el volumen.', rows: [...audioRows(),
+      { l: 'Sonidos de STONE', s: 'Botones, encendido y apagado', v: S.sound ? 'Activados' : 'Desactivados', key: 'sound' },
+      { l: 'Volumen de la interfaz', s: 'Independiente del volumen de los juegos', v: Math.round(S.vol * 100) + ' %', key: 'vol' }] };
+    case 'Red': return { d: 'El cable de red se configura solo. Para Wi-Fi, elige una red y escribe su contraseña con el mando.', rows: netRows() };
+    case 'Bluetooth': return { d: 'Mandos, auriculares y teclados. Para emparejar, ponlos en modo emparejamiento y busca.', rows: btRows() };
+    case 'Almacenamiento': return { d: 'Espacio en cada disco, lo que ocupa cada juego y las descargas de Steam en curso.', rows: storageRows() };
+    case 'Salud': return { d: 'El estado de STONE MACHINE, leído ahora. Nada de esta pantalla cambia la consola.', rows: healthRows() };
     case 'Steam': return { d: 'Los ajustes de Steam, con el aspecto de STONE. La lista sale de lo que ofrece este Steam; los de sí/no se cambian con A.', rows: steamSetRows() };
     case 'Emuladores': {
       if (!S.emu) { if (!S.emuLoading) loadEmulators(); return { d: 'Emuladores de otras consolas, desde Flathub.', rows: [{ l: 'Leyendo…', s: 'Buscando qué emuladores están instalados', v: '', ro: true }] }; }
       return { d: 'Se instalan desde Flathub y aparecen en tu biblioteca como accesos directos. Los juegos y BIOS los pones tú. RetroDECK reúne la mayoría de consolas en una sola app.',
         rows: S.emu.map(e => { const st = EMU_STATE[e.key]; const busy = st && st.state === 'installing';
-          return { l: e.name, s: busy ? st.text : e.plays, v: e.installed ? 'Instalado' : busy ? 'Instalando…' : 'Instalar', act: 'emu', emu: e }; }) };
+          return { l: e.name, s: busy ? st.text : e.plays, v: e.installed ? 'Instalado' : busy ? 'Instalando…' : 'Instalar', act: 'emu', emu: e }; }).concat(romRows()) };
     }
     case 'Rendimiento': return { d: `Perfil activo: ${profOf(S.prof).n}. Elige entre silencio y rendimiento, o ajusta tu propio perfil.`, rows: [
       { l: 'Performance Center', s: 'SILENT, BALANCED, PERFORMANCE y CUSTOM', v: 'Abrir', act: 'perf' },
@@ -197,7 +221,8 @@ function catRows() {
       { l: 'Hardware', s: S.caps ? (S.caps.board ? `AMD BC-250 detectada · Zen 2 ${cores()} núcleos · GPU ${cu40Top() ? 40 : 24} CU · 16 GB GDDR6` : 'No se detectó una AMD BC-250: el ajuste de rendimiento está desactivado') : 'Leyendo…', v: '' },
       { l: 'Sistema base', s: rel.STONE_BASE_IMAGE ? `Bazzite · ${rel.STONE_BASE_IMAGE}${rel.STONE_BASE_DIGEST ? ' @ ' + rel.STONE_BASE_DIGEST.slice(7, 19) : ''}` : 'Bazzite (imagen derivada de bazzite-deck)', v: '' },
       { l: 'Componentes', s: [rel.STONE_KERNEL && `kernel ${rel.STONE_KERNEL}`, rel.STONE_MESA && `Mesa ${rel.STONE_MESA}`, rel.STONE_GOVERNOR_VERSION && `regulador ${rel.STONE_GOVERNOR_VERSION}`].filter(Boolean).join(' · ') || '—', v: '' },
-      { l: 'Modo escritorio', s: 'Para usuarios avanzados', v: 'En Steam', act: 'info', where: 'Botón STEAM → Energía → Cambiar a escritorio' }] };
+      { l: 'Modo escritorio', s: 'Para usuarios avanzados', v: 'Energía', act: 'info', where: 'Energía → Escritorio. Para volver: «Volver a STONE» en el escritorio, o reiniciar' },
+      { l: 'NEURAL RENDER', s: 'Experimental: sin backends; ninguno funciona hoy de forma medible en la GPU de la BC-250', v: 'Sin backend' }] };
     case 'Actualizaciones': return { d: 'Las actualizaciones llegan como una imagen completa y se aplican al reiniciar. Si una falla, la anterior sigue disponible.', rows: [
       { l: 'Estado', s: !dep ? 'No se pudo leer el estado del sistema' : dep.staged ? `Actualización lista: ${dep.staged.version || 'nueva versión'}. Se aplica al reiniciar` : `Instalada: ${(dep.booted && dep.booted.version) || rel.STONE_VERSION || '—'}`, v: '' },
       ...(dep && dep.staged ? [{ l: 'Reiniciar y actualizar', s: 'La consola se reinicia con la versión nueva', v: 'Reiniciar', act: 'reboot' }] : []),
@@ -212,16 +237,41 @@ function catRows() {
    unlocked report 8; the BC-250's stock firmware 6. */
 function cores() { const t = navigator.hardwareConcurrency || 12; return Math.max(1, Math.round(t / 2)); }
 
-/* 40 CU: shown, never switched from here. It changes how the kernel starts, so it is done by
-   hand with sudo stone-cu40 (confirmation, GPU test, automatic way back). */
+/* 40 CU (M04, D-31): switched from here with STONE's own confirmation; stone-cu40 does the work
+   through pkexec (polkit allows these three command lines to the console administrator only). The
+   kernel uses it from the next boot; the boot guard turns it off by itself after GPU errors. */
 function cu40Row() {
-  const c = S.caps && S.caps.cu40;
-  const how = 'En una terminal (Konsole o Ctrl+Alt+F3): sudo stone-cu40 enable → reinicia → sudo stone-cu40 test. '
-    + 'Si la prueba falla, STONE vuelve sola a 24 CU. Para apagarlo: sudo stone-cu40 disable';
-  if (!S.caps) return { l: 'GPU · unidades de cálculo', s: 'Leyendo…', v: '' };
-  if (!c || !c.available) return { l: 'GPU · unidades de cálculo', s: 'Esta versión de STONE OS no trae el desbloqueo de 40 CU', v: '24 CU' };
-  if (c.active) return { l: 'GPU · unidades de cálculo', s: `40 CU en uso · máximo validado de esta consola: ${c.ceiling_mhz} MHz`, v: '40 CU', act: 'info', where: 'Para buscar el máximo estable de esta consola: stonectl calibrate (terminal). Estado: stonectl calibration. 40 CU: sudo stone-cu40 status' };
-  return { l: 'GPU · unidades de cálculo', s: '24 CU en uso · 40 CU disponible, se activa a mano con prueba de estabilidad', v: '24 CU', act: 'info', where: how };
+  const c = S.caps && S.caps.cu40, L = 'GPU · unidades de cálculo';
+  if (!S.caps) return { l: L, s: 'Leyendo…', v: '' };
+  if (!c || !c.available) return { l: L, s: 'Esta versión de STONE OS no trae el desbloqueo de 40 CU', v: '24 CU' };
+  if (c.active) return { l: L, s: `40 CU en uso · máximo validado de esta consola: ${c.ceiling_mhz} MHz`, v: '40 CU', act: 'cu40' };
+  return { l: L, s: '24 CU en uso · 40 CU disponible (la configuración de STONE MACHINE)', v: 'Activar 40 CU', act: 'cu40' };
+}
+const CU40_WARN = `<p>Es un cambio de la comunidad, no de AMD: no todas las placas lo aguantan. Con 40 CU la GPU consume unos 30 W más y se calienta más.</p>
+  <p>STONE empieza con un máximo prudente y la calibración busca después el máximo estable de tu consola. Si aparecen errores de GPU, STONE vuelve sola a 24 CU en el siguiente arranque.</p>`;
+function cu40Dlg(ri) {
+  const c = S.caps && S.caps.cu40, on = c && c.active;
+  const back = () => { closeDlg(); play('back'); enterSettings({ pane: true, ri }); };
+  if (on) {
+    return openDlg(`<h2>40 CU</h2><p>Las 40 unidades de cálculo están en uso.</p><p>La prueba de 3 minutos comprueba que la GPU calcula bien a plena carga. Apagar 40 CU vuelve a 24 desde el próximo arranque.</p>
+      <div class="btns"><span class="txt-f" data-f data-b="test">PROBAR</span><span class="txt-f" data-f data-b="off">APAGAR 40 CU</span><span class="txt-f" data-f data-b="no">VOLVER</span></div>`, {
+      onA: el => { if (el.dataset.b === 'no') return back(); play('select'); closeDlg(); cu40Run(el.dataset.b === 'test' ? 'test' : 'disable', ri); }, onB: back });
+  }
+  openDlg(`<h2>ACTIVAR 40 CU</h2>${CU40_WARN}<p>Se aplica al reiniciar.</p>
+    <div class="btns"><span class="txt-f" data-f data-b="yes">ACTIVAR</span><span class="txt-f" data-f data-b="no">CANCELAR</span></div>`, {
+    onA: el => { if (el.dataset.b !== 'yes') return back(); play('select'); closeDlg(); cu40Run('enable', ri); }, onB: back });
+}
+async function cu40Run(op, ri) {
+  toast(op === 'test' ? 'Probando la GPU durante 3 minutos…' : 'Cambiando el arranque…', false);
+  let r = null;
+  try { r = await Sys.cu40(op); } catch (e) { play('error'); toast(e.code === 'PermissionDenied' ? 'Hace falta ser el administrador de la consola' : `No se pudo: ${e.message}`, false); return enterSettings({ pane: true, ri }); }
+  if (!r.ok) { play('error'); toast((r.text.split('\n').filter(Boolean).slice(-2).join(' ')) || 'No se pudo', false); return enterSettings({ pane: true, ri }); }
+  if (op === 'test') { toast('Prueba aprobada: las 40 CU calcularon bien', false); return enterSettings({ pane: true, ri }); }
+  rebootDlg(op === 'enable' ? '40 CU se usará desde el próximo arranque.' : 'La GPU vuelve a 24 CU desde el próximo arranque.', () => enterSettings({ pane: true, ri }));
+}
+function rebootDlg(msg, later) {
+  openDlg(`<h2>REINICIAR</h2><p>${msg}</p><div class="btns"><span class="txt-f" data-f data-b="now">REINICIAR AHORA</span><span class="txt-f" data-f data-b="later">MÁS TARDE</span></div>`, {
+    onA: el => { closeDlg(); if (el.dataset.b === 'now') { play('select'); return shutdown(true); } play('back'); later(); }, onB: () => { closeDlg(); later(); } });
 }
 
 /* Game resolution environment (Juegos ven): Televisor = every game sees the display's own

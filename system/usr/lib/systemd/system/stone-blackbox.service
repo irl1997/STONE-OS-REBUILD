@@ -1,0 +1,12 @@
+[Unit]
+Description=STONE black box (keep the previous boot's errors and last lines)
+Documentation=file:///usr/lib/stone/stone_home/blackbox.py
+After=local-fs.target systemd-journald.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/stone/stone-blackbox
+Nice=10
+
+[Install]
+WantedBy=multi-user.target

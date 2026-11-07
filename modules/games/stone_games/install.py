@@ -334,6 +334,10 @@ def uninstall(appid):
             except OSError:
                 break
             d = os.path.dirname(d)
+    try:                                   # framegen.py's copy of the ini as STONE found it
+        os.remove(os.path.join(exe_dir, "OptiScaler.ini.stone-orig"))
+    except OSError:
+        pass
     os.remove(_install_path(appid))
     return {"ok": True, "removed": removed}
 

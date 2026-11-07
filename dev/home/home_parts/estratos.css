@@ -1,0 +1,64 @@
+/* ---------- ESTRATOS (D-30) ----------
+   The screen as rock seen in section: a header stratum, the game stratum (its art shows through),
+   an amber vein for the horizon and a deep stratum with the machine's state. Labels read like core
+   samples: mono, numbered strata. Loaded after every other rule: it restyles, it never removes. */
+#stage{--vein:#c88a3a;--vein-deep:#7a4f20;--st-head:rgba(18,19,21,.93);--st-deep:rgba(13,14,15,.96);--st-rule:#26272a}
+.st-head{position:absolute;left:0;top:0;width:1920px;height:196px;background:var(--st-head);border-bottom:1px solid var(--st-rule);pointer-events:none}
+.st-deep{position:absolute;left:0;top:672px;width:1920px;height:408px;background:var(--st-deep);pointer-events:none}
+.st-label{position:absolute;left:96px;font-family:var(--f-mono);font-size:15px;letter-spacing:.16em;color:var(--text-2);text-transform:uppercase;font-variant-numeric:tabular-nums}
+.st-label b{font-weight:400;color:var(--warm)}
+#home .horizon{top:668px;height:3px;background:linear-gradient(90deg,transparent 0%,var(--vein) 12%,var(--vein-deep) 62%,transparent 100%);opacity:1;box-shadow:0 0 18px rgba(200,138,58,.35)}
+#home .ctx{top:700px}
+#home .strata{position:absolute;left:96px;top:872px;width:1728px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:40px}
+#home .strata div{display:flex;flex-direction:column;gap:8px;min-width:0}
+#home .strata span{font-family:var(--f-mono);font-size:14px;letter-spacing:.16em;color:var(--text-2)}
+#home .strata b{font-family:var(--f-display);font-weight:300;font-size:28px;letter-spacing:.1em;color:var(--warm);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#home .strata b.warn{color:var(--ember)}
+#home .sys{top:984px;gap:56px;font-family:var(--f-display);font-weight:300;letter-spacing:.14em;font-size:20px}
+#home .st-label.l2{top:836px}
+#home .st-label.l1{top:226px}
+#hdr .brand{letter-spacing:.55em}
+#tabs{gap:64px;font-size:20px;letter-spacing:.28em}
+#stage.hc{--st-rule:var(--ash)}
+/* Library: the same header stratum; the count reads like a sample label */
+#library::before{content:"";position:absolute;left:0;top:0;width:1920px;height:196px;background:var(--st-head);border-bottom:1px solid var(--st-rule)}
+#library .count{font-family:var(--f-mono);font-size:15px;letter-spacing:.16em;text-transform:uppercase;top:214px}
+#library .count::before{content:"ESTRATO 01 · ";color:var(--text-2)}
+#library .filters span.cur::after{background:var(--vein)}
+/* Settings: the header stratum over the title; the categories are the core's labels (mono, numbered
+   by order), the vein marks the open one. */
+#settings::before{content:"";position:absolute;left:0;top:0;width:1920px;height:208px;background:#121315;border-bottom:1px solid var(--st-rule)}
+#settings{background:linear-gradient(180deg,#141517 0%,#101113 100%)}
+#settings .cats{counter-reset:cat;gap:18px;font-family:var(--f-mono);font-size:19px;letter-spacing:.08em}
+#settings .cats span{counter-increment:cat}
+#settings .cats span::before{content:counter(cat,decimal-leading-zero) "  ";color:var(--slate)}
+#settings .cats span.cur::before{color:var(--vein)}
+#settings .vr{background:linear-gradient(180deg,var(--vein) 0%,var(--vein-deep) 40%,var(--st-rule) 100%);width:2px;opacity:.7}
+/* Quick menu and power: deep-stratum panels with the vein on their edge */
+#quick .panel{background:var(--st-deep);border-left:2px solid var(--vein)}
+#quick .steam .cap{font-family:var(--f-mono);font-size:14px;letter-spacing:.16em}
+#power .box{background:#121315;border-top:2px solid var(--vein);border-radius:2px}
+#power .h{font-family:var(--f-mono);font-size:16px;letter-spacing:.2em}
+#dlg .box{border-top:2px solid var(--vein)}
+#dlg.solid .box{border-top:0}
+/* Game page: the info strip is the deep stratum, its labels are samples; the vein under the actions */
+#detail::after{content:"";position:absolute;left:0;top:842px;width:1920px;height:238px;background:var(--st-deep);pointer-events:none}
+#detail .info{z-index:1;border-top:3px solid transparent;border-image:linear-gradient(90deg,var(--vein) 0%,var(--vein-deep) 50%,transparent 100%) 1;font-family:var(--f-mono);font-size:15px;letter-spacing:.14em;text-transform:uppercase}
+#detail .info b{font-family:var(--f-text);font-size:22px;letter-spacing:0;text-transform:none}
+#detail .origin{font-family:var(--f-mono);font-size:16px;letter-spacing:.2em;text-transform:uppercase;color:var(--vein)}
+/* Performance and tuning: strata background, profile tiles with a top vein of their own colour */
+#perf,#tuning{background:linear-gradient(180deg,#141517 0%,#141517 196px,#101113 196px,#0e0f10 100%)}
+#perf::before,#tuning::before{content:"";position:absolute;left:0;top:195px;width:1920px;height:1px;background:var(--st-rule)}
+.card.ptile{background:#0e0f10;border-top:3px solid var(--slate);border-radius:2px}
+.card.ptile.cur{border-top-color:var(--vein)}
+#perf .note{font-family:var(--f-text)}
+/* Game screen (a game is open): its label reads like a sample */
+#game .tag{font-family:var(--f-mono);font-size:17px;letter-spacing:.12em}
+/* FIRST RUN and full-screen dialogs: a stratum card on black */
+#dlg.solid .box{background:#121315;border-top:3px solid var(--vein);border-radius:2px;top:220px}
+#dlg.solid .brand{letter-spacing:.55em}
+/* On-screen keyboard (connect.js osk) */
+#dlg .krow{display:flex;gap:10px;justify-content:center}
+#dlg .key{min-width:56px;padding:10px 0;text-align:center;font-family:var(--f-mono);font-size:24px;background:#0e0f10;border-radius:2px}
+#dlg .key.wide{min-width:120px;font-size:16px;letter-spacing:.14em}
+#dlg .okbox{font-family:var(--f-mono);font-size:28px;color:var(--warm);border-bottom:2px solid var(--vein);padding-bottom:8px;min-height:40px;word-break:break-all}

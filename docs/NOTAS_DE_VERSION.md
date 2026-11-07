@@ -1,44 +1,69 @@
-# STONE OS (rebuild) 0.4.0-dev.1 — llegar y jugar
+# STONE OS (rebuild) 1.0.0-rc1
 
-**La consola arranca directamente en STONE**, sin comandos (D-29). Incluye todo lo de 0.3.0-dev.1 (F0, F1 y F2).
+La primera versión candidata de STONE OS para STONE MACHINE (AMD BC-250, 8 núcleos, 40 CU), con todo el plan del prompt maestro (D-31). Se instala desde cero con la ISO y arranca directamente en STONE.
 
-## Novedades
+**Es una versión candidata: todo está probado en software (CODE TESTED) y nada se ha observado todavía en la BC-250.** Instalar la ISO borra el disco de la consola.
 
-- **Sesión STONE automática.** STONE Home delante y Steam oculto, desde el primer encendido.
-- **Guardia de arranque.** Si dos arranques seguidos no llegan a mostrar STONE Home, la consola vuelve sola al Game Mode de Bazzite. `stone-session status` explica por qué y `sudo stone-session default on` la recupera.
-- **Escritorio desde Home:** Energía → Escritorio. En el escritorio, «Volver a STONE». Un reinicio también vuelve a STONE.
-- **Red:** el cable Ethernet funciona sin configurar nada. El Wi-Fi y el audio desde STONE llegan en F6.
+## Llegar y jugar
 
-## Estado
+- **Arranque directo:** la consola arranca en la sesión STONE: STONE Home delante y Steam oculto.
+- **Guardia de arranque:** si dos arranques seguidos no llegan a mostrar Home, la consola vuelve sola al Game Mode de Bazzite y explica por qué.
+- **FIRST RUN:** placa, núcleos y CU, comprobación del sistema, pantalla, oferta de activar 40 CU, cuenta de Steam y rendimiento en BALANCED.
+- **Energía:** Apagar, Reiniciar, Escritorio («Volver a STONE» para regresar) y Opciones de arranque (Safe Mode, versión anterior).
 
-| | |
-| --- | --- |
-| Software | CODE TESTED |
-| Hardware | NOT TESTED: nada se ha probado aún en la BC-250 (D-28). Instalar la ISO borra el disco |
+## Diseño Estratos
 
----
+Toda la interfaz en capas como roca vista en corte, con etiquetas de muestra, la veta ámbar y el estado de la máquina siempre a la vista.
 
-## Lo que ya traía 0.3.0-dev.1 (F2)
+## Rendimiento y salud
 
-Primera versión de la reconstrucción con la consola completa de STONE OS para STONE MACHINE: AMD BC-250 con 8 núcleos y 40 CU. Incluye F0, F1 y F2.
+- **Perfiles:** SILENT, BALANCED y PERFORMANCE; CUSTOM con pruebas; perfil por juego; calibración; última configuración buena y Safe Mode.
+- **40 CU desde STONE:** activar, probar 3 minutos y apagar, con confirmación; una guardia vuelve a 24 CU si hay errores de GPU.
+- **STONE HEALTH** (Ajustes → Salud) y `stone-doctor`: CPU, memoria, discos, servicios y errores de GPU.
+- **Caja negra:** los errores del arranque anterior, conservados para diagnóstico.
 
-### Qué trae
+## Imagen
 
-- **Base:** Bazzite `bazzite-deck:stable-44`, fijada a la de las mediciones de rc14–rc23. Regulador de GPU v0.4.14, fijado. `amdgpu` con la opción de 40 CU, `stone-cu40` y la guardia de arranque. Tema de arranque STONE, sin reposo.
-- **`stoned` (F1):** perfiles SILENT, BALANCED y PERFORMANCE; última configuración buena; Safe Mode; telemetría y límites térmicos; perfiles por juego; calibración; configuración de referencia de 8 núcleos y 40 CU.
-- **Sesión STONE (F2):**
-  - STONE Home delante, con Steam oculto;
-  - el juego al frente al jugar;
-  - el botón guía devuelve a Home y REANUDAR devuelve el juego;
-  - si Home falla varias veces, la consola pasa al Game Mode de Steam.
-- **STONE Home:** la interfaz de rc23, más:
-  - FIRST RUN en una instalación nueva;
-  - métricas de arranque BOOT TO VISUAL y BOOT TO READY (`stone-session boot`);
-  - pantalla de actualizaciones adaptada a la sesión STONE.
-- **STONE DISPLAY y STONE OPTIMIZED**, portados de rc23.
-- **Procedencia completa** en `/usr/lib/stone-release`. Imagen firmada sin clave (Sigstore).
+- **Escalado por juego:** FSR del juego, FSR de pantalla, OptiScaler y HelixSR.
+- **STONE IMAGE:** aspectos NATURAL, CLARITY, CINEMA, VIVID y RETRO por juego (vkBasalt).
+- **Generación de fotogramas** (experimental, con OptiScaler y nunca en juegos con anti-cheat ni en línea).
+- **STONE DISPLAY:** la pantalla real y lo que cabe en la conexión.
 
-### Qué no trae todavía
+## Inteligencia
 
-- El Quick Menu superpuesto encima del juego: llega tras la prueba T-SESS-04.
-- Performance Center y TUNING (F3), GRAPHICS (F4), EXPERIENCE ENGINE (F5), CONNECT (F6), DOWNLOADS (F7), EMULATION (F8) y DESKTOP (F9).
+**EXPERIENCE ENGINE**, con reglas fijas y sin IA generativa:
+- confianza por juego;
+- última medición (FPS, 1 % más lento, tirones);
+- aviso cuando algo cambió desde la medición;
+- mejor configuración medida para calidad, equilibrio y fluidez;
+- previsión térmica en el modo técnico;
+- autorreparación: apaga el aspecto de un juego que se cerró mal.
+
+## Conexiones y ajustes
+
+- **Bluetooth:** buscar, emparejar, conectar y olvidar mandos y auriculares, con su batería.
+- **Audio:** salida y volumen.
+- **Red:** cable, y Wi-Fi con teclado en pantalla.
+
+## Biblioteca, descargas y almacenamiento
+
+- **Almacenamiento:** espacio por disco con aviso, juegos por tamaño, caché de sombreadores y datos de Proton.
+- **Descargas** de Steam en curso.
+- **Limpiar caché** y **desinstalar** desde la interfaz de Steam.
+
+## Emulación
+
+- **Emuladores:** 12 de Flathub.
+- **Tus juegos** en `~/Emulation/roms/<consola>`: STONE los añade a la biblioteca y se abren con su emulador como cualquier juego.
+
+## Calidad
+
+- **Pruebas en CI:** la consola, Home en navegadores reales, la sesión STONE y la firma.
+- **Prueba de humo de la imagen:** antes de publicar se comprueban programas, servicios y módulos.
+- **Firma:** imagen firmada sin clave (Sigstore).
+
+## No incluido
+
+- **NEURAL RENDER:** solo la arquitectura, sin ningún backend activo.
+- **Menú superpuesto encima del juego:** se decide tras probar el botón guía en la placa.
+- **Instalador con imagen propia:** de momento es Anaconda, con un informe de instalación.

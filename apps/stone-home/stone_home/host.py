@@ -17,13 +17,17 @@ from stone_games import schema as games_schema
 from stone_games.perf import PerfAsync
 
 from . import bootmetrics
+from . import connect
 from . import bridge
 from . import emulators
 from . import firstrun
+from . import health
 from . import library
+from . import roms
 from . import shortcuts
 from . import steamcef
 from . import steamsettings
+from . import storage
 from . import system
 
 
@@ -41,6 +45,8 @@ class Host:
         self.steam_ui = steamcef                              # Steam's interface (replaced in tests)
         self.session_focus = None                             # gamescope_x11.Focus in the STONE session (tests: a fake)
         self.session_switch = ["/usr/bin/stone-session", "switch"]   # tests: a fake
+        self.cu40_cmd = ["pkexec", "/usr/bin/stone-cu40"]             # tests: a fake
+        self.rollback_cmd = ["pkexec", "/usr/bin/bootc", "rollback"]  # tests: a fake
         cef = _SteamUIProxy(self)
         # STONE DISPLAY: display model and the game resolution environment (stone_display/).
         self.display = stone_display.Display(game_policy=self.game_policy, cef=cef,
@@ -301,6 +307,33 @@ class Host:
         preset = args[2] if len(args) == 3 else None
         self._opt_call(done, lambda: self.optimized.set_image(appid, args[1], preset))
 
+    def m_game_experience(self, args, done):
+        """EXPERIENCE ENGINE report of one game."""
+        appid, _ = self._game_args(args, 1, 1)
+        self._opt_call(done, lambda: self.optimized.experience(appid))
+
+    def m_game_frameGen(self, args, done):
+        appid, _ = self._game_args(args, 1, 1)
+        self._opt_call(done, lambda: self.optimized.frame_generation(appid))
+
+    def m_game_setFrameGen(self, args, done):
+        if len(args) != 2 or not isinstance(args[1], bool):
+            return done(None, "InvalidValue", "arguments")
+        appid, _ = self._game_args(args[:1], 1, 1)
+        self._opt_call(done, lambda: self.optimized.set_frame_generation(appid, args[1]))
+
+    def m_game_look(self, args, done):
+        """lookOptions(appid): STONE IMAGE looks of one game and the chosen one."""
+        appid, _ = self._game_args(args, 1, 1)
+        self._opt_call(done, lambda: self.optimized.look_options(appid))
+
+    def m_game_setLook(self, args, done):
+        """setLook(appid, key|null)."""
+        if len(args) != 2 or not (args[1] is None or isinstance(args[1], str)):
+            return done(None, "InvalidValue", "arguments")
+        appid, _ = self._game_args(args[:1], 1, 1)
+        self._opt_call(done, lambda: self.optimized.set_look(appid, args[1]))
+
     def m_components(self, args, done):
         """components(kind?): without kind, what is downloaded; with kind, download the newest official release."""
         if not args:
@@ -493,6 +526,139 @@ class Host:
                 res = ({"ok": True}, None, "") if r.returncode == 0 else (None, "PermissionDenied", r.stdout.strip() or r.stderr.strip())
             except (OSError, subprocess.SubprocessError) as e:
                 res = (None, "Unsupported", str(e))
+            GLib.idle_add(lambda: (done(*res), False)[1])
+        threading.Thread(target=work, daemon=True).start()
+
+    # ---- 40 CU from STONE Home (M04): the page confirms, pkexec + polkit allow these lines only --
+    CU40_OPS = {"enable": ["enable", "--yes"], "disable": ["disable", "--yes"], "test": ["test", "--minutes", "3"]}
+
+    def m_gpu_cu40(self, args, done):
+        if len(args) != 1 or args[0] not in self.CU40_OPS:
+            return done(None, "InvalidValue", "operation")
+        argv = self.cu40_cmd + self.CU40_OPS[args[0]]
+
+        def work():
+            try:
+                r = subprocess.run(argv, capture_output=True, text=True, timeout=600)
+                text = (r.stdout + r.stderr).strip()
+                res = ({"ok": r.returncode == 0, "code": r.returncode, "text": text[-2000:]}, None, "")
+                if r.returncode in (126, 127):              # pkexec: refused or dismissed
+                    res = (None, "PermissionDenied", text[-500:] or "refused")
+            except (OSError, subprocess.SubprocessError) as e:
+                res = (None, "Unsupported", str(e))
+            GLib.idle_add(lambda: (done(*res), False)[1])
+        threading.Thread(target=work, daemon=True).start()
+
+    # ---- STONE CONNECT and SETTINGS (M12, M16): Bluetooth, audio, network (connect.py) -----------
+    CONNECT = {
+        "bt.devices": (lambda: connect.bt_devices(), 0),
+        "bt.scan": (lambda: connect.bt_scan(), 0),
+        "bt.action": (lambda a, mac: connect.bt_action(a, mac), 2),
+        "audio.status": (lambda: connect.audio_status(), 0),
+        "audio.default": (lambda i: connect.audio_default(i), 1),
+        "audio.volume": (lambda v: connect.audio_volume(v), 1),
+        "net.status": (lambda: connect.net_status(), 0),
+        "net.wifiList": (lambda: connect.wifi_list(), 0),
+        "net.wifiConnect": (lambda ssid, pw: connect.wifi_connect(ssid, pw), 2),
+        "net.wifiDisconnect": (lambda dev: connect.wifi_disconnect(dev), 1),
+    }
+
+    def _connect(self, name, args, done):
+        fn, n = self.CONNECT[name]
+        if len(args) != n:
+            return done(None, "InvalidValue", "arguments")
+
+        def work():
+            try:
+                r = fn(*args)
+                res = (r, None, "") if "error" not in r else (None, "Unsupported", r["error"])
+            except Exception as e:  # noqa: BLE001  (a tool that misbehaves is reported, never fatal)
+                res = (None, "HardwareError", f"{name}: {e!r}")
+            GLib.idle_add(lambda: (done(*res), False)[1])
+        threading.Thread(target=work, daemon=True).start()
+
+    def __getattr__(self, attr):
+        if attr.startswith("m_"):
+            name = attr[2:].replace("_", ".", 1)
+            if name in Host.CONNECT:
+                return lambda args, done: self._connect(name, args, done)
+        raise AttributeError(attr)
+
+    # ---- Boot options from STONE Home (M02): the boot menu is not reachable with a controller ----
+    def m_boot_rollback(self, args, done):
+        """Next boot: the previous image (bootc rollback through pkexec; polkit allows this line only)."""
+        argv = self.rollback_cmd
+
+        def work():
+            try:
+                r = subprocess.run(argv, capture_output=True, text=True, timeout=120)
+                text = (r.stdout + r.stderr).strip()
+                if r.returncode in (126, 127):
+                    res = (None, "PermissionDenied", text[-300:] or "refused")
+                elif r.returncode != 0:
+                    res = (None, "Unsupported", text[-300:] or f"bootc rollback: {r.returncode}")
+                else:
+                    res = ({"ok": True, "text": text[-500:]}, None, "")
+            except (OSError, subprocess.SubprocessError) as e:
+                res = (None, "Unsupported", str(e))
+            GLib.idle_add(lambda: (done(*res), False)[1])
+        threading.Thread(target=work, daemon=True).start()
+
+    # ---- STONE EMULATION (M14): the person's games for other consoles (roms.py) ---------------
+    def _bg(self, done, fn, what):
+        def work():
+            try:
+                res = (fn(), None, "")
+            except Exception as e:  # noqa: BLE001
+                res = (None, "HardwareError", f"{what}: {e!r}")
+            GLib.idle_add(lambda: (done(*res), False)[1])
+        threading.Thread(target=work, daemon=True).start()
+
+    def m_roms_scan(self, args, done):
+        self._bg(done, roms.scan, "roms")
+
+    def m_roms_folders(self, args, done):
+        self._bg(done, lambda: {"base": roms.folders()}, "roms")
+
+    def m_roms_add(self, args, done):
+        self._bg(done, lambda: roms.add_to_library(steam_ui=self.steam_ui), "roms")
+
+    # ---- STONE STORAGE and DOWNLOADS (M20, M13) ---------------------------------------------
+    def m_storage_status(self, args, done):
+        root = self.root()
+
+        def work():
+            try:
+                res = (storage.status(root), None, "")
+            except Exception as e:  # noqa: BLE001
+                res = (None, "HardwareError", f"storage: {e!r}")
+            GLib.idle_add(lambda: (done(*res), False)[1])
+        threading.Thread(target=work, daemon=True).start()
+
+    def m_storage_clearShaderCache(self, args, done):
+        if len(args) != 1 or not isinstance(args[0], str):
+            return done(None, "InvalidValue", "appid")
+        r = storage.clear_shader_cache(self.root(), args[0])
+        done(r) if "error" not in r else done(None, "InvalidValue", r["error"])
+
+    def m_storage_uninstall(self, args, done):
+        """Steam's own uninstall dialog for an installed game (Steam asks for confirmation)."""
+        if len(args) != 1 or not isinstance(args[0], str) or not args[0].isdigit():
+            return done(None, "InvalidValue", "appid")
+        try:
+            self.sys.open_url(f"steam://uninstall/{args[0]}")
+        except ValueError as e:
+            return done(None, "InvalidValue", str(e))
+        done({"ok": True})
+
+    # ---- STONE HEALTH (M19) ---------------------------------------------------------------
+    def m_health_status(self, args, done):
+        def work():
+            try:
+                snap = health.snapshot()
+                res = ({"snapshot": snap, "checks": [list(c) for c in health.doctor(snap)]}, None, "")
+            except Exception as e:  # noqa: BLE001  (a reading that fails is reported, never fatal)
+                res = (None, "HardwareError", f"health: {e!r}")
             GLib.idle_add(lambda: (done(*res), False)[1])
         threading.Thread(target=work, daemon=True).start()
 

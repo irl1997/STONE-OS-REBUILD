@@ -638,6 +638,54 @@ def H08_escritorio_only_in_the_stone_session_through_stone_session_switch():
 
 
 @test
+def H09_cu40_only_three_operations_through_pkexec_and_health():
+    with Tmp() as d:
+        calls = os.path.join(d, "calls")
+        h = host_mod.Host(lambda *a: None, stoned=FakeStoned(), sysapi=system.System(spawn=lambda u: None), steam_root="/nonexistent")
+        h.cu40_cmd = ["sh", "-c", f'echo "$*" >> {calls}; echo Listo', "stone-cu40"]
+        for bad in ({"method": "gpu.cu40", "args": []}, {"method": "gpu.cu40", "args": ["guard"]},
+                    {"method": "gpu.cu40", "args": ["enable; reboot"]}):
+            assert run_host(h, bad)[1] == "InvalidValue", bad
+        r = run_host(h, {"method": "gpu.cu40", "args": ["enable"]}, timeout=15)
+        assert r[0] == {"ok": True, "code": 0, "text": "Listo"}, r
+        run_host(h, {"method": "gpu.cu40", "args": ["test"]}, timeout=15)
+        assert open(calls).read().split("\n")[:2] == ["enable --yes", "test --minutes 3"]
+        h.cu40_cmd = ["sh", "-c", "exit 126"]
+        assert run_host(h, {"method": "gpu.cu40", "args": ["disable"]}, timeout=15)[1] == "PermissionDenied"
+        r = run_host(h, {"method": "health.status", "args": []}, timeout=30)
+        assert r[1] is None and any(c[1] == "Memoria" for c in r[0]["checks"]), r
+
+
+@test
+def H10_connect_methods_check_arguments_and_turn_errors_into_unsupported():
+    C = host_mod.connect
+    saved = (C.bt_devices, C.wifi_connect)
+    C.bt_devices = lambda: {"devices": []}
+    C.wifi_connect = lambda ssid, pw: {"error": "Contraseña incorrecta"} if pw == "mala1234" else {"ok": True}
+    try:
+        h = host_mod.Host(lambda *a: None, stoned=FakeStoned(), sysapi=system.System(spawn=lambda u: None), steam_root="/nonexistent")
+        assert run_host(h, {"method": "bt.devices", "args": []}, timeout=15)[0] == {"devices": []}
+        assert run_host(h, {"method": "bt.devices", "args": ["x"]})[1] == "InvalidValue"
+        assert run_host(h, {"method": "net.wifiConnect", "args": ["Casa", "buena123"]}, timeout=15)[0] == {"ok": True}
+        assert run_host(h, {"method": "net.wifiConnect", "args": ["Casa", "mala1234"]}, timeout=15)[1] == "Unsupported"
+        assert run_host(h, {"method": "net.reboot", "args": []})[1] == "InvalidValue"
+    finally:
+        C.bt_devices, C.wifi_connect = saved
+
+
+@test
+def H11_previous_version_only_through_the_fixed_rollback_command():
+    h = host_mod.Host(lambda *a: None, stoned=FakeStoned(), sysapi=system.System(spawn=lambda u: None), steam_root="/nonexistent")
+    h.rollback_cmd = ["sh", "-c", "echo Next boot: rollback"]
+    assert run_host(h, {"method": "boot.rollback", "args": []}, timeout=15)[0]["ok"] is True
+    h.rollback_cmd = ["sh", "-c", "exit 126"]
+    assert run_host(h, {"method": "boot.rollback", "args": []}, timeout=15)[1] == "PermissionDenied"
+    h.rollback_cmd = ["sh", "-c", "echo no rollback deployment >&2; exit 1"]
+    r = run_host(h, {"method": "boot.rollback", "args": []}, timeout=15)
+    assert r[1] == "Unsupported"
+
+
+@test
 def H02_launch_only_games_from_the_last_library_scan():
     with Tmp() as d:
         root = FX.build(os.path.join(d, "Steam"))

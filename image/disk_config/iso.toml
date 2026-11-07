@@ -4,8 +4,11 @@
 # console follows that image's channel tag (@UPDATE_REF@) for atomic updates.
 [customizations.installer.kickstart]
 contents = """
-%post
+%post --log=/root/stone-install.log
 bootc switch --mutate-in-place --transport registry @UPDATE_REF@
+# STONE install report (M21): what was installed and when, for STONE HEALTH and support
+{ echo "STONE OS installed: $(date -u +%Y-%m-%dT%H:%M:%SZ)"; echo "Image: @IMAGE_REF@ (updates: @UPDATE_REF@)";
+  cat /usr/lib/stone-release 2>/dev/null; lsblk -o NAME,SIZE,TYPE,MOUNTPOINTS 2>/dev/null; } > /var/log/stone-install.txt || true
 %end
 """
 

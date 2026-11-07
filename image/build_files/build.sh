@@ -112,6 +112,10 @@ cp -a /ctx/modules/games/game-profiles/. /usr/share/stone/game-profiles/
 ## Both engines stay until board test 26 passes (R-02, D-06): Chromium draws on the GPU; the
 ## GTK 4 + WebKitGTK 6 shell is the software fallback. The build fails without either.
 dnf5 -y install webkitgtk6.0 gtk4 gobject-introspection chromium   # cairo-1.0 typelib: GTK from Python
+## STONE IMAGE looks (stone_games/look.py) use the vkBasalt Vulkan layer. Without it the looks show
+## "no disponible" and nothing else changes, so a missing package is a warning, not a failure.
+dnf5 -y install --skip-unavailable vkBasalt
+compgen -G "/usr/share/vulkan/implicit_layer.d/*[Bb]asalt*" || echo "WARNING: vkBasalt layer not installed; STONE IMAGE looks unavailable"
 python3 -c "import gi; gi.require_version('Gtk', '4.0'); gi.require_version('WebKit', '6.0'); from gi.repository import Gtk, WebKit" \
     || { echo "ERROR: WebKitGTK 6 / GTK 4 bindings missing; STONE Home fallback cannot run"; exit 1; }
 CHROMIUM_BIN=""
@@ -162,7 +166,7 @@ printf '%s\n' "# STONE OS: the STONE session is the automatic session (D-29)." \
     "[Autologin]" "Session=gamescope-session-stone.desktop" > /etc/sddm.conf.d/zz-stone-session.conf
 test -x /usr/libexec/stone/stone-session-select && test -x /usr/libexec/stone/stone-session-guard \
     || { echo "ERROR: STONE session helpers missing"; exit 1; }
-systemctl enable stone-session-guard.service
+systemctl enable stone-session-guard.service stone-blackbox.service
 command -v pkexec >/dev/null || { echo "ERROR: pkexec missing; Escritorio / Volver a STONE cannot switch sessions"; exit 1; }
 ls /usr/share/wayland-sessions/plasma.desktop /usr/share/wayland-sessions/plasmawayland.desktop 2>/dev/null \
     || echo "WARNING: no Plasma session file; Escritorio will look for gnome.desktop"
@@ -186,8 +190,8 @@ rpmfile() { local v; v="$(rpm -qf --qf '%{NAME} %{VERSION}-%{RELEASE}\n' "$1" 2>
 {
     echo "STONE_NAME=\"STONE OS\""
     echo "STONE_VERSION=\"${STONE_VERSION}\""
-    echo "STONE_PHASE=\"F2\""
-    echo "STONE_MODULES_ABSENT=\"connect downloads emulation desktop\""
+    echo "STONE_PHASE=\"1.0\""
+    echo "STONE_MODULES_ABSENT=\"\""
     echo "STONE_SESSION_DEFAULT=\"on (sudo stone-session default off)\""
     echo "STONE_CHANNEL=\"${STONE_CHANNEL:-dev}\""
     echo "STONE_COMMIT=\"${STONE_COMMIT:-unknown}\""
@@ -209,4 +213,4 @@ rpmfile() { local v; v="$(rpm -qf --qf '%{NAME} %{VERSION}-%{RELEASE}\n' "$1" 2>
 } > /usr/lib/stone-release
 cat /usr/lib/stone-release
 
-echo "STONE OS ${STONE_VERSION} (F2): build completed."
+echo "STONE OS ${STONE_VERSION} (1.0): build completed."

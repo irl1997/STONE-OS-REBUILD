@@ -327,6 +327,36 @@ def register(root=None, proc="/proc"):
     return out
 
 
+def prepare_session(root=None, proc="/proc"):
+    """STONE session start (supervisor.run), before Steam starts: what rc23's `register` did that
+    the STONE session still needs. Steam's interface flag (steamcef: JUGAR through Steam, Steam's
+    settings, adding shortcuts while Steam runs) and the shortcuts that waited for Steam to be closed
+    (emulators, games of emulators). The STONE shortcut and the startup movie are rc23's Game Mode
+    autostart and are not written. On a new installation Steam's folder appears after its first
+    start: the flag is then created at the next session start."""
+    root = root or steam_root()
+    if steam_running(proc):
+        return {"result": "skipped", "reason": "steam is running"}
+    out = {"result": "ok"}
+    if os.environ.get("STONE_HOME_CEF", "1") != "0":
+        out["steam_ui_launch"] = os.path.isdir(root) and steamcef.enable(root)
+    from . import emulators
+    extra = emulators.pending_entries()
+    accts = accounts(root)
+    if extra and not accts:
+        emulators.requeue_entries(extra)
+        out["shortcuts"] = "waiting for the first Steam sign-in"
+    elif extra:
+        added = []
+        for a in accts:
+            try:
+                added += add_extra_shortcuts(a, extra)
+            except (OSError, vdf.VDFError):
+                pass
+        out["shortcuts_added"] = sorted(set(added))
+    return out
+
+
 def add_extra_shortcuts(acct, entries):
     """Non-Steam shortcuts for installed emulators ({name, exe, start, options}); an entry with
     the same Exe and launch options already present is left alone. Steam must be closed."""

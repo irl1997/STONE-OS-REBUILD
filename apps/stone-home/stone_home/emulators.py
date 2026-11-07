@@ -94,13 +94,44 @@ def take_pending():
     return keys
 
 
+PENDING_ENTRIES = "pending-entries.json"
+
+
+def queue_entries(entries):
+    """Shortcuts other than catalog emulators (games of emulators, roms.py) to add when Steam is
+    closed: [{name, exe, start, options}] with exe/start already quoted as Steam writes them."""
+    path = os.path.join(SC.state_dir(), PENDING_ENTRIES)
+    try:
+        with open(path) as f:
+            have = [e for e in json.load(f) if isinstance(e, dict)]
+    except (OSError, ValueError, TypeError):
+        have = []
+    keys = {(e.get("exe"), e.get("options")) for e in have}
+    have += [e for e in entries if (e["exe"], e["options"]) not in keys]
+    os.makedirs(SC.state_dir(), exist_ok=True)
+    SC._write_atomic(path, (json.dumps(have) + "\n").encode())
+
+
 def pending_entries():
-    """Shortcut entries for register(): written into shortcuts.vdf while Steam is closed."""
+    """Shortcut entries for register() / prepare_session(): written into shortcuts.vdf while Steam is
+    closed. Taken from the queue: requeue_entries() puts them back if they could not be written."""
     out = []
     for key in take_pending():
         name, exe, start, opts = _shortcut_fields(key)
         out.append({"name": name, "exe": f'"{exe}"', "start": f'"{start}"', "options": opts})
+    path = os.path.join(SC.state_dir(), PENDING_ENTRIES)
+    try:
+        with open(path) as f:
+            out += [e for e in json.load(f) if isinstance(e, dict) and {"name", "exe", "start", "options"} <= set(e)]
+        os.remove(path)
+    except (OSError, ValueError, TypeError):
+        pass
     return out
+
+
+def requeue_entries(entries):
+    if entries:
+        queue_entries(entries)
 
 
 def install(key, progress, run=_run, steam_ui=None):
