@@ -99,3 +99,32 @@ function osk(title, done, secret) {
   };
   draw();
 }
+
+/* ---------- STONE STORAGE and DOWNLOADS (storage.py) ---------- */
+const GB = b => b == null ? '—' : b >= 2 ** 30 ? `${(b / 2 ** 30).toFixed(b >= 10 * 2 ** 30 ? 0 : 1).replace('.', ',')} GB` : `${Math.max(1, Math.round(b / 2 ** 20))} MB`;
+function storageRows() {
+  const T = CX.storage;
+  if (!T) { cxLoad('storage', () => Bridge.call('storage.status'), 'Almacenamiento'); return [{ l: 'Leyendo…', s: 'Discos, juegos y descargas', v: '' }]; }
+  if (T.error) return [{ l: 'No se pudo leer el almacenamiento', s: T.error, v: '' }];
+  const rows = T.libraries.map(l => ({ l: l.path, s: `${GB(l.free)} libres de ${GB(l.total)}${l.low ? ' · queda poco espacio' : ''}`, v: l.low ? 'Aviso' : 'Bien', act: 'info', where: 'Biblioteca de Steam en este disco' }));
+  T.downloads.forEach(d => rows.push({ l: `Descargando · ${d.name}`, s: d.progress == null ? 'En cola o preparando' : `${GB(d.downloaded)} de ${GB(d.total)}`, v: d.progress == null ? '—' : `${Math.round(d.progress * 100)} %`, act: 'steam-dl' }));
+  T.games.slice(0, 20).forEach(g => rows.push({ l: g.name, s: `Juego ${GB(g.size)} · caché de sombreadores ${GB(g.shader_cache)} · Proton ${GB(g.prefix)}`, v: GB((g.size || 0) + (g.shader_cache || 0) + (g.prefix || 0)), act: 'game-store', game: g }));
+  rows.push({ l: 'Volver a leer', s: 'Actualiza tamaños y descargas', v: '', act: 'storage-again' });
+  return rows;
+}
+function storeAct(r, ri) {
+  if (r.act === 'storage-again') { play('select'); return cxReset('storage', 'Almacenamiento', ri); }
+  if (r.act === 'steam-dl') { play('select'); return sys('openSteam', 'downloads'); }
+  const g = r.game, back = () => { closeDlg(); play('back'); enterSettings({ pane: true, ri }); };
+  play('select');
+  openDlg(`<h2>${esc(g.name)}</h2><p>Juego: <b>${GB(g.size)}</b> · caché de sombreadores: <b>${GB(g.shader_cache)}</b> · datos de Proton: <b>${GB(g.prefix)}</b></p>
+    <p>La caché de sombreadores se vuelve a crear sola la próxima vez que juegues (el primer arranque irá algo más lento). Desinstalar abre la confirmación de Steam.</p>
+    <div class="btns"><span class="txt-f" data-f data-b="cache">LIMPIAR CACHÉ</span><span class="txt-f" data-f data-b="uninstall">DESINSTALAR</span><span class="txt-f" data-f data-b="no">VOLVER</span></div>`, {
+    onA: el => {
+      if (el.dataset.b === 'no') return back();
+      closeDlg(); play('select');
+      const m = el.dataset.b === 'cache' ? Bridge.call('storage.clearShaderCache', g.appid).then(x => toast(`Caché limpiada: ${GB(x.freed)} libres`, false))
+        : Bridge.call('storage.uninstall', g.appid).then(() => toast(`${g.name}: confirma en Steam para desinstalar`, false));
+      m.catch(e => { play('error'); toast((e && e.message) || 'No se pudo', false); }).then(() => cxReset('storage', 'Almacenamiento', ri));
+    }, onB: back });
+}

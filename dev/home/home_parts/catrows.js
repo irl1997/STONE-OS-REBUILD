@@ -196,6 +196,7 @@ function catRows() {
       { l: 'Volumen de la interfaz', s: 'Independiente del volumen de los juegos', v: Math.round(S.vol * 100) + ' %', key: 'vol' }] };
     case 'Red': return { d: 'El cable de red se configura solo. Para Wi-Fi, elige una red y escribe su contraseña con el mando.', rows: netRows() };
     case 'Bluetooth': return { d: 'Mandos, auriculares y teclados. Para emparejar, ponlos en modo emparejamiento y busca.', rows: btRows() };
+    case 'Almacenamiento': return { d: 'Espacio en cada disco, lo que ocupa cada juego y las descargas de Steam en curso.', rows: storageRows() };
     case 'Salud': return { d: 'El estado de STONE MACHINE, leído ahora. Nada de esta pantalla cambia la consola.', rows: healthRows() };
     case 'Steam': return { d: 'Los ajustes de Steam, con el aspecto de STONE. La lista sale de lo que ofrece este Steam; los de sí/no se cambian con A.', rows: steamSetRows() };
     case 'Emuladores': {

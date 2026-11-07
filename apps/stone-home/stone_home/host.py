@@ -26,6 +26,7 @@ from . import library
 from . import shortcuts
 from . import steamcef
 from . import steamsettings
+from . import storage
 from . import system
 
 
@@ -570,6 +571,34 @@ class Host:
             if name in Host.CONNECT:
                 return lambda args, done: self._connect(name, args, done)
         raise AttributeError(attr)
+
+    # ---- STONE STORAGE and DOWNLOADS (M20, M13) ---------------------------------------------
+    def m_storage_status(self, args, done):
+        root = self.root()
+
+        def work():
+            try:
+                res = (storage.status(root), None, "")
+            except Exception as e:  # noqa: BLE001
+                res = (None, "HardwareError", f"storage: {e!r}")
+            GLib.idle_add(lambda: (done(*res), False)[1])
+        threading.Thread(target=work, daemon=True).start()
+
+    def m_storage_clearShaderCache(self, args, done):
+        if len(args) != 1 or not isinstance(args[0], str):
+            return done(None, "InvalidValue", "appid")
+        r = storage.clear_shader_cache(self.root(), args[0])
+        done(r) if "error" not in r else done(None, "InvalidValue", r["error"])
+
+    def m_storage_uninstall(self, args, done):
+        """Steam's own uninstall dialog for an installed game (Steam asks for confirmation)."""
+        if len(args) != 1 or not isinstance(args[0], str) or not args[0].isdigit():
+            return done(None, "InvalidValue", "appid")
+        try:
+            self.sys.open_url(f"steam://uninstall/{args[0]}")
+        except ValueError as e:
+            return done(None, "InvalidValue", str(e))
+        done({"ok": True})
 
     # ---- STONE HEALTH (M19) ---------------------------------------------------------------
     def m_health_status(self, args, done):
