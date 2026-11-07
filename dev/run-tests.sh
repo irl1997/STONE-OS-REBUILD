@@ -9,4 +9,5 @@ engine="$(command -v podman || command -v docker || true)"
 [[ -n "${engine}" ]] || { echo "podman or docker is needed (see docs/CONSTRUIR.md)" >&2; exit 2; }
 "${engine}" build -t localhost/stone-os-rebuild-dev -f dev/Containerfile dev
 "${engine}" run --rm -v "$(pwd):/src:ro" localhost/stone-os-rebuild-dev \
+    # shellcheck disable=SC2016  # $rc is expanded by the container's bash, not here
     bash -c 'rc=0; scripts/validate.sh || rc=1; scripts/test-all.sh || rc=1; exit $rc'

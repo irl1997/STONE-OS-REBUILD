@@ -26,11 +26,15 @@ def _can_run():
 
 def test_stoned_suite():
     need(_can_run(), "stoned suite needs PyGObject and dbus-daemon (dev container, CI)")
+    env = dict(os.environ, PYTHONWARNINGS="ignore::DeprecationWarning")   # GLib deprecations in the fake governor
     r = subprocess.run([sys.executable, os.path.join(REPO, "tests", "stoned_suite.py")],
-                       capture_output=True, text=True, timeout=1500)
-    tail = "\n".join((r.stdout + r.stderr).splitlines()[-60:])
-    assert r.returncode == 0, tail
-    assert "FAIL" not in r.stdout, tail
+                       capture_output=True, text=True, timeout=1500, env=env)
+    lines = r.stdout.splitlines()
+    failed = [x for x in lines if x.startswith("FAIL")]
+    summary = [x for x in lines if " passed, " in x]
+    report = "\n".join(failed + summary + ["--- last output ---"] + (r.stdout + r.stderr).splitlines()[-40:])
+    print("\n".join(summary))
+    assert r.returncode == 0 and not failed, report
 
 
 if __name__ == "__main__":
