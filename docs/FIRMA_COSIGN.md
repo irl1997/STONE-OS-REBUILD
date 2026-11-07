@@ -4,16 +4,34 @@ Cada imagen de STONE OS se firma (R-09, F0-C). La clave la crea **el propietario
 
 ## Una sola vez
 
-1. Instala cosign en el Mac:
+1. Descarga cosign v3.1.2 (la versión de CI) a una carpeta **fuera** del repositorio y comprueba su suma. El Mac de STONE MACHINE es Apple Silicon y no tiene Homebrew.
 
    ```bash
-   brew install cosign
+   mkdir -p ~/stone-firma && cd ~/stone-firma
    ```
 
-2. En una carpeta **fuera** del repositorio, crea el par de claves. Cuando pida una contraseña, pulsa Enter para dejarla vacía: el flujo de GitHub firma sin contraseña.
+   ```bash
+   curl -LO https://github.com/sigstore/cosign/releases/download/v3.1.2/cosign-darwin-arm64
+   ```
 
    ```bash
-   cosign generate-key-pair
+   curl -LO https://github.com/sigstore/cosign/releases/download/v3.1.2/cosign_checksums.txt
+   ```
+
+   ```bash
+   grep ' cosign-darwin-arm64$' cosign_checksums.txt | shasum -a 256 -c
+   ```
+
+   Debe decir `cosign-darwin-arm64: OK`. Si no, no lo uses.
+
+   ```bash
+   chmod +x cosign-darwin-arm64 && mv cosign-darwin-arm64 cosign && ./cosign version
+   ```
+
+2. Crea el par de claves en esa carpeta. Cuando pida una contraseña, pulsa Enter para dejarla vacía: el flujo de GitHub firma sin contraseña.
+
+   ```bash
+   ./cosign generate-key-pair
    ```
 
    Se crean `cosign.key` (privada) y `cosign.pub` (pública).
@@ -26,5 +44,7 @@ Cada imagen de STONE OS se firma (R-09, F0-C). La clave la crea **el propietario
 ## Verificar una imagen
 
 ```bash
-cosign verify --key cosign.pub ghcr.io/irl1997/stone-os-rebuild:dev
+~/stone-firma/cosign verify --key cosign.pub ghcr.io/irl1997/stone-os-rebuild:dev
 ```
+
+Si GitHub responde «Failed to add secret», no se guardó nada: recarga la página y repite el paso 3 escribiendo el nombre a mano.

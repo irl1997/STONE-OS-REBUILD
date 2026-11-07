@@ -42,7 +42,7 @@ tests:
   - {id: "REF-01", title: "Comprobacion fisica de 8 nucleos y 40 CU (D-16)", phase: F0, kind: P, status: NOT TESTED, runs: [], observed: ["owner, 2026-11-06: 8 cores and 40 CU"]}
   - {id: "DIAG-01", title: "Diagnostico de solo lectura (D-14)", phase: F0, kind: P, status: NOT TESTED, runs: [], observed: []}
   - {id: "T-PLAT-01", title: "stone-release coincide con build-metadata de la imagen instalada", phase: F0, kind: P, status: NOT TESTED, runs: [], observed: []}
-  - {id: "T-BOOT-01", title: "Tiempo de arranque hasta Home (x5)", phase: F9, kind: P, status: NOT TESTED, runs: [], observed: []}
+  - {id: "T-BOOT-01", title: "BOOT TO VISUAL y BOOT TO READY (x5), sin pantallas de Steam ni escritorio", phase: F2, kind: P, status: NOT TESTED, runs: [], observed: []}
   - {id: "T-PERF-01", title: "Configuracion detectada distinta de la de referencia desactiva CUSTOM", phase: F1, kind: S+V, status: NOT TESTED, runs: [], observed: []}
   - {id: "T-STEAM-01", title: "Sin adaptador CEF, JUGAR y biblioteca siguen funcionando", phase: F2, kind: P, status: NOT TESTED, runs: [], observed: []}
   - {id: "T-DISP-01", title: "Modelo de pantalla coincide con el EDID real", phase: F4, kind: P, status: NOT TESTED, runs: [], observed: []}
@@ -55,3 +55,19 @@ tests:
   - {id: "T-EMU-01", title: "Emulador desde STONE con vuelta a Home y al perfil global", phase: F8, kind: P, status: NOT TESTED, runs: [], observed: []}
   - {id: "T-DESK-01", title: "Ida y vuelta al escritorio x5", phase: F9, kind: P, status: NOT TESTED, runs: [], observed: []}
   - {id: "T-DESK-02", title: "Reinicio desde el escritorio vuelve a STONE", phase: F9, kind: P, status: NOT TESTED, runs: [], observed: []}
+  - {id: "T-SESS-01", title: "Encendido a STONE Home x5 sin ninguna pantalla de Steam", phase: F2, kind: P, status: NOT TESTED, runs: [], observed: []}
+  - {id: "T-SESS-02", title: "JUGAR, juego al frente, salir y volver a Home", phase: F2, kind: P, status: NOT TESTED, runs: [], observed: []}
+  - {id: "T-SESS-03", title: "Mando y Steam Input dentro del juego en la sesion STONE", phase: F2, kind: P, status: NOT TESTED, runs: [], observed: []}
+  - {id: "T-SESS-04", title: "Quick Menu de STONE durante el juego", phase: F2, kind: P, status: NOT TESTED, runs: [], observed: []}
+  - {id: "T-SESS-05", title: "Fallo provocado de la sesion: recuperacion tras N intentos", phase: F2, kind: S+V, status: NOT TESTED, runs: [], observed: []}
+  - {id: "T-SESS-06", title: "Steam se actualiza sin mostrar su interfaz", phase: F2, kind: P, status: NOT TESTED, runs: [], observed: []}
+  - {id: "T-SESS-07", title: "Primer inicio de sesion de Steam desde FIRST RUN", phase: F2, kind: P, status: NOT TESTED, runs: [], observed: []}
+  - {id: "T-HOME-01", title: "Fondo del juego seleccionado nitido a la resolucion de la pantalla", phase: F2, kind: P, status: NOT TESTED, runs: [], observed: []}
+  - {id: "T-HOME-02", title: "Con un juego abierto, Home no cambia los FPS medidos", phase: F2, kind: P, status: NOT TESTED, runs: [], observed: []}
+  - {id: "T-FR-01", title: "De la instalacion a Home operable solo con el mando", phase: F2, kind: P, status: NOT TESTED, runs: [], observed: []}
+  - {id: "T-HLTH-01", title: "Cada valor medido de STONE HEALTH coincide con sysfs/hwmon", phase: F3, kind: P, status: NOT TESTED, runs: [], observed: []}
+  - {id: "T-IMG-01", title: "Coste de cada preset de STONE IMAGE registrado", phase: F4, kind: P, status: NOT TESTED, runs: [], observed: []}
+  - {id: "T-AUD-01", title: "La salida de audio elegida persiste tras reiniciar y reconectar", phase: F6, kind: P, status: NOT TESTED, runs: [], observed: []}
+  - {id: "T-DL-03", title: "Pausar y reanudar una descarga desde STONE", phase: F7, kind: P, status: NOT TESTED, runs: [], observed: []}
+  - {id: "T-STOR-01", title: "Tamanos de juegos coinciden con los de Steam", phase: F7, kind: P, status: NOT TESTED, runs: [], observed: []}
+  - {id: "T-INST-01", title: "Instalar sobre un disco con datos pide confirmacion explicita", phase: F9, kind: S+V, status: NOT TESTED, runs: [], observed: []}

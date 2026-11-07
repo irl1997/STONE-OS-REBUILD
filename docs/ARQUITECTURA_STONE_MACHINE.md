@@ -1,6 +1,6 @@
 # STONE MACHINE — Especificación de arquitectura integral de STONE OS
 
-Versión: 1.1 (borrador para aprobación) · Fecha: 2026-11-06 · Resuelve P-14 a nivel documental.
+Versión: 1.2 · Fecha: 2026-11-07 · Resuelve P-14 e integra el prompt maestro (D-25).
 Plataforma única: AMD BC-250 (D-01). Este documento describe el **producto final**. Las fases F0–F9 son etapas de construcción, no recortes del alcance.
 
 ## Cómo leer este documento
@@ -27,12 +27,13 @@ Las especificaciones de diseño originales del proyecto no están disponibles (H
 | A4 | El rendimiento de la GPU se cambia **sólo** a través del regulador. STONE no toca voltaje, ventilador, memoria ni límites de potencia, ni desactiva protecciones | [C] |
 | A5 | Configuración de referencia: **8 núcleos y 40 CU** (D-16). STONE no desbloquea nada ni propone cambios de BIOS o firmware (D-17). Overclock y cambios de frecuencia: sólo a mano, con verificación, guardia de arranque y vuelta atrás; lo automático sólo puede **reducir o desactivar** | [C] D-04, D-16, D-17 |
 | A12 | Ninguna frecuencia máxima, voltaje ni límite térmico es una constante de STONE: se leen del regulador, salen de la calibración o se toman de documentación citada y se revalidan | [C] D-18 |
-| A6 | Steam sigue siendo el motor de la sesión, lanzador y red de seguridad: si STONE falla, la consola sigue usable con la interfaz de Steam | [C] |
+| A6 | **STONE es la experiencia; Steam es un componente interno.** La consola arranca en la sesión propia de STONE (M24), con STONE Home al frente. Steam corre en segundo plano para biblioteca, lanzamiento, Steam Input y descargas, y su interfaz no se muestra como experiencia. Steam Game Mode se conserva sólo como ruta de recuperación. *(v1.1 decía: «Steam sigue siendo el motor de la sesión»; sustituido por D-21)* | [C] D-21 |
 | A7 | Mínimo privilegio: la interfaz nunca es root; `stoned` no es root; cada privilegio extra va en un ayudante de un solo propósito | [C] |
 | A8 | Contratos de API versionados, únicos para producción, simulador y pruebas | [C] R-07 |
 | A9 | La consola es un sistema atómico (bootc): todo se instala en la imagen; el estado del usuario vive en `/var` y `$HOME` | [C] |
 | A10 | Un juego en primer plano tiene prioridad: STONE se duerme mientras se juega | [C] |
-| A11 | Cuatro estados de madurez: `CODE TESTED` → `READY FOR HARDWARE TEST` → `OBSERVED ON BOARD` → `HARDWARE VERIFIED` | [C] D-08 |
+| A11 | Vocabulario único de estados: `CODE TESTED` → `READY FOR HARDWARE TEST` → `OBSERVED ON BOARD` → `HARDWARE VERIFIED`, más `EXPERIMENTAL` y `BLOCKED` para módulos, y `COMMUNITY REPORTED` sólo para perfiles de juego. No se usan otras listas | [C] D-08, D-23 |
+| A13 | Producto, no conjunto de piezas: el objetivo es STONE OS 1.0 RC tal como lo define el prompt maestro (D-25), construido por fases F0–F9 con puerta de software y de placa en cada una | [C] D-25 |
 
 ---
 
@@ -49,13 +50,14 @@ Las especificaciones de diseño originales del proyecto no están disponibles (H
 └──────▲───────────────────────▲──────────────────────────────▲──────────────────────────────▲───────────┘
        │ D-Bus sistema         │ CEF local (adaptador)        │ D-Bus (BlueZ, NM, logind)    │ Flatpak / Steam
        │ stone-performance.v1  │                              │                              │
-┌──────┴─────────────── STONED (usuario `stoned`, systemd aislado) ───────────────┐   Steam · Gamescope
+┌──────┴─────────────── STONED (usuario `stoned`, systemd aislado) ───────────────┐   Steam (en segundo plano)
 │ PERFORMANCE · CALIBRATION · RECOVERY/SAFE MODE · TELEMETRY · THERMAL · GAMES    │
 └──────▲──────────────────────────────────────────────────────────────────────────┘
        │ D-Bus del regulador · sysfs/hwmon (lectura) · /proc
 cyan-skillfish-governor-smu · amdgpu (24/40 CU) · k10temp · nct6683 · logind · BlueZ · NetworkManager
        │
-PLATFORM (Bazzite bootc) · BOOT ENGINE (Plymouth, recover, autoarranque) · AMD BC-250 (BIOS P3.00)
+STONE SESSION (Gamescope propia: STONE Home al frente, juegos, Steam oculto) · ruta de recuperación: Game Mode
+PLATFORM (Bazzite bootc) · BOOT ENGINE (Plymouth, recover) · AMD BC-250 (8 núcleos, 40 CU)
 ```
 
 ### 2.1 Mapa de módulos
@@ -74,15 +76,23 @@ PLATFORM (Bazzite bootc) · BOOT ENGINE (Plymouth, recover, autoarranque) · AMD
 | M10 | STONE GRAPHICS | Usuario | dentro del host | Parcial |
 | M11 | STONE OPTIMIZED + STONE GAME PROFILE | Usuario | dentro del host + `stone-game` | Existe (sin mediciones) |
 | M12 | STONE CONNECT (Bluetooth y mandos) | Usuario (+ sistema) | host | Nuevo |
-| M13 | STONE DOWNLOADS (instalación y desinstalación) | Usuario | host | Parcial |
+| M13 | STONE DOWNLOADS + STONE LIBRARY (instalación, desinstalación, biblioteca unificada) | Usuario | host | Parcial |
 | M14 | STONE EMULATION | Usuario | host | Parcial |
 | M15 | STONE DESKTOP | Usuario + sesión | host + SDDM | Nuevo |
-| M16 | STONE SETTINGS (audio, red, sistema, accesibilidad) [P] | Usuario | host | Parcial (vía Steam) |
+| M16 | STONE SETTINGS + STONE AUDIO (audio, red, idioma, sistema, accesibilidad) | Usuario | host | Parcial (vía Steam) |
+| M17 | STONE IMAGE (postprocesado ligero) | Usuario | host + Gamescope / capa Vulkan | Nuevo |
+| M18 | STONE NEURAL RENDER | Investigación | — | `EXPERIMENTAL` (desactivado) |
+| M19 | STONE HEALTH (diagnóstico) | Usuario (vista) + sistema (datos) | host + `stoned` | Nuevo (sobre M06) |
+| M20 | STONE STORAGE | Usuario | host | Nuevo |
+| M21 | STONE INSTALLER | Instalador | ISO (Anaconda / bootc-image-builder) | Parcial (ISO de rc23) |
+| M22 | FIRST RUN (primer encendido) | Usuario | host + Home | Nuevo |
+| M23 | STONE EXPERIENCE ENGINE | Usuario + sistema | host + `stoned` | Nuevo |
+| M24 | STONE SESSION (sesión gráfica propia) | Sesión | Gamescope + SDDM + systemd de usuario | Nuevo (D-21) |
 | X1 | STONE SECURITY (transversal) | Todas | — | Existe |
 | X2 | STONE API CONTRACTS (transversal) | Todas | — | Nuevo (R-07) |
 | X3 | STONE DEV & TEST (simulador, contenedor, CI, validación) | Fuera de la imagen | — | Existe (a migrar) |
 
-M16 es una propuesta. Hoy los ajustes de audio, red y sistema los da Steam, y no hay un módulo definido para ellos (vacío V-08).
+M13 incluye STONE LIBRARY (§15 del prompt maestro) y M16 incluye STONE AUDIO (§21). STONE UPDATE (§23) es parte de M01, con pantalla propia en Home. El «Visual Engine» de Home (§18) es parte de M07.
 
 ### 2.2 Catálogo de interfaces
 
@@ -135,15 +145,15 @@ Los números de prueba (§n) remiten a `HARDWARE_VALIDATION.md` de rc23. Los ide
 
 | Campo | Especificación |
 | --- | --- |
-| Objetivo y funcionalidades | Encendido de consola continuo e ininterrumpido: Plymouth STONE (THE LINE) → vídeo de arranque de STONE en lugar del de Steam → STONE Home sobre la misma línea [C]; decisión de recuperación antes de la sesión [C] (detalle en M05); registro del acceso directo y autoarranque confirmado de STONE Home [C]; tiempos de arranque medidos y registrados [C]; opción de arranque de mantenimiento `stone.safe=1` [C]. **[P]:** menú de arranque de STONE accesible desde el mando (Safe Mode, versión anterior, escritorio); presupuesto de tiempo de arranque como criterio |
-| Responsabilidades | Que la consola nunca quede en un estado sin salida: si STONE Home no abre, Steam Game Mode queda usable [C] |
-| Dependencias | Plymouth + `plymouth-plugin-script`, dracut, SDDM, `gamescope-session-plus@`, Steam, M05, M07, M08 |
-| Interfaces | Tema `/usr/share/plymouth/themes/stone`; `stone-home-register.service` y `stone-home-autostart.service` (usuario); drop-in de `gamescope-session-plus@.service.d`; `stone-home-session register|launch|status|diag` |
+| Objetivo y funcionalidades | Encendido de consola continuo e ininterrumpido: Plymouth STONE (THE LINE) → sesión STONE (M24) → STONE Home sobre la misma línea, sin pantallas de Steam ni de escritorio [C] D-21; decisión de recuperación antes de la sesión [C] (detalle en M05); tiempos de arranque medidos y registrados [C]: **BOOT TO VISUAL** (primer fotograma de STONE) y **BOOT TO READY** (Home operable), tiempo por servicio (`systemd-analyze`), reintentos y comparación entre arranques, con línea base en la placa antes de optimizar; opción de arranque de mantenimiento `stone.safe=1` [C]. **[P]:** menú de arranque de STONE accesible desde el mando (Safe Mode, versión anterior, escritorio); presupuesto de tiempo de arranque como criterio. Nunca se retrasa la interfaz para ocultar que el sistema no está listo |
+| Responsabilidades | Que la consola nunca quede en un estado sin salida: si la sesión STONE o Home fallan, se registra el error, se reintenta sin ciclos infinitos y, tras N fallos, se arranca la ruta de recuperación (Steam Game Mode de Bazzite) avisando del motivo [C] D-21 |
+| Dependencias | Plymouth + `plymouth-plugin-script`, dracut, SDDM, `gamescope-session-plus`, Steam, M05, M07, M08, M24 |
+| Interfaces | Tema `/usr/share/plymouth/themes/stone`; sesión STONE (M24); `stone-home-session status|diag`; registro de métricas de arranque (`~/.local/state/stone/boot-metrics.jsonl` [P]). El acceso directo «STONE» en Steam y el autoarranque vía `steam://` de rc23 pasan a ser sólo de la ruta de recuperación |
 | Integración con STONE HOME | El vídeo termina en el primer fotograma de Home [C]; Home llama a `HomeReady` cuando está en pantalla [C] |
 | Relación con STONED | `stoned-recover` decide antes de `display-manager.service` [C]; `HomeReady` habilita la aplicación del perfil guardado [C] |
-| Requisitos HW/SW | GPU con salida activa durante el initramfs [V] (pantalla negra de 30–60 s reportada por la comunidad, sin medir en STONE); Steam Game Mode de Bazzite 44 |
-| Fases | F0 (Plymouth, recover, sin reposo); F2 (registro, vídeo, autoarranque); F9+ (menú de arranque con mando [P]) |
-| Aceptación y pruebas | Software: K02–K07 (`test_home.py`), R01–R12 (`run_tests.py`). Placa: §1 (×5), §16, §23. T-BOOT-01 [P]: tiempo desde encendido hasta Home registrado en 5 arranques, sin la pantalla de Steam visible durante más de N s (N a fijar con la medición) |
+| Requisitos HW/SW | GPU con salida activa durante el initramfs [V] (pantalla negra de 30–60 s reportada por la comunidad, sin medir en STONE); `gamescope-session-plus` de Bazzite 44 |
+| Fases | F0 (Plymouth, recover, sin reposo); F2 (sesión STONE, métricas de arranque, recuperación de la sesión); F9+ (menú de arranque con mando [P]) |
+| Aceptación y pruebas | Software: R01–R12 (`run_tests.py`), pruebas de la sesión (M24). Placa: §1 (×5), §16, §23. T-BOOT-01: BOOT TO VISUAL y BOOT TO READY registrados en 5 arranques, **ninguna pantalla de Steam ni de escritorio visible** |
 
 ### M03 · STONED (STONE System Service)
 
@@ -217,27 +227,36 @@ Los números de prueba (§n) remiten a `HARDWARE_VALIDATION.md` de rc23. Los ide
 
 | Campo | Especificación |
 | --- | --- |
-| Objetivo y funcionalidades | La interfaz de consola, entera con mando [C]: Inicio (recientes), Biblioteca (instalados, no instalados, accesos directos), Ficha de juego (JUGAR/INSTALAR/REANUDAR, perfil, imagen), Menú rápido, Ajustes, Performance Center, STONE TUNING, Energía (apagar, reiniciar, apagar tras inactividad), sonido, THE LINE y STONE MOTION, sueño mientras se juega [C]. **[P]:** búsqueda en biblioteca; pantallas de Descargas, Conectar, Emulación y Escritorio (de M12–M15); notificaciones |
-| Responsabilidades | Mostrar el estado real de cada módulo; no ejecutar comandos, rutas ni URLs elegidas por la página [C]; dormir con un juego en primer plano [C] |
+| Objetivo y funcionalidades | La interfaz de consola, entera con mando [C]: Inicio (recientes), Biblioteca (instalados, no instalados, accesos directos), Ficha de juego (JUGAR/INSTALAR/REANUDAR, perfil, imagen), Menú rápido, Ajustes, Performance Center, STONE TUNING, Energía (apagar, reiniciar, apagar tras inactividad), sonido, THE LINE y STONE MOTION, sueño mientras se juega [C]. **Nuevo en v1.2** [C] D-25:
+- Es la aplicación principal de la sesión STONE (M24), no un acceso directo de Steam.
+- **Quick Menu propio** también durante el juego (mecanismo [V] V-13).
+- **Visual Engine:** portadas y fondos a la resolución de la pantalla (corrige los fondos borrosos de rc23), caché, precarga de los elementos próximos y liberación de lo que no se ve, sin presión innecesaria sobre la memoria compartida.
+- **Ciclo de vida** MOUNT → ACTIVE → BACKGROUND → SUSPENDED → UNMOUNT: con un juego delante, Home queda en SUSPENDED (sin animaciones, sin lectura del mando salvo el Quick Menu, sin precargas, telemetría mínima).
+- Pantallas de Descargas, Biblioteca unificada, Conectar, Emulación, Salud, Almacenamiento, Actualizaciones y Escritorio (M12–M23).
+- **[P]:** búsqueda en la biblioteca; notificaciones. |
+| Responsabilidades | Mostrar el estado real de cada módulo; no ejecutar comandos, rutas ni URLs elegidas por la página [C]; consumir lo mínimo con un juego en primer plano [C]; no mostrar la interfaz de Steam como destino [C] D-21 |
 | Dependencias | Chromium del sistema (motor objetivo único) [C] R-02; WebKitGTK 6 + GTK 4 como respaldo hasta cumplir R-02 [C] D-06; Python 3 + PyGObject; fuentes OFL incluidas |
 | Interfaces | `stone-home.v1` (host ↔ UI) [C] R-07; transporte HTTP 127.0.0.1 con ruta secreta por arranque, comprobación de Host/Origin, SSE [C] |
 | Integración con STONE HOME | — (es STONE HOME). Cada módulo M08–M16 se presenta como sección o pantalla de Home |
 | Relación con STONED | Cliente de `org.stonemachine.Performance1` por `bridge.py`; llama a `HomeReady` [C]; `stoned` lo excluye de la detección de juegos [C] |
 | Requisitos HW/SW | Dibujo por GPU a la resolución de la ventana (diseño a 1920×1080, escala hasta 4K) [C]; consumo de memoria y CPU [V] P-10; mando dentro de Home [V] P-16 |
-| Fases | F2 (Home mínimo: biblioteca, JUGAR, vuelta, energía); F3 (Performance Center); después, cada módulo añade su pantalla |
-| Aceptación y pruebas | Software: `test_home.py`, `test_server.py`, `chromium_selftest.py`, e2e Playwright, ESLint, regresión del diseño [C] R-08. Placa: §17, §19, §20, §26 |
+| Fases | F2 (Home en la sesión STONE: biblioteca, JUGAR, vuelta, energía, Visual Engine, ciclo de vida, Quick Menu); F3 (Performance Center, Salud); después, cada módulo añade su pantalla |
+| Aceptación y pruebas | Software: `test_home.py`, `test_server.py`, `chromium_selftest.py`, e2e Playwright, ESLint, regresión del diseño [C] R-08; prueba de ciclo de vida (en SUSPENDED: 0 cuadros dibujados, 0 temporizadores activos salvo el Quick Menu). Placa: §17, §19, §20, §26; T-HOME-01 [P]: el fondo de un juego seleccionado se ve nítido a la resolución de la pantalla; T-HOME-02 [P]: con un juego abierto, Home no cambia los FPS medidos |
 
 ### M08 · STONE STEAM BRIDGE
 
 | Campo | Especificación |
 | --- | --- |
-| Objetivo y funcionalidades | Integración con Steam en un único adaptador [C] R-06: biblioteca desde VDF/ACF/`localconfig.vdf`/`shortcuts.vdf` [C]; juegos no instalados desde la interfaz de Steam [C]; lanzar (`SteamClient.Apps.RunGame`, respaldo `steam://`) [C]; acceso directo «STONE» e identificadores [C]; abrir secciones de ajustes de Steam [C]; catálogo de ajustes Get/Set descubiertos (sólo sí/no) [C]; opciones de lanzamiento por juego (para M10/M11) [C]; detección de capacidades de la Steam instalada [C] R-06 |
-| Responsabilidades | Aislar las APIs internas de Steam: ningún otro módulo llama a `SteamClient.*` [C]; modo degradado cuando una función no existe [C]; nunca escribir `shortcuts.vdf` con Steam abierto [C] |
-| Dependencias | Steam (se actualiza solo), puerto CEF `127.0.0.1:8080` con `.cef-enable-remote-debugging` [C] (riesgo N-05, revisión [C] R-06) |
+| Objetivo y funcionalidades | Integración con Steam en un único adaptador [C] R-06: biblioteca desde VDF/ACF/`localconfig.vdf`/`shortcuts.vdf` [C]; juegos no instalados desde la interfaz de Steam [C]; lanzar (`SteamClient.Apps.RunGame`, respaldo `steam://`) [C]; acceso directo «STONE» e identificadores [C]; abrir secciones de ajustes de Steam [C]; catálogo de ajustes Get/Set descubiertos (sólo sí/no) [C]; opciones de lanzamiento por juego (para M10/M11) [C]; detección de capacidades de la Steam instalada [C] R-06. **v1.2** [C] D-21, D-24:
+- Steam corre en segundo plano dentro de la sesión STONE: el bridge lo arranca, comprueba que está listo y lo usa sin mostrar su interfaz.
+- Descargas, pausas, verificación y actualizaciones de juegos van por este adaptador, con capacidades detectadas y marcadas «depende de Steam».
+- Abrir secciones de la interfaz de Steam queda sólo como último recurso, y siempre avisado. |
+| Responsabilidades | Aislar las APIs internas de Steam: ningún otro módulo llama a `SteamClient.*` [C]; modo degradado cuando una función no existe [C]; nunca escribir `shortcuts.vdf` con Steam abierto [C]; vigilar que Steam siga vivo y reiniciarlo sin ciclos infinitos [P] |
+| Dependencias | Steam (se actualiza solo), puerto CEF `127.0.0.1:8080` con `.cef-enable-remote-debugging` [C] (riesgo N-05, revisión [C] R-06); modo de Steam en segundo plano [V] V-12, V-14, V-16 |
 | Interfaces | API interna de Python con capacidades (`capabilities()`, `library()`, `launch()`, `install()`, `settings()`, `launch_options()`); se expone a la UI por `stone-home.v1` |
 | Integración con STONE HOME | Biblioteca, ficha, JUGAR/INSTALAR, Ajustes → Steam [C] |
 | Relación con STONED | Ninguna directa: `stoned` detecta las partidas por `/proc`, no por el bridge [C] |
-| Requisitos HW/SW | Steam Game Mode de Bazzite; formato del `reaper` [V] P-11 |
+| Requisitos HW/SW | Steam en segundo plano dentro de la sesión STONE [V]; formato del `reaper` en ese modo [V] P-11 |
 | Fases | F2 (biblioteca, lanzar, acceso directo); F4–F5 (opciones de lanzamiento); F6+ (ajustes) |
 | Aceptación y pruebas | Software: `test_home.py` L, K, H; pruebas de contrato con grabaciones de la Steam real [C] R-06. Placa: §4, §17, §23. T-STEAM-01 [P]: con el adaptador CEF desactivado, JUGAR y la biblioteca de instalados siguen funcionando |
 
@@ -265,6 +284,13 @@ Los números de prueba (§n) remiten a `HARDWARE_VALIDATION.md` de rc23. Los ide
 - La ruta recomendada por juego se elige por **medición en esta consola con 40 CU** (vía M11), no por tablas genéricas.
 - Las rutas que dependen del rendimiento de la GPU (resolución interna, calidad del upscaler) se guardan junto con la configuración en que se midieron (CU, calibración, regulador).
 - Si la consola arranca en el estado degradado de 24 CU, esas recomendaciones se marcan como no válidas y se vuelve a la ruta segura (nativo o FSR del juego) [P].
+
+**Generación de fotogramas** [C] D-22:
+- Apagada por defecto.
+- Se activa sólo si la persona la elige o si una medición en esta consola muestra mejora: frametime, 1 % low, latencia y artefactos medidos, no sólo los FPS medios.
+- Nunca en juegos online o con anti-cheat.
+- Los FPS generados se muestran siempre aparte de los renderizados.
+- Opciones a evaluar: la de FSR 3.1 vía OptiScaler y las que ofrezca cada juego [V].
 - Ninguna resolución, calidad o tasa de cuadros «esperada» para 40 CU se fija de antemano: no hay mediciones [C] D-18. |
 | Responsabilidades | Reversibilidad completa, también si Home o la consola se caen [C]; no tocar archivos del juego salvo instalación pedida (M13) [C] |
 | Dependencias | M08 (opciones de lanzamiento), M13 (componentes), detección de anti-cheat (`detect.py`) |
@@ -323,6 +349,13 @@ Los números de prueba (§n) remiten a `HARDWARE_VALIDATION.md` de rc23. Los ide
 | Fases | F7 (con lo existente disponible antes: INSTALAR en F2, componentes en F4) |
 | Aceptación y pruebas | Software: G20, G21 (descarga, SHA-256, ruta maliciosa). Placa: T-DL-01 instalar y desinstalar un juego por Steam desde STONE; T-DL-02 instalar y quitar OptiScaler deja la carpeta idéntica |
 
+**Ampliación v1.2: STONE LIBRARY** [C] D-25:
+- Biblioteca unificada con el origen de cada juego: Steam, accesos directos, emuladores (M14) y juegos instalados a mano.
+- Epic y GOG sólo mediante herramientas autorizadas (por ejemplo Heroic, que añade sus juegos como accesos directos) [P] V-05. No se promete compatibilidad universal.
+- Descargas: instalar, pausar, reanudar, cancelar, actualizar, desinstalar, progreso y velocidad, a través de M08 («depende de Steam») [C] D-24.
+- Nunca se muestra una operación que no se ejecutó.
+- Prueba nueva: T-DL-03 [P], pausar y reanudar una descarga desde STONE, con el progreso coincidiendo con el de Steam.
+
 ### M14 · STONE EMULATION — Parcial
 
 | Campo | Especificación |
@@ -364,6 +397,124 @@ Los números de prueba (§n) remiten a `HARDWARE_VALIDATION.md` de rc23. Los ide
 | Requisitos HW/SW | [V] Salida de audio real (HDMI a través del adaptador) |
 | Fases | F6–F7 (con CONNECT) [P] |
 | Aceptación y pruebas | [P] Placa: cambio de volumen y salida reflejado en la pantalla y en `wpctl status` |
+
+**Ampliación v1.2: STONE AUDIO** [C] D-25:
+- Salida por HDMI/DisplayPort (a través del adaptador DP→HDMI [V]), USB y Bluetooth (con M12).
+- Selección de salida simple y persistente; reconexión automática.
+- Sonidos de interfaz de Home, que se callan durante el juego.
+- Prueba nueva: T-AUD-01 [P], la salida elegida se mantiene tras reiniciar y tras desconectar y reconectar el dispositivo.
+
+### M17 · STONE IMAGE — Nuevo
+
+| Campo | Especificación |
+| --- | --- |
+| Objetivo y funcionalidades | Postprocesado ligero por juego: presets STONE NATURAL, CLARITY, CINEMA, VIVID, RETRO y CUSTOM; nitidez, debanding, ajuste tonal moderado, tratamiento de negros, filtros para emulación, HDR cuando lo haya [C] D-25 |
+| Responsabilidades | Ningún filtro pesado por defecto (NATURAL = sin coste o casi); medir el coste de cada efecto y mostrarlo; desactivable por juego; nunca en juegos online o con anti-cheat si el filtro se inyecta en el proceso del juego [C] |
+| Dependencias | Filtros de Gamescope (fuera del proceso del juego, preferidos) o capa Vulkan (vkBasalt u otra) [V]: elegir tras medir coste y compatibilidad |
+| Interfaces | `image.presets`, `image.get(appid)`, `image.set(appid, preset)` en `stone-home.v1` [P]; se guarda en el perfil de juego (M11) |
+| Integración con STONE HOME | Ficha del juego, junto a «Imagen» de M10 |
+| Relación con STONED | Ninguna |
+| Requisitos HW/SW | Coste medido en la BC-250 con 40 CU [V] |
+| Fases | F4 |
+| Aceptación y pruebas | Software: validación de presets y de su aplicación y retirada por lanzamiento. Placa: T-IMG-01 [P], coste por preset (FPS y frametime con y sin el filtro) registrado en el perfil |
+
+### M18 · STONE NEURAL RENDER — `EXPERIMENTAL`
+
+| Campo | Especificación |
+| --- | --- |
+| Objetivo y funcionalidades | Arquitectura de backends intercambiables para reconstrucción o mejora de imagen con redes neuronales, preparada para backends futuros compatibles con GFX1013 [C] D-25 |
+| Responsabilidades | Permanece **desactivado** mientras no exista un backend funcional y medible; no copia tecnologías propietarias que dependen de hardware ausente; nunca resta rendimiento general [C] |
+| Dependencias | Ninguna en producción. Investigación: coste de cómputo, memoria, latencia y calidad en RDNA1/GFX1013 [V] |
+| Interfaces | Ninguna expuesta hasta que haya un backend; después, una ruta más en M10 |
+| Integración con STONE HOME | Ninguna mientras sea `EXPERIMENTAL` |
+| Relación con STONED | Ninguna |
+| Requisitos HW/SW | Desconocidos [V] |
+| Fases | Sin fase: investigación paralela; entra en M10 sólo con medición en la placa |
+| Aceptación y pruebas | Un backend sólo sale de `EXPERIMENTAL` con medición en la placa que muestre mejora de calidad a coste aceptable |
+
+### M19 · STONE HEALTH — Nuevo
+
+| Campo | Especificación |
+| --- | --- |
+| Objetivo y funcionalidades | Panel de diagnóstico: CPU (núcleos en línea), GPU (CU detectados), frecuencias, temperaturas, consumo cuando la telemetría sea válida, ventiladores, memoria, almacenamiento, controladores, errores de GPU, estabilidad (fallos, Safe Mode, LKG), estado de servicios. Incluye **Crash Black Box**: registros útiles antes y después de un fallo [C] D-25 |
+| Responsabilidades | Distinguir siempre **medido / estimado / no disponible**; no inventar sensores [C] A1, D-18 |
+| Dependencias | M06 (telemetría), M05 (recuperación), `systemd`, journal, `hardware/bc250.yaml` (fiabilidad de cada sensor) |
+| Interfaces | `GetMetrics`, `GetCapabilities`, `GetState` de `stoned`; `health.services`, `health.errors` en `stone-home.v1` [P] |
+| Integración con STONE HOME | Ajustes → Salud y un indicador discreto en Inicio |
+| Relación con STONED | Lee de `stoned` (sólo lectura) |
+| Requisitos HW/SW | Sensores reales de la BC-250 [V] |
+| Fases | F3 |
+| Aceptación y pruebas | Software: cada valor lleva su origen y su estado; sensor ausente = «no disponible». Placa: T-HLTH-01 [P], cada valor «medido» coincide con una lectura directa de sysfs/hwmon |
+
+### M20 · STONE STORAGE — Nuevo
+
+| Campo | Especificación |
+| --- | --- |
+| Objetivo y funcionalidades | Espacio libre, juegos instalados y tamaño por juego, bibliotecas de Steam por disco, temporales, cachés, shader cache, recomendaciones de limpieza y alertas de espacio [C] D-25 |
+| Responsabilidades | **Nunca** borrar partidas, configuraciones ni datos personales sin una confirmación explícita en pantalla; limpiar sólo cachés regenerables, y siempre avisado [C] |
+| Dependencias | VDF/ACF de Steam (M08), `df`/`statvfs`, rutas de caché conocidas |
+| Interfaces | `storage.summary`, `storage.cleanable`, `storage.clean(id)` (sólo elementos de una lista fija) en `stone-home.v1` [P] |
+| Integración con STONE HOME | Ajustes → Almacenamiento; aviso de espacio antes de instalar (M13) |
+| Relación con STONED | Ninguna |
+| Requisitos HW/SW | Disco de la consola [V] P-17 |
+| Fases | F7 |
+| Aceptación y pruebas | Software: la limpieza sólo toca rutas de la lista fija (prueba con un árbol simulado que incluye partidas). Placa: T-STOR-01 [P], los tamaños coinciden con los de Steam |
+
+### M21 · STONE INSTALLER — Parcial
+
+| Campo | Especificación |
+| --- | --- |
+| Objetivo y funcionalidades | Instalador con identidad STONE: detectar hardware (BC-250), verificar compatibilidad, identificar discos, avisar del borrado, particionar, instalar, preparar el primer arranque y generar un informe de instalación [C] D-25 |
+| Responsabilidades | No sobrescribir una instalación existente sin confirmación; ISO publicada sólo si se construyó y verificó (SHA-256) [C] |
+| Dependencias | bootc-image-builder (Anaconda ISO) de rc23/F0 [C]; personalización visual de Anaconda limitada [V] V-17 |
+| Interfaces | `image/disk_config/iso.toml` (kickstart); informe en el primer arranque [P] |
+| Integración con STONE HOME | FIRST RUN (M22) muestra el informe de instalación |
+| Relación con STONED | El primer arranque arranca `stoned` con estado vacío (BALANCED, sin calibración) |
+| Requisitos HW/SW | Pendrive y disco de la BC-250 [V] |
+| Fases | F9 (identidad completa). La ISO funcional ya existe desde rc1 y se reconstruye cuando se acuerde |
+| Aceptación y pruebas | §16 (instalación en la placa); T-INST-01 [P], instalar sobre un disco con datos pide confirmación explícita |
+
+### M22 · FIRST RUN — Nuevo
+
+| Campo | Especificación |
+| --- | --- |
+| Objetivo y funcionalidades | Primer encendido guiado: detectar BC-250 y configuración (8 núcleos, 40 CU), comprobación de salud, pantalla y resolución, conectividad, mando, audio, inicio de sesión en Steam (una sola vez, integrado en la sesión STONE [V] V-15), preparar la biblioteca, perfil BALANCED [C] D-25 |
+| Responsabilidades | Nunca overclock, calibración ni funciones experimentales en el primer arranque [C] A2 |
+| Dependencias | M04, M09, M12, M16, M19, M08, M24 |
+| Interfaces | Pantallas de Home; estado `firstrun.done` en `~/.config/stone/` [P] |
+| Integración con STONE HOME | Es la primera vista de Home tras instalar |
+| Relación con STONED | Lee capacidades; el perfil queda en BALANCED de fábrica |
+| Requisitos HW/SW | Mando conectado o mando por USB [V] |
+| Fases | F2 |
+| Aceptación y pruebas | Placa: T-FR-01 [P], de la instalación a Home operable sólo con el mando y sin ninguna pantalla de Steam salvo el inicio de sesión |
+
+### M23 · STONE EXPERIENCE ENGINE — Nuevo
+
+| Campo | Especificación |
+| --- | --- |
+| Objetivo y funcionalidades | Inteligencia adaptativa sobre M04, M06 y M11, con **reglas deterministas y estadística, sin IA generativa** [C] D-25. Funciones, cada una con su prueba, sólo cuando sus datos existan: Performance Autopilot (QUALITY / BALANCED / FLUID), Adaptive Experience con histéresis, 1 % Low Optimizer, Thermal Forecast, Efficiency Engine (sólo con potencia fiable), Stutter Hunter, VRR Intelligence, Smart Pre-Warm, Regression Guard (tras actualizar Proton, Mesa o kernel), Profile Evolution, Self-Healing (sólo reparaciones no destructivas), Auto Benchmark, Confidence System (estados de A11) |
+| Responsabilidades | Predecible, auditable y reversible: cada cambio automático queda registrado con su motivo y se revierte si empeora; dentro de los límites validados de M04; nunca subir un límite [C] A5 |
+| Dependencias | Fuente de FPS y frametime durante la partida [V] V-11 (hoy sólo el CSV de MangoHud al final); M06, M11, M04 |
+| Interfaces | `experience.mode`, `experience.log` en `stone-home.v1` [P]; ajustes por `SetSessionProfile`/`SetGameProfile` de `stoned` |
+| Integración con STONE HOME | Ficha del juego (modo de experiencia) y Quick Menu |
+| Relación con STONED | Pide perfiles a `stoned`; nunca escribe en el hardware |
+| Requisitos HW/SW | Mediciones reales por juego en la BC-250 |
+| Fases | F5 en adelante, función a función |
+| Aceptación y pruebas | Cada función: prueba de reglas con series simuladas (incluida la histéresis: sin cambios constantes) y prueba en la placa con mejora medida antes de activarse por defecto |
+
+### M24 · STONE SESSION — Nuevo (D-21)
+
+| Campo | Especificación |
+| --- | --- |
+| Objetivo y funcionalidades | Sesión gráfica propia de la consola: SDDM inicia automáticamente una variante de `gamescope-session-plus` llamada `stone` (archivo en `/usr/share/gamescope-session-plus/sessions.d/` [V] V-12), cuya aplicación principal es STONE Home. Steam se lanza dentro de la misma Gamescope en segundo plano, sin interfaz visible. Los juegos que lanza Steam aparecen al frente; al salir, el foco vuelve a Home [C] D-21 |
+| Responsabilidades | Que nunca se vea la interfaz de Steam ni un escritorio como experiencia; mantener Steam vivo (reinicio controlado); arrancar la ruta de recuperación (Game Mode de Bazzite) tras N fallos seguidos de la sesión, con el motivo registrado; no romper el cambio a escritorio de Bazzite (M15) |
+| Dependencias | `gamescope-session-plus` y Gamescope de Bazzite 44; Steam en modo segundo plano [V] V-14; SDDM y su configuración de inicio automático [V] V-12; M07, M08, M02, M05 |
+| Interfaces | Archivo de sesión `stone`; unidades de usuario `stone-session` [P]; `session.state` en `stone-home.v1` [P]; registro de arranques de la sesión |
+| Integración con STONE HOME | Home es la aplicación principal de la sesión; Quick Menu durante el juego mediante el mecanismo de superposición de Gamescope [V] V-13 |
+| Relación con STONED | Ninguna directa; `stoned` sigue detectando partidas por el `reaper` de Steam [V] P-11 en este modo |
+| Requisitos HW/SW | Mando con Steam Input dentro de la sesión [V] V-15; actualizaciones del propio cliente de Steam sin ventanas visibles [V] V-16 |
+| Fases | F2 (prioritaria: decide la forma de toda la experiencia) |
+| Aceptación y pruebas | Software: pruebas de la lógica de reintentos y recuperación con un Steam y una Gamescope simulados. Placa: T-SESS-01 de encendido a Home ×5 sin ninguna pantalla de Steam; T-SESS-02 JUGAR, juego al frente, salir y volver a Home; T-SESS-03 mando y Steam Input dentro del juego; T-SESS-04 Quick Menu durante el juego; T-SESS-05 la sesión falla a propósito → recuperación tras N intentos; T-SESS-06 Steam se actualiza sin mostrar su interfaz; T-SESS-07 primer inicio de sesión en Steam desde FIRST RUN |
 
 ### X1 · STONE SECURITY (transversal)
 
@@ -425,19 +576,22 @@ Contenido:
 | --- | --- | --- | --- |
 | F0 | Imagen base, arranque, sin reposo, procedencia, regulador v0.4.14 fijado, módulo 40 CU y guardia | M01, M02 (base), M04 (40 CU en la imagen), X1, X3 | CI ahora; placa diferida (D-19): §0, §1, §2, §14, §16, §21, §22, §25 (sólo lectura del estado) |
 | F1 | `stoned` núcleo: perfiles, configuración detectada (8 núcleos / 40 CU), LKG, recuperación, Safe Mode, telemetría, térmico, partidas | M03, M04 (base), M05, M06 | CI + §3–§13, §15 |
-| F2 | STONE Home mínimo + Steam Bridge + autoarranque | M07, M08, M02 (Home) | CI + §17, §19, §20, §23, §26 |
-| F3 | Performance Center, TUNING, CALIBRATION, gestión de 40 CU desde STONE | M04, M06 (UI) | CI + §18, §25, §28 |
-| F4 | DISPLAY + GRAPHICS | M09, M10 | CI + §27, T-DISP-01, T-GFX-01 |
-| F5 | OPTIMIZED + GAME PROFILE | M11 | CI + §29 |
-| F6 | CONNECT (+ SETTINGS audio/red [P]) | M12, M16 | T-CONN-01..03 |
-| F7 | DOWNLOADS unificado | M13 | T-DL-01..02 |
+| F2 | **Sesión STONE propia** + STONE Home (Visual Engine, ciclo de vida, Quick Menu) + Steam Bridge en segundo plano + FIRST RUN + métricas de arranque + pantalla de actualizaciones | M24, M07, M08, M22, M02, M01 (UPDATE) | CI + §17, §19, §20, §23, §26, T-SESS-01..07, T-BOOT-01, T-FR-01, T-HOME-01..02 |
+| F3 | Performance Center, TUNING, CALIBRATION, gestión de 40 CU desde STONE, STONE HEALTH | M04, M06 (UI), M19 | CI + §18, §25, §28, T-HLTH-01 |
+| F4 | DISPLAY + GRAPHICS (con generación de fotogramas, D-22) + STONE IMAGE | M09, M10, M17 | CI + §27, T-DISP-01, T-GFX-01, T-IMG-01 |
+| F5 | OPTIMIZED + GAME PROFILE + EXPERIENCE ENGINE (función a función) | M11, M23 | CI + §29 |
+| F6 | CONNECT + SETTINGS y AUDIO | M12, M16 | T-CONN-01..03, T-AUD-01 |
+| F7 | DOWNLOADS + LIBRARY + STORAGE | M13, M20 | T-DL-01..03, T-STOR-01 |
 | F8 | EMULATION | M14 | T-EMU-01 |
-| F9 | DESKTOP + menú de arranque con mando [P] | M15, M02 | T-DESK-01..02, T-BOOT-01 |
+| F9 | DESKTOP + menú de arranque con mando [P] + INSTALLER con identidad STONE → **STONE OS 1.0 RC** | M15, M02, M21 | T-DESK-01..02, T-INST-01, validación final |
+| — | NEURAL RENDER (investigación, `EXPERIMENTAL`) | M18 | Sólo con medición en placa |
 
 Reglas:
 - [C] Cada fase se cierra cuando su CI pasa y sus pruebas de placa están ejecutadas y registradas.
 - [C] Ninguna funcionalidad de rc23 se pierde: cada fase porta lo existente de sus módulos o lo deja declarado como «no presente todavía», nunca simulado.
-- [P] El orden de F6–F9 es una recomendación y está pendiente de confirmación del propietario.
+- [C] Bajo la autonomía de D-20, Claude avanza dentro y entre fases sin pedir aprobación. Las puertas de placa dependen de las sesiones del propietario con la consola.
+- [P] El orden de F6–F9 es el recomendado. La equivalencia con las fases del prompt maestro está en `REVISION_PROMPT_MAESTRO.md` §5.
+- **Bloqueos P0 de una versión candidata** (prompt §30) [C]: no arranca; no aparece STONE Home; no se puede iniciar un juego; se pierde la recuperación; hay operaciones privilegiadas inseguras; se aplica hardware sin protección; se pierden datos; una actualización fallida deja la consola irrecuperable.
 
 ---
 
@@ -454,12 +608,19 @@ Reglas:
 | V-07 | Distribución futura de STONE PROFILE DATABASE | Con las actualizaciones de imagen; descarga firmada más adelante | Decisión del propietario |
 | V-08 | Ajustes propios (audio, red, idioma) frente a los de Steam | Módulo M16 | Decisión del propietario |
 | V-09 | Presupuesto de tiempo de arranque | Fijar tras medir 5 arranques | Diagnóstico + §1 |
-| V-10 | Plugin de STONE dentro del juego (menú rápido de Steam) | Evaluar en F6+ | Decisión del propietario |
-| V-11 | Fuente fiable de FPS para el controlador dinámico | Sólo registro CSV de MangoHud al terminar la partida | §29 |
+| V-10 | ~~Plugin de STONE dentro del menú rápido de Steam~~ **Sustituido** por el Quick Menu propio de la sesión STONE (V-13) | — | D-21 |
+| V-11 | Fuente fiable de FPS durante la partida (controlador dinámico, EXPERIENCE ENGINE) | Registro CSV de MangoHud al terminar; evaluar lectura en vivo de mangoapp | §29 |
+| V-12 | Formato del archivo de sesión de `gamescope-session-plus` en Bazzite 44 y cómo elige SDDM la sesión automática sin romper el cambio a escritorio | Variante `stone` en `sessions.d`, junto a la `ogui-steam` de Bazzite | Leer la imagen base en CI + prueba en placa |
+| V-13 | Cómo mostrar el Quick Menu de STONE encima de un juego en Gamescope | Ventana superpuesta de Gamescope (el mecanismo que usa la interfaz de Steam); si no es viable, el botón de Home devuelve a STONE con el juego en pausa de foco | Prueba en placa (T-SESS-04) |
+| V-14 | Steam en segundo plano sin interfaz: modo de arranque, botón Steam/guía, overlay del juego, notificaciones | Arrancar Steam sin su interfaz de Game Mode y capturar el botón guía en STONE | Prueba en placa |
+| V-15 | Steam Input y mandos para Home y juegos fuera de Game Mode; inicio de sesión de Steam la primera vez | Home lee el mando por la API Gamepad; inicio de sesión de Steam una sola vez dentro de FIRST RUN | Prueba en placa (T-SESS-03, T-SESS-07) |
+| V-16 | Actualización del propio cliente de Steam sin ventanas | Actualizar en segundo plano; si Steam abre una ventana, mostrarla tapada por la pantalla de STONE | Prueba en placa (T-SESS-06) |
+| V-17 | Cuánto se puede personalizar visualmente el instalador Anaconda | Marca STONE en lo que Anaconda permita; si no basta, evaluar un instalador propio en F9 | Investigación en F9 |
 
 ## Registro de cambios
 
 | Versión | Fecha | Cambio |
 | --- | --- | --- |
 | 1.0 | 2026-11-06 | Primera especificación integral (P-14), pendiente de aprobación |
+| 1.2 | 2026-11-07 | Prompt maestro integrado (D-20 a D-25): A6 sustituido por la sesión propia (M24); A11 con vocabulario único; A13 nuevo; módulos M17–M24 (IMAGE, NEURAL RENDER, HEALTH, STORAGE, INSTALLER, FIRST RUN, EXPERIENCE ENGINE, SESSION); LIBRARY en M13 y AUDIO en M16; M02, M07, M08 y M10 actualizados (métricas de arranque, Visual Engine, ciclo de vida, Steam en segundo plano, generación de fotogramas con condiciones); fases F2–F9 reordenadas hacia 1.0 RC; bloqueos P0; V-12 a V-17 |
 | 1.1 | 2026-11-06 | Configuración de referencia 8 núcleos / 40 CU (D-16, D-17); principio A12 sin cifras inventadas (D-18); M04, M10 y M11 rediseñados para esa configuración; F0 incluye el módulo de 40 CU; V-02 cerrado |

@@ -116,7 +116,7 @@ No se cambia ninguna frecuencia, voltaje ni umbral (D-18). `governor-config.py` 
 | La base Bazzite cambia | Digest fijado; actualización deliberada con CI |
 | Actualizar la consola por error a una imagen F0 | F0-A y F0-B |
 
-## 8. Estado de implementación (2026-11-07)
+## 8. Estado de implementación (actualizado 2026-11-07)
 
 | # | Tarea | Estado | Verificado |
 | --- | --- | --- | --- |
@@ -126,8 +126,8 @@ No se cambia ninguna frecuencia, voltaje ni umbral (D-18). `governor-config.py` 
 | 4 | Regulador v0.4.14 fijado + RPM archivado en CI + registro de contrato | Hecho | Disponibilidad comprobada en el COPR (build 11067195). Base fijada comprobada en GHCR (HTTP 200). **Contrato en vivo: sólo en placa** |
 | 5 | 40 CU (obligatorio), Plymouth, bloqueo de reposo | Hecho | `test_cu40.py` 14/14 y `test_cu40_patch.py` PASS en el Mac |
 | 6 | `hardware/bc250.yaml` y `hardware/validation/matrix.yaml` | Hecho | Comprobados con el analizador YAML de Ruby (Psych) y las reglas de `test_hardware_profile.py`: 6/6. Encontró y se corrigieron dos errores de sintaxis |
-| 7 | Workflows (CI, imagen firmada, ISO, release en borrador) | Hecho | **No ejecutados:** falta subir el repositorio y crear `SIGNING_SECRET` (F0-C) |
+| 7 | Workflows (CI, imagen firmada, ISO, release en borrador) | Hecho | **CI ejecutado en GitHub: verde** en el Pull Request #1 (commit 344bacf, 37 s). La primera ejecución (40eec30) falló en Ruff por la caché en `/src` de solo lectura; corregido con `RUFF_CACHE_DIR`. `Build image` sin ejecutar: falta `SIGNING_SECRET` (F0-C) y fusionar |
 | 8 | Pruebas | Hecho | En el Mac: `test_build_config`, `test_release_info` y 40 CU PASS; `test_governor_config` omitida (necesita Python 3.11) |
 | 9 | Documentación (es): `CONSTRUIR.md`, `FIRMA_COSIGN.md`, `NOTAS_DE_VERSION.md`, `README.md` | Hecho | — |
 
-Puerta de software pendiente: primera ejecución de CI y de `Build image` en GitHub. Puerta de placa: diferida (D-19).
+Puerta de software: **CI en verde** (2026-11-07). Pendiente: `SIGNING_SECRET`, `cosign.pub` y el primer `Build image` tras fusionar. Puerta de placa: diferida (D-19).
