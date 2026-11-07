@@ -1,4 +1,4 @@
-# Primera sesión en la placa con STONE OS (rebuild) F2
+# Primera sesión en la placa con STONE OS (rebuild) 0.3.0-dev.1 (F2)
 
 Guía para el propietario. Se hace en la BC-250, con mando, teclado y una terminal: TTY (Ctrl+Alt+F3) o SSH desde otro equipo.
 
@@ -10,6 +10,16 @@ Nada de esta sesión toca la BIOS, el firmware, las frecuencias, los voltajes, l
 Lo que se vea se anota como `OBSERVED ON BOARD`, nunca `HARDWARE VERIFIED` (D-08).
 
 ## Antes de empezar
+
+- **Atajo con scripts (`docs/fases/placa/`).** Los pasos 2, 3, 4 y 6 tienen un script que hace exactamente lo que se describe abajo y dice LISTO o PARA:
+  - `stone-paso-2-fijar-rc23.sh`
+  - `stone-paso-3-cambiar-a-f2.sh`
+  - `stone-paso-4-comprobar.sh`
+  - `stone-paso-6-recoger.sh`, que recoge los registros de la sesión STONE.
+
+  Los pasos 3 y 4 leen `digest-esperado.txt`, que Claude escribe después de comprobar la firma de la release. Se copian a un pendrive junto con `docs/diagnostico/stone-diag-readonly.sh`.
+
+- **No se usa la ISO.** La ISO de la release instala desde cero y **borra el disco**. Para esta sesión se cambia de imagen con `bootc switch`, que no borra nada. La ISO queda de reserva para una instalación limpia.
 
 - Duración aproximada: 1 h 30 min.
 - **Qué traer al Mac al final:**
@@ -49,7 +59,7 @@ Con `sudo ostree admin status` debe aparecer `Pinned: yes` en rc23. Para quitar 
 1. **En el Mac, comprueba la firma** (`docs/FIRMA.md`):
 
    ```bash
-   cosign verify ghcr.io/irl1997/stone-os-rebuild:dev \
+   cosign verify ghcr.io/irl1997/stone-os-rebuild:0.3.0-dev.1 \
      --certificate-identity-regexp '^https://github.com/irl1997/STONE-OS-REBUILD/\.github/workflows/build-image\.yml@' \
      --certificate-oidc-issuer https://token.actions.githubusercontent.com
    ```
@@ -59,10 +69,10 @@ Con `sudo ostree admin status` debe aparecer `Pinned: yes` en rc23. Para quitar 
 2. **En la placa:**
 
    ```bash
-   sudo bootc switch ghcr.io/irl1997/stone-os-rebuild:dev
+   sudo bootc switch ghcr.io/irl1997/stone-os-rebuild:0.3.0-dev.1
    ```
 
-   Descarga la imagen y la deja preparada. Los datos, juegos y ajustes de `/home` no se tocan. Los argumentos de arranque actuales, como el de 40 CU si rc23 lo tenía, pasan a la versión nueva.
+   Se usa la etiqueta de la versión, no `dev`: así la consola no se actualiza sola a una compilación posterior en mitad de las pruebas. Descarga la imagen y la deja preparada. Los datos, juegos y ajustes de `/home` no se tocan. Los argumentos de arranque actuales, como el de 40 CU si rc23 lo tenía, pasan a la versión nueva.
 
 3. Reinicia: `systemctl reboot`.
 
@@ -83,7 +93,7 @@ Qué se mira:
 
 | Comprobación | Qué se espera |
 | --- | --- |
-| `bootc status` | Arrancada `ghcr.io/irl1997/stone-os-rebuild:dev` con el mismo `sha256:` que verificó cosign; rc23 como versión anterior |
+| `bootc status` | Arrancada `ghcr.io/irl1997/stone-os-rebuild:0.3.0-dev.1` con el mismo `sha256:` que verificó cosign; rc23 como versión anterior |
 | `stone-release` | `STONE_PHASE="F2"` |
 | `/proc/cmdline` | Los mismos argumentos que en el diagnóstico de rc23 |
 | `stonectl status` | `stoned` responde; perfil BALANCED; configuración detectada de 8 núcleos y, si estaba activa, 40 CU |
