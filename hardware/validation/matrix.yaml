@@ -64,6 +64,8 @@ tests:
   - {id: "T-SESS-07", title: "Primer inicio de sesion de Steam desde FIRST RUN", phase: F2, kind: P, status: NOT TESTED, runs: [], observed: []}
   - {id: "T-HOME-01", title: "Fondo del juego seleccionado nitido a la resolucion de la pantalla", phase: F2, kind: P, status: NOT TESTED, runs: [], observed: []}
   - {id: "T-HOME-02", title: "Con un juego abierto, Home no cambia los FPS medidos", phase: F2, kind: P, status: NOT TESTED, runs: [], observed: []}
+  - {id: "T-UPD-01", title: "En la sesion STONE, una version nueva aparece preparada y se aplica con Reiniciar y actualizar", phase: F2, kind: P, status: NOT TESTED, runs: [], observed: []}
+  - {id: "T-SESS-08", title: "Las filas Abrir en Steam de Ajustes se ven delante de Home en la sesion STONE", phase: F2, kind: P, status: NOT TESTED, runs: [], observed: []}
   - {id: "T-FR-01", title: "De la instalacion a Home operable solo con el mando", phase: F2, kind: P, status: NOT TESTED, runs: [], observed: []}
   - {id: "T-HLTH-01", title: "Cada valor medido de STONE HEALTH coincide con sysfs/hwmon", phase: F3, kind: P, status: NOT TESTED, runs: [], observed: []}
   - {id: "T-IMG-01", title: "Coste de cada preset de STONE IMAGE registrado", phase: F4, kind: P, status: NOT TESTED, runs: [], observed: []}

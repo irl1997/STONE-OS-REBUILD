@@ -73,7 +73,7 @@ Estados según D-23. Nada de esto se ha observado todavía en la placa.
 | 4 | Quick Menu encima del juego | Pendiente | Plan B (V-13) mientras tanto: el botón guía vuelve a Home |
 | 5 | Métricas de arranque | CODE TESTED | `bootmetrics.py`, `stone-session boot`; prueba en placa T-BOOT-01 |
 | 5 | FIRST RUN | CODE TESTED | `firstrun.py`, `home_parts/power_boot.js`; prueba en placa T-FR-01 |
-| 5 | Pantalla de actualizaciones | Pendiente | — |
+| 5 | Pantalla de actualizaciones | CODE TESTED | `system.update_timer`, `home_parts/catrows.js`; V-18, T-UPD-01 |
 | 6 | Imagen con la sesión instalada (no automática) | CODE TESTED (build en CI) | `build.sh` §6d |
 
 **Métricas de arranque.** Se registran dos momentos por arranque, en segundos desde que arranca el kernel:
@@ -89,3 +89,12 @@ Si un arranque se mide dos veces, vale la primera, así que reiniciar Home no ca
 4. Rendimiento en BALANCED.
 
 FIRST RUN no sube frecuencias, no calibra y no activa nada experimental (A2). Conectividad y audio llegan con CONNECT y SETTINGS en F6. Para volver a verlo, se borra `~/.config/stone/firstrun.json`.
+
+**Actualizaciones.** La pantalla muestra tres cosas:
+- la versión instalada;
+- la versión preparada, si la hay, con el botón «Reiniciar y actualizar»;
+- el estado de la comprobación automática de Bazzite, leído en systemd sin privilegios: activa o no, la última vez y la próxima.
+
+Dentro de la sesión STONE ya no remite al botón STEAM, que ahí no está a la vista. La búsqueda manual queda abierta en V-18.
+
+**Pendiente conocido (V-19).** Las filas «Abrir en Steam» de Ajustes asumen la interfaz de Steam al frente. En la sesión STONE hay que comprobarlas en la placa (T-SESS-08).

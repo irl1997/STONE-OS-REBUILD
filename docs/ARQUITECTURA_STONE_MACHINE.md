@@ -616,6 +616,8 @@ Reglas:
 | V-15 | Steam Input y mandos para Home y juegos fuera de Game Mode; inicio de sesión de Steam la primera vez | Home lee el mando por la API Gamepad; inicio de sesión de Steam una sola vez dentro de FIRST RUN | Prueba en placa (T-SESS-03, T-SESS-07) |
 | V-16 | Actualización del propio cliente de Steam sin ventanas | Actualizar en segundo plano; si Steam abre una ventana, mostrarla tapada por la pantalla de STONE | Prueba en placa (T-SESS-06) |
 | V-17 | Cuánto se puede personalizar visualmente el instalador Anaconda | Marca STONE en lo que Anaconda permita; si no basta, evaluar un instalador propio en F9 | Investigación en F9 |
+| V-18 | Actualizaciones dentro de la sesión STONE: qué temporizador usa Bazzite 44 (`uupd.timer`), si sigue la imagen de STONE en GHCR y cómo buscar una actualización a mano sin la interfaz de Steam | Home lee el temporizador por D-Bus (sólo lectura) y ofrece reiniciar cuando hay una versión preparada; la búsqueda manual queda para cuando se sepa si hace falta un método privilegiado en `stoned` | Prueba en placa (T-UPD-01) |
+| V-19 | Las filas «Abrir en Steam» de Ajustes dentro de la sesión STONE, donde la interfaz de Steam no está al frente | Abrir el panel de Steam y ponerlo delante con el mismo control de foco que los juegos; si no es posible, sustituir cada fila por una pantalla propia | Prueba en placa (T-SESS-08) |
 
 ## Registro de cambios
 

@@ -146,6 +146,13 @@ function applyRender() {
     .catch(() => toast('No se pudo guardar el modo de imagen', false));
   enterSettings({ pane: true, ri: NAV.c });
 }
+/* Bazzite checks for a new image by itself and leaves it ready for the next restart (M01). */
+function updTimerText(u) {
+  if (!u) return 'No se pudo leer el servicio de actualización automática';
+  if (!u.enabled) return 'Desactivada en este sistema';
+  const t = s => new Date(s * 1000).toLocaleString('es', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+  return `Activa${u.last ? ' · última ' + t(u.last) : ''}${u.next ? ' · próxima ' + t(u.next) : ''}`;
+}
 function catRows() {
   /* Settings Steam already handles open in Steam's own settings; if that fails, STONE says where. */
   const steam = (t, d, where) => ({ l: t, s: d, v: 'Abrir en Steam', act: 'steam', where, sec: STEAM_SEC[CATS[cat]] });
@@ -193,7 +200,9 @@ function catRows() {
       { l: 'Modo escritorio', s: 'Para usuarios avanzados', v: 'En Steam', act: 'info', where: 'Botón STEAM → Energía → Cambiar a escritorio' }] };
     case 'Actualizaciones': return { d: 'Las actualizaciones llegan como una imagen completa y se aplican al reiniciar. Si una falla, la anterior sigue disponible.', rows: [
       { l: 'Estado', s: !dep ? 'No se pudo leer el estado del sistema' : dep.staged ? `Actualización lista: ${dep.staged.version || 'nueva versión'}. Se aplica al reiniciar` : `Instalada: ${(dep.booted && dep.booted.version) || rel.STONE_VERSION || '—'}`, v: '' },
-      steam('Buscar actualizaciones', 'Sistema y Steam se actualizan desde Steam', 'Botón STEAM → Ajustes → Sistema → Buscar actualizaciones'),
+      ...(dep && dep.staged ? [{ l: 'Reiniciar y actualizar', s: 'La consola se reinicia con la versión nueva', v: 'Reiniciar', act: 'reboot' }] : []),
+      { l: 'Comprobación automática', s: updTimerText(S.info && S.info.updates), v: '' },
+      ...(S.info && S.info.session === 'stone' ? [] : [steam('Buscar actualizaciones', 'Sistema y Steam se actualizan desde Steam', 'Botón STEAM → Ajustes → Sistema → Buscar actualizaciones')]),
       { l: 'Volver a la versión anterior', s: dep && dep.rollback ? `Guardada: ${dep.rollback.version || 'versión anterior'}` : 'No hay una versión anterior guardada todavía', v: 'Cómo', act: 'info', where: 'Reinicia y, en el menú de arranque, elige la segunda entrada. STONE OS arranca con la versión anterior' }] };
     default: return { d: `${CATS[cat]}: lo gestiona Steam.`, rows: [steam(`Abrir ${CATS[cat].toLowerCase()}`, 'Panel nativo de Steam', `Botón STEAM → Ajustes → ${CATS[cat]}`)] };
   }

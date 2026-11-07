@@ -3,7 +3,8 @@
   power        logind PowerOff / Reboot (the active local session is allowed by the
                default polkit rules; no root, no shell)
   steam URLs   a fixed set of steam:// URLs handed to the running Steam client
-  system info  /usr/lib/stone-release, the boot time and the image deployments
+  system info  /usr/lib/stone-release, the boot time, the image deployments and the
+               automatic update timer (systemd properties, read-only)
   prefs        STONE Home's own settings in ~/.config/stone/home.json
 
 Nothing here runs a shell or a command built from UI input. The only commands are
@@ -142,6 +143,31 @@ def deployments(run=subprocess.run):
     return res
 
 
+# Bazzite's automatic image update (ublue-os/uupd) first; the bootc and rpm-ostree timers are
+# what an image without uupd would use. The first one that is loaded is reported. [V-18]
+UPDATE_TIMERS = ("uupd.timer", "bootc-fetch-apply-updates.timer", "rpm-ostreed-automatic.timer")
+SD = ("org.freedesktop.systemd1", "/org/freedesktop/systemd1")
+
+
+def _usec(v):
+    return v // 1000000 if isinstance(v, int) and v > 0 else None
+
+
+def update_timer(get_props, timers=UPDATE_TIMERS):
+    """{"unit", "enabled", "last", "next"} (epoch seconds) for the first loaded timer, or None.
+    get_props(unit) -> {"LoadState", "UnitFileState", "LastTriggerUSec", "NextElapseUSecRealtime"} or None."""
+    for unit in timers:
+        try:
+            p = get_props(unit)
+        except Exception:  # noqa: BLE001  (no systemd, no bus: nothing to report)
+            p = None
+        if not p or p.get("LoadState") != "loaded":
+            continue
+        return {"unit": unit, "enabled": p.get("UnitFileState") in ("enabled", "static", "alias"),
+                "last": _usec(p.get("LastTriggerUSec")), "next": _usec(p.get("NextElapseUSecRealtime"))}
+    return None
+
+
 class System:
     def __init__(self, bus=None, spawn=None):
         self._bus = bus
@@ -178,8 +204,24 @@ class System:
         self.bus().call("org.freedesktop.login1", "/org/freedesktop/login1", "org.freedesktop.login1.Manager",
                         method, GLib.Variant("(b)", (False,)), None, Gio.DBusCallFlags.NONE, 10000, None, finished)
 
+    def _timer_props(self, unit):
+        bus = self.bus()
+        path = bus.call_sync(SD[0], SD[1], "org.freedesktop.systemd1.Manager", "LoadUnit", GLib.Variant("(s)", (unit,)),
+                             GLib.VariantType("(o)"), Gio.DBusCallFlags.NONE, 5000, None).unpack()[0]
+        out = {}
+        for iface, keys in (("org.freedesktop.systemd1.Unit", ("LoadState", "UnitFileState")),
+                            ("org.freedesktop.systemd1.Timer", ("LastTriggerUSec", "NextElapseUSecRealtime"))):
+            for k in keys:
+                try:
+                    out[k] = bus.call_sync(SD[0], path, "org.freedesktop.DBus.Properties", "Get", GLib.Variant("(ss)", (iface, k)),
+                                           GLib.VariantType("(v)"), Gio.DBusCallFlags.NONE, 5000, None).unpack()[0]
+                except GLib.Error:
+                    out[k] = None
+        return out
+
     def info(self, done):
         def work():
-            res = {"release": read_release(), "boot_time": boot_time(), "deployments": deployments()}
+            res = {"release": read_release(), "boot_time": boot_time(), "deployments": deployments(),
+                   "updates": update_timer(self._timer_props), "session": os.environ.get("STONE_SESSION") or "other"}
             GLib.idle_add(lambda: (done(res), False)[1])
         threading.Thread(target=work, daemon=True).start()

@@ -527,6 +527,25 @@ def M03_first_run_once_for_new_installs_not_for_existing_consoles():
             del os.environ["XDG_CONFIG_HOME"]
 
 
+@test
+def P04_automatic_update_timer_first_loaded_one_is_reported():
+    props = {"uupd.timer": None,
+             "bootc-fetch-apply-updates.timer": {"LoadState": "loaded", "UnitFileState": "enabled",
+                                                 "LastTriggerUSec": 1_700_000_000_500_000, "NextElapseUSecRealtime": 0}}
+
+    def get(unit):
+        if unit == "rpm-ostreed-automatic.timer":
+            raise RuntimeError("bus gone")
+        return props.get(unit)
+    assert system.update_timer(get) == {"unit": "bootc-fetch-apply-updates.timer", "enabled": True,
+                                        "last": 1_700_000_000, "next": None}
+    props["uupd.timer"] = {"LoadState": "loaded", "UnitFileState": "disabled", "LastTriggerUSec": 0,
+                           "NextElapseUSecRealtime": 1_800_000_000_000_000}
+    assert system.update_timer(get) == {"unit": "uupd.timer", "enabled": False, "last": None, "next": 1_800_000_000}
+    assert system.update_timer(lambda u: {"LoadState": "not-found"}) is None
+    assert system.update_timer(get, timers=("rpm-ostreed-automatic.timer",)) is None
+
+
 # ---------------------------------------------------------------- host request table
 class FakeStoned:
     def __init__(self):
