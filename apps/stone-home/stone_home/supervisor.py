@@ -16,15 +16,23 @@ Commands:
   stone-session run                 the session client (never returns while the session lives)
   stone-session status [--json]     last session start, fallback state and reason
   stone-session boot [--json]       BOOT TO VISUAL / BOOT TO READY of the last boots (M02)
-  sudo stone-session default on     make the STONE session the console's automatic session
+  sudo stone-session default on     make the STONE session the console's automatic session (the image's
+                                    default since 0.4.0, D-29; also undoes the boot guard)
   sudo stone-session default off    back to Bazzite's own automatic session
+  stone-session switch desktop      log out to Bazzite's desktop, for the next login only (M15)
+  stone-session switch stone        from the desktop, log out back to the STONE session
 
 Nothing here is privileged except `default`, which only writes or removes one SDDM drop-in
-(/etc/sddm.conf.d/zz-stone-session.conf). Environment (tests and board tuning only):
+(/etc/sddm.conf.d/zz-stone-session.conf), and `switch`, which asks polkit to run
+/usr/libexec/stone/stone-session-select (next-login-only session) and then logs out.
+Environment (tests and board tuning only):
   STONE_SESSION_STEAM      command that starts Steam in the background
   STONE_SESSION_HOME       command that starts STONE Home
   STONE_SESSION_FALLBACK   Steam's Game Mode interface, used when STONE Home keeps failing
   STONE_SESSION_SDDM_DIR   where the SDDM drop-in goes
+  STONE_SESSION_GUARD_DIR  the boot guard's state (/var/lib/stone)
+  STONE_SESSION_SELECT     command that picks the next login's session (pkexec + helper)
+  STONE_SESSION_LOGOUT     command that ends this login
 """
 
 import json
@@ -44,6 +52,9 @@ POLL_S = 0.2                 # children and the guide button
 GAME_EVERY = 5               # ticks between /proc scans for the running game (1 s)
 SESSION_DESKTOP = "gamescope-session-stone.desktop"
 SDDM_DROPIN = "zz-stone-session.conf"
+SELECT_CMD = "pkexec /usr/libexec/stone/stone-session-select"
+LOGOUT_CMD = "systemctl --user stop graphical-session.target"     # what steamos-manager does
+RETURN_LAUNCHER = "/usr/share/applications/stone-volver.desktop"
 
 
 def state_dir():
@@ -230,11 +241,24 @@ def _fallback():
     return subprocess.call(argv, stdin=subprocess.DEVNULL)
 
 
+def guard_state():
+    from . import guard
+    st = guard.load_state(os.environ.get("STONE_SESSION_GUARD_DIR", guard.STATE_DIR))
+    sddm_dir = os.environ.get("STONE_SESSION_SDDM_DIR", "/etc/sddm.conf.d")
+    st["default"] = os.path.exists(os.path.join(sddm_dir, SDDM_DROPIN))
+    return st
+
+
 def status(as_json=False, out=sys.stdout):
     st = read_state()
+    g = guard_state()
     if as_json:
-        out.write(json.dumps(st) + "\n")
+        out.write(json.dumps(dict(st, guard=g)) + "\n")
         return 0
+    out.write("Sesión automática: " + ("STONE" if g["default"] else "la de Bazzite") + "\n")
+    if g["disabled"]:
+        out.write(f"La guardia de arranque la desactivó el {time.strftime('%Y-%m-%d %H:%M', time.localtime(g['disabled']['time']))}: "
+                  f"{g['disabled']['reason']}. Para volver a usarla: sudo stone-session default on\n")
     if not st:
         out.write("La sesión STONE no ha arrancado todavía en esta consola.\n")
         return 0
@@ -259,7 +283,9 @@ def default(on, out=sys.stdout):
         out.write("Hace falta sudo: sudo stone-session default on|off\n")
         return 1
     path = os.path.join(sddm_dir, SDDM_DROPIN)
+    from . import guard
     if on:
+        guard.enable(state_dir=os.environ.get("STONE_SESSION_GUARD_DIR", guard.STATE_DIR))
         os.makedirs(sddm_dir, exist_ok=True)
         tmp = path + ".tmp"
         with open(tmp, "w") as f:
@@ -275,6 +301,29 @@ def default(on, out=sys.stdout):
     return 0
 
 
+def switch(target, out=sys.stdout):
+    """Next login in Bazzite's desktop (desktop) or back in the STONE session (stone), then log out."""
+    if target == "desktop":
+        desk = os.path.join(os.path.expanduser("~"), "Desktop")
+        dst = os.path.join(desk, "Volver a STONE.desktop")
+        try:                                  # a way back on the desktop itself
+            if os.path.isdir(desk) and not os.path.exists(dst) and os.path.exists(RETURN_LAUNCHER):
+                with open(RETURN_LAUNCHER) as src, open(dst, "w") as f:
+                    f.write(src.read())
+                os.chmod(dst, 0o755)
+        except OSError:
+            pass
+    r = subprocess.run(_cmd("STONE_SESSION_SELECT", SELECT_CMD) + [target], capture_output=True, text=True, timeout=60)
+    if r.returncode != 0:
+        log(f"switch {target}: refused ({r.returncode}) {r.stderr.strip()}")
+        out.write("No se pudo cambiar de sesión: " + (r.stderr.strip() or f"código {r.returncode}") + "\n")
+        return 1
+    log(f"switch {target}: next login {r.stdout.strip()}; logging out")
+    out.write("Cerrando la sesión…\n")
+    out.flush()
+    return subprocess.call(_cmd("STONE_SESSION_LOGOUT", LOGOUT_CMD))
+
+
 def main(argv):
     if argv == ["run"]:
         return run()
@@ -282,11 +331,13 @@ def main(argv):
         return status()
     if argv == ["status", "--json"]:
         return status(as_json=True)
+    if len(argv) == 2 and argv[0] == "switch" and argv[1] in ("desktop", "stone"):
+        return switch(argv[1])
     if argv in (["boot"], ["boot", "--json"]):
         return boot(as_json=len(argv) == 2)
     if len(argv) == 2 and argv[0] == "default" and argv[1] in ("on", "off"):
         return default(argv[1] == "on")
-    sys.stdout.write("uso: stone-session run | status [--json] | boot [--json] | default on|off\n")
+    sys.stdout.write("uso: stone-session run | status [--json] | boot [--json] | default on|off | switch desktop|stone\n")
     return 2
 
 

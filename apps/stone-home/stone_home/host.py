@@ -6,6 +6,7 @@ done(result) or done(None, code, message), with the same error codes as stoned.
 """
 
 import os
+import subprocess
 import threading
 
 from gi.repository import GLib
@@ -39,6 +40,7 @@ class Host:
         self.restart = None                                   # set by app.py: restart STONE Home
         self.steam_ui = steamcef                              # Steam's interface (replaced in tests)
         self.session_focus = None                             # gamescope_x11.Focus in the STONE session (tests: a fake)
+        self.session_switch = ["/usr/bin/stone-session", "switch"]   # tests: a fake
         cef = _SteamUIProxy(self)
         # STONE DISPLAY: display model and the game resolution environment (stone_display/).
         self.display = stone_display.Display(game_policy=self.game_policy, cef=cef,
@@ -479,6 +481,20 @@ class Host:
             self.session_focus = None
             return done(None, "Unsupported", f"gamescope focus: {e}")
         done({"managed": True})
+
+    def m_session_desktop(self, args, done):
+        """Escritorio (M15): `stone-session switch desktop`, which asks polkit and logs out."""
+        if os.environ.get("STONE_SESSION") != "stone":
+            return done(None, "Unsupported", "only in the STONE session")
+
+        def work():
+            try:
+                r = subprocess.run(self.session_switch + ["desktop"], capture_output=True, text=True, timeout=90)
+                res = ({"ok": True}, None, "") if r.returncode == 0 else (None, "PermissionDenied", r.stdout.strip() or r.stderr.strip())
+            except (OSError, subprocess.SubprocessError) as e:
+                res = (None, "Unsupported", str(e))
+            GLib.idle_add(lambda: (done(*res), False)[1])
+        threading.Thread(target=work, daemon=True).start()
 
     # ---- boot metrics (M02) and FIRST RUN (M22) -----------------------------------------
     def m_boot_mark(self, args, done):
