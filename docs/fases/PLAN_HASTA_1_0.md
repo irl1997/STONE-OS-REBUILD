@@ -9,6 +9,8 @@ Fecha: 2026-11-07. Decisiones de partida:
 
 ## Cómo se trabaja
 
+**D-31 (2026-11-07):** los bloques 0.5 a 1.0 se publican juntos como **1.0.0-rc1**, con una ISO para instalar desde cero. La tabla de abajo es el orden de trabajo dentro de esa versión.
+
 - **Una versión por bloque**, cada una con su imagen firmada, su ISO y su *release*: 0.4.0-dev.1, 0.5.0-dev.1… hasta 1.0.0-rc1.
 - **El propietario** solo publica ramas, fusiona y sube la etiqueta de versión, con la guía paso a paso.
 - **Estados (D-23):** sin placa, nada pasa de `CODE TESTED` / `READY FOR HARDWARE TEST`. La matriz `hardware/validation/matrix.yaml` lleva cada prueba de placa pendiente.
