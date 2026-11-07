@@ -674,6 +674,18 @@ def H10_connect_methods_check_arguments_and_turn_errors_into_unsupported():
 
 
 @test
+def H11_previous_version_only_through_the_fixed_rollback_command():
+    h = host_mod.Host(lambda *a: None, stoned=FakeStoned(), sysapi=system.System(spawn=lambda u: None), steam_root="/nonexistent")
+    h.rollback_cmd = ["sh", "-c", "echo Next boot: rollback"]
+    assert run_host(h, {"method": "boot.rollback", "args": []}, timeout=15)[0]["ok"] is True
+    h.rollback_cmd = ["sh", "-c", "exit 126"]
+    assert run_host(h, {"method": "boot.rollback", "args": []}, timeout=15)[1] == "PermissionDenied"
+    h.rollback_cmd = ["sh", "-c", "echo no rollback deployment >&2; exit 1"]
+    r = run_host(h, {"method": "boot.rollback", "args": []}, timeout=15)
+    assert r[1] == "Unsupported"
+
+
+@test
 def H02_launch_only_games_from_the_last_library_scan():
     with Tmp() as d:
         root = FX.build(os.path.join(d, "Steam"))

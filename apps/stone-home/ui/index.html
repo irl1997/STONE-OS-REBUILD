@@ -484,6 +484,7 @@ const Sys = {
   firstrunComplete: () => Bridge.call('firstrun.complete'),
   sessionResume: () => Bridge.call('session.resume'), sessionDesktop: () => Bridge.call('session.desktop'),
   health: () => Bridge.call('health.status'), cu40: op => Bridge.call('gpu.cu40', op),
+  bootRollback: () => Bridge.call('boot.rollback'),
   gameExperience: appid => Bridge.call('game.experience', appid), gameLook: appid => Bridge.call('game.look', appid), gameSetLook: (appid, k) => Bridge.call('game.setLook', appid, k)
 };
 async function sys(method, ...a) {
@@ -2180,6 +2181,7 @@ function openPower() {
     <div class="main txt-f" data-f data-act="off">APAGAR</div>
     <div class="txt-f" style="font-size:26px" data-f data-act="reboot">Reiniciar</div>
     ${S.info && S.info.session === 'stone' ? '<div class="txt-f" style="font-size:26px" data-f data-act="desktop">Escritorio</div>' : ''}
+    <div class="txt-f" style="font-size:26px" data-f data-act="bootopts">Opciones de arranque</div>
     ${S.running !== null && G[S.running] ? `<div class="warn">${esc(G[S.running].n)} se cerrará al apagar o reiniciar.</div>` : ''}`;
   $('#power').classList.add('on'); line.classList.remove('off');
   const items = [...box.querySelectorAll('[data-f]')];
@@ -2201,6 +2203,24 @@ async function powerA(el) {
   if (a === 'off') return shutdown(false);
   if (a === 'reboot') return shutdown(true);
   if (a === 'desktop') return toDesktop();
+  if (a === 'bootopts') return bootOptions();
+}
+/* M02: what the boot menu offers, reachable with the controller. Each option says what happens
+   and asks before restarting. */
+function bootOptions() {
+  const dep = S.info && S.info.deployments, prev = dep && dep.rollback;
+  const back = () => { closeDlg(); play('back'); S.section = 0; if (NAV) NAV.id = ''; enterHome({ r: 1, c: 3 }); };
+  openDlg(`<h2>OPCIONES DE ARRANQUE</h2>
+    <p><b>Safe Mode</b>: STONE arranca con los valores de fábrica, sin perfiles CUSTOM ni perfiles por juego.</p>
+    <p><b>Versión anterior</b>: ${prev ? `el próximo arranque usa ${esc(prev.version || 'la versión anterior')}. Puedes volver a la actual de la misma forma.` : 'no hay una versión anterior guardada todavía.'}</p>
+    <div class="btns"><span class="txt-f" data-f data-b="safe">SAFE MODE</span>${prev ? '<span class="txt-f" data-f data-b="prev">VERSIÓN ANTERIOR</span>' : ''}<span class="txt-f" data-f data-b="no">VOLVER</span></div>`, {
+    onA: async el => {
+      const b = el.dataset.b; if (b === 'no') return back();
+      closeDlg(); play('select');
+      if (b === 'safe') { const st = await api('enterSafeMode'); if (st) return rebootDlg('Safe Mode queda activo: STONE usará los valores de fábrica.', back); return back(); }
+      try { await Sys.bootRollback(); rebootDlg('El próximo arranque usará la versión anterior de STONE OS.', back); }
+      catch (e) { play('error'); toast(e.code === 'PermissionDenied' ? 'Hace falta ser el administrador de la consola' : `No se pudo: ${e.message}`, false); back(); }
+    }, onB: back });
 }
 /* M15: Bazzite's desktop for this login only; "Volver a STONE" on the desktop (or a reboot) comes back. */
 async function toDesktop() {

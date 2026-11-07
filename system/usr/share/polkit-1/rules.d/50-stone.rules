@@ -18,6 +18,11 @@ polkit.addRule(function (action, subject) {
     if (action.id.indexOf("org.freedesktop.NetworkManager.") == 0 && subject.isInGroup("wheel")) {
         return polkit.Result.YES;
     }
+    // Previous STONE OS version from STONE Home (Opciones de arranque): this exact command line only
+    if (action.id == "org.stonemachine.boot.rollback" && subject.isInGroup("wheel") &&
+        action.lookup("command_line") == "/usr/bin/bootc rollback") {
+        return polkit.Result.YES;
+    }
     // 40 CU from STONE Home: only these exact command lines (Home asked for confirmation first)
     if (action.id == "org.stonemachine.cu40" && subject.isInGroup("wheel")) {
         var cl = action.lookup("command_line");

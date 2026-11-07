@@ -46,6 +46,7 @@ class Host:
         self.session_focus = None                             # gamescope_x11.Focus in the STONE session (tests: a fake)
         self.session_switch = ["/usr/bin/stone-session", "switch"]   # tests: a fake
         self.cu40_cmd = ["pkexec", "/usr/bin/stone-cu40"]             # tests: a fake
+        self.rollback_cmd = ["pkexec", "/usr/bin/bootc", "rollback"]  # tests: a fake
         cef = _SteamUIProxy(self)
         # STONE DISPLAY: display model and the game resolution environment (stone_display/).
         self.display = stone_display.Display(game_policy=self.game_policy, cef=cef,
@@ -572,6 +573,26 @@ class Host:
             if name in Host.CONNECT:
                 return lambda args, done: self._connect(name, args, done)
         raise AttributeError(attr)
+
+    # ---- Boot options from STONE Home (M02): the boot menu is not reachable with a controller ----
+    def m_boot_rollback(self, args, done):
+        """Next boot: the previous image (bootc rollback through pkexec; polkit allows this line only)."""
+        argv = self.rollback_cmd
+
+        def work():
+            try:
+                r = subprocess.run(argv, capture_output=True, text=True, timeout=120)
+                text = (r.stdout + r.stderr).strip()
+                if r.returncode in (126, 127):
+                    res = (None, "PermissionDenied", text[-300:] or "refused")
+                elif r.returncode != 0:
+                    res = (None, "Unsupported", text[-300:] or f"bootc rollback: {r.returncode}")
+                else:
+                    res = ({"ok": True, "text": text[-500:]}, None, "")
+            except (OSError, subprocess.SubprocessError) as e:
+                res = (None, "Unsupported", str(e))
+            GLib.idle_add(lambda: (done(*res), False)[1])
+        threading.Thread(target=work, daemon=True).start()
 
     # ---- STONE EMULATION (M14): the person's games for other consoles (roms.py) ---------------
     def _bg(self, done, fn, what):

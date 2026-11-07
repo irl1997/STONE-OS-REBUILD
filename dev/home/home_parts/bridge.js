@@ -52,6 +52,7 @@ const Sys = {
   firstrunComplete: () => Bridge.call('firstrun.complete'),
   sessionResume: () => Bridge.call('session.resume'), sessionDesktop: () => Bridge.call('session.desktop'),
   health: () => Bridge.call('health.status'), cu40: op => Bridge.call('gpu.cu40', op),
+  bootRollback: () => Bridge.call('boot.rollback'),
   gameExperience: appid => Bridge.call('game.experience', appid), gameLook: appid => Bridge.call('game.look', appid), gameSetLook: (appid, k) => Bridge.call('game.setLook', appid, k)
 };
 async function sys(method, ...a) {
