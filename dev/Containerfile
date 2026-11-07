@@ -9,5 +9,6 @@ RUN dnf -y install --setopt=install_weak_deps=False \
     && dnf clean all
 # Pinned like CI (.github/workflows/ci.yml).
 RUN python3 -m pip install --no-cache-dir --break-system-packages ruff==0.16.9 actionlint-py==1.7.11.24
-ENV PYTHONDONTWRITEBYTECODE=1 STONE_REQUIRE_ALL=1
+# /src is mounted read only (dev/run-tests.sh): tool caches go to /tmp, never next to the sources.
+ENV PYTHONDONTWRITEBYTECODE=1 STONE_REQUIRE_ALL=1 RUFF_CACHE_DIR=/tmp/ruff_cache
 WORKDIR /src
