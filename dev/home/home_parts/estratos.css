@@ -25,3 +25,19 @@
 #library .count{font-family:var(--f-mono);font-size:15px;letter-spacing:.16em;text-transform:uppercase;top:214px}
 #library .count::before{content:"ESTRATO 01 · ";color:var(--text-2)}
 #library .filters span.cur::after{background:var(--vein)}
+/* Settings: the header stratum over the title; the categories are the core's labels (mono, numbered
+   by order), the vein marks the open one. */
+#settings::before{content:"";position:absolute;left:0;top:0;width:1920px;height:208px;background:#121315;border-bottom:1px solid var(--st-rule)}
+#settings{background:linear-gradient(180deg,#141517 0%,#101113 100%)}
+#settings .cats{counter-reset:cat;gap:18px;font-family:var(--f-mono);font-size:19px;letter-spacing:.08em}
+#settings .cats span{counter-increment:cat}
+#settings .cats span::before{content:counter(cat,decimal-leading-zero) "  ";color:var(--slate)}
+#settings .cats span.cur::before{color:var(--vein)}
+#settings .vr{background:linear-gradient(180deg,var(--vein) 0%,var(--vein-deep) 40%,var(--st-rule) 100%);width:2px;opacity:.7}
+/* Quick menu and power: deep-stratum panels with the vein on their edge */
+#quick .panel{background:var(--st-deep);border-left:2px solid var(--vein)}
+#quick .steam .cap{font-family:var(--f-mono);font-size:14px;letter-spacing:.16em}
+#power .box{background:#121315;border-top:2px solid var(--vein);border-radius:2px}
+#power .h{font-family:var(--f-mono);font-size:16px;letter-spacing:.2em}
+#dlg .box{border-top:2px solid var(--vein)}
+#dlg.solid .box{border-top:0}
