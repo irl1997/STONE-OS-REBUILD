@@ -273,6 +273,11 @@ body.dormant *,body.dormant *::before,body.dormant *::after{animation-play-state
 #hdr .brand{letter-spacing:.55em}
 #tabs{gap:64px;font-size:20px;letter-spacing:.28em}
 #stage.hc{--st-rule:var(--ash)}
+/* Library: the same header stratum; the count reads like a sample label */
+#library::before{content:"";position:absolute;left:0;top:0;width:1920px;height:196px;background:var(--st-head);border-bottom:1px solid var(--st-rule)}
+#library .count{font-family:var(--f-mono);font-size:15px;letter-spacing:.16em;text-transform:uppercase;top:214px}
+#library .count::before{content:"ESTRATO 01 · ";color:var(--text-2)}
+#library .filters span.cur::after{background:var(--vein)}
 </style>
 
 <div id="app">
