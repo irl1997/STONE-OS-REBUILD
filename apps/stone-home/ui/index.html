@@ -251,6 +251,28 @@ body.dormant *,body.dormant *::before,body.dormant *::after{animation-play-state
 #pulse.go{animation:pulse 1.4s var(--e-light)}
 @keyframes pulse{0%{opacity:0;transform:scaleX(.2)}25%{opacity:.9;transform:scaleX(1)}100%{opacity:0;transform:scaleX(1)}}
 
+/* ---------- ESTRATOS (D-30) ----------
+   The screen as rock seen in section: a header stratum, the game stratum (its art shows through),
+   an amber vein for the horizon and a deep stratum with the machine's state. Labels read like core
+   samples: mono, numbered strata. Loaded after every other rule: it restyles, it never removes. */
+#stage{--vein:#c88a3a;--vein-deep:#7a4f20;--st-head:rgba(18,19,21,.93);--st-deep:rgba(13,14,15,.96);--st-rule:#26272a}
+.st-head{position:absolute;left:0;top:0;width:1920px;height:196px;background:var(--st-head);border-bottom:1px solid var(--st-rule);pointer-events:none}
+.st-deep{position:absolute;left:0;top:672px;width:1920px;height:408px;background:var(--st-deep);pointer-events:none}
+.st-label{position:absolute;left:96px;font-family:var(--f-mono);font-size:15px;letter-spacing:.16em;color:var(--text-2);text-transform:uppercase;font-variant-numeric:tabular-nums}
+.st-label b{font-weight:400;color:var(--warm)}
+#home .horizon{top:668px;height:3px;background:linear-gradient(90deg,transparent 0%,var(--vein) 12%,var(--vein-deep) 62%,transparent 100%);opacity:1;box-shadow:0 0 18px rgba(200,138,58,.35)}
+#home .ctx{top:700px}
+#home .strata{position:absolute;left:96px;top:872px;width:1728px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:40px}
+#home .strata div{display:flex;flex-direction:column;gap:8px;min-width:0}
+#home .strata span{font-family:var(--f-mono);font-size:14px;letter-spacing:.16em;color:var(--text-2)}
+#home .strata b{font-family:var(--f-display);font-weight:300;font-size:28px;letter-spacing:.1em;color:var(--warm);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#home .strata b.warn{color:var(--ember)}
+#home .sys{top:984px;gap:56px;font-family:var(--f-display);font-weight:300;letter-spacing:.14em;font-size:20px}
+#home .st-label.l2{top:836px}
+#home .st-label.l1{top:226px}
+#hdr .brand{letter-spacing:.55em}
+#tabs{gap:64px;font-size:20px;letter-spacing:.28em}
+#stage.hc{--st-rule:var(--ash)}
 </style>
 
 <div id="app">
@@ -440,6 +462,7 @@ function adopt(st) {
   if (st.profiles) Object.entries(st.profiles).forEach(([id, v]) => { if (FACT[id] && v && v.max) Object.assign(FACT[id], { max: v.max, min: v.min, temp: v.temp, resp: v.resp }); });
   if (st.range) S.range = st.range;
   const sb = document.getElementById('safeBadge'); if (sb) sb.hidden = !st.safe_mode;
+  refreshStrata();
   st.slots.forEach((s, k) => { slots[k] = s.state === 'empty' ? null : { max: s.max, min: s.min, temp: s.temp, resp: s.resp, state: s.state, test_level: s.test_level }; });
   G.forEach(g => { g.perf = st.per_game[g.appid] || null; });
   gameSync(st, before);
@@ -760,8 +783,14 @@ function homeHTML() {
     set: '<svg width="26" height="26" viewBox="0 0 26 26" fill="none" stroke-width="2" aria-hidden="true"><path d="M4 7h18M4 13h18M4 19h18"/><rect x="8" y="5" width="4" height="4" fill="#141517"/><rect x="15" y="11" width="4" height="4" fill="#141517"/><rect x="6" y="17" width="4" height="4" fill="#141517"/></svg>',
     pow: '<svg width="26" height="26" viewBox="0 0 26 26" fill="none" stroke-width="2" aria-hidden="true"><path d="M13 3v9"/><path d="M7.5 7a8 8 0 1 0 11 0"/></svg>'
   };
-  return `<div class="clip"><div class="track" data-sx="0">${cards}</div></div>
+  const label = S.section === 0 ? `ESTRATO 01 · <b>RECIENTES</b>${G.length ? ` · ${G.length} JUEGO${G.length === 1 ? '' : 'S'}` : ''}`
+    : S.section === 2 ? 'ESTRATO 01 · <b>EXPLORAR</b>' : 'ESTRATO 01 · <b>MEDIA</b>';
+  return `<div class="st-head"></div><div class="st-deep"></div>
+    <div class="st-label l1">${label}</div>
+    <div class="clip"><div class="track" data-sx="0">${cards}</div></div>
     <div class="horizon"></div>
+    <div class="st-label l2">ESTRATO 02 · <b>LA MÁQUINA</b></div>
+    <div class="strata" id="strata">${strataHTML()}</div>
     <div class="ctx"><div class="kicker" id="hk"></div><div class="ctx-title" id="ht"></div><div class="meta" id="hm"></div></div>
     <div class="sys">
       <span class="txt-f" data-f data-act="library">${ico.lib}Biblioteca</span>
@@ -770,6 +799,16 @@ function homeHTML() {
       <span class="txt-f" data-f data-act="power">${ico.pow}Apagar</span>
     </div>`;
 }
+/* ESTRATOS: what the console is doing, read from stoned (nothing here is invented: unknown stays out). */
+function strataHTML() {
+  const cell = (k, v, warn) => `<div><span>${k}</span><b${warn ? ' class="warn"' : ''}>${esc(v)}</b></div>`;
+  const p = profOf(effective());
+  const lim = S.actual && !S.actual.error ? `hasta ${S.actual.max} MHz` : (S.actual && S.actual.error === 'ServiceUnavailable' ? 'sin servicio' : 'leyendo…');
+  const cu = S.caps ? (S.caps.board ? `${cu40Top() ? 40 : 24} CU` : 'no es BC-250') : 'leyendo…';
+  const state = S.safeMode ? 'SAFE MODE' : S.running !== null && G[S.running] ? 'jugando' : 'lista';
+  return cell('PERFIL', p.n + (S.game && S.game.profile ? ' · juego' : '')) + cell('GPU', lim) + cell('UNIDADES', cu) + cell('CONSOLA', state, S.safeMode);
+}
+function refreshStrata() { const s = document.getElementById('strata'); if (s && S.screen === 'home') s.innerHTML = strataHTML(); }
 function homeContext(el) {
   const hk = $('#hk'), ht = $('#ht'), hm = $('#hm');
   hm.classList.remove('on'); clearTimeout(metaT);

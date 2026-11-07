@@ -125,6 +125,7 @@ def build(src):
     t = replace_once(t, "#game .tag.gone{opacity:0}\n", "#game .tag.gone{opacity:0}\nbody.dormant *,body.dormant *::before,body.dormant *::after{animation-play-state:paused!important;transition:none!important}\n", "dormant css")
     t = replace_once(t, "  if (S.screen === 'off' || S.screen === 'asleep') return act('a');\n", "", "click off")
     t = replace_span(t, "/* Bar buttons */", "})();\n</script>", part("start.js") + "\n})();\n</script>", "start", inclusive_end=True)
+    t = replace_once(t, "\n</style>\n\n<div id=\"app\">", "\n" + part("estratos.css") + "\n</style>\n\n<div id=\"app\">", "estratos")
     for bad in ("SimStoned", "PerfAPI.sim", "Math.random() * 8", "simulad", "prototipo", "fonts.googleapis", "bCrash", "bFault"):
         if bad in t:
             line = t[:t.index(bad)].count("\n") + 1

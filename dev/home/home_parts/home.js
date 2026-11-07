@@ -24,8 +24,14 @@ function homeHTML() {
     set: '<svg width="26" height="26" viewBox="0 0 26 26" fill="none" stroke-width="2" aria-hidden="true"><path d="M4 7h18M4 13h18M4 19h18"/><rect x="8" y="5" width="4" height="4" fill="#141517"/><rect x="15" y="11" width="4" height="4" fill="#141517"/><rect x="6" y="17" width="4" height="4" fill="#141517"/></svg>',
     pow: '<svg width="26" height="26" viewBox="0 0 26 26" fill="none" stroke-width="2" aria-hidden="true"><path d="M13 3v9"/><path d="M7.5 7a8 8 0 1 0 11 0"/></svg>'
   };
-  return `<div class="clip"><div class="track" data-sx="0">${cards}</div></div>
+  const label = S.section === 0 ? `ESTRATO 01 · <b>RECIENTES</b>${G.length ? ` · ${G.length} JUEGO${G.length === 1 ? '' : 'S'}` : ''}`
+    : S.section === 2 ? 'ESTRATO 01 · <b>EXPLORAR</b>' : 'ESTRATO 01 · <b>MEDIA</b>';
+  return `<div class="st-head"></div><div class="st-deep"></div>
+    <div class="st-label l1">${label}</div>
+    <div class="clip"><div class="track" data-sx="0">${cards}</div></div>
     <div class="horizon"></div>
+    <div class="st-label l2">ESTRATO 02 · <b>LA MÁQUINA</b></div>
+    <div class="strata" id="strata">${strataHTML()}</div>
     <div class="ctx"><div class="kicker" id="hk"></div><div class="ctx-title" id="ht"></div><div class="meta" id="hm"></div></div>
     <div class="sys">
       <span class="txt-f" data-f data-act="library">${ico.lib}Biblioteca</span>
@@ -34,6 +40,16 @@ function homeHTML() {
       <span class="txt-f" data-f data-act="power">${ico.pow}Apagar</span>
     </div>`;
 }
+/* ESTRATOS: what the console is doing, read from stoned (nothing here is invented: unknown stays out). */
+function strataHTML() {
+  const cell = (k, v, warn) => `<div><span>${k}</span><b${warn ? ' class="warn"' : ''}>${esc(v)}</b></div>`;
+  const p = profOf(effective());
+  const lim = S.actual && !S.actual.error ? `hasta ${S.actual.max} MHz` : (S.actual && S.actual.error === 'ServiceUnavailable' ? 'sin servicio' : 'leyendo…');
+  const cu = S.caps ? (S.caps.board ? `${cu40Top() ? 40 : 24} CU` : 'no es BC-250') : 'leyendo…';
+  const state = S.safeMode ? 'SAFE MODE' : S.running !== null && G[S.running] ? 'jugando' : 'lista';
+  return cell('PERFIL', p.n + (S.game && S.game.profile ? ' · juego' : '')) + cell('GPU', lim) + cell('UNIDADES', cu) + cell('CONSOLA', state, S.safeMode);
+}
+function refreshStrata() { const s = document.getElementById('strata'); if (s && S.screen === 'home') s.innerHTML = strataHTML(); }
 function homeContext(el) {
   const hk = $('#hk'), ht = $('#ht'), hm = $('#hm');
   hm.classList.remove('on'); clearTimeout(metaT);

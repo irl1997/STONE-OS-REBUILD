@@ -1,0 +1,22 @@
+/* ---------- ESTRATOS (D-30) ----------
+   The screen as rock seen in section: a header stratum, the game stratum (its art shows through),
+   an amber vein for the horizon and a deep stratum with the machine's state. Labels read like core
+   samples: mono, numbered strata. Loaded after every other rule: it restyles, it never removes. */
+#stage{--vein:#c88a3a;--vein-deep:#7a4f20;--st-head:rgba(18,19,21,.93);--st-deep:rgba(13,14,15,.96);--st-rule:#26272a}
+.st-head{position:absolute;left:0;top:0;width:1920px;height:196px;background:var(--st-head);border-bottom:1px solid var(--st-rule);pointer-events:none}
+.st-deep{position:absolute;left:0;top:672px;width:1920px;height:408px;background:var(--st-deep);pointer-events:none}
+.st-label{position:absolute;left:96px;font-family:var(--f-mono);font-size:15px;letter-spacing:.16em;color:var(--text-2);text-transform:uppercase;font-variant-numeric:tabular-nums}
+.st-label b{font-weight:400;color:var(--warm)}
+#home .horizon{top:668px;height:3px;background:linear-gradient(90deg,transparent 0%,var(--vein) 12%,var(--vein-deep) 62%,transparent 100%);opacity:1;box-shadow:0 0 18px rgba(200,138,58,.35)}
+#home .ctx{top:700px}
+#home .strata{position:absolute;left:96px;top:872px;width:1728px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:40px}
+#home .strata div{display:flex;flex-direction:column;gap:8px;min-width:0}
+#home .strata span{font-family:var(--f-mono);font-size:14px;letter-spacing:.16em;color:var(--text-2)}
+#home .strata b{font-family:var(--f-display);font-weight:300;font-size:28px;letter-spacing:.1em;color:var(--warm);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#home .strata b.warn{color:var(--ember)}
+#home .sys{top:984px;gap:56px;font-family:var(--f-display);font-weight:300;letter-spacing:.14em;font-size:20px}
+#home .st-label.l2{top:836px}
+#home .st-label.l1{top:226px}
+#hdr .brand{letter-spacing:.55em}
+#tabs{gap:64px;font-size:20px;letter-spacing:.28em}
+#stage.hc{--st-rule:var(--ash)}
