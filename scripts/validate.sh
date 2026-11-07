@@ -95,6 +95,11 @@ if have systemd-analyze; then
     root="$(mktemp -d)"; mkdir -p "$root/usr/lib/systemd/system"
     cp -a /usr/lib/systemd/system/. "$root/usr/lib/systemd/system/" 2>/dev/null; cp -a /lib/systemd/system/. "$root/usr/lib/systemd/system/" 2>/dev/null
     cp -a system/. "$root/"
+    # On Fedora/Bazzite dbus.service is an alias of dbus-broker.service created when the broker is
+    # enabled (a symlink outside /usr/lib in a container). Recreate that alias for the check.
+    if [[ ! -e "$root/usr/lib/systemd/system/dbus.service" && -e "$root/usr/lib/systemd/system/dbus-broker.service" ]]; then
+        ln -s dbus-broker.service "$root/usr/lib/systemd/system/dbus.service"
+    fi
     if systemd-analyze verify --man=no --root="$root" "$root"/usr/lib/systemd/system/stone-cu40-guard.service \
             "$root"/usr/lib/systemd/system/stoned.service "$root"/usr/lib/systemd/system/stoned-recover.service; then
         ok "systemd-analyze verify"; else bad "systemd-analyze verify"; fi
