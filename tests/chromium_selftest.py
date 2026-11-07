@@ -60,6 +60,9 @@ def main():
         rel = os.path.join(tmp, "stone-release")
         with open(rel, "w") as f:
             f.write('STONE_VERSION="test"\n')
+        os.makedirs(os.path.join(tmp, "config", "stone"), exist_ok=True)     # FIRST RUN already seen (it has its own test)
+        with open(os.path.join(tmp, "config", "stone", "firstrun.json"), "w") as f:
+            f.write('{"done": true}')
         e = dict(env.env, STONE_STEAM_ROOT=root, STONE_HOME_UI=os.path.join(REPO, "apps/stone-home/ui"),
                  STONE_RELEASE_FILE=rel, XDG_CONFIG_HOME=os.path.join(tmp, "config"), XDG_STATE_HOME=os.path.join(tmp, "state"),
                  HOME=tmp, STONE_CHROMIUM=binary, GDK_BACKEND="x11", PYTHONPATH=LIB,

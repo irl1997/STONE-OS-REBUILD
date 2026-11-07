@@ -152,6 +152,23 @@ def test_status_and_bad_arguments():
         b.close()
 
 
+def test_boot_command_reports_the_measured_boots():
+    b = Box(steam="true", home="true")
+    try:
+        r = b.run("boot")
+        assert r.returncode == 0 and "Todavía no hay arranques" in r.stdout, r.stdout + r.stderr
+        os.makedirs(os.path.join(b.state, "stone"))
+        with open(os.path.join(b.state, "stone", "boot-metrics.jsonl"), "w") as f:
+            f.write(json.dumps({"boot_id": "abcdef0123", "version": "F2", "session": "stone",
+                                "visual_s": 24.1, "ready_s": 27.9}) + "\n")
+        r = b.run("boot")
+        assert "BOOT TO VISUAL 24.1" in r.stdout and "BOOT TO READY 27.9" in r.stdout, r.stdout
+        r = b.run("boot", "--json")
+        assert json.loads(r.stdout)[0]["ready_s"] == 27.9
+    finally:
+        b.close()
+
+
 def test_session_file_uses_the_supervisor_and_steams_features():
     tmp = tempfile.mkdtemp()
     try:

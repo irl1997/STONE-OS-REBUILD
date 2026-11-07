@@ -15,8 +15,10 @@ from stone_games import optimizer as games_opt
 from stone_games import schema as games_schema
 from stone_games.perf import PerfAsync
 
+from . import bootmetrics
 from . import bridge
 from . import emulators
+from . import firstrun
 from . import library
 from . import shortcuts
 from . import steamcef
@@ -461,6 +463,32 @@ class Host:
 
     def m_systemInfo(self, args, done):
         self.sys.info(done)
+
+    # ---- boot metrics (M02) and FIRST RUN (M22) -----------------------------------------
+    def m_boot_mark(self, args, done):
+        if len(args) != 1 or args[0] not in bootmetrics.STAGES:
+            return done(None, "InvalidValue", "stage")
+        stage = args[0]
+
+        def work():
+            try:
+                res = (bootmetrics.mark(stage, release=system.read_release(), analyze=bootmetrics.systemd_analyze), None, "")
+            except OSError as e:
+                res = (None, "HardwareError", str(e))
+            GLib.idle_add(lambda: (done(*res), False)[1])
+        threading.Thread(target=work, daemon=True).start()
+
+    def m_boot_history(self, args, done):
+        done(bootmetrics.history()[-10:])
+
+    def m_firstrun_status(self, args, done):
+        done(firstrun.status(self.root()))
+
+    def m_firstrun_complete(self, args, done):
+        try:
+            done(firstrun.complete(system.read_release().get("STONE_VERSION")))
+        except OSError as e:
+            done(None, "HardwareError", str(e))
 
     def m_prefs_get(self, args, done):
         done(system.load_prefs())

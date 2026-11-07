@@ -14,6 +14,7 @@ user, inside the session's Gamescope. It:
 Commands:
   stone-session run                 the session client (never returns while the session lives)
   stone-session status [--json]     last session start, fallback state and reason
+  stone-session boot [--json]       BOOT TO VISUAL / BOOT TO READY of the last boots (M02)
   sudo stone-session default on     make the STONE session the console's automatic session
   sudo stone-session default off    back to Bazzite's own automatic session
 
@@ -158,6 +159,7 @@ def run():
     signal.signal(signal.SIGTERM, _stop)
     signal.signal(signal.SIGINT, _stop)
 
+    os.environ["STONE_SESSION"] = "stone"         # inherited by Steam and Home: boot metrics say which session
     steam = Child("steam", _cmd("STONE_SESSION_STEAM", STEAM_CMD))
     home = Child("stone-home", _cmd("STONE_SESSION_HOME", HOME_CMD))
     started = time.time()
@@ -217,6 +219,13 @@ def status(as_json=False, out=sys.stdout):
     return 0
 
 
+def boot(as_json=False, out=sys.stdout):
+    from . import bootmetrics as BM
+    recs = BM.history()
+    out.write(json.dumps(recs) + "\n" if as_json else BM.report(recs))
+    return 0
+
+
 def default(on, out=sys.stdout):
     """Make (or stop making) the STONE session the automatic session. Root only; reversible."""
     sddm_dir = os.environ.get("STONE_SESSION_SDDM_DIR", "/etc/sddm.conf.d")
@@ -247,9 +256,11 @@ def main(argv):
         return status()
     if argv == ["status", "--json"]:
         return status(as_json=True)
+    if argv in (["boot"], ["boot", "--json"]):
+        return boot(as_json=len(argv) == 2)
     if len(argv) == 2 and argv[0] == "default" and argv[1] in ("on", "off"):
         return default(argv[1] == "on")
-    sys.stdout.write("uso: stone-session run | status [--json] | default on|off\n")
+    sys.stdout.write("uso: stone-session run | status [--json] | boot [--json] | default on|off\n")
     return 2
 
 

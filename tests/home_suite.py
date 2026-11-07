@@ -23,7 +23,7 @@ sys.path[0:0] = [os.path.join(_REPO, p) for p in ("services/stoned", "apps/stone
 from gi.repository import GLib  # noqa: E402
 
 import steam_fixture as FX  # noqa: E402
-from stone_home import bridge, host as host_mod, library, shortcuts as SC, system, vdf  # noqa: E402
+from stone_home import bootmetrics as BM, bridge, firstrun as FR, host as host_mod, library, shortcuts as SC, system, vdf  # noqa: E402
 from stoned import games  # noqa: E402
 
 TESTS = []
@@ -442,6 +442,91 @@ def P03_release_file_and_rpm_ostree_status():
     assert system.deployments(run=lambda *a, **k: (_ for _ in ()).throw(OSError("no"))) is None
 
 
+# ---------------------------------------------------------------- boot metrics (M02), FIRST RUN (M22)
+def _fake_proc(d, boot_id, up):
+    os.makedirs(os.path.join(d, "sys", "kernel", "random"), exist_ok=True)
+    with open(os.path.join(d, "sys", "kernel", "random", "boot_id"), "w") as f:
+        f.write(boot_id + "\n")
+    with open(os.path.join(d, "uptime"), "w") as f:
+        f.write(f"{up} 100.00\n")
+
+
+@test
+def M01_boot_metrics_one_record_per_boot_first_mark_wins():
+    with Tmp() as d:
+        proc, path = os.path.join(d, "proc"), os.path.join(d, "state", "boot-metrics.jsonl")
+        _fake_proc(proc, "aaaa-1", 21.37)
+        os.environ["STONE_SESSION"] = "stone"
+        try:
+            r = BM.mark("visual", proc, path, release={"STONE_VERSION": "F2"})
+            assert r == {"boot_id": "aaaa-1", "version": "F2", "session": "stone", "visual_s": 21.37}, r
+            _fake_proc(proc, "aaaa-1", 30.0)
+            BM.mark("visual", proc, path)                 # a Home restart: the boot's number stays
+            r = BM.mark("ready", proc, path, analyze=lambda: {"firmware": 4.1, "loader": 1.0})
+            assert r["visual_s"] == 21.37 and r["ready_s"] == 30.0 and r["systemd"]["firmware"] == 4.1, r
+            _fake_proc(proc, "bbbb-2", 19.5)
+            BM.mark("ready", proc, path)
+        finally:
+            del os.environ["STONE_SESSION"]
+        h = BM.history(path)
+        assert [x["boot_id"] for x in h] == ["aaaa-1", "bbbb-2"] and "visual_s" not in h[1]
+        with open(path, "a") as f:
+            f.write("{broken\n[1]\n")
+        assert len(BM.history(path)) == 2
+        for i in range(BM.KEEP + 5):
+            _fake_proc(proc, f"boot-{i}", 10)
+            BM.mark("visual", proc, path)
+        assert len(BM.history(path)) == BM.KEEP and BM.history(path)[-1]["boot_id"] == f"boot-{BM.KEEP + 4}"
+        txt = BM.report(BM.history(path))
+        assert "BOOT TO VISUAL 10.0" in txt and "BOOT TO READY —" in txt, txt
+        assert BM.mark("visual", os.path.join(d, "noproc"), path) is None
+        try:
+            BM.mark("../x", proc, path)
+            raise AssertionError("bad stage accepted")
+        except ValueError:
+            pass
+        assert BM.report([]).startswith("Todavía no hay")
+
+
+@test
+def M02_systemd_analyze_output_is_parsed_or_ignored():
+    out = ("Startup finished in 4.512s (firmware) + 1.204s (loader) + 1.910s (kernel) + 3.020s (initrd) "
+           "+ 1min 2.500s (userspace) = 1min 13.146s\ngraphical.target reached after 1min 1.9s in userspace.\n")
+    assert BM.parse_analyze(out) == {"firmware": 4.512, "loader": 1.204, "kernel": 1.91, "initrd": 3.02, "userspace": 62.5}
+    assert BM.parse_analyze("Startup finished in 812ms (kernel) + 5.1s (userspace) = 5.9s") == {"kernel": 0.812, "userspace": 5.1}
+    assert BM.parse_analyze("Bootup is not yet finished.") is None and BM.parse_analyze("") is None
+
+    class R:
+        returncode, stdout = 1, ""
+    assert BM.systemd_analyze(run=lambda *a, **k: R) is None
+    assert BM.systemd_analyze(run=lambda *a, **k: (_ for _ in ()).throw(OSError("no"))) is None
+
+
+@test
+def M03_first_run_once_for_new_installs_not_for_existing_consoles():
+    with Tmp() as d:
+        os.environ["XDG_CONFIG_HOME"] = os.path.join(d, "cfg")
+        try:
+            steam = os.path.join(d, "steam")
+            assert FR.status(steam) == {"done": False, "steam_account": False}
+            os.makedirs(os.path.join(steam, "userdata", "0"))         # 0 is not an account
+            assert FR.status(steam)["steam_account"] is False
+            os.makedirs(os.path.join(steam, "userdata", "12345"))
+            assert FR.status(steam)["steam_account"] is True
+            assert FR.complete("F2") == {"done": True}
+            with open(FR.path()) as f:
+                assert json.load(f)["version"] == "F2"
+            assert FR.status(steam)["done"] is True
+            os.remove(FR.path())
+            system.save_prefs({})                                      # an older STONE image: settings exist
+            assert FR.status(steam)["done"] is True
+            with open(FR.path(), "w") as f:
+                f.write("{broken")
+            assert FR.status(steam)["done"] is True                    # damaged file + settings: not new
+        finally:
+            del os.environ["XDG_CONFIG_HOME"]
+
+
 # ---------------------------------------------------------------- host request table
 class FakeStoned:
     def __init__(self):
@@ -476,6 +561,27 @@ def H01_host_dispatches_only_known_methods():
         assert r and r[1] == "InvalidValue", (bad, r)
     assert run_host(h, {"method": "perf.getState", "args": []}) == ({"profile": "balanced"}, None)
     assert h.stoned.calls == [("getState", [])]
+
+
+@test
+def H06_host_boot_and_first_run_methods():
+    with Tmp() as d:
+        os.environ["XDG_CONFIG_HOME"] = os.path.join(d, "cfg")
+        os.environ["XDG_STATE_HOME"] = os.path.join(d, "state")
+        try:
+            h = host_mod.Host(lambda *a: None, stoned=FakeStoned(), sysapi=system.System(spawn=lambda u: None),
+                              steam_root=os.path.join(d, "steam"))
+            for bad in ({"method": "boot.mark", "args": []}, {"method": "boot.mark", "args": ["/etc/x"]},
+                        {"method": "boot.mark", "args": ["visual", "ready"]}):
+                assert run_host(h, bad)[1] == "InvalidValue", bad
+            r = run_host(h, {"method": "boot.mark", "args": ["visual"]}, timeout=15)
+            assert r[1] is None and (r[0] is None or r[0]["visual_s"] >= 0), r   # None off Linux (no /proc)
+            assert run_host(h, {"method": "boot.history", "args": []})[1] is None
+            assert run_host(h, {"method": "firstrun.status", "args": []})[0] == {"done": False, "steam_account": False}
+            assert run_host(h, {"method": "firstrun.complete", "args": []})[0] == {"done": True}
+            assert run_host(h, {"method": "firstrun.status", "args": []})[0]["done"] is True
+        finally:
+            del os.environ["XDG_CONFIG_HOME"], os.environ["XDG_STATE_HOME"]
 
 
 @test

@@ -414,7 +414,10 @@ const Sys = {
   components: kind => Bridge.call('components', ...(kind ? [kind] : [])), gamePlan: (appid, kind) => Bridge.call('game.installPlan', appid, kind),
   gameInstall: appid => Bridge.call('game.install', appid), gameUninstall: appid => Bridge.call('game.uninstallImage', appid),
   gameOptStatus: appid => Bridge.call('game.optimizeStatus', appid), gameOptStart: appid => Bridge.call('game.optimizeStart', appid),
-  gameStatus: () => Bridge.call('game.status'), gameRestore: appid => Bridge.call('game.restoreRecommended', appid)
+  gameStatus: () => Bridge.call('game.status'), gameRestore: appid => Bridge.call('game.restoreRecommended', appid),
+  /* M02 boot metrics and M22 FIRST RUN */
+  bootMark: stage => Bridge.call('boot.mark', stage), firstrunStatus: () => Bridge.call('firstrun.status'),
+  firstrunComplete: () => Bridge.call('firstrun.complete')
 };
 async function sys(method, ...a) {
   try { return await Sys[method](...a); }
@@ -1900,6 +1903,8 @@ function loadPrefs(p) {
 async function boot() {
   S.screen = 'transition';
   $('#black').classList.add('on'); line.classList.add('boot');
+  Sys.bootMark('visual').catch(() => {});          /* BOOT TO VISUAL: STONE Home's first frame */
+  const first = Sys.firstrunStatus().catch(() => ({ done: true }));
   const prefs = Sys.prefsGet().then(loadPrefs).catch(() => {});
   const prep = Promise.all([prefs, refreshCaps(), Sys.info().then(i => { S.info = i; }).catch(() => {}), prefs.then(loadLibrary)]);
   /* Home is about to be on screen: only now may stoned apply the saved profile (factory or validated) */
@@ -1916,11 +1921,55 @@ async function boot() {
   await wait(300);
   $('#black').classList.remove('on');
   S.section = 0; if (NAV) NAV.id = ''; NAV = null;
+  const fr = await Promise.race([first, wait(3000).then(() => ({ done: true }))]);
   if (S.running !== null && S.game) { showGame(G[S.running], true); }
+  else if (!fr.done) { await home; Sys.bootMark('ready').catch(() => {}); return firstRun(fr); }
   else enterHome({ r: 0, c: 0, slow: true });
+  Sys.bootMark('ready').catch(() => {});           /* BOOT TO READY: Home answers the controller */
   setTimeout(() => line.classList.remove('boot'), 1300);
   armIdleOff();
   home.then(st => { if (st) setTimeout(() => bootNotices(st), 1400); });
+}
+
+/* ---------- FIRST RUN (M22) ----------
+   Shown once on a new installation. It only reads what the console has (configuration, health,
+   display, Steam account) and leaves the profile at BALANCED, the factory one: no overclock,
+   calibration or experimental function on the first start (A2). Connectivity and audio come with
+   STONE CONNECT and SETTINGS (F6). */
+function frStep(html, buttons) {
+  return new Promise(res => {
+    const b = buttons.map(([k, t]) => `<span class="txt-f" data-f data-b="${k}">${t}</span>`).join('');
+    openDlg(`${html}<div class="btns">${b}</div>`, { onA: el => { play('select'); closeDlg(); S.screen = 'transition'; res(el.dataset.b); } }, false, true);
+  });
+}
+function frConfigText() {
+  const c = S.caps, cfg = c && c.configuration;
+  if (!c) return ['<p>El servicio de rendimiento no responde: STONE no puede leer la configuración. Home funciona; Rendimiento quedará en valores de fábrica.</p>', false];
+  const d = (cfg && cfg.detected) || {}, r = (cfg && cfg.reference) || {};
+  const row = (label, have, want, unit) => `<p>${label}: <b>${have === null || have === undefined ? 'no se pudo leer' : have + unit}</b>${want ? ` · referencia ${want}${unit}` : ''}</p>`;
+  const ok = c.board && cfg && cfg.matches !== false;
+  return [`<p>Placa BC-250: <b>${c.board ? 'detectada' : 'no detectada'}</b></p>${row('Núcleos de CPU', d.cpu_cores, r.cpu_cores, '')}${row('GPU', d.gpu_cu, r.gpu_cu, ' CU')}
+    ${cfg && cfg.matches === false ? `<p>Esta configuración no es la de referencia (${esc(cfg.reasons.join('; '))}). Los perfiles de fábrica funcionan; CUSTOM, pruebas y calibración quedan bloqueados.</p>` : ''}
+    ${S.safeMode ? '<p>STONE arrancó en Safe Mode: valores de fábrica.</p>' : ''}`, ok];
+}
+async function firstRun(fr) {
+  S.screen = 'transition';
+  setTimeout(() => line.classList.remove('boot'), 1300);
+  const [cfgHtml] = frConfigText();
+  await frStep(`<div class="brand" style="font-size:40px">STONE</div><h2>BIENVENIDO</h2><p>Primer encendido de STONE MACHINE. Si has llegado aquí con el botón A, el mando funciona.</p>${cfgHtml}`, [['next', 'CONTINUAR']]);
+  const dsp = await Sys.display(true).catch(() => null);
+  await frStep(`<h2>PANTALLA</h2>${dsp && dsp.connected
+    ? `<p>${esc(dsp.name || 'Pantalla')}${dsp.connection ? ' · ' + esc(dsp.connection) : ''}</p><p>Resolución nativa: <b>${resTxt(dsp.native)}</b></p><p>Salida actual: <b>${resTxt(dsp.output)}</b>${dsp.max_hz ? ` · hasta ${dsp.max_hz} Hz` : ''}</p>`
+    : '<p>STONE no pudo leer la pantalla. Puedes revisarla después en Ajustes → Pantalla.</p>'}<p>Se cambia en Ajustes → Pantalla.</p>`, [['next', 'CONTINUAR']]);
+  if (!fr.steam_account) {
+    const b = await frStep('<h2>STEAM</h2><p>Para jugar, inicia sesión en Steam una vez. Es la única pantalla de Steam que verás.</p>', [['login', 'INICIAR SESIÓN'], ['later', 'MÁS TARDE']]);
+    if (b === 'login') await Sys.openSteam('store').catch(() => {});
+  } else await frStep('<h2>STEAM</h2><p>Cuenta de Steam: <b>conectada</b>.</p>', [['next', 'CONTINUAR']]);
+  await frStep(`<h2>RENDIMIENTO</h2><p>STONE empieza en <b>${profOf(S.prof || 'balanced').n}</b>, los valores de fábrica.</p><p>El primer encendido nunca sube frecuencias ni calibra. Eso se hace cuando quieras en Ajustes → Rendimiento.</p>`, [['go', 'EMPEZAR']]);
+  await Sys.firstrunComplete().catch(() => {});
+  if (NAV) NAV.id = ''; NAV = null;
+  enterHome({ r: 0, c: 0, slow: true });
+  armIdleOff();
 }
 
 /* ---------- Input dispatch ---------- */

@@ -48,6 +48,9 @@ def main():
         e = dict(env.env, XDG_CONFIG_HOME=os.path.join(tmp, "config"), STONE_RELEASE_FILE=os.path.join(tmp, "rel"))
         with open(e["STONE_RELEASE_FILE"], "w") as f:
             f.write('STONE_VERSION="e2e"\n')
+        os.makedirs(os.path.join(tmp, "config", "stone"), exist_ok=True)     # FIRST RUN already seen (it has its own test)
+        with open(os.path.join(tmp, "config", "stone", "firstrun.json"), "w") as f:
+            f.write('{"done": true}')
         srv = subprocess.Popen([sys.executable, os.path.join(REPO, "dev", "home", "stone_home_devserver.py"), "--port", str(port),
                                 "--steam-root", root, "--fake-steam", launches, "--fake-power", power], env=e)
         url = f"http://127.0.0.1:{port}/"

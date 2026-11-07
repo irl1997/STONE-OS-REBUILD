@@ -46,7 +46,10 @@ const Sys = {
   components: kind => Bridge.call('components', ...(kind ? [kind] : [])), gamePlan: (appid, kind) => Bridge.call('game.installPlan', appid, kind),
   gameInstall: appid => Bridge.call('game.install', appid), gameUninstall: appid => Bridge.call('game.uninstallImage', appid),
   gameOptStatus: appid => Bridge.call('game.optimizeStatus', appid), gameOptStart: appid => Bridge.call('game.optimizeStart', appid),
-  gameStatus: () => Bridge.call('game.status'), gameRestore: appid => Bridge.call('game.restoreRecommended', appid)
+  gameStatus: () => Bridge.call('game.status'), gameRestore: appid => Bridge.call('game.restoreRecommended', appid),
+  /* M02 boot metrics and M22 FIRST RUN */
+  bootMark: stage => Bridge.call('boot.mark', stage), firstrunStatus: () => Bridge.call('firstrun.status'),
+  firstrunComplete: () => Bridge.call('firstrun.complete')
 };
 async function sys(method, ...a) {
   try { return await Sys[method](...a); }

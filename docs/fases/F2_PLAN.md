@@ -59,3 +59,33 @@ Plan B de cada incógnita (si la placa lo contradice):
 - **Software:** CI completo (validación sin omisiones y todas las pruebas).
 - **Placa:** §17, §19, §20, §23, §26, T-SESS-01 a 07, T-BOOT-01, T-FR-01, T-HOME-01 y 02.
 - La primera sesión en la placa cambia a la imagen nueva **sin borrar nada** (`bootc switch`, con rc23 como despliegue anterior) e incluye el diagnóstico de solo lectura aprobado (D-14).
+
+## 5. Estado (2026-11-07)
+
+Estados según D-23. Nada de esto se ha observado todavía en la placa.
+
+| # | Pieza | Estado | Dónde |
+| --- | --- | --- | --- |
+| 1 | Sesión STONE y supervisor | CODE TESTED | `supervisor.py`, `sessions.d/stone`, `tests/test_session.py` |
+| 2 | Host de Home, puente, biblioteca, Chromium | CODE TESTED | `stone_home/`, `tests/home_suite.py`, `tests/server_suite.py` |
+| 3 | Interfaz de rc23 | CODE TESTED (portada) | `dev/home/` → `apps/stone-home/ui/index.html` |
+| 4 | Foco de Gamescope: Home como interfaz principal y el juego delante | CODE TESTED (Xvfb en CI) | `gamescope_x11.py`, `tests/test_gamescope_x11.py` |
+| 4 | Quick Menu encima del juego | Pendiente | Plan B (V-13) mientras tanto: el botón guía vuelve a Home |
+| 5 | Métricas de arranque | CODE TESTED | `bootmetrics.py`, `stone-session boot`; prueba en placa T-BOOT-01 |
+| 5 | FIRST RUN | CODE TESTED | `firstrun.py`, `home_parts/power_boot.js`; prueba en placa T-FR-01 |
+| 5 | Pantalla de actualizaciones | Pendiente | — |
+| 6 | Imagen con la sesión instalada (no automática) | CODE TESTED (build en CI) | `build.sh` §6d |
+
+**Métricas de arranque.** Se registran dos momentos por arranque, en segundos desde que arranca el kernel:
+- **BOOT TO VISUAL:** aparece el primer fotograma de STONE Home, la línea sobre negro.
+- **BOOT TO READY:** Home responde al mando.
+
+Si un arranque se mide dos veces, vale la primera, así que reiniciar Home no cambia los números. El tiempo del firmware y del cargador no entra en estas cifras: se guarda aparte, tal como lo da `systemd-analyze time`. Plymouth sale antes que BOOT TO VISUAL y no se mide. Los datos van a `~/.local/state/stone/boot-metrics.jsonl` y se consultan con `stone-session boot`.
+
+**FIRST RUN.** Se muestra una vez en una instalación nueva; una consola que ya tiene ajustes de Home no lo ve. Son cuatro pantallas que solo leen:
+1. Bienvenida, con la configuración detectada (placa, núcleos y CU frente a la referencia) y Safe Mode si está activo.
+2. Pantalla conectada.
+3. Cuenta de Steam. Si no hay ninguna, ofrece iniciar sesión (V-15).
+4. Rendimiento en BALANCED.
+
+FIRST RUN no sube frecuencias, no calibra y no activa nada experimental (A2). Conectividad y audio llegan con CONNECT y SETTINGS en F6. Para volver a verlo, se borra `~/.config/stone/firstrun.json`.
