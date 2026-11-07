@@ -1,6 +1,6 @@
 """STONE Home end-to-end: production page + host (dev server) + real stoned + fake governor.
 
-Starts a private D-Bus, the fake governor and stoned (as in run_tests.py), a fixture Steam
+Starts a private D-Bus, the fake governor and stoned (as in stoned_suite.py), a fixture Steam
 folder and dev/home/stone_home_devserver.py with fake Steam and fake power, then runs
 tests/e2e/home.e2e.mjs in headless Chromium (Playwright). Afterwards it checks what reached
 the governor, Steam and logind.
@@ -22,7 +22,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(HERE)
 sys.path.insert(0, HERE)
 
-import run_tests as RT  # noqa: E402
+import stoned_suite as RT  # noqa: E402
 import steam_fixture as FX  # noqa: E402
 
 

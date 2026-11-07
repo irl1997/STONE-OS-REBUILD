@@ -1,6 +1,6 @@
 """The real STONE Home shell (GTK 4 + WebKitGTK 6, stone_home/app.py) against a real stoned.
 
-Starts a private D-Bus, the fake governor and stoned (as in run_tests.py), a fixture Steam
+Starts a private D-Bus, the fake governor and stoned (as in stoned_suite.py), a fixture Steam
 folder, then runs `stone-home --selftest` under a virtual X server. The page checks, through
 the WebKit message handler, that it reaches stoned, the library, the settings file, the
 release file and its bundled fonts, and reports back; the process exit code is the result.
@@ -21,7 +21,7 @@ sys.path.insert(0, HERE)
 LIBS = [os.path.join(REPO, p) for p in ("services/stoned", "apps/stone-home", "modules/display", "modules/games")]
 LIB = os.pathsep.join(LIBS)   # PYTHONPATH for the shell under test
 
-import run_tests as RT  # noqa: E402
+import stoned_suite as RT  # noqa: E402
 import steam_fixture as FX  # noqa: E402
 
 

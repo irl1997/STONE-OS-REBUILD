@@ -646,7 +646,7 @@ def H03_bridge_rejects_bad_arguments_before_dbus():
 # ---------------------------------------------------------------- bridge <-> real stoned
 @test
 def B01_bridge_talks_to_real_stoned_and_reads_back_actual_state():
-    import run_tests as RT
+    import stoned_suite as RT
     env = RT.Env()
     try:
         RT.R.recover(env.store())

@@ -1,6 +1,6 @@
 """The real STONE Home Chromium shell (stone_home/chromium.py) against a real stoned.
 
-Starts a private D-Bus, the fake governor and stoned (as in run_tests.py), a fixture Steam
+Starts a private D-Bus, the fake governor and stoned (as in stoned_suite.py), a fixture Steam
 folder, then runs the Chromium shell with `--selftest` under a virtual X server at 3840 x 2160.
 The page checks, over the shell's token-protected local HTTP transport, that it reaches stoned,
 the library, the settings file, the release file and its fonts, and reports back. Also checked:
@@ -25,7 +25,7 @@ sys.path.insert(0, HERE)
 LIBS = [os.path.join(REPO, p) for p in ("services/stoned", "apps/stone-home", "modules/display", "modules/games")]
 LIB = os.pathsep.join(LIBS)   # PYTHONPATH for the shell under test
 
-import run_tests as RT  # noqa: E402
+import stoned_suite as RT  # noqa: E402
 import steam_fixture as FX  # noqa: E402
 
 
