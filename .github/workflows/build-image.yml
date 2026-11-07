@@ -3,7 +3,8 @@ name: Build image
 # Builds the STONE OS (rebuild) bootc image and publishes it to GitHub Container Registry:
 #   ghcr.io/<owner>/stone-os-rebuild:<tags>   (tags from VERSION and the git ref, scripts/release-info.sh)
 # F0-A: a name of its own and the dev channel, so no console that follows rc23 receives it.
-# F0-C: every pushed image is signed; without the SIGNING_SECRET the run stops before building.
+# Every pushed image is signed keyless (D-26): cosign uses this workflow's GitHub OIDC identity through
+# Sigstore, so no signing key or repository secret exists. Verify with docs/FIRMA.md.
 on:
   push:
     branches: [main]
@@ -49,6 +50,7 @@ jobs:
     permissions:
       contents: read
       packages: write
+      id-token: write   # keyless signing (Sigstore OIDC), D-26
     outputs:
       image: ${{ steps.meta.outputs.image }}
       digest: ${{ steps.push.outputs.digest }}
@@ -57,15 +59,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-
-      - name: Require the signing key (F0-C)
-        env:
-          COSIGN_PRIVATE_KEY: ${{ secrets.SIGNING_SECRET }}
-        run: |
-          if [[ -z "${COSIGN_PRIVATE_KEY}" ]]; then
-            echo "::error::SIGNING_SECRET is not set. Every STONE OS image is signed (R-09): see docs/FIRMA_COSIGN.md."
-            exit 1
-          fi
 
       - name: Maximize build space
         uses: ublue-os/remove-unwanted-software@695eb75bc387dbcd9685a8e72d23439d8686cba6
@@ -163,19 +156,20 @@ jobs:
         with:
           cosign-release: "v3.1.2"
 
-      - name: Sign image
+      - name: Sign image (keyless)
         if: github.event_name != 'pull_request'
         env:
-          COSIGN_PRIVATE_KEY: ${{ secrets.SIGNING_SECRET }}
-          COSIGN_PASSWORD: ""
           IMAGE: ${{ steps.meta.outputs.image }}
           DIGEST: ${{ steps.push.outputs.digest }}
           REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
           echo "${REGISTRY_TOKEN}" | cosign login ghcr.io -u "${GITHUB_ACTOR}" --password-stdin
-          cosign sign -y --new-bundle-format=false --use-signing-config=false --key env://COSIGN_PRIVATE_KEY "${IMAGE}@${DIGEST}"
-          echo "- Signature: signed with the repository cosign key (cosign.pub)" >> "$GITHUB_STEP_SUMMARY"
+          cosign sign -y "${IMAGE}@${DIGEST}"
+          cosign verify "${IMAGE}@${DIGEST}" \
+            --certificate-identity-regexp "^${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/\.github/workflows/build-image\.yml@" \
+            --certificate-oidc-issuer https://token.actions.githubusercontent.com > /dev/null
+          echo "- Signature: keyless (Sigstore), verified against this workflow's identity" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Build metadata
         if: github.event_name != 'pull_request'

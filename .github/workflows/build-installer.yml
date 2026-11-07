@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       image_tag:
-        description: Image tag to install (empty = the version in VERSION)
+        description: Image tag to install (empty = dev, the tag every build of main publishes)
         required: false
         type: string
   workflow_call:
@@ -69,7 +69,7 @@ jobs:
           set -euo pipefail
           source image/config/build.env
           version="$(tr -d '[:space:]' < VERSION)"
-          tag="${INPUT_TAG:-${version}}"
+          tag="${INPUT_TAG:-dev}"
           [[ "${tag}" =~ ^[A-Za-z0-9._-]+$ ]] || { echo "bad tag ${tag}"; exit 1; }
           eval "$(scripts/release-info.sh "v${version}" "${GITHUB_SHA}" --shell)"
           image="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/${IMAGE_NAME}"

@@ -6,7 +6,7 @@ __pycache__/
 *.pyc
 .pytest_cache/
 .ruff_cache/
-# signing key: never commit (docs/FIRMA_COSIGN.md)
+# images are signed keyless (docs/FIRMA.md); never commit a private key
 cosign.key
 # macOS Finder
 .DS_Store

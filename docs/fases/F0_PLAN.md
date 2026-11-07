@@ -52,7 +52,7 @@ Ninguna de estas piezas se borra ni se pierde: siguen en rc23 y en `04_BACKUPS` 
 | El RPM exacto del regulador se guarda como artefacto del build, con SHA-256 | El COPR puede retirar versiones antiguas (R-03) |
 | Prueba de contrato del regulador en el build: los métodos y propiedades D-Bus que STONE usa existen en el paquete instalado | R-03, P-02 |
 | `stone-release` añade `STONE_REFERENCE_CPU_CORES=8` y `STONE_REFERENCE_GPU_CU=40` | Configuración de referencia D-16. **No son límites:** sirven para comparar con lo detectado |
-| Firma cosign obligatoria: el workflow falla sin `SIGNING_SECRET` | R-09 |
+| Firma obligatoria, sin clave (keyless, Sigstore) desde D-26; antes exigía `SIGNING_SECRET` | R-09, D-26 |
 | Nombre de imagen y canal **distintos** de los de rc23 (ver §6, decisión F0-A) | Para que la consola no se actualice sola a una imagen sin `stoned` ni Home |
 | Rutas según R-10; comentarios y código en inglés | D-07 |
 
@@ -104,7 +104,7 @@ No se cambia ninguna frecuencia, voltaje ni umbral (D-18). `governor-config.py` 
 | --- | --- | --- |
 | F0-A | ¿Con qué nombre de imagen y canal se publica? La consola sigue hoy `ghcr.io/irl1997/stone-os:rc`, y publicar F0 con ese nombre podría actualizarla a una imagen sin `stoned` ni Home | `ghcr.io/irl1997/stone-os-rebuild`, canal `dev`. Versión `0.2.0-dev.N`. El nombre definitivo se decide al llegar a paridad con rc23 |
 | F0-B | **Seguridad con 40 CU:** sin `stoned` no hay techo de STONE; el regulador queda en su rango de fábrica con 40 CU. Ese rango sólo se probó con una calibración rápida en rc15, sin validar | La imagen F0 **no se instala en la placa para uso diario**. La primera imagen que se instale será **F1**, con `stoned`, y se validará junto con la puerta de F0. Hasta entonces, la consola sigue en su imagen actual |
-| F0-C | Firma obligatoria: hace falta crear el par de claves cosign y el secreto `SIGNING_SECRET` en GitHub | La crea el propietario siguiendo una guía en español; la clave privada nunca entra en el repositorio |
+| F0-C | ~~Firma obligatoria con clave cosign y secreto `SIGNING_SECRET`~~ **Sustituida por D-26: firma sin clave** | La crea el propietario siguiendo una guía en español; la clave privada nunca entra en el repositorio |
 | F0-D | ¿CI con GitHub Actions en `irl1997/STONE-OS-REBUILD`? | Sí, mismo modelo que rc23 (acciones fijadas por SHA) |
 
 ## 7. Riesgos de F0
@@ -126,8 +126,8 @@ No se cambia ninguna frecuencia, voltaje ni umbral (D-18). `governor-config.py` 
 | 4 | Regulador v0.4.14 fijado + RPM archivado en CI + registro de contrato | Hecho | Disponibilidad comprobada en el COPR (build 11067195). Base fijada comprobada en GHCR (HTTP 200). **Contrato en vivo: sólo en placa** |
 | 5 | 40 CU (obligatorio), Plymouth, bloqueo de reposo | Hecho | `test_cu40.py` 14/14 y `test_cu40_patch.py` PASS en el Mac |
 | 6 | `hardware/bc250.yaml` y `hardware/validation/matrix.yaml` | Hecho | Comprobados con el analizador YAML de Ruby (Psych) y las reglas de `test_hardware_profile.py`: 6/6. Encontró y se corrigieron dos errores de sintaxis |
-| 7 | Workflows (CI, imagen firmada, ISO, release en borrador) | Hecho | **CI ejecutado en GitHub: verde** en el Pull Request #1 (commit 344bacf, 37 s). La primera ejecución (40eec30) falló en Ruff por la caché en `/src` de solo lectura; corregido con `RUFF_CACHE_DIR`. `Build image` sin ejecutar: falta `SIGNING_SECRET` (F0-C) y fusionar |
+| 7 | Workflows (CI, imagen firmada, ISO, release en borrador) | Hecho | **CI ejecutado en GitHub: verde** en el Pull Request #1 (commit 344bacf, 37 s). La primera ejecución (40eec30) falló en Ruff por la caché en `/src` de solo lectura; corregido con `RUFF_CACHE_DIR`. `Build image` sin ejecutar: falta fusionar en `main` (la firma ya no necesita secreto, D-26) |
 | 8 | Pruebas | Hecho | En el Mac: `test_build_config`, `test_release_info` y 40 CU PASS; `test_governor_config` omitida (necesita Python 3.11) |
-| 9 | Documentación (es): `CONSTRUIR.md`, `FIRMA_COSIGN.md`, `NOTAS_DE_VERSION.md`, `README.md` | Hecho | — |
+| 9 | Documentación (es): `CONSTRUIR.md`, `FIRMA.md`, `NOTAS_DE_VERSION.md`, `README.md` | Hecho | — |
 
-Puerta de software: **CI en verde** (2026-11-07). Pendiente: `SIGNING_SECRET`, `cosign.pub` y el primer `Build image` tras fusionar. Puerta de placa: diferida (D-19).
+Puerta de software: **CI en verde** (2026-11-07). Pendiente: fusionar en `main` y el primer `Build image` (firma sin clave, D-26). Puerta de placa: diferida (D-19).

@@ -21,11 +21,11 @@ Las imágenes bootc se construyen en Linux. Desde el Mac se usa GitHub Actions:
 | Flujo | Cuándo | Resultado |
 | --- | --- | --- |
 | `CI` | Cada push y pull request | `scripts/validate.sh` + todas las pruebas, dentro del contenedor de desarrollo |
-| `Build image` | Push a `main` o a mano | `ghcr.io/<usuario>/stone-os-rebuild:dev` y `dev-<sha>`, **firmada**, más los metadatos y el RPM del regulador archivados |
+| `Build image` | Push a `main` o a mano | `ghcr.io/<usuario>/stone-os-rebuild:dev` y `dev-<sha>`, **firmada sin clave**, más los metadatos y el RPM del regulador archivados |
 | `Build installer` | A mano | ISO de instalación (partes de menos de 2 GiB + SHA-256) |
 | `Release` | Etiqueta `v<VERSION>` | Release en **borrador**: ISO, metadatos y paquete del regulador |
 
-Antes del primer `Build image` hay que crear la clave de firma: [FIRMA_COSIGN.md](FIRMA_COSIGN.md). Sin ella, el flujo se detiene antes de compilar.
+Las imágenes se firman sin clave (D-26): no hace falta crear nada antes del primer `Build image`. Ver [FIRMA.md](FIRMA.md).
 
 ## Probar en el Mac
 

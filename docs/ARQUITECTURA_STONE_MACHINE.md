@@ -521,7 +521,7 @@ Los números de prueba (§n) remiten a `HARDWARE_VALIDATION.md` de rc23. Los ide
 Contenido:
 - [C] Modelo de privilegios de A7.
 - [C] polkit acotado al usuario de la consola (R-09).
-- [C] Firma cosign obligatoria.
+- [C] Firma obligatoria de cada imagen, sin clave (Sigstore, identidad del flujo de GitHub) [C] D-26.
 - [C] Acciones de CI fijadas por SHA.
 - [C] Sin red para `stoned`.
 - [C] CSP sin orígenes externos y proxy nulo en Chromium.

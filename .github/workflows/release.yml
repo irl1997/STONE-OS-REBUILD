@@ -43,7 +43,7 @@ jobs:
     permissions:
       contents: read
       packages: write
-    secrets: inherit
+      id-token: write   # keyless signing in build-image.yml (D-26)
 
   installer:
     name: Installer

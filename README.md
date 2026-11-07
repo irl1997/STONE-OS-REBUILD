@@ -10,7 +10,7 @@ Reconstrucción integral de STONE OS para **STONE MACHINE**: AMD BC-250 con 8 n�
 | [docs/DECISIONES_TECNICAS.md](docs/DECISIONES_TECNICAS.md) | Decisiones confirmadas, recomendaciones aprobadas y datos pendientes |
 | [docs/fases/F0_PLAN.md](docs/fases/F0_PLAN.md) | Plan de F0 |
 | [docs/CONSTRUIR.md](docs/CONSTRUIR.md) | Construir y probar |
-| [docs/FIRMA_COSIGN.md](docs/FIRMA_COSIGN.md) | Clave de firma de las imágenes |
+| [docs/FIRMA.md](docs/FIRMA.md) | Firma de las imágenes (sin clave) y cómo verificarla |
 | [docs/diagnostico/](docs/diagnostico/) | Diagnóstico de solo lectura de la BC-250 |
 | [hardware/bc250.yaml](hardware/bc250.yaml) | Lo que se sabe de la placa, con su origen y estado |
 | [hardware/validation/matrix.yaml](hardware/validation/matrix.yaml) | Matriz de validación en placa |
