@@ -147,6 +147,9 @@ test -x /usr/share/gamescope-session-plus/gamescope-session-plus \
 test -e /usr/lib/systemd/user/gamescope-session-plus@.service \
     || { echo "ERROR: gamescope-session-plus@.service not found"; exit 1; }
 test -s /usr/share/gamescope-session-plus/sessions.d/stone || { echo "ERROR: sessions.d/stone missing"; exit 1; }
+## Gamescope focus (Home as the main interface, the game in front) is written with python-xlib.
+python3 -c "import Xlib" 2>/dev/null || dnf5 -y install python3-xlib
+python3 -c "import Xlib" || { echo "ERROR: python3-xlib missing; the STONE session cannot keep Gamescope's focus"; exit 1; }
 test -s /usr/share/gamescope-session-plus/sessions.d/steam \
     || echo "WARNING: sessions.d/steam not found; the STONE session runs without Steam's Gamescope settings"
 ls /usr/share/gamescope-session-plus/sessions.d/ /usr/share/wayland-sessions/

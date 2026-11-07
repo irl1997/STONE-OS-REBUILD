@@ -8,6 +8,8 @@ user, inside the session's Gamescope. It:
   3. restarts either when it stops, but at most RESTART_LIMIT times in RESTART_WINDOW_S;
      when STONE Home keeps failing, the console falls back to Steam's own Game Mode interface in
      this same session (the recovery path of D-21), and the reason is recorded.
+  4. keeps Gamescope's focus: Home marked as the main interface, the running game in front of it
+     (gamescope_x11.py) [V-13].
 
 Commands:
   stone-session run                 the session client (never returns while the session lives)
@@ -79,6 +81,44 @@ def read_state():
         return {}
 
 
+class FocusKeeper:
+    """Home as Gamescope's main interface and the running game in front (gamescope_x11.py).
+    Never fatal: without python-xlib or $DISPLAY the session runs and the fact is logged once."""
+
+    def __init__(self):
+        self.gx = None
+        self.focus = None
+        self.marked = set()
+        self.game = "unset"
+        self.disabled = None
+        try:
+            from . import gamescope_x11 as GX
+            self.gx = GX
+            if not os.environ.get("DISPLAY"):
+                raise RuntimeError("no DISPLAY")
+            self.focus = GX.Focus()
+        except Exception as e:  # noqa: BLE001  (no Xlib, no display: focus is left to Gamescope)
+            self.disabled = str(e)
+            log(f"gamescope focus not managed: {e}")
+
+    def tick(self):
+        if self.focus is None:
+            return
+        try:
+            for win in self.focus.find_home():
+                if win.id not in self.marked:
+                    self.focus.mark_home(win)
+                    self.marked.add(win.id)
+                    log(f"STONE Home window {win.id:#x} marked as the main interface")
+            game = self.gx.running_game()
+            if game != self.game:
+                self.focus.front(game)
+                log("in front: " + ("STONE Home" if game is None else f"game {game}"))
+                self.game = game
+        except Exception as e:  # noqa: BLE001  (a window that vanished, a lost display)
+            log(f"gamescope focus: {e}")
+
+
 class Child:
     """One supervised process with a restart budget."""
 
@@ -124,9 +164,11 @@ def run():
     _write_state({"started": started, "fallback": None})
     steam.start()
     home.start()
+    focus = FocusKeeper()
     try:
         while not stopping["flag"]:
             time.sleep(POLL_S)
+            focus.tick()
             rc = steam.poll()
             if rc is not None:
                 log(f"steam exited ({rc})")
