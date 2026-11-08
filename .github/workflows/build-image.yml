@@ -124,19 +124,16 @@ jobs:
           cp governor-contract.txt governor-rpm/
           (cd governor-rpm && sha256sum ./*.rpm governor-contract.txt | tee governor-SHA256SUMS)
 
-      - name: Rechunk (smaller updates on the console)
+      - name: Install cosign (verifies chunkah, then signs the image)
+        uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+        with:
+          cosign-release: "v3.1.2"
+
+      - name: Rechunk with chunkah (each package in the same layer, version after version)
         run: |
           set -euo pipefail
           source image/config/build.env
-          # Same podman (rootless) that built the image, as in ublue-os/image-template's ostree-rechunk
-          graphroot="$(podman info --format '{{.Store.GraphRoot}}')"
-          podman run --rm --pull=never --privileged \
-            --mount=type=image,src="localhost/${IMAGE_NAME}:build",target=/rpm-ostree \
-            --mount=type=bind,src="${graphroot}",target=/run/host-container-storage,rw \
-            --mount=type=tmpfs,target=/run/rpm-ostree-storage \
-            --entrypoint /usr/bin/rpm-ostree "localhost/${IMAGE_NAME}:build" \
-            compose build-chunked-oci --max-layers 127 --format-version=2 --bootc --rootfs /rpm-ostree \
-            --output "containers-storage:[overlay@/run/host-container-storage+/run/rpm-ostree-storage]localhost/${IMAGE_NAME}:build"
+          scripts/rechunk.sh "localhost/${IMAGE_NAME}:build"
 
       - name: Push to GitHub Container Registry
         id: push
@@ -144,6 +141,7 @@ jobs:
         env:
           IMAGE: ${{ steps.meta.outputs.image }}
           TAGS: ${{ steps.info.outputs.tags }}
+          CHANNEL: ${{ steps.info.outputs.channel }}
           REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
@@ -152,6 +150,8 @@ jobs:
           # One push, then every other tag points at that same manifest: a second `podman push`
           # re-serializes it and gives the tag a different digest that nothing signed (F1, F2 run 3).
           read -r first rest <<< "${TAGS}"
+          # What a console on this channel downloads: layers of the new image not in the one it has now
+          prev="$(skopeo inspect --retry-times 3 --raw "docker://${IMAGE}:${CHANNEL}" 2>/dev/null || true)"
           podman push --digestfile=/tmp/digest "localhost/${IMAGE_NAME}:build" "${IMAGE}:${first}"
           digest="$(cat /tmp/digest)"
           for tag in ${rest}; do
@@ -162,18 +162,30 @@ jobs:
             [ "sha256:${got}" = "${digest}" ] || { echo "ERROR: ${tag} is sha256:${got}, not the signed ${digest}"; exit 1; }
           done
           echo "digest=${digest}" >> "$GITHUB_OUTPUT"
+          new="$(skopeo inspect --retry-times 3 --raw "docker://${IMAGE}@${digest}")"
+          delta="$(PREV="${prev}" NEW="${new}" python3 -c '
+          import json, os
+          new = json.loads(os.environ["NEW"]); size = {l["digest"]: l["size"] for l in new["layers"]}
+          try:
+              old = {l["digest"] for l in json.loads(os.environ["PREV"])["layers"]}
+          except (ValueError, KeyError):
+              old = None
+          total = sum(size.values())
+          if old is None:
+              print(f"first image of this channel: {total / 2**30:.2f} GiB in {len(size)} layers")
+          else:
+              d = sum(s for k, s in size.items() if k not in old)
+              print(f"update from the previous image of this channel: {d / 2**20:.0f} MiB of {total / 2**30:.2f} GiB "
+                    f"({sum(1 for k in size if k not in old)} of {len(size)} layers)")
+          ')"
+          echo "${delta}"
           {
             echo "### STONE OS (rebuild) image"
+            echo "- ${delta}"
             echo "- Image: \`${IMAGE}@${digest}\`"
             echo "- Tags: \`${TAGS}\`"
             echo '```'; cat stone-release.txt; echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
-
-      - name: Install cosign
-        if: github.event_name != 'pull_request' && (github.event_name != 'workflow_dispatch' || inputs.publish)
-        uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
-        with:
-          cosign-release: "v3.1.2"
 
       - name: Sign image (keyless)
         if: github.event_name != 'pull_request' && (github.event_name != 'workflow_dispatch' || inputs.publish)
