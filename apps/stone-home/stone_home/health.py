@@ -122,9 +122,19 @@ def blackbox(directory=BLACKBOX):
     return out[:10]
 
 
+def steam_ui():
+    """Steam's interface reachable (library of the account, installing, Steam's settings): True,
+    False, or None when this is not a STONE Home process (stone-doctor in a terminal still asks)."""
+    try:
+        from . import steamcef
+        return steamcef.reachable()
+    except Exception:  # noqa: BLE001
+        return None
+
+
 def snapshot(run=_run):
     return {"cpu": cpu(), "memory": memory(), "storage": storage(), "services": services(run),
-            "gpu_errors": gpu_errors(run), "blackbox": blackbox()}
+            "gpu_errors": gpu_errors(run), "blackbox": blackbox(), "steam_ui": steam_ui()}
 
 
 def doctor(snap):
@@ -154,6 +164,10 @@ def doctor(snap):
         out.append(("warn", "GPU", f"{len(ge)} errores de amdgpu en este arranque"))
     else:
         out.append(("ok", "GPU", "Sin errores en este arranque"))
+    su = snap.get("steam_ui")
+    if su is not None:
+        out.append(("ok", "Interfaz de Steam", "responde: biblioteca de la cuenta, instalar y ajustes de Steam") if su
+                    else ("warn", "Interfaz de Steam", "no responde: solo se ven los juegos instalados. Reinicia la consola; si sigue, avisa"))
     bb = snap.get("blackbox") or []
     crashes = [b for b in bb if b.get("clean") is False]
     out.append(("warn" if crashes else "ok", "Caja negra",

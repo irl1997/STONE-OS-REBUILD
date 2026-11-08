@@ -73,6 +73,8 @@ tests:
   - {id: "T-CU40-02", title: "Activar 40 CU desde FIRST RUN o Ajustes, reiniciar, PROBAR 3 min aprobada", phase: F3, kind: P, status: NOT TESTED, runs: [], observed: []}
   - {id: "T-FG-01", title: "Generacion de fotogramas en un juego con OptiScaler instalado por STONE", phase: F4, kind: P, status: NOT TESTED, runs: [], observed: []}
   - {id: "T-BOOT-02", title: "Opciones de arranque: Safe Mode y Version anterior desde Energia", phase: F9, kind: P, status: NOT TESTED, runs: [], observed: []}
+  - {id: "T-LIB-01", title: "Biblioteca: juegos de la cuenta no instalados visibles; INSTALAR descarga sin dialogo de Steam", phase: F7, kind: P, status: NOT TESTED, runs: [], observed: []}
+  - {id: "T-SRCH-01", title: "Buscar con Y: resultados de la biblioteca y de la tienda; un juego gratis se instala", phase: F7, kind: P, status: NOT TESTED, runs: [], observed: []}
   - {id: "T-FR-01", title: "De la instalacion a Home operable solo con el mando", phase: F2, kind: P, status: NOT TESTED, runs: [], observed: []}
   - {id: "T-HLTH-01", title: "Cada valor medido de STONE HEALTH coincide con sysfs/hwmon", phase: F3, kind: P, status: NOT TESTED, runs: [], observed: []}
   - {id: "T-IMG-01", title: "Coste de cada preset de STONE IMAGE registrado", phase: F4, kind: P, status: NOT TESTED, runs: [], observed: []}

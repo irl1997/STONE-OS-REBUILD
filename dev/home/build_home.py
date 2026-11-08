@@ -115,7 +115,8 @@ def build(src):
     t = replace_span(t, "/* Fail-safe demo:", "function safeModeDlg() {", part("bootnotices.js") + "\n", "crash+notices")
     t = replace_span(t, "/* ---------- POWER ---------- */", "/* ---------- Input dispatch ---------- */", part("power_boot.js") + "\n\n", "power+boot")
     t = replace_span(t, "function act(a) {", "  const dirs = ['up', 'down', 'left', 'right'];", part("act_head.js") + "\n", "act head")
-    t = replace_once(t, "    if (a === 'y') return toast('Búsqueda: fuera de este prototipo', false);\n", "", "search")
+    t = replace_once(t, "    if (a === 'y') return toast('Búsqueda: fuera de este prototipo', false);\n", "    if (a === 'y') { play('select'); return openSearch(); }\n", "search")
+    t = replace_once(t, "    if (a === 'lt' || a === 'rt') return letterJump(a === 'lt' ? -1 : 1);\n", "    if (a === 'lt' || a === 'rt') return letterJump(a === 'lt' ? -1 : 1);\n    if (a === 'y') { play('select'); return openSearch(); }\n", "library search")
     t = replace_once(t, "    if (a === 'b') { play('back'); clearInterval(installT); installT = 0; line.classList.remove('load'); return S.from === 'library'",
                      "    if (a === 'b') { play('back'); return S.from === 'library'", "detail back")
     t = replace_once(t, "function touched() {\n  if (S.deep)", "function touched() {\n  armIdleOff();\n  if (S.deep)", "touched idle")

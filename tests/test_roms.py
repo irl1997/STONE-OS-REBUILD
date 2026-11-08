@@ -93,7 +93,7 @@ def test_prepare_session_flags_steam_and_waits_for_the_first_sign_in():
     with Box() as b:
         EM.queue_entries([{"name": "X", "exe": '"/usr/bin/flatpak"', "start": '"/"', "options": "run a.b"}])
         out = SC.prepare_session(proc=os.path.join(b.t, "noproc"))
-        assert out["steam_ui_launch"] is False and out["shortcuts"] == "waiting for the first Steam sign-in"
+        assert out["steam_ui_launch"] is True and out["shortcuts"] == "waiting for the first Steam sign-in"   # folder created for Steam
         os.makedirs(os.path.join(b.steam, "userdata", "1", "config"))
         out = SC.prepare_session(proc=os.path.join(b.t, "noproc"))
         assert out["steam_ui_launch"] is True and out["shortcuts_added"] == ["X"]

@@ -686,6 +686,22 @@ def H11_previous_version_only_through_the_fixed_rollback_command():
 
 
 @test
+def H12_install_without_steam_ui_falls_back_to_the_install_url_and_free_store_games():
+    seen = []
+
+    class UI:
+        @staticmethod
+        def install(appid):
+            return "cef unavailable (URLError)"
+    h = host_mod.Host(lambda *a: None, stoned=FakeStoned(), sysapi=system.System(spawn=seen.append), steam_root="/nonexistent")
+    h.steam_ui = UI
+    assert run_host(h, {"method": "install", "args": ["570"]})[1] == "InvalidValue"      # not owned, not a free store game
+    h.store_free = {"570"}
+    r = run_host(h, {"method": "install", "args": ["570"]}, timeout=15)
+    assert r[0] == {"ok": True, "via": "url"} and seen == ["steam://install/570"], (r, seen)
+
+
+@test
 def H02_launch_only_games_from_the_last_library_scan():
     with Tmp() as d:
         root = FX.build(os.path.join(d, "Steam"))

@@ -34,6 +34,7 @@ function homeHTML() {
     <div class="strata" id="strata">${strataHTML()}</div>
     <div class="ctx"><div class="kicker" id="hk"></div><div class="ctx-title" id="ht"></div><div class="meta" id="hm"></div></div>
     <div class="sys">
+      <span class="txt-f" data-f data-act="search">${ico.exp}Buscar</span>
       <span class="txt-f" data-f data-act="library">${ico.lib}Biblioteca</span>
       <span class="txt-f" data-f data-act="explore">${ico.exp}Explorar</span>
       <span class="txt-f" data-f data-act="settings">${ico.set}Ajustes</span>
@@ -64,8 +65,9 @@ function homeContext(el) {
     [NAV && NAV.rows[0][NAV.c + 1], NAV && NAV.rows[0][NAV.c - 1]].forEach(nx => { if (nx && nx.dataset.g !== undefined) blurOf(G[+nx.dataset.g]); });
   } else {
     const a = el.dataset.act;
-    const label = { library: ['BIBLIOTECA', S.libReady ? `${G.length} juego${G.length === 1 ? '' : 's'}` : 'Leyendo…'], explore: ['EXPLORAR', 'Tienda y descargas de Steam'], settings: ['AJUSTES', 'Pantalla, audio, rendimiento y más'], power: ['APAGAR', 'Apagar o reiniciar'], steam: [el.dataset.name, 'Se abre en Steam'] }[a] || ['', ''];
+    const label = { search: ['BUSCAR', 'Tus juegos y la tienda de Steam (Y)'], library: ['BIBLIOTECA', S.libReady ? `${G.length} juego${G.length === 1 ? '' : 's'}` : 'Leyendo…'], explore: ['EXPLORAR', 'Tienda y descargas de Steam'], settings: ['AJUSTES', 'Pantalla, audio, rendimiento y más'], power: ['APAGAR', 'Apagar o reiniciar'], steam: [el.dataset.name, 'Se abre en Steam'] }[a] || ['', ''];
     hk.textContent = S.section === 2 ? 'EXPLORAR' : S.section === 3 ? 'MEDIA' : 'SISTEMA';
+    if (a === 'search') hk.textContent = 'BUSCAR';
     ht.textContent = label[0]; hm.textContent = label[1];
     metaT = setTimeout(() => hm.classList.add('on'), S.rm ? 150 : 600);
     if (el.closest('.sys') == null || S.section !== 0) setBg(neutralBg, '');
@@ -102,6 +104,7 @@ function homeA(el) {
     if (S.running === g.i && el.classList.contains('hero')) { play('select'); return resumeGame(); }
     play('select'); return enterDetail(g.i);
   }
+  if (a === 'search') { play('select'); return openSearch(); }
   if (a === 'library') { play('select'); S.section = 1; return enterLibrary(); }
   if (a === 'explore') { play('select'); S.section = 2; return enterHome({ r: 0, c: 0 }); }
   if (a === 'settings') { play('select'); return enterSettings(); }
@@ -131,4 +134,44 @@ function thermalForecast(limit) {
   if (slope < 0.2) return null;
   const now = mc + slope / 60 * (THERM[n - 1][0] - mt);
   return Math.max(0, (limit - now) / slope);
+}
+
+/* ---------- SEARCH (M13): the library in the page, Steam's store through the host ----------
+   Y (or Buscar) opens the on-screen keyboard; results list the person's games first (play or install)
+   and then the store: a free game installs from STONE, a paid one is bought in Steam. */
+const fold = t => String(t).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+function openSearch() {
+  const from = S.screen;
+  osk('BUSCAR JUEGOS', q => { if (q === null || !q.trim()) return from === 'library' ? enterLibrary() : enterHome({ r: 1, c: 0 }); searchResults(q.trim(), from); });
+}
+function searchResults(q, from) {
+  const words = fold(q).split(/\s+/).filter(Boolean);
+  const lib = G.filter(g => words.every(w => fold(g.n).includes(w))).slice(0, 8);
+  let store = null, storeErr = null;
+  const back = () => { closeDlg(); play('back'); return from === 'library' ? enterLibrary() : enterHome({ r: 1, c: 0 }); };
+  const draw = () => {
+    const mine = new Set(G.map(g => g.appid));
+    const libRows = lib.map(g => `<span class="txt-f sres" data-f data-g="${g.i}">${esc(g.n)}<small>${g.inst ? 'Instalado · JUGAR' : 'En tu cuenta · INSTALAR'}</small></span>`).join('');
+    const st = store === null ? '<p>Buscando en la tienda de Steam…</p>' : storeErr ? `<p>${esc(storeErr)}</p>`
+      : store.filter(s => !mine.has(s.appid)).slice(0, 8).map(s => `<span class="txt-f sres" data-f data-s="${s.appid}" data-free="${s.free ? 1 : 0}">${esc(s.name)}<small>${s.free ? 'Gratis · INSTALAR' : 'De pago · se compra en Steam'}</small></span>`).join('') || '<p>Nada más en la tienda.</p>';
+    openDlg(`<h2>«${esc(q)}»</h2><div class="slist"><span class="st-cap">EN TU BIBLIOTECA</span>${libRows || '<p>Ningún juego tuyo coincide.</p>'}<span class="st-cap">EN LA TIENDA DE STEAM</span>${st}</div>
+      <div class="btns"><span class="txt-f" data-f data-b="again">BUSCAR OTRA COSA</span><span class="txt-f" data-f data-b="no">VOLVER</span></div>`, {
+      onA: el => {
+        if (el.dataset.b === 'no') return back();
+        if (el.dataset.b === 'again') { closeDlg(); return openSearch(); }
+        play('select'); closeDlg();
+        if (el.dataset.g !== undefined) return enterDetail(+el.dataset.g);
+        const appid = el.dataset.s, name = el.textContent;
+        if (el.dataset.free === '1') return sys('install', appid).then(r => { if (r) toast('Instalando: la descarga aparece en Ajustes → Almacenamiento', false); return back(); });
+        openDlg(`<h2>DE PAGO</h2><p>STONE no hace compras. Cómpralo en la tienda de Steam (en el móvil, en el ordenador o desde el escritorio de la consola) con tu cuenta: aparecerá aquí, en tu biblioteca, para instalarlo.</p><div class="btns"><span class="txt-f" data-f data-b="ok">ENTENDIDO</span></div>`, { onA: () => { closeDlg(); draw(); }, onB: () => { closeDlg(); draw(); } });
+      }, onB: back });
+    const d = $('#dlg');
+    const rows = [...d.querySelectorAll('.slist [data-f]')].map(e => [e]).concat([[...d.querySelectorAll('.btns [data-f]')]]);
+    NAV = mkNav(rows, { place: (el, b) => ({ x: b.x, y: b.y + b.h + 4, w: b.w }) }); NAV.id = 'dlg';
+    requestAnimationFrame(() => applyFocus());
+  };
+  draw();
+  if (S.libReady && !S.libOwnedKnown) toast('La interfaz de Steam no responde: solo aparecen tus juegos instalados', false);
+  Bridge.call('store.search', q).then(r => { store = r.results; }, e => { storeErr = (e && e.message) || 'La tienda no responde'; })
+    .then(() => { if (S.screen === 'dlg' && $('#dlg h2') && $('#dlg h2').textContent === `«${q}»`) draw(); });
 }
