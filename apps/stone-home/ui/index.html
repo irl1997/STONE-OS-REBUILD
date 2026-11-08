@@ -320,6 +320,85 @@ body.dormant *,body.dormant *::before,body.dormant *::after{animation-play-state
 #dlg .sres{display:flex;justify-content:space-between;gap:24px;font-size:22px;padding:6px 0}
 #dlg .sres small{font-family:var(--f-mono);font-size:15px;letter-spacing:.08em;color:var(--text-2)}
 #dlg .st-cap{font-family:var(--f-mono);font-size:14px;letter-spacing:.16em;color:var(--vein);margin-top:10px}
+/* GAME LOADING (detail_game.js loadingOn): the game's art slowly settles, its name on the deep stratum
+   and the vein running under it until the game is in front. Flex column: lines never overlap. */
+#game .tag{bottom:auto;top:72px}
+#game.loading .art{opacity:.62;animation:ld-settle 20s var(--e-light) both}
+@keyframes ld-settle{from{transform:scale(1.07)}to{transform:scale(1)}}
+#game .ld{position:absolute;inset:0;opacity:0;visibility:hidden;transition:opacity .9s var(--e-light),visibility 0s linear .9s;
+  background:linear-gradient(90deg,rgba(10,10,11,.94) 0%,rgba(10,10,11,.72) 42%,rgba(10,10,11,.12) 100%),linear-gradient(0deg,rgba(10,10,11,.92) 0%,rgba(10,10,11,0) 50%)}
+#game.loading .ld{opacity:1;visibility:visible;transition:opacity .6s var(--e-light)}
+#game .ld .col{position:absolute;left:96px;bottom:150px;width:1240px;display:flex;flex-direction:column;gap:20px}
+#game .ld-kick{font-family:var(--f-mono);font-size:16px;letter-spacing:.2em;color:var(--vein);text-transform:uppercase}
+#game .ld-title{font-family:var(--f-display);font-weight:300;font-size:72px;line-height:84px;letter-spacing:.24em;color:var(--warm);text-wrap:balance;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+#game .ld-title.long{font-size:52px;line-height:62px;letter-spacing:.18em}
+#game .ld-sub{font-size:22px;line-height:30px;color:var(--text-2)}
+#game .ld-sub:empty,#game .ld-note:empty{display:none}
+#game .ld-bar{position:relative;width:640px;height:4px;margin-top:18px;background:rgba(237,233,227,.18);border-radius:2px;overflow:hidden}
+#game .ld-bar i{position:absolute;left:0;top:0;width:40%;height:100%;background:linear-gradient(90deg,transparent,var(--vein) 50%,transparent);animation:ld-sweep 1.8s ease-in-out infinite;box-shadow:0 0 14px rgba(200,138,58,.5)}
+@keyframes ld-sweep{from{transform:translateX(-100%)}to{transform:translateX(260%)}}
+#game .ld-step{font-family:var(--f-mono);font-size:18px;letter-spacing:.24em;color:var(--warm)}
+#game .ld-note{font-size:20px;line-height:28px;color:var(--text-2);max-width:900px}
+#game .ld-foot{position:absolute;right:96px;bottom:64px;display:flex;align-items:center;gap:12px;font-family:var(--f-display);font-weight:300;font-size:18px;letter-spacing:.22em;color:var(--text-2)}
+#stage.rm #game.loading .art,#stage.rm #game .ld-bar i{animation:none}
+/* Lists inside dialogs (GRÁFICOS, PROPIEDADES, STEAM PREGUNTA): label left, value right, one per line */
+#dlg .sres small{white-space:nowrap}
+#dlg .box > .st-cap{margin:0 0 -14px}
+/* SETUP (power_boot.js): the first start, full screen. Left: the step; right: the core sample of the
+   whole setup, one stratum per step, the vein on the current one. Columns and rows are flex/grid:
+   text wraps inside its column and never reaches the core. */
+#setup{position:absolute;inset:0;z-index:26;background:linear-gradient(180deg,#121315 0%,#121315 196px,#0e0f10 196px,#0b0b0c 100%);opacity:0;visibility:hidden;transition:opacity .8s var(--e-light),visibility 0s linear .8s}
+#setup.on{opacity:1;visibility:visible;transition:opacity .8s var(--e-light)}
+#setup.out{opacity:0}
+#setup .su-head{position:absolute;left:96px;right:96px;top:54px;height:48px;display:flex;justify-content:space-between;align-items:center}
+#setup .su-head .brand{font-size:32px;letter-spacing:.55em}
+#setup .su-count{font-family:var(--f-mono);font-size:16px;letter-spacing:.2em;color:var(--text-2)}
+#setup::before{content:"";position:absolute;left:0;top:195px;width:1920px;height:1px;background:var(--st-rule)}
+#setup .su-body{position:absolute;left:96px;top:250px;width:1000px;max-height:790px;display:flex;flex-direction:column;gap:22px}
+#setup .su-body.in{animation:su-in .7s var(--e-settle) both}
+@keyframes su-in{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+#setup .su-kick{font-family:var(--f-mono);font-size:16px;letter-spacing:.2em;color:var(--text-2)}
+#setup .su-kick b{font-weight:400;color:var(--vein)}
+#setup .su-title{margin:0;font-family:var(--f-display);font-weight:200;font-size:88px;line-height:96px;letter-spacing:.2em;color:var(--warm)}
+#setup .su-lead{margin:0;font-size:26px;line-height:38px;color:var(--text-2);max-width:940px}
+#setup .su-lead b{font-weight:400;color:var(--warm)}
+#setup .su-rows{display:flex;flex-direction:column;margin-top:14px;border-top:1px solid var(--st-rule)}
+#setup .su-row{display:flex;justify-content:space-between;align-items:baseline;gap:32px;padding:16px 0;border-bottom:1px solid var(--st-rule);font-size:24px;color:var(--warm)}
+#setup .su-row span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#setup .su-row b{flex:none;font-family:var(--f-mono);font-weight:400;font-size:18px;letter-spacing:.12em;color:var(--text-2);text-transform:uppercase}
+#setup .su-row.txt-f b{color:var(--vein)}
+#setup .su-row.lr b{color:var(--warm)}
+#setup .su-btns{margin-top:36px;display:flex;gap:72px;font-family:var(--f-display);font-weight:300;font-size:28px;letter-spacing:.24em;color:var(--warm)}
+#setup .su-core{position:absolute;left:1340px;top:250px;width:484px;display:grid;grid-template-rows:repeat(8,1fr);height:740px;border-left:2px solid var(--st-rule)}
+#setup .su-core div{display:flex;align-items:center;gap:24px;padding-left:36px;font-family:var(--f-mono);font-size:17px;letter-spacing:.2em;color:var(--slate);border-bottom:1px solid #1b1c1e;
+  background:linear-gradient(90deg,rgba(43,44,47,.25),transparent 70%);transition:color .6s var(--e-light),background .6s var(--e-light)}
+#setup .su-core div:nth-child(odd){background:linear-gradient(90deg,rgba(43,44,47,.4),transparent 70%)}
+#setup .su-core span{color:inherit;opacity:.7}
+#setup .su-core .done{color:var(--text-2)}
+#setup .su-core .cur{color:var(--warm);margin-left:-2px;border-left:3px solid var(--vein);background:linear-gradient(90deg,rgba(200,138,58,.22),transparent 80%);box-shadow:-6px 0 18px rgba(200,138,58,.35)}
+/* Framing: amber corners at the stage edges, so the person sees where the picture ends on the TV */
+#setup .su-frame{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .4s}
+#setup.framing .su-frame{opacity:1}
+#setup .su-frame i{position:absolute;width:120px;height:120px;border:0 solid var(--vein)}
+#setup .su-frame i:nth-child(1){left:0;top:0;border-left-width:6px;border-top-width:6px}
+#setup .su-frame i:nth-child(2){right:0;top:0;border-right-width:6px;border-top-width:6px}
+#setup .su-frame i:nth-child(3){left:0;bottom:0;border-left-width:6px;border-bottom-width:6px}
+#setup .su-frame i:nth-child(4){right:0;bottom:0;border-right-width:6px;border-bottom-width:6px}
+#stage.rm #setup .su-body.in{animation:none}
+/* Screenshot viewer (home.js shotViewer): the picture fills the stage, caption and buttons on the deep stratum */
+#dlg.viewer .box{left:0;top:0;width:1920px;height:1080px;padding:0;border:0;background:#000;gap:0}
+#dlg.viewer .shot-img{position:absolute;inset:0 0 170px 0;background:center/contain no-repeat}
+#dlg.viewer .shot-cap{position:absolute;left:96px;bottom:64px;display:flex;flex-direction:column;gap:6px;font-size:22px;color:var(--text-2)}
+#dlg.viewer .shot-cap b{font-family:var(--f-display);font-weight:300;font-size:32px;letter-spacing:.2em;color:var(--warm)}
+#dlg.viewer .btns{position:absolute;right:96px;bottom:118px;margin:0}   /* above the button hints */
+.card.cap.shot{width:400px;height:225px;background-size:cover;background-position:center}   /* screenshots are 16:9 */
+/* Settings: the pane ends above the button hints whatever the description's length; the rows take
+   what is left and scroll inside it (the focus keeps the current row in view). */
+#settings .pane{bottom:120px}
+#settings .rows{flex:1 1 auto;min-height:0;max-height:none}
+/* Home context: one line for the name (long names end in «…»), so the line under it never reaches stratum 02 */
+#home .ctx-title{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:1728px}
+#home .ctx .meta{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:1728px}
 </style>
 
 <div id="app">
@@ -370,10 +449,10 @@ const $ = s => document.querySelector(s);
 const stage = $('#stage'), line = $('#line');
 
 /* ---------- Stage scaling ---------- */
-let SCALE = 1;
+let SCALE = 1, FRAME = 0;
 function fit() {
   const vp = $('#viewport'), w = vp.clientWidth, h = vp.clientHeight;
-  SCALE = Math.min(w / 1920, h / 1080);
+  SCALE = Math.min(w / 1920, h / 1080) * (1 - FRAME / 50);
   stage.style.transform = `translate(${(w - 1920 * SCALE) / 2}px, ${(h - 1080 * SCALE) / 2}px) scale(${SCALE})`;
 }
 new ResizeObserver(fit).observe($('#viewport'));
@@ -491,7 +570,10 @@ const Sys = {
   health: () => Bridge.call('health.status'), cu40: op => Bridge.call('gpu.cu40', op),
   bootRollback: () => Bridge.call('boot.rollback'),
   gameFrameGen: appid => Bridge.call('game.frameGen', appid), gameSetFrameGen: (appid, on) => Bridge.call('game.setFrameGen', appid, on),
-  gameExperience: appid => Bridge.call('game.experience', appid), gameLook: appid => Bridge.call('game.look', appid), gameSetLook: (appid, k) => Bridge.call('game.setLook', appid, k)
+  gameExperience: appid => Bridge.call('game.experience', appid), gameLook: appid => Bridge.call('game.look', appid), gameSetLook: (appid, k) => Bridge.call('game.setLook', appid, k),
+  /* Steam asking something (steamcef.dialog), answered from STONE; STONE MEDIA */
+  steamDialog: () => Bridge.call('steam.dialog'), steamAnswer: (i, label) => Bridge.call('steam.dialogAnswer', i, label),
+  shots: appid => Bridge.call('media.screenshots', ...(appid ? [appid] : []))
 };
 async function sys(method, ...a) {
   try { return await Sys[method](...a); }
@@ -819,14 +901,16 @@ function homeHTML() {
       cards += `<div class="card hero" data-f data-g="${g0.i}" style="background-image:${hu ? `url(&quot;${hu}&quot;)` : 'none'};background-color:var(--shale)">${hu ? '' : nameTag(g0)}${runTag(g0.i)}</div>`;
       recent.slice(1).forEach(i => { const g = G[i]; cards += `<div class="card cap" data-f data-g="${i}" style="background-image:${capUrl(g).replace(/"/g, '&quot;')}">${g.art.capsule ? '' : nameTag(g)}${runTag(i)}</div>`; });
     } else {
-      cards += `<div class="card wide" data-f data-act="steam" data-k="store" data-name="STEAM STORE"><b>${S.libReady ? 'SIN JUEGOS' : 'BIBLIOTECA'}</b><span>${S.libReady ? 'Instala juegos desde la Tienda de Steam' : 'Leyendo la biblioteca de Steam…'}</span></div>`;
+      cards += `<div class="card wide" data-f data-act="search"><b>${S.libReady ? 'SIN JUEGOS' : 'BIBLIOTECA'}</b><span>${S.libReady ? 'Busca un juego para instalarlo (Y)' : 'Leyendo la biblioteca de Steam…'}</span></div>`;
     }
     cards += `<div class="card tile" data-f data-act="library">BIBLIOTECA</div>`;
   } else if (S.section === 2) {
-    [['STEAM STORE', 'Tienda de Steam', 'store'], ['DESCARGAS', 'Descargas y actualizaciones de juegos', 'downloads']]
-      .forEach(([t, s, k]) => { cards += `<div class="card wide" data-f data-act="steam" data-k="${k}" data-name="${t}"><b>${t}</b><span>${s}</span></div>`; });
+    [['BUSCAR JUEGOS', 'Tu biblioteca y la tienda de Steam', 'search'], ['DESCARGAS', 'Descargas y actualizaciones de juegos', 'downloads'], ['EMULADORES', 'Juegos de otras consolas', 'emu']]
+      .forEach(([t, s, k]) => { cards += `<div class="card wide" data-f data-act="${k}"><b>${t}</b><span>${s}</span></div>`; });
   } else {
-    cards += `<div class="card wide" data-f data-act="steam" data-k="screenshots" data-name="CAPTURAS"><b>CAPTURAS</b><span>Capturas guardadas por Steam</span></div>`;
+    if (!SHOTS) loadShots();
+    if (SHOTS && SHOTS.length) SHOTS.slice(0, 12).forEach((sh, k) => { cards += `<div class="card cap shot" data-f data-act="shot" data-k="${k}" style="background-image:url(&quot;${Bridge.artUrl(sh.appid === '0' ? '0' : '0', sh.kind)}&quot;)"></div>`; });
+    else cards += `<div class="card wide" data-f data-act="noshots"><b>CAPTURAS</b><span>${SHOTS ? 'Aún no hay capturas. Durante el juego: botón STEAM + R1' : 'Leyendo las capturas…'}</span></div>`;
   }
   const ico = {
     lib: '<svg width="26" height="26" viewBox="0 0 26 26" fill="none" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="6" height="18"/><rect x="11" y="4" width="6" height="18"/><path d="M19 5l4 1-3 16-4-1"/></svg>',
@@ -875,7 +959,9 @@ function homeContext(el) {
     [NAV && NAV.rows[0][NAV.c + 1], NAV && NAV.rows[0][NAV.c - 1]].forEach(nx => { if (nx && nx.dataset.g !== undefined) blurOf(G[+nx.dataset.g]); });
   } else {
     const a = el.dataset.act;
-    const label = { search: ['BUSCAR', 'Tus juegos y la tienda de Steam (Y)'], library: ['BIBLIOTECA', S.libReady ? `${G.length} juego${G.length === 1 ? '' : 's'}` : 'Leyendo…'], explore: ['EXPLORAR', 'Tienda y descargas de Steam'], settings: ['AJUSTES', 'Pantalla, audio, rendimiento y más'], power: ['APAGAR', 'Apagar o reiniciar'], steam: [el.dataset.name, 'Se abre en Steam'] }[a] || ['', ''];
+    const label = { search: ['BUSCAR', 'Tus juegos y la tienda de Steam (Y)'], library: ['BIBLIOTECA', S.libReady ? `${G.length} juego${G.length === 1 ? '' : 's'}` : 'Leyendo…'], explore: ['EXPLORAR', 'Buscar, descargas y emuladores'], settings: ['AJUSTES', 'Pantalla, audio, rendimiento y más'], power: ['APAGAR', 'Apagar o reiniciar'],
+      downloads: ['DESCARGAS', 'Lo que se descarga y el espacio libre'], emu: ['EMULADORES', 'Juegos de otras consolas'], noshots: ['CAPTURAS', 'Durante el juego: botón STEAM + R1'],
+      shot: (() => { const sh = SHOTS && SHOTS[+el.dataset.k], g = sh && G.find(x => x.appid === sh.appid); return ['CAPTURA', sh ? `${g ? g.n : 'Juego ' + sh.appid} · ${new Date(sh.time * 1000).toLocaleDateString('es-CL')}` : '']; })() }[a] || ['', ''];
     hk.textContent = S.section === 2 ? 'EXPLORAR' : S.section === 3 ? 'MEDIA' : 'SISTEMA';
     if (a === 'search') hk.textContent = 'BUSCAR';
     ht.textContent = label[0]; hm.textContent = label[1];
@@ -919,7 +1005,10 @@ function homeA(el) {
   if (a === 'explore') { play('select'); S.section = 2; return enterHome({ r: 0, c: 0 }); }
   if (a === 'settings') { play('select'); return enterSettings(); }
   if (a === 'power') { play('select'); return openPower(); }
-  if (a === 'steam') { play('select'); return sys('openSteam', el.dataset.k).then(r => { if (r) toast(`${el.dataset.name}: se abre en Steam`, false); }); }
+  if (a === 'downloads') { play('select'); return openCat('Almacenamiento'); }
+  if (a === 'emu') { play('select'); return openCat('Emuladores'); }
+  if (a === 'shot') { play('select'); return shotViewer(+el.dataset.k); }
+  if (a === 'noshots') { play('select'); return toast('Las capturas que hagas jugando aparecen aquí', false); }
 }
 function section(d) {
   const n = S.section + d;
@@ -973,7 +1062,7 @@ function searchResults(q, from) {
         if (el.dataset.g !== undefined) return enterDetail(+el.dataset.g);
         const appid = el.dataset.s, name = el.textContent;
         if (el.dataset.free === '1') return sys('install', appid).then(r => { if (r) toast('Instalando: la descarga aparece en Ajustes → Almacenamiento', false); return back(); });
-        openDlg(`<h2>DE PAGO</h2><p>STONE no hace compras. Cómpralo en la tienda de Steam (en el móvil, en el ordenador o desde el escritorio de la consola) con tu cuenta: aparecerá aquí, en tu biblioteca, para instalarlo.</p><div class="btns"><span class="txt-f" data-f data-b="ok">ENTENDIDO</span></div>`, { onA: () => { closeDlg(); draw(); }, onB: () => { closeDlg(); draw(); } });
+        openDlg(`<h2>DE PAGO</h2><p>STONE no hace compras. Cómpralo con tu cuenta en la app de Steam del móvil o en store.steampowered.com/app/${appid}: aparecerá aquí, en tu biblioteca, listo para instalar.</p><div class="btns"><span class="txt-f" data-f data-b="ok">ENTENDIDO</span></div>`, { onA: () => { closeDlg(); draw(); }, onB: () => { closeDlg(); draw(); } });
       }, onB: back });
     const d = $('#dlg');
     const rows = [...d.querySelectorAll('.slist [data-f]')].map(e => [e]).concat([[...d.querySelectorAll('.btns [data-f]')]]);
@@ -984,6 +1073,27 @@ function searchResults(q, from) {
   if (S.libReady && !S.libOwnedKnown) toast('La interfaz de Steam no responde: solo aparecen tus juegos instalados', false);
   Bridge.call('store.search', q).then(r => { store = r.results; }, e => { storeErr = (e && e.message) || 'La tienda no responde'; })
     .then(() => { if (S.screen === 'dlg' && $('#dlg h2') && $('#dlg h2').textContent === `«${q}»`) draw(); });
+}
+
+/* Settings opened straight at one category (Explorar → Descargas, Emuladores). */
+function openCat(name) { const k = CATS.indexOf(name); if (k >= 0) cat = k; return enterSettings({ pane: true, ri: 0 }); }
+
+/* ---------- STONE MEDIA: the screenshots Steam saved (media.py), without Steam's screen ---------- */
+let SHOTS = null, shotsBusy = false;
+function loadShots() {
+  if (shotsBusy) return; shotsBusy = true;
+  Sys.shots().then(r => { SHOTS = r.shots; }, () => { SHOTS = []; }).then(() => { shotsBusy = false; if (S.screen === 'home' && S.section === 3) enterHome({ r: 0, c: 0 }); });
+}
+function shotViewer(k) {
+  const n = SHOTS.length, sh = SHOTS[k], g = G.find(x => x.appid === sh.appid);
+  const when = new Date(sh.time * 1000).toLocaleString('es-CL', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  const back = () => { closeDlg(); $('#dlg').classList.remove('viewer'); play('back'); enterHome({ r: 0, c: Math.min(k, 11) }); };
+  openDlg(`<div class="shot-img" style="background-image:url(&quot;${Bridge.artUrl('0', sh.kind)}&quot;)"></div>
+    <div class="shot-cap"><b>${esc(g ? g.n : 'Juego ' + sh.appid)}</b><span>${esc(when)} · ${k + 1} de ${n}</span></div>
+    <div class="btns"><span class="txt-f" data-f data-b="prev">ANTERIOR</span><span class="txt-f" data-f data-b="next">SIGUIENTE</span><span class="txt-f" data-f data-b="no">VOLVER</span></div>`, {
+    onA: el => { if (el.dataset.b === 'no') return back(); play('nav'); shotViewer((k + (el.dataset.b === 'next' ? 1 : n - 1)) % n); NAV.c = el.dataset.b === 'next' ? 1 : 0; applyFocus(); },
+    onB: back }, false, true);
+  $('#dlg').classList.add('viewer');
 }
 
 /* ---------- LIBRARY ---------- */
@@ -1057,8 +1167,9 @@ function enterDetail(i, opts = {}) {
   S.screen = 'detail';
   const canPlay = g.inst || g.src === 'shortcut';
   const prim = running ? 'REANUDAR' : canPlay ? 'JUGAR' : 'INSTALAR';
+  /* Five actions at most on one line (they always fit the 1920 stage); the image options live in GRÁFICOS. */
   const sec = [[g.fav ? 'Quitar de favoritos' : 'Favorito', 'fav'], [`Rendimiento: ${g.perf ? profOf(g.perf).n : 'Global'}`, 'perf'], ['Propiedades', 'opt']];
-  if (g.src === 'steam' && g.inst) sec.splice(2, 0, [imgLabel(g), 'img'], [preLabel(g), 'pre'], [lookLabel(g), 'look'], [fgLabel(g), 'fg'], ['Experiencia', 'xp'], [optLabel(g), 'ins'], ['Instalar HelixSR', 'hlx'], [optzLabel(g), 'opz']);
+  if (g.src === 'steam' && g.inst) sec.splice(2, 0, ['Gráficos', 'gfx'], ['Experiencia', 'xp']);
   $('#detail').innerHTML = `
     <div class="col"><div class="origin">${esc(g.o)}</div><h1${g.n.length > 22 ? ' class="long"' : ''}>${esc(g.n.toUpperCase())}</h1>
       <div class="stats">${playText(g)} · Última sesión: ${running ? 'ahora' : g.last}</div>
@@ -1155,18 +1266,6 @@ async function insOpti(g, i) {
     toast(r && r.ok ? 'FSR (OptiScaler) instalado. Elige «Imagen: OptiScaler» para usarlo' : ((r && r.error) || 'No se pudo instalar'), false);
   } catch (e) { play('error'); toast('No se pudo: ' + ((e && e.message) || 'sin respuesta') + '. Si fue la descarga, revisa internet y vuelve a pulsar', false); }
 }
-async function insHelix(g, i) {
-  try {
-    let r = await Sys.gamePlan(g.appid, 'helixsr');
-    if (r && r.needs_download) {
-      toast('Descargando HelixSR del autor (GitHub)… puede tardar', false);
-      await Sys.components('helixsr');
-      r = await Sys.gamePlan(g.appid, 'helixsr');
-    }
-    if (!r || !r.ok) { play('error'); return toast(((r && r.error) || 'No se pudo preparar') + '', false); }
-    toast(`HelixSR ${r.tag} descargado. Para instalarlo en tus juegos sin anti-cheat, en la terminal (Ctrl+Alt+F3): stone-game install ${g.appid} helixsr`, false);
-  } catch (e) { play('error'); toast('No se pudo: ' + ((e && e.message) || 'sin respuesta') + '. Revisa internet y vuelve a pulsar', false); }
-}
 /* STONE OPTIMIZED: GAME -> STONE RECOMMENDED -> PLAY. The host says what JUGAR will use and why;
    nothing is shown that was not measured or is not in the profile database. */
 async function experience(g, i) {
@@ -1183,17 +1282,17 @@ function detailA(el) {
   if (a === 'primary') {
     play('select');
     if (S.running === g.i) return resumeGame();
-    if (!g.inst && g.src !== 'shortcut') return sys('install', g.appid).then(r => { if (r) toast(`${g.n}: elige dónde instalarlo en Steam. Al terminar aparece aquí listo para jugar`, false); });
+    if (!g.inst && g.src !== 'shortcut') return sys('install', g.appid).then(r => { if (!r) return; steamWatch(20000); toast(`${g.n}: instalando. La descarga se ve en Ajustes → Almacenamiento; al terminar, JUGAR`, false); });
     return launch(g);
   }
-  if (a === 'opt') { play('select'); return toast('Propiedades, logros y compatibilidad: en la ficha del juego en Steam', false); }
+  if (a === 'opt') { play('select'); return propsDlg(g); }
   if (a === 'fav') {
     play('select'); g.fav = !g.fav; if (g.fav) favs.add(g.appid); else favs.delete(g.appid); savePrefs();
     enterDetail(curG, { r: 1, c: 0 }); return toast(g.fav ? 'Añadido a favoritos' : 'Quitado de favoritos', false);
   }
   if (a === 'opz') { play('select'); return optimizar(g, curG); }
   if (a === 'ins') { play('select'); return insOpti(g, curG); }
-  if (a === 'hlx') { play('select'); return insHelix(g, curG); }
+  if (a === 'gfx') { play('select'); return gfxPanel(g); }
   if (a === 'xp') { play('select'); return xpDlg(g); }
   if (a === 'fg') {
     if (!g.fg) { play('error'); return toast('Leyendo…', false); }
@@ -1241,31 +1340,71 @@ function detailA(el) {
    Steam starts the game; Gamescope puts it in front of STONE Home. stoned sees the session through
    Steam's reaper process and reports it in its state, which is what this screen follows: when the
    game ends, Home comes back. */
-let tagT = 0, launchT = 0;
+let tagT = 0, launchT = 0, ldT = [];
+/* The launch sound: the line rising into the game (the same voice as the start of the console). */
+SND.launch = () => { tone(220, 1.6, .05, { glide: 440, attack: .05, lp: 1400, wet: .5 }); tone(660, 1.8, .018, { attack: .2, delay: .35, lp: 3000, wet: .8 }); };
 async function launch(g, starter) {
   if (S.launching !== null) return;
   const ok = await (starter ? starter() : sys('launch', g.appid));
   if (!ok) return;
-  if (g.exp && g.exp.settings && g.exp.status !== 'UNKNOWN') toast(g.exp.settings, false);
   S.launching = g.i; S.running = g.i; S.screen = 'transition';
   recent = [g.i, ...recent.filter(i => i !== g.i)].slice(0, 6);
-  const b = stageBox(focusEl());
+  const el = focusEl(), b = el ? stageBox(el) : { x: 960, y: 540, w: 0, h: 0 };
   chrome(false, false); $('#hints').classList.add('hide');
+  play('launch');
+  /* The focus line leaves the card and becomes the loading vein of the game's own screen. */
   $('#black').classList.remove('fast'); $('#black').classList.add('on');
   setLine(b.x + b.w / 2, b.y + b.h + 16, 0, { slow: true });
-  await wait(1200);
-  line.classList.add('off');
+  await wait(700);
   showGame(g, true);
-  /* If stoned does not see the game within 90 s (Steam updating it first, or stoned not running),
-     STONE stops waiting; B on this screen always goes back to Home. */
-  clearTimeout(launchT); launchT = setTimeout(() => { S.launching = null; }, 90000);
+  steamWatch(95000);
+  /* stoned may have seen the game before STONE started waiting for it */
+  if (S.game && S.game.appid === g.appid) launchFound(g.i);
+  /* Steam updating the game first, a long first start or a game that never opens: after 90 s STONE asks. */
+  clearTimeout(launchT); launchT = setTimeout(() => launchStalled(g), 90000);
+}
+const LD_STEPS = [[0, 'PREPARANDO', ''], [1400, 'STEAM ABRE EL JUEGO', ''],
+  [7000, 'CARGANDO', 'La primera vez que juegas, el juego prepara sus sombreadores: puede tardar unos minutos.'],
+  [40000, 'SIGUE CARGANDO', 'B vuelve al inicio; el juego seguirá abriéndose.']];
+function loadingOn(g) {
+  const gm = $('#game');
+  if (!gm.querySelector('.ld')) gm.insertAdjacentHTML('beforeend', '<div class="ld"><div class="col"><div class="ld-kick"></div><div class="ld-title"></div><div class="ld-sub"></div><div class="ld-bar"><i></i></div><div class="ld-step"></div><div class="ld-note"></div></div><div class="ld-foot"><span class="g">B</span>INICIO</div></div>');
+  const set = (k, v) => { gm.querySelector('.ld-' + k).textContent = v; };
+  set('kick', `${g.o} · ${profOf(g.perf || effective()).n}`);
+  set('title', g.n.toUpperCase());
+  gm.querySelector('.ld-title').classList.toggle('long', g.n.length > 22);
+  set('sub', g.exp && g.exp.settings && g.exp.status !== 'UNKNOWN' ? g.exp.settings : '');
+  ldT.forEach(clearTimeout);
+  ldT = LD_STEPS.map(([t, step, note]) => setTimeout(() => { set('step', step); set('note', note); }, t));
+  const tag = gm.querySelector('.tag'); tag.textContent = `${g.n} · en curso. A: volver al juego · ☰: menú de STONE · B: inicio`; tag.classList.add('gone');
+  gm.classList.add('loading');
+}
+function loadingOff() {
+  ldT.forEach(clearTimeout); ldT = [];
+  $('#game').classList.remove('loading');
+}
+function launchStalled(g) {
+  if (S.launching !== g.i) return;
+  if (S.screen === 'dlg') { launchT = setTimeout(() => launchStalled(g), 15000); return; }
+  play('notify');
+  openDlg(`<h2>${esc(g.n.toUpperCase())}</h2><p>El juego todavía no se ha abierto. Si Steam lo está actualizando, la descarga aparece en Ajustes → Almacenamiento.</p>
+    <div class="btns"><span class="txt-f" data-f data-b="wait">ESPERAR</span><span class="txt-f" data-f data-b="home">VOLVER AL INICIO</span></div>`, {
+    onA: el => {
+      closeDlg(); play('select');
+      if (el.dataset.b === 'wait') { S.screen = 'game'; NAV = null; line.classList.add('off'); $('#hints').classList.add('hide'); steamWatch(95000); launchT = setTimeout(() => launchStalled(g), 90000); return; }
+      S.launching = null; S.running = null; loadingOff(); returnHome();
+    } });
+}
+function launchFound(i) {
+  S.launching = null; clearTimeout(launchT);
+  setTimeout(() => { if (S.dormant) return; loadingOff(); if (S.running === i) showTag(G[i]); }, 1500);
 }
 /* Called from adopt(): stoned's view of the running game is the truth. */
 function gameSync(st, before) {
   const appid = st.game ? st.game.appid : null;
   const i = appid ? G.findIndex(g => g.appid === appid) : -1;
   if (appid) {
-    if (i >= 0) { S.running = i; if (S.launching === i) { S.launching = null; clearTimeout(launchT); } }
+    if (i >= 0) { S.running = i; if (S.launching === i) launchFound(i); }
     return;
   }
   if (S.running !== null && S.launching === null) gameEnded(before);
@@ -1282,7 +1421,7 @@ function gameEnded(before) {
   loadLibrary().then(() => { if (S.screen === 'home') enterHome(); });     /* play time and order changed */
 }
 function returnHome() {
-  closeQuick(true);
+  closeQuick(true); loadingOff();
   $('#black').classList.add('fast', 'on');
   setTimeout(() => {
     S.section = 0; if (NAV) NAV.id = ''; NAV = null;
@@ -1303,14 +1442,17 @@ function showGame(g, fresh) {
   S.screen = 'game'; NAV = null;
   const gm = $('#game'), hu = heroUrl(g);
   gm.querySelector('.art').style.backgroundImage = hu ? `url("${hu}")` : neutralBg;
-  const tag = gm.querySelector('.tag'); tag.textContent = `${g.n} · en curso. A: volver al juego · ☰: menú de STONE · B: inicio`;
-  tag.classList.remove('gone'); clearTimeout(tagT); tagT = setTimeout(() => tag.classList.add('gone'), 6000);
+  if (S.launching === g.i) loadingOn(g); else { loadingOff(); showTag(g); }
   showScreen('game'); setBg('', 'none'); chrome(false, false);
   $('#hints').classList.add('hide');
   line.classList.add('off');
   setTimeout(() => $('#black').classList.remove('on'), fresh ? 200 : 0);
   setMetrics(S.tech);
   gameMode();
+}
+function showTag(g) {
+  const tag = $('#game .tag'); tag.textContent = `${g.n} · en curso. A: volver al juego · ☰: menú de STONE · B: inicio`;
+  tag.classList.remove('gone'); clearTimeout(tagT); tagT = setTimeout(() => tag.classList.add('gone'), 6000);
 }
 /* In the STONE session the session puts the game back in front (guide button, plan B of V-13);
    elsewhere Steam does it when it is asked to start the game again. [VERIFICAR EN PLACA] */
@@ -1350,6 +1492,94 @@ async function xpDlg(g) {
   if (r.regression.length) rows.push(`<p>Desde la última medición ${esc(r.regression.join(', '))}: conviene volver a medir.</p>`);
   if (r.autopilot) rows.push(`<p>Mejor medido: ${Object.entries(r.autopilot).filter(([, v]) => v).map(([k]) => GOAL_TXT[k]).join(' · ') || '—'}. STONE RECOMMENDED usa el de EQUILIBRIO.</p>`);
   openDlg(`<h2>EXPERIENCIA</h2>${rows.join('')}<div class="btns"><span class="txt-f" data-f data-b="ok">VOLVER</span></div>`, { onA: back, onB: back });
+}
+
+/* GRÁFICOS: the image options of one game in a list, each line with its value; A changes it in place. */
+const GFX = [['img', g => imgLabel(g)], ['pre', g => preLabel(g)], ['look', g => lookLabel(g)], ['fg', g => fgLabel(g)], ['ins', g => optLabel(g)], ['opz', g => optzLabel(g)]];
+function gfxPanel(g, at = 0) {
+  const row = ([k, f]) => { const [l, v] = f(g).split(/: (.*)/s); return `<span class="txt-f sres" data-f data-act="${k}">${esc(l)}<small>${esc(v || '')}</small></span>`; };
+  const back = () => { closeDlg(); play('back'); enterDetail(curG, { r: 1, c: 2 }); };
+  openDlg(`<h2>GRÁFICOS</h2><p>${esc(g.n)} · cada cambio se aplica la próxima vez que juegues.</p><div class="slist">${GFX.map(row).join('')}</div>
+    <div class="btns"><span class="txt-f" data-f data-b="no">VOLVER</span></div>`, {
+    onA: el => {
+      if (el.dataset.b === 'no') return back();
+      const k = el.dataset.act, r = NAV.r;
+      if (k === 'opz') { closeDlg(); enterDetail(curG, { r: 1, c: 2 }); return detailA({ dataset: { act: 'opz' } }); }
+      Promise.resolve(detailA({ dataset: { act: k } })).then(() => { if (S.screen === 'dlg' && $('#dlg h2') && $('#dlg h2').textContent === 'GRÁFICOS') gfxPanel(g, r); });
+    }, onB: back });
+  const d = $('#dlg');
+  NAV = mkNav([...d.querySelectorAll('.slist [data-f]')].map(e => [e]).concat([[...d.querySelectorAll('.btns [data-f]')]]), { r: at, place: (el, b) => ({ x: b.x, y: b.y + b.h + 4, w: b.w }) });
+  NAV.id = 'dlg'; requestAnimationFrame(() => applyFocus());
+  if (!g.img) imgLoad(g, curG).then(() => { if (S.screen === 'dlg' && $('#dlg h2') && $('#dlg h2').textContent === 'GRÁFICOS') gfxPanel(g, NAV ? NAV.r : 0); });
+}
+/* PROPIEDADES: what STONE knows of the game, and uninstalling it (asked twice, done without Steam's dialog). */
+function propsDlg(g) {
+  const back = () => { closeDlg(); play('back'); enterDetail(curG, { r: 1, c: [...$('#detail').querySelectorAll('.second [data-f]')].length - 1 }); };
+  const kv = (k, v) => `<span class="sres">${k}<small>${esc(v)}</small></span>`;
+  const canRemove = g.src === 'steam' && g.inst && S.running !== g.i;
+  openDlg(`<h2>PROPIEDADES</h2><div class="slist">${kv('Origen', g.o)}${kv('Tamaño', g.sz || '—')}${kv('Tiempo jugado', playText(g))}${kv('Última sesión', g.last || '—')}${kv('Al iniciarse', g.perf ? profOf(g.perf).n : 'Perfil global')}${g.src === 'steam' ? kv('Steam App ID', g.appid) : ''}</div>
+    <div class="btns">${canRemove ? '<span class="txt-f" data-f data-b="rm">DESINSTALAR</span>' : ''}<span class="txt-f" data-f data-b="no">VOLVER</span></div>`, {
+    onA: el => {
+      if (el.dataset.b === 'no') return back();
+      play('select');
+      openDlg(`<h2>DESINSTALAR</h2><p>Se borra ${esc(g.n)} de la consola (${esc(g.sz || 'su tamaño en disco')}). Tus partidas en la nube de Steam se conservan. Puedes volver a instalarlo cuando quieras.</p>
+        <div class="btns"><span class="txt-f" data-f data-b="no">CANCELAR</span><span class="txt-f" data-f data-b="yes">DESINSTALAR</span></div>`, {
+        onA: e2 => {
+          if (e2.dataset.b !== 'yes') { closeDlg(); play('back'); return propsDlg(g); }
+          closeDlg(); play('select');
+          S.section = 0; if (NAV) NAV.id = ''; enterHome({ r: 0, c: 0 });
+          Bridge.call('storage.uninstall', g.appid).then(() => { steamWatch(15000); toast(`${g.n}: desinstalando`, false); }, e => { play('error'); toast((e && e.message) || 'No se pudo desinstalar', false); })
+            .then(() => loadLibrary()).then(() => { if (S.screen === 'home') enterHome({ r: 0, c: 0 }); });
+        }, onB: () => { closeDlg(); play('back'); propsDlg(g); } });
+    }, onB: back });
+}
+
+/* ---------- STEAM ASKS, STONE ANSWERS ----------
+   Steam sometimes stops to ask (saves in the cloud that do not match, which way to start a game,
+   a licence, a first-launch question). Its interface is hidden in the STONE session, so STONE reads
+   the question (steamcef.dialog) and asks it with its own screen; the answer presses Steam's button.
+   Watched while a game starts, installs or uninstalls. [VERIFICAR EN PLACA] */
+let swT = 0, swUntil = 0, swBusy = false, swSkip = { key: '', until: 0 };
+function steamWatch(ms) {
+  swUntil = Math.max(swUntil, Date.now() + ms);
+  if (!swT) swT = setTimeout(swTick, 1200);
+}
+async function swTick() {
+  swT = 0;
+  if (Date.now() > swUntil) return;
+  if (!swBusy && !S.dormant && !['dlg', 'power', 'quick'].includes(S.screen)) {
+    swBusy = true;
+    const r = await Sys.steamDialog().catch(() => null);
+    swBusy = false;
+    const d = r && r.dialog, key = d ? d.title + '|' + d.buttons.join('|') : '';
+    if (d && !S.dormant && !(key === swSkip.key && Date.now() < swSkip.until) && !['dlg', 'power', 'quick'].includes(S.screen)) steamAsk(d, key);
+  }
+  swT = setTimeout(swTick, 2500);
+}
+function steamAsk(d, key) {
+  const from = S.screen, nav = NAV;
+  const back = () => {
+    closeDlg();
+    if (from === 'game') { S.screen = 'game'; NAV = null; line.classList.add('off'); $('#hints').classList.add('hide'); return; }
+    if (from === 'detail') return enterDetail(curG, { r: 0, c: 0 });
+    if (from === 'library') return enterLibrary();
+    if (from === 'settings') return enterSettings();
+    if (NAV !== nav) { if (NAV) NAV.id = ''; enterHome({ r: 0, c: 0 }); }
+  };
+  play('notify');
+  openDlg(`<span class="st-cap">STEAM PREGUNTA</span><h2>${esc((d.title || 'Steam').toUpperCase())}</h2>${d.text ? `<p>${esc(d.text)}</p>` : ''}
+    <div class="slist">${d.buttons.map((b, i) => `<span class="txt-f sres" data-f data-i="${i}">${esc(b)}</span>`).join('')}</div>`, {
+    onA: el => {
+      const i = +el.dataset.i; play('select'); back();
+      Sys.steamAnswer(i, d.buttons[i]).then(r => { if (!r.ok) toast(r.result === 'changed' ? 'Steam cambió la pregunta: aparecerá de nuevo' : 'Steam ya no lo pregunta', false); },
+        () => toast('No se pudo responder a Steam', false));
+      steamWatch(10000);
+    },
+    onB: () => { play('back'); swSkip = { key, until: Date.now() + 30000 }; back(); } });
+  const dl = $('#dlg');
+  NAV = mkNav([...dl.querySelectorAll('.slist [data-f]')].map(e => [e]), { place: (el, b) => ({ x: b.x, y: b.y + b.h + 4, w: b.w }) });
+  NAV.id = 'dlg'; requestAnimationFrame(() => applyFocus());
+  hints([['A', 'Responder'], ['B', 'Más tarde']]);
 }
 
 /* ---------- QUICK MENU ---------- */
@@ -1441,7 +1671,7 @@ function linkRows(D) {
   const goalMax = D.goal === 'max_res';
   return [
     { l: 'Conexión', s: L.reaches_4k60 ? 'Lleva 4K a 60 Hz o más' : (L.display_offers_4k60 ? '4K a 60 Hz no cabe en esta conexión' : 'Lo máximo que lleva la conexión'),
-      v: f(L.target), act: 'info', where: L.advice || `Fluida: ${f(L.best_fluid)}. Máxima resolución: ${f(L.best_max_res)}. Detalle: stonectl display` },
+      v: f(L.target), act: 'info', where: L.advice || `Fluida: ${f(L.best_fluid)}. Máxima resolución: ${f(L.best_max_res)}.` },
     { l: 'Meta de imagen', s: goalMax ? 'La resolución más alta, aunque sean menos Hz' : 'La más alta a 60 Hz o más (recomendado para jugar)',
       v: goalMax ? 'Máxima resolución' : 'Fluidez', key: 'dispgoal' }];
 }
@@ -1462,11 +1692,12 @@ function displayRows() {
   const games = D.game_env ? `${D.game_env.w} × ${D.game_env.h}` : 'Desconocida';
   return [
     { l: 'Televisor', s: `${D.name || 'Pantalla'}${D.connection ? ' · ' + D.connection : ''}${caps ? ' · ' + caps : ''}`, v: resTxt(D.native), act: 'info',
-      where: warn ? warn.text : `Nativa ${resTxt(D.native)}. Salida actual ${resTxt(D.output)}. Diagnóstico completo: stonectl display` },
+      where: warn ? warn.text : `Nativa ${resTxt(D.native)}. Salida actual ${resTxt(D.output)}.` },
     { l: 'Salida', s: D.output ? (D.native && D.output.w < D.native.w ? 'Por debajo de la nativa del televisor' : 'La que envía la consola al televisor') : 'Steam no respondió todavía',
       v: resTxt(D.output), act: 'info', where: D.native && D.output && D.output.w < D.native.w
-        ? 'Botón STEAM → Ajustes → Pantalla → Resolución: elige la nativa del televisor' : 'La resolución de salida la fija Steam (Ajustes → Pantalla)' },
+        ? 'El cable o el adaptador no llevan la nativa: «Conexión» dice lo máximo que llevan' : 'La consola envía esta resolución al televisor' },
     ...linkRows(D),
+    { l: 'Encuadre', s: 'Si los bordes se cortan en tu televisor, reduce la imagen hasta ver las esquinas', v: `${FRAME} %`, key: 'frame' },
     { l: 'Juegos ven', s: D.policy === 'native' ? 'La resolución del televisor; cada juego decide cómo dibujar' : 'Lo que Steam da por defecto',
       v: D.policy === 'native' ? `Televisor · ${games}` : `Steam · ${games}`, key: 'gameres' }];
 }
@@ -1486,11 +1717,16 @@ function steamSetRows() {
   const rows = (ss.settings || []).slice().sort((a, b) => a.area.localeCompare(b.area) || a.label.localeCompare(b.label)).map(x => ({
     l: x.label, s: x.area, v: x.type === 'bool' ? (x.value ? 'Sí' : 'No') : String(x.value),
     act: x.writable ? 'sset' : 'info', sset: x, where: `${x.area}: ${x.label} = ${x.value}${x.writable ? '' : ' (solo lectura)'}` }));
-  return [head, ...rows];
+  if (S.steamAcct === undefined) { S.steamAcct = null; Sys.firstrunStatus().then(f => { S.steamAcct = !!f.steam_account; }, () => { S.steamAcct = false; }).then(() => { if (S.screen === 'settings' && CATS[cat] === 'Steam') enterSettings({ pane: !!NAV.pane, ri: NAV.pane ? NAV.c : 0 }); }); }
+  const acct = { l: 'Cuenta de Steam', s: S.steamAcct ? 'Conectada en esta consola' : S.steamAcct === null ? 'Leyendo…' : 'Sin iniciar sesión: Steam muestra su pantalla de inicio de sesión una vez',
+    v: S.steamAcct ? 'Conectada' : 'Iniciar sesión', act: 'sset', login: !S.steamAcct };
+  return [acct, head, ...rows];
 }
 function ssetA(r) {
   play('select');
+  if (r.login) { S.steamAcct = undefined; return Sys.openSteam('store').catch(() => toast('Steam no respondió', false)); }
   if (r.refresh) { S.ss = null; return loadSteamSet(true); }
+  if (!r.sset) return;
   const x = r.sset;
   Bridge.call('steam.setSetting', x.id, !x.value).then(res => {
     toast(res && res.ok ? `${x.label}: ${!x.value ? 'Sí' : 'No'}` : 'Steam no aceptó el cambio', false);
@@ -1579,7 +1815,7 @@ const LVL = { ok: 'Bien', warn: 'Aviso', fail: 'Fallo' };
 function healthRows() {
   const H = S.health;
   if (!H) { loadHealth(); return [{ l: 'Leyendo…', s: 'CPU, memoria, discos, servicios y registros', v: '' }]; }
-  if (H.error) return [{ l: 'No se pudo leer el estado', s: 'Prueba de nuevo o usa stone-doctor en una terminal', v: '' }];
+  if (H.error) return [{ l: 'No se pudo leer el estado', s: 'Vuelve a intentarlo en unos segundos; si sigue, reinicia la consola', v: '' }];
   const st = S.st || {};
   const rows = H.checks.map(([lvl, t, d]) => ({ l: t, s: d, v: LVL[lvl] || lvl, act: 'info', where: d }));
   rows.push({ l: 'Estabilidad', s: st.safe_mode ? `Safe Mode activo (${SAFE_REASON[st.safe_reason] || st.safe_reason})` : st.last_failure ? 'Hubo un fallo reciente: STONE volvió a la última configuración buena' : 'Sin fallos de rendimiento recientes',
@@ -1634,7 +1870,7 @@ function catRows() {
       { l: 'Hardware', s: S.caps ? (S.caps.board ? `AMD BC-250 detectada · Zen 2 ${cores()} núcleos · GPU ${cu40Top() ? 40 : 24} CU · 16 GB GDDR6` : 'No se detectó una AMD BC-250: el ajuste de rendimiento está desactivado') : 'Leyendo…', v: '' },
       { l: 'Sistema base', s: rel.STONE_BASE_IMAGE ? `Bazzite · ${rel.STONE_BASE_IMAGE}${rel.STONE_BASE_DIGEST ? ' @ ' + rel.STONE_BASE_DIGEST.slice(7, 19) : ''}` : 'Bazzite (imagen derivada de bazzite-deck)', v: '' },
       { l: 'Componentes', s: [rel.STONE_KERNEL && `kernel ${rel.STONE_KERNEL}`, rel.STONE_MESA && `Mesa ${rel.STONE_MESA}`, rel.STONE_GOVERNOR_VERSION && `regulador ${rel.STONE_GOVERNOR_VERSION}`].filter(Boolean).join(' · ') || '—', v: '' },
-      { l: 'Modo escritorio', s: 'Para usuarios avanzados', v: 'Energía', act: 'info', where: 'Energía → Escritorio. Para volver: «Volver a STONE» en el escritorio, o reiniciar' },
+      { l: 'Modo escritorio', s: 'Avanzado: el escritorio de Linux, fuera de la experiencia de consola', v: 'Abrir', act: 'desktop' },
       { l: 'NEURAL RENDER', s: 'Experimental: sin backends; ninguno funciona hoy de forma medible en la GPU de la BC-250', v: 'Sin backend' }] };
     case 'Actualizaciones': return { d: 'Las actualizaciones llegan como una imagen completa y se aplican al reiniciar. Si una falla, la anterior sigue disponible.', rows: [
       { l: 'Estado', s: !dep ? 'No se pudo leer el estado del sistema' : dep.staged ? `Actualización lista: ${dep.staged.version || 'nueva versión'}. Se aplica al reiniciar` : `Instalada: ${(dep.booted && dep.booted.version) || rel.STONE_VERSION || '—'}`, v: '' },
@@ -1812,17 +2048,17 @@ function storageRows() {
 }
 function storeAct(r, ri) {
   if (r.act === 'storage-again') { play('select'); return cxReset('storage', 'Almacenamiento', ri); }
-  if (r.act === 'steam-dl') { play('select'); return sys('openSteam', 'downloads'); }
+  if (r.act === 'steam-dl') { play('select'); return toast('La descarga sigue sola, también con la consola en reposo. Al terminar, el juego aparece listo para jugar', false); }
   const g = r.game, back = () => { closeDlg(); play('back'); enterSettings({ pane: true, ri }); };
   play('select');
   openDlg(`<h2>${esc(g.name)}</h2><p>Juego: <b>${GB(g.size)}</b> · caché de sombreadores: <b>${GB(g.shader_cache)}</b> · datos de Proton: <b>${GB(g.prefix)}</b></p>
-    <p>La caché de sombreadores se vuelve a crear sola la próxima vez que juegues (el primer arranque irá algo más lento). Desinstalar abre la confirmación de Steam.</p>
+    <p>La caché de sombreadores se vuelve a crear sola la próxima vez que juegues (el primer arranque irá algo más lento).</p>
     <div class="btns"><span class="txt-f" data-f data-b="cache">LIMPIAR CACHÉ</span><span class="txt-f" data-f data-b="uninstall">DESINSTALAR</span><span class="txt-f" data-f data-b="no">VOLVER</span></div>`, {
     onA: el => {
       if (el.dataset.b === 'no') return back();
       closeDlg(); play('select');
       const m = el.dataset.b === 'cache' ? Bridge.call('storage.clearShaderCache', g.appid).then(x => toast(`Caché limpiada: ${GB(x.freed)} libres`, false))
-        : Bridge.call('storage.uninstall', g.appid).then(() => toast(`${g.name}: confirma en Steam para desinstalar`, false));
+        : Bridge.call('storage.uninstall', g.appid).then(() => { steamWatch(15000); toast(`${g.name}: desinstalando`, false); });
       m.catch(e => { play('error'); toast((e && e.message) || 'No se pudo', false); }).then(() => cxReset('storage', 'Almacenamiento', ri));
     }, onB: back });
 }
@@ -1910,6 +2146,7 @@ function adjust(key, d, ri) {
   else if (key === 'rm') { S.rm = !S.rm; }
   else if (key === 'tech') { S.tech = !S.tech; }
   else if (key === 'sysvol') { return setSysVol(d, ri); }
+  else if (key === 'frame') { const n = FRAME + d; if (n < 0 || n > 6) return bump(d); FRAME = n; fit(); }
   else if (key === 'render') { S.render = (S.render + d + RENDER.length) % RENDER.length; play('select'); return applyRender(); }
   else if (key === 'gameres') { return setGamePolicy(); }
   else if (key === 'dispgoal') { return setDisplayGoal(); }
@@ -1931,12 +2168,13 @@ function settingsA(el) {
   if (r.act === 'emu') return emuA(r);
   if (r.act === 'sset') return ssetA(r);
   if (r.act === 'measure') { play('select'); return measureSmoothness(); }
+  if (r.act === 'desktop') { play('select'); return desktopDlg(NAV.c); }
   if (r.act === 'perf') { play('select'); return enterPerf(); }
   if (r.act === 'safe') { play('select'); return S.safeMode ? leaveSafeMode(NAV.c) : askSafeMode(NAV.c); }
 }
 const SAFE_REASON = { failures: 'STONE MACHINE se detuvo dos veces seguidas', manual: 'lo activaste tú', kernel: 'pedido en el arranque (stone.safe=1)' };
 function askSafeMode(ri) {
-  openDlg(`<h2>ACTIVAR SAFE MODE</h2><p>STONE vuelve ahora a valores de fábrica: nada por encima de BALANCED, sin perfiles CUSTOM, sin perfiles por juego y sin pruebas. Tus ranuras y tus perfiles por juego se conservan.</p><p>Sigue activo aunque reinicies, hasta que salgas desde aquí. Si la pantalla no funciona, también se puede activar desde una terminal con <b>sudo stonectl safe-mode on</b>.</p>
+  openDlg(`<h2>ACTIVAR SAFE MODE</h2><p>STONE vuelve ahora a valores de fábrica: nada por encima de BALANCED, sin perfiles CUSTOM, sin perfiles por juego y sin pruebas. Tus ranuras y tus perfiles por juego se conservan.</p><p>Sigue activo aunque reinicies, hasta que salgas desde aquí. Si la pantalla no funciona, el menú de arranque de la consola también ofrece Safe Mode.</p>
     <div class="btns"><span class="txt-f" data-f data-b="yes">ACTIVAR</span><span class="txt-f" data-f data-b="no">CANCELAR</span></div>`, {
     onA: el => { closeDlg(); if (el.dataset.b !== 'yes') { play('back'); return enterSettings({ pane: true, ri }); }
       api('enterSafeMode').then(st => { enterSettings({ pane: true, ri }); if (st) toast('Safe Mode activado: sólo valores de fábrica'); }); },
@@ -2244,7 +2482,6 @@ function openPower() {
   box.innerHTML = `<div class="h">ENERGÍA</div>
     <div class="main txt-f" data-f data-act="off">APAGAR</div>
     <div class="txt-f" style="font-size:26px" data-f data-act="reboot">Reiniciar</div>
-    ${S.info && S.info.session === 'stone' ? '<div class="txt-f" style="font-size:26px" data-f data-act="desktop">Escritorio</div>' : ''}
     <div class="txt-f" style="font-size:26px" data-f data-act="bootopts">Opciones de arranque</div>
     ${S.running !== null && G[S.running] ? `<div class="warn">${esc(G[S.running].n)} se cerrará al apagar o reiniciar.</div>` : ''}`;
   $('#power').classList.add('on'); line.classList.remove('off');
@@ -2285,6 +2522,12 @@ function bootOptions() {
       try { await Sys.bootRollback(); rebootDlg('El próximo arranque usará la versión anterior de STONE OS.', back); }
       catch (e) { play('error'); toast(e.code === 'PermissionDenied' ? 'Hace falta ser el administrador de la consola' : `No se pudo: ${e.message}`, false); back(); }
     }, onB: back });
+}
+function desktopDlg(ri) {
+  const back = () => { closeDlg(); play('back'); enterSettings({ pane: true, ri }); };
+  openDlg(`<h2>MODO ESCRITORIO</h2><p>Sales de la consola al escritorio de Linux, para usuarios avanzados. Los juegos y STONE se cierran.</p><p>Para volver: «Volver a STONE» en el escritorio, o reinicia la consola.</p>
+    <div class="btns"><span class="txt-f" data-f data-b="no">CANCELAR</span><span class="txt-f" data-f data-b="yes">ABRIR EL ESCRITORIO</span></div>`, {
+    onA: el => { if (el.dataset.b !== 'yes') return back(); closeDlg(); play('select'); toDesktop(); }, onB: back });
 }
 /* M15: Bazzite's desktop for this login only; "Volver a STONE" on the desktop (or a reboot) comes back. */
 async function toDesktop() {
@@ -2340,12 +2583,13 @@ let saveT = 0;
 function savePrefs() {
   clearTimeout(saveT);
   saveT = setTimeout(() => Sys.prefsSet({ sound: S.sound, vol: S.vol, hc: S.hc, rm: S.rm, ts: S.ts, safe: S.safe, idle: S.idle,
-    tech: S.tech, adv_ack: S.advAck, engine: S.render, favorites: [...favs] }).catch(() => {}), 400);
+    tech: S.tech, adv_ack: S.advAck, engine: S.render, favorites: [...favs], frame: FRAME }).catch(() => {}), 400);
 }
 function loadPrefs(p) {
   if (!p) return;
   S.sound = p.sound; S.vol = p.vol; S.hc = p.hc; S.rm = p.rm || reduceOS; S.ts = p.ts; S.safe = p.safe; S.idle = p.idle;
   S.tech = p.tech; S.advAck = p.adv_ack; S.render = p.engine === 1 ? 1 : 0; favs.clear(); (p.favorites || []).forEach(a => favs.add(a));
+  FRAME = p.frame > 0 && p.frame <= 6 ? p.frame : 0; fit();
   applyPrefs();
 }
 
@@ -2384,17 +2628,11 @@ async function boot() {
   home.then(st => { if (st) setTimeout(() => bootNotices(st), 1400); });
 }
 
-/* ---------- FIRST RUN (M22) ----------
-   Shown once on a new installation. It only reads what the console has (configuration, health,
-   display, Steam account) and leaves the profile at BALANCED, the factory one: no overclock,
-   calibration or experimental function on the first start (A2). Connectivity and audio come with
-   STONE CONNECT and SETTINGS (F6). */
-function frStep(html, buttons) {
-  return new Promise(res => {
-    const b = buttons.map(([k, t]) => `<span class="txt-f" data-f data-b="${k}">${t}</span>`).join('');
-    openDlg(`${html}<div class="btns">${b}</div>`, { onA: el => { play('select'); closeDlg(); S.screen = 'transition'; res(el.dataset.b); } }, false, true);
-  });
-}
+/* ---------- SETUP: the first start (M22) ----------
+   A full-screen setup like a console's: controller, internet, screen and framing, sound,
+   performance, Steam account. It only reads and offers; nothing changes without the person's A.
+   The profile stays BALANCED, the factory one: no overclock, calibration or experiment (A2).
+   The right side is a core sample of the setup: one stratum per step, the vein on the current one. */
 function frConfigText() {
   const c = S.caps, cfg = c && c.configuration;
   if (!c) return ['<p>El servicio de rendimiento no responde: STONE no puede leer la configuración. Home funciona; Rendimiento quedará en valores de fábrica.</p>', false];
@@ -2405,43 +2643,187 @@ function frConfigText() {
     ${cfg && cfg.matches === false ? `<p>Esta configuración no es la de referencia (${esc(cfg.reasons.join('; '))}). Los perfiles de fábrica funcionan; CUSTOM, pruebas y calibración quedan bloqueados.</p>` : ''}
     ${S.safeMode ? '<p>STONE arrancó en Safe Mode: valores de fábrica.</p>' : ''}`, ok];
 }
-async function firstRun(fr) {
-  S.screen = 'transition';
-  setTimeout(() => line.classList.remove('boot'), 1300);
-  const [cfgHtml] = frConfigText();
-  /* stone-doctor's checks (health.py): the first start says plainly if something of STONE is not running */
-  const hl = await Promise.race([Sys.health().catch(() => null), wait(5000).then(() => null)]);
-  S.health = hl;
-  const bad = hl ? hl.checks.filter(c => c[0] === 'fail') : [], warn = hl ? hl.checks.filter(c => c[0] === 'warn') : [];
-  const docHtml = !hl ? '<p>Comprobación del sistema: no respondió a tiempo. Puedes verla en Ajustes → Salud.</p>'
-    : bad.length ? `<p>Comprobación del sistema: <b>${bad.length} fallo${bad.length > 1 ? 's' : ''}</b> (${esc(bad.map(c => c[1]).join(', '))}). Detalle en Ajustes → Salud.</p>`
-    : `<p>Comprobación del sistema: <b>${warn.length ? warn.length + ' aviso' + (warn.length > 1 ? 's' : '') : 'todo bien'}</b>.</p>`;
-  await frStep(`<div class="brand" style="font-size:40px">STONE</div><h2>BIENVENIDO</h2><p>Primer encendido de STONE MACHINE. Si has llegado aquí con el botón A, el mando funciona.</p>${cfgHtml}${docHtml}`, [['next', 'CONTINUAR']]);
-  /* 40 CU: STONE MACHINE's configuration (D-16). Offered, never switched without the person (D-31). */
-  let reboot = false;
-  const c40 = S.caps && S.caps.board && S.caps.cu40;
-  if (c40 && c40.available && !c40.active) {
-    const b = await frStep(`<h2>40 CU</h2><p>Esta consola usa ahora 24 de las 40 unidades de cálculo de su GPU. STONE MACHINE está pensada para las 40.</p>${CU40_WARN}`, [['on', 'ACTIVAR'], ['later', 'AHORA NO']]);
-    if (b === 'on') {
-      const r = await Sys.cu40('enable').catch(e => ({ ok: false, text: e.message }));
-      reboot = !!(r && r.ok);
-      await frStep(`<h2>40 CU</h2><p>${reboot ? 'Listo: se usará desde el próximo arranque. Al terminar la bienvenida podrás reiniciar.' : 'No se pudo activar ahora. Puedes hacerlo después en Ajustes → Rendimiento.'}</p>`, [['next', 'CONTINUAR']]);
-    }
+const SU_STEPS = [['hola', 'INICIO'], ['mando', 'MANDO'], ['red', 'INTERNET'], ['pantalla', 'PANTALLA'], ['sonido', 'SONIDO'],
+  ['rend', 'RENDIMIENTO'], ['steam', 'STEAM'], ['listo', 'LISTO']];
+let SU = null;
+function suEl() {
+  let el = $('#setup');
+  if (!el) {
+    stage.insertAdjacentHTML('beforeend', `<section id="setup"><div class="su-head"><div class="brand">STONE</div><div class="su-count"></div></div>
+      <div class="su-body"><div class="su-kick"></div><h1 class="su-title"></h1><p class="su-lead"></p><div class="su-rows"></div><div class="su-btns"></div></div><div class="su-core"></div><div class="su-frame"><i></i><i></i><i></i><i></i></div></section>`);
+    el = $('#setup');
   }
-  const dsp = await Sys.display(true).catch(() => null);
-  await frStep(`<h2>PANTALLA</h2>${dsp && dsp.connected
-    ? `<p>${esc(dsp.name || 'Pantalla')}${dsp.connection ? ' · ' + esc(dsp.connection) : ''}</p><p>Resolución nativa: <b>${resTxt(dsp.native)}</b></p><p>Salida actual: <b>${resTxt(dsp.output)}</b>${dsp.max_hz ? ` · hasta ${dsp.max_hz} Hz` : ''}</p>`
-    : '<p>STONE no pudo leer la pantalla. Puedes revisarla después en Ajustes → Pantalla.</p>'}<p>Se cambia en Ajustes → Pantalla.</p>`, [['next', 'CONTINUAR']]);
-  if (!fr.steam_account) {
-    const b = await frStep('<h2>STEAM</h2><p>Para jugar, inicia sesión en Steam una vez. Es la única pantalla de Steam que verás.</p>', [['login', 'INICIAR SESIÓN'], ['later', 'MÁS TARDE']]);
-    if (b === 'login') await Sys.openSteam('store').catch(() => {});
-  } else await frStep('<h2>STEAM</h2><p>Cuenta de Steam: <b>conectada</b>.</p>', [['next', 'CONTINUAR']]);
-  await frStep(`<h2>RENDIMIENTO</h2><p>STONE empieza en <b>${profOf(S.prof || 'balanced').n}</b>, los valores de fábrica.</p><p>El primer encendido nunca sube frecuencias ni calibra. Eso se hace cuando quieras en Ajustes → Rendimiento.</p>`, [['go', 'EMPEZAR']]);
+  return el;
+}
+/* One step on screen. rows: [{l, v, k, lr}] (k = what A does, lr = LEFT/RIGHT change it); buttons: [[k, label]] */
+function suDraw(st) {
+  const el = suEl(), i = SU_STEPS.findIndex(x => x[0] === st.key);
+  SU.cur = st;
+  el.querySelector('.su-count').textContent = `PASO ${String(i + 1).padStart(2, '0')} DE ${String(SU_STEPS.length).padStart(2, '0')}`;
+  el.querySelector('.su-kick').innerHTML = `ESTRATO ${String(i + 1).padStart(2, '0')} · <b>${SU_STEPS[i][1]}</b>`;
+  el.querySelector('.su-title').textContent = st.title;
+  el.querySelector('.su-lead').innerHTML = st.lead || '';
+  el.querySelector('.su-rows').innerHTML = (st.rows || []).map((r, k) => `<div class="su-row${r.k ? ' txt-f' : ''}${r.lr ? ' lr' : ''}"${r.k ? ` data-f data-r="${k}"` : ''}><span>${esc(r.l)}</span><b>${r.lr ? '◀ ' : ''}${esc(r.v || '')}${r.lr ? ' ▶' : ''}</b></div>`).join('');
+  el.querySelector('.su-btns').innerHTML = st.buttons.map(([k, t]) => `<span class="txt-f" data-f data-b="${k}">${t}</span>`).join('');
+  el.querySelector('.su-core').innerHTML = SU_STEPS.map(([k, n], j) => `<div class="${j < i ? 'done' : j === i ? 'cur' : ''}"><span>${String(j + 1).padStart(2, '0')}</span>${n}</div>`).join('');
+  el.classList.toggle('framing', st.key === 'pantalla');
+  const body = el.querySelector('.su-body'); body.classList.remove('in'); void body.offsetWidth; body.classList.add('in');
+  S.screen = 'dlg';
+  DLG = { onA: suA, onLR: suLR, onB: i > 0 ? () => { play('back'); suGo(SU.i - 1); } : null };
+  const rows = [...el.querySelectorAll('.su-rows [data-f]')].map(e => [e]);
+  NAV = mkNav(rows.concat([[...el.querySelectorAll('.su-btns [data-f]')]]), { r: st.r == null ? rows.length : Math.min(st.r, rows.length), place: (e, b) => ({ x: b.x, y: b.y + b.h + 6, w: b.w }) });
+  NAV.id = 'setup';
+  requestAnimationFrame(() => { line.classList.remove('off'); applyFocus(); });
+  hints([['A', 'Elegir'], ...(st.rows || []).some(r => r.lr) ? [['◀ ▶', 'Ajustar']] : [], ...(i > 0 ? [['B', 'Atrás']] : [])]);
+}
+function suA(el) {
+  SU.at = NAV.r;                      /* a step drawn again keeps the focus where it was */
+  if (el.dataset.b) { play('select'); return SU.cur.onButton(el.dataset.b); }
+  const r = SU.cur.rows[+el.dataset.r];
+  if (r && r.k) { play('select'); return SU.cur.onRow(r, +el.dataset.r); }
+}
+function suLR(d, el) {
+  const r = el && el.dataset.r !== undefined ? SU.cur.rows[+el.dataset.r] : null;
+  if (!r || !r.lr) return false;
+  SU.at = NAV.r; SU.cur.onLR(r, d, +el.dataset.r); return true;
+}
+function suGo(i) { SU.at = null; SU.i = Math.max(0, Math.min(SU_STEPS.length - 1, i)); return SU_FN[SU_STEPS[SU.i][0]](); }
+const suNext = () => suGo(SU.i + 1);
+const SU_FN = {
+  hola() {
+    const [cfgHtml] = frConfigText(), hl = S.health;
+    const bad = hl ? hl.checks.filter(c => c[0] === 'fail') : [];
+    const tmp = document.createElement('div'); tmp.innerHTML = cfgHtml;
+    const rows = [...tmp.querySelectorAll('p')].map(p => { const [l, v] = p.textContent.split(/: (.*)/s); return { l, v: v || '' }; }).filter(r => r.v);
+    rows.push({ l: 'Comprobación del sistema', v: !hl ? 'en Ajustes → Salud' : bad.length ? `${bad.length} aviso${bad.length > 1 ? 's' : ''} · Ajustes → Salud` : 'todo bien' });
+    suDraw({ key: 'hola', title: 'HOLA.', lead: 'Vamos a dejar lista tu STONE MACHINE. Son unos minutos y todo se puede cambiar después en Ajustes.', rows,
+      buttons: [['go', 'EMPEZAR']], onButton: suNext });
+  },
+  async mando() {
+    const draw = (list, note) => suDraw({ key: 'mando', title: 'MANDO', r: SU.at,
+      lead: 'Si has llegado aquí con el botón A, tu mando ya funciona. Para añadir un mando Bluetooth, ponlo en modo de emparejamiento y búscalo.',
+      rows: [...(list || []).filter(d => /input-gaming|joystick|gamepad/i.test(d.icon || '') || /mando|controller|pad/i.test(d.name || ''))
+        .map(d => ({ l: d.name, v: d.connected ? `conectado${d.battery != null ? ' · ' + d.battery + ' %' : ''}` : d.paired ? 'emparejado' : 'EMPAREJAR', k: d.paired ? null : 'pair', mac: d.mac })),
+        { l: 'Buscar mandos Bluetooth', v: note || '', k: 'scan' }],
+      buttons: [['next', 'CONTINUAR']], onButton: suNext,
+      onRow: async r => {
+        if (r.k === 'scan') { draw(list, 'buscando…'); const x = await Bridge.call('bt.scan').catch(() => null); return draw(x && x.devices, x ? '' : 'Bluetooth no responde'); }
+        draw(list, 'emparejando…');
+        const x = await Bridge.call('bt.action', 'pair', r.mac).catch(e => ({ error: (e && e.message) || 'no se pudo' }));
+        toast(x && x.error ? `${r.l}: ${x.error}` : `${r.l}: emparejado`, false);
+        const y = await Bridge.call('bt.devices').catch(() => null); draw(y && y.devices, '');
+      } });
+    draw(null, 'leyendo…');
+    const x = await Bridge.call('bt.devices').catch(() => null);
+    if (SU.cur.key === 'mando') draw(x && x.devices, x ? '' : 'Bluetooth no responde');
+  },
+  async red() {
+    let net = null, wifi = null, note = '';
+    const draw = () => {
+      const online = net && net.online, cable = net && net.devices.find(d => d.type === 'ethernet' && d.state === 'connected');
+      const rows = [{ l: 'Estado', v: !net ? 'leyendo…' : online ? (cable ? 'conectado por cable' : 'conectado') : 'sin conexión' }];
+      (wifi || []).slice(0, 6).forEach(w => rows.push({ l: w.ssid, v: w.active ? 'conectado' : `${w.secure ? 'con contraseña' : 'abierta'} · señal ${w.signal} %`, k: w.active ? null : 'wifi', w }));
+      rows.push({ l: 'Buscar redes Wi-Fi', v: note, k: 'scan' });
+      suDraw({ key: 'red', title: 'INTERNET', r: SU.at, rows,
+        lead: 'STONE necesita internet para Steam, las descargas y las actualizaciones. Con cable ya está; si no, elige tu Wi-Fi.',
+        buttons: online ? [['next', 'CONTINUAR']] : [['next', 'OMITIR POR AHORA']], onButton: suNext,
+        onRow: async r => {
+          if (r.k === 'scan') { note = 'buscando…'; draw(); wifi = ((await Bridge.call('net.wifiList').catch(() => null)) || {}).networks || []; note = wifi.length ? '' : 'ninguna red'; return draw(); }
+          const go = async pw => {            /* pw null: an open network */
+            note = `conectando a ${r.w.ssid}…`; draw();
+            const x = await Bridge.call('net.wifiConnect', r.w.ssid, pw).catch(e => ({ error: (e && e.message) || 'no se pudo' }));
+            note = x && x.error ? x.error : ''; if (!(x && x.error)) toast(`Conectado a ${r.w.ssid}`, false);
+            net = await Bridge.call('net.status').catch(() => net); wifi = ((await Bridge.call('net.wifiList').catch(() => null)) || {}).networks || wifi; draw();
+          };
+          if (!r.w.secure) return go(null);
+          osk(`Contraseña de ${r.w.ssid}`, pw => (pw === null ? draw() : go(pw)), true);
+        } });
+    };
+    draw();
+    net = await Bridge.call('net.status').catch(() => ({ devices: [], online: false }));
+    if (SU.cur.key !== 'red') return;
+    if (!net.online) { wifi = ((await Bridge.call('net.wifiList').catch(() => null)) || {}).networks || []; }
+    if (SU.cur.key === 'red') draw();
+  },
+  async pantalla() {
+    const draw = d => suDraw({ key: 'pantalla', title: 'PANTALLA', r: SU.at,
+      lead: 'Ajusta el encuadre hasta que las cuatro esquinas ámbar se vean enteras en tu televisor. Si ya se ven, déjalo en 0 %.',
+      rows: [{ l: 'Televisor', v: d ? (d.connected ? (d.name || 'conectado') : 'no se pudo leer') : 'leyendo…' },
+        { l: 'Resolución', v: d && d.connected ? resTxt(d.output) : '—' },
+        { l: 'Encuadre', v: `${FRAME} %`, k: 'frame', lr: true }],
+      buttons: [['next', 'CONTINUAR']], onButton: suNext,
+      onRow: () => toast('Usa ◀ ▶ para ajustar el encuadre', false),
+      onLR: (r, dd, k) => { const n = Math.max(0, Math.min(6, FRAME + dd)); if (n === FRAME) return bump(dd); FRAME = n; fit(); play('nav'); savePrefs(); draw(d); } });
+    draw(null);
+    const d = await Sys.display(true).catch(() => ({ connected: false }));
+    if (SU.cur.key === 'pantalla') draw(d);
+  },
+  async sonido() {
+    let A = null;
+    const draw = () => suDraw({ key: 'sonido', title: 'SONIDO', r: SU.at,
+      lead: 'Elige por dónde suena la consola. Al elegir una salida suena una nota de prueba.',
+      rows: [...(A ? A.outputs : []).map(o => ({ l: o.name, v: o.default ? 'en uso' : 'usar', k: 'out', o })),
+        ...(A ? [{ l: 'Volumen', v: `${Math.round(A.volume * 100)} %`, k: 'vol', lr: true }] : [{ l: 'Salidas', v: 'leyendo…' }])],
+      buttons: [['next', 'CONTINUAR']], onButton: suNext,
+      onRow: async (r, k) => { if (r.k !== 'out') return; await Bridge.call('audio.default', r.o.id).catch(() => {}); A = await Bridge.call('audio.status').catch(() => A); draw(); setTimeout(() => play('notify'), 250); },
+      onLR: (r, d, k) => { A.volume = Math.max(0, Math.min(1, Math.round((A.volume + d * 0.05) * 20) / 20)); Bridge.call('audio.volume', A.volume).catch(() => {}); play('nav'); draw(); } });
+    draw();
+    A = await Bridge.call('audio.status').catch(() => null);
+    if (SU.cur.key === 'sonido') draw();
+  },
+  rend() {
+    const c40 = S.caps && S.caps.board && S.caps.cu40, offer = c40 && c40.available && !c40.active && !SU.reboot;
+    suDraw({ key: 'rend', title: 'RENDIMIENTO',
+      lead: `STONE empieza en <b>${profOf(S.prof || 'balanced').n}</b>, los valores de fábrica. El primer encendido nunca sube frecuencias ni calibra: eso se hace cuando quieras en Ajustes → Rendimiento.`
+        + (offer ? '<br><br>Tu GPU usa 24 de sus 40 unidades de cálculo. Con 40 rinde más, consume unos 30 W más y se calienta más. Es un cambio de la comunidad: si aparecen errores de GPU, STONE vuelve sola a 24 CU.' : ''),
+      rows: [{ l: 'Perfil', v: profOf(S.prof || 'balanced').n }, { l: 'GPU', v: c40 ? (c40.active || SU.reboot ? '40 CU' + (SU.reboot ? ' al reiniciar' : '') : '24 CU') : '—' }],
+      buttons: offer ? [['next', 'AHORA NO'], ['cu', 'ACTIVAR 40 CU']] : [['next', 'CONTINUAR']],   /* the safe answer has the focus */
+      onButton: async b => {
+        if (b !== 'cu') return suNext();
+        toast('Cambiando el arranque…', false);
+        const r = await Sys.cu40('enable').catch(e => ({ ok: false, text: e.message }));
+        SU.reboot = !!(r && r.ok);
+        toast(SU.reboot ? '40 CU se usará desde el próximo arranque' : 'No se pudo ahora: Ajustes → Rendimiento', false);
+        SU_FN.rend();
+      } });
+  },
+  steam() {
+    const has = SU.fr.steam_account;
+    suDraw({ key: 'steam', title: 'STEAM',
+      lead: has ? 'Tu cuenta de Steam ya está en esta consola: tu biblioteca aparece en STONE.'
+        : 'Tus juegos vienen de tu cuenta de Steam. Steam muestra su propia pantalla de inicio de sesión una sola vez (puedes usar el código QR con la app de Steam del móvil); después todo sigue en STONE.',
+      rows: [{ l: 'Cuenta', v: has ? 'conectada' : 'sin iniciar sesión' }],
+      buttons: has ? [['next', 'CONTINUAR']] : [['login', 'INICIAR SESIÓN'], ['next', 'MÁS TARDE']],
+      onButton: async b => {
+        if (b === 'login') { await Sys.openSteam('store').catch(() => {}); SU.fr = await Sys.firstrunStatus().catch(() => SU.fr); }
+        suNext();
+      } });
+  },
+  listo() {
+    suDraw({ key: 'listo', title: 'TODO LISTO.', lead: 'Tu STONE MACHINE está preparada. Pulsa Y en Inicio para buscar un juego, y el botón STONE para volver aquí desde cualquier juego.',
+      rows: [{ l: 'Encuadre', v: `${FRAME} %` }, { l: 'Rendimiento', v: profOf(S.prof || 'balanced').n + (SU.reboot ? ' · 40 CU al reiniciar' : '') },
+        { l: 'Steam', v: SU.fr.steam_account ? 'conectado' : 'pendiente: Ajustes → Steam' }],
+      buttons: [['go', 'EMPEZAR A JUGAR']], onButton: suFinish });
+  }
+};
+async function firstRun(fr) {
+  setTimeout(() => line.classList.remove('boot'), 1300);
+  SU = { i: 0, fr, reboot: false, at: null };
+  S.health = await Promise.race([Sys.health().catch(() => null), wait(5000).then(() => null)]);
+  chrome(false, false); showScreen('');
+  suEl().classList.add('on');
+  suGo(0);
+}
+async function suFinish() {
+  S.screen = 'transition';
   await Sys.firstrunComplete().catch(() => {});
-  if (NAV) NAV.id = ''; NAV = null;
+  const el = $('#setup'); el.classList.add('out');
+  await wait(700);
+  el.classList.remove('on', 'out', 'framing');
+  DLG = null; if (NAV) NAV.id = ''; NAV = null;
   enterHome({ r: 0, c: 0, slow: true });
   armIdleOff();
-  if (reboot) setTimeout(() => rebootDlg('40 CU se usará desde el próximo arranque.', () => enterHome({ r: 0, c: 0 })), 900);
+  if (SU.reboot) setTimeout(() => rebootDlg('40 CU se usará desde el próximo arranque.', () => enterHome({ r: 0, c: 0 })), 900);
 }
 
 /* ---------- Input dispatch ---------- */
@@ -2469,6 +2851,7 @@ function act(a) {
     return;
   }
   if (S.screen === 'dlg') {
+    if ((a === 'left' || a === 'right') && DLG.onLR && DLG.onLR(a === 'left' ? -1 : 1, focusEl())) return;
     if (dirs.includes(a)) return move(a);
     if (a === 'a') return DLG.onA(focusEl());
     if (a === 'b' && DLG.onB) return DLG.onB();
@@ -2562,6 +2945,8 @@ function dormantCheck() {
   document.body.classList.toggle('dormant', on);
   console.info(`[stone] ${on ? 'asleep: game in front' : 'awake'}`);
   if (on) {
+    /* the game is in front: its loading screen and label are done, and nothing may change the page now */
+    loadingOff(); clearTimeout(tagT); $('#game .tag').classList.add('gone');
     if (loopH) { cancelAnimationFrame(loopH); clearTimeout(loopH); loopH = 0; }
     stopHold();
     audioSleep();

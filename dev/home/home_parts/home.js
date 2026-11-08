@@ -9,14 +9,16 @@ function homeHTML() {
       cards += `<div class="card hero" data-f data-g="${g0.i}" style="background-image:${hu ? `url(&quot;${hu}&quot;)` : 'none'};background-color:var(--shale)">${hu ? '' : nameTag(g0)}${runTag(g0.i)}</div>`;
       recent.slice(1).forEach(i => { const g = G[i]; cards += `<div class="card cap" data-f data-g="${i}" style="background-image:${capUrl(g).replace(/"/g, '&quot;')}">${g.art.capsule ? '' : nameTag(g)}${runTag(i)}</div>`; });
     } else {
-      cards += `<div class="card wide" data-f data-act="steam" data-k="store" data-name="STEAM STORE"><b>${S.libReady ? 'SIN JUEGOS' : 'BIBLIOTECA'}</b><span>${S.libReady ? 'Instala juegos desde la Tienda de Steam' : 'Leyendo la biblioteca de Steam…'}</span></div>`;
+      cards += `<div class="card wide" data-f data-act="search"><b>${S.libReady ? 'SIN JUEGOS' : 'BIBLIOTECA'}</b><span>${S.libReady ? 'Busca un juego para instalarlo (Y)' : 'Leyendo la biblioteca de Steam…'}</span></div>`;
     }
     cards += `<div class="card tile" data-f data-act="library">BIBLIOTECA</div>`;
   } else if (S.section === 2) {
-    [['STEAM STORE', 'Tienda de Steam', 'store'], ['DESCARGAS', 'Descargas y actualizaciones de juegos', 'downloads']]
-      .forEach(([t, s, k]) => { cards += `<div class="card wide" data-f data-act="steam" data-k="${k}" data-name="${t}"><b>${t}</b><span>${s}</span></div>`; });
+    [['BUSCAR JUEGOS', 'Tu biblioteca y la tienda de Steam', 'search'], ['DESCARGAS', 'Descargas y actualizaciones de juegos', 'downloads'], ['EMULADORES', 'Juegos de otras consolas', 'emu']]
+      .forEach(([t, s, k]) => { cards += `<div class="card wide" data-f data-act="${k}"><b>${t}</b><span>${s}</span></div>`; });
   } else {
-    cards += `<div class="card wide" data-f data-act="steam" data-k="screenshots" data-name="CAPTURAS"><b>CAPTURAS</b><span>Capturas guardadas por Steam</span></div>`;
+    if (!SHOTS) loadShots();
+    if (SHOTS && SHOTS.length) SHOTS.slice(0, 12).forEach((sh, k) => { cards += `<div class="card cap shot" data-f data-act="shot" data-k="${k}" style="background-image:url(&quot;${Bridge.artUrl(sh.appid === '0' ? '0' : '0', sh.kind)}&quot;)"></div>`; });
+    else cards += `<div class="card wide" data-f data-act="noshots"><b>CAPTURAS</b><span>${SHOTS ? 'Aún no hay capturas. Durante el juego: botón STEAM + R1' : 'Leyendo las capturas…'}</span></div>`;
   }
   const ico = {
     lib: '<svg width="26" height="26" viewBox="0 0 26 26" fill="none" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="6" height="18"/><rect x="11" y="4" width="6" height="18"/><path d="M19 5l4 1-3 16-4-1"/></svg>',
@@ -65,7 +67,9 @@ function homeContext(el) {
     [NAV && NAV.rows[0][NAV.c + 1], NAV && NAV.rows[0][NAV.c - 1]].forEach(nx => { if (nx && nx.dataset.g !== undefined) blurOf(G[+nx.dataset.g]); });
   } else {
     const a = el.dataset.act;
-    const label = { search: ['BUSCAR', 'Tus juegos y la tienda de Steam (Y)'], library: ['BIBLIOTECA', S.libReady ? `${G.length} juego${G.length === 1 ? '' : 's'}` : 'Leyendo…'], explore: ['EXPLORAR', 'Tienda y descargas de Steam'], settings: ['AJUSTES', 'Pantalla, audio, rendimiento y más'], power: ['APAGAR', 'Apagar o reiniciar'], steam: [el.dataset.name, 'Se abre en Steam'] }[a] || ['', ''];
+    const label = { search: ['BUSCAR', 'Tus juegos y la tienda de Steam (Y)'], library: ['BIBLIOTECA', S.libReady ? `${G.length} juego${G.length === 1 ? '' : 's'}` : 'Leyendo…'], explore: ['EXPLORAR', 'Buscar, descargas y emuladores'], settings: ['AJUSTES', 'Pantalla, audio, rendimiento y más'], power: ['APAGAR', 'Apagar o reiniciar'],
+      downloads: ['DESCARGAS', 'Lo que se descarga y el espacio libre'], emu: ['EMULADORES', 'Juegos de otras consolas'], noshots: ['CAPTURAS', 'Durante el juego: botón STEAM + R1'],
+      shot: (() => { const sh = SHOTS && SHOTS[+el.dataset.k], g = sh && G.find(x => x.appid === sh.appid); return ['CAPTURA', sh ? `${g ? g.n : 'Juego ' + sh.appid} · ${new Date(sh.time * 1000).toLocaleDateString('es-CL')}` : '']; })() }[a] || ['', ''];
     hk.textContent = S.section === 2 ? 'EXPLORAR' : S.section === 3 ? 'MEDIA' : 'SISTEMA';
     if (a === 'search') hk.textContent = 'BUSCAR';
     ht.textContent = label[0]; hm.textContent = label[1];
@@ -109,7 +113,10 @@ function homeA(el) {
   if (a === 'explore') { play('select'); S.section = 2; return enterHome({ r: 0, c: 0 }); }
   if (a === 'settings') { play('select'); return enterSettings(); }
   if (a === 'power') { play('select'); return openPower(); }
-  if (a === 'steam') { play('select'); return sys('openSteam', el.dataset.k).then(r => { if (r) toast(`${el.dataset.name}: se abre en Steam`, false); }); }
+  if (a === 'downloads') { play('select'); return openCat('Almacenamiento'); }
+  if (a === 'emu') { play('select'); return openCat('Emuladores'); }
+  if (a === 'shot') { play('select'); return shotViewer(+el.dataset.k); }
+  if (a === 'noshots') { play('select'); return toast('Las capturas que hagas jugando aparecen aquí', false); }
 }
 function section(d) {
   const n = S.section + d;
@@ -163,7 +170,7 @@ function searchResults(q, from) {
         if (el.dataset.g !== undefined) return enterDetail(+el.dataset.g);
         const appid = el.dataset.s, name = el.textContent;
         if (el.dataset.free === '1') return sys('install', appid).then(r => { if (r) toast('Instalando: la descarga aparece en Ajustes → Almacenamiento', false); return back(); });
-        openDlg(`<h2>DE PAGO</h2><p>STONE no hace compras. Cómpralo en la tienda de Steam (en el móvil, en el ordenador o desde el escritorio de la consola) con tu cuenta: aparecerá aquí, en tu biblioteca, para instalarlo.</p><div class="btns"><span class="txt-f" data-f data-b="ok">ENTENDIDO</span></div>`, { onA: () => { closeDlg(); draw(); }, onB: () => { closeDlg(); draw(); } });
+        openDlg(`<h2>DE PAGO</h2><p>STONE no hace compras. Cómpralo con tu cuenta en la app de Steam del móvil o en store.steampowered.com/app/${appid}: aparecerá aquí, en tu biblioteca, listo para instalar.</p><div class="btns"><span class="txt-f" data-f data-b="ok">ENTENDIDO</span></div>`, { onA: () => { closeDlg(); draw(); }, onB: () => { closeDlg(); draw(); } });
       }, onB: back });
     const d = $('#dlg');
     const rows = [...d.querySelectorAll('.slist [data-f]')].map(e => [e]).concat([[...d.querySelectorAll('.btns [data-f]')]]);
@@ -174,4 +181,25 @@ function searchResults(q, from) {
   if (S.libReady && !S.libOwnedKnown) toast('La interfaz de Steam no responde: solo aparecen tus juegos instalados', false);
   Bridge.call('store.search', q).then(r => { store = r.results; }, e => { storeErr = (e && e.message) || 'La tienda no responde'; })
     .then(() => { if (S.screen === 'dlg' && $('#dlg h2') && $('#dlg h2').textContent === `«${q}»`) draw(); });
+}
+
+/* Settings opened straight at one category (Explorar → Descargas, Emuladores). */
+function openCat(name) { const k = CATS.indexOf(name); if (k >= 0) cat = k; return enterSettings({ pane: true, ri: 0 }); }
+
+/* ---------- STONE MEDIA: the screenshots Steam saved (media.py), without Steam's screen ---------- */
+let SHOTS = null, shotsBusy = false;
+function loadShots() {
+  if (shotsBusy) return; shotsBusy = true;
+  Sys.shots().then(r => { SHOTS = r.shots; }, () => { SHOTS = []; }).then(() => { shotsBusy = false; if (S.screen === 'home' && S.section === 3) enterHome({ r: 0, c: 0 }); });
+}
+function shotViewer(k) {
+  const n = SHOTS.length, sh = SHOTS[k], g = G.find(x => x.appid === sh.appid);
+  const when = new Date(sh.time * 1000).toLocaleString('es-CL', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  const back = () => { closeDlg(); $('#dlg').classList.remove('viewer'); play('back'); enterHome({ r: 0, c: Math.min(k, 11) }); };
+  openDlg(`<div class="shot-img" style="background-image:url(&quot;${Bridge.artUrl('0', sh.kind)}&quot;)"></div>
+    <div class="shot-cap"><b>${esc(g ? g.n : 'Juego ' + sh.appid)}</b><span>${esc(when)} · ${k + 1} de ${n}</span></div>
+    <div class="btns"><span class="txt-f" data-f data-b="prev">ANTERIOR</span><span class="txt-f" data-f data-b="next">SIGUIENTE</span><span class="txt-f" data-f data-b="no">VOLVER</span></div>`, {
+    onA: el => { if (el.dataset.b === 'no') return back(); play('nav'); shotViewer((k + (el.dataset.b === 'next' ? 1 : n - 1)) % n); NAV.c = el.dataset.b === 'next' ? 1 : 0; applyFocus(); },
+    onB: back }, false, true);
+  $('#dlg').classList.add('viewer');
 }

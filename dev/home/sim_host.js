@@ -28,6 +28,7 @@ const Bridge = (() => {
     { appid: '413150', name: 'Stardew Valley', source: 'steam', installed: true, last: now - DAY * 20, min: 6100, size: 0.6e9, kind: 'plain' },
     { appid: '730', name: 'Counter-Strike 2', source: 'steam', installed: true, last: now - DAY * 30, min: 900, size: 33e9, kind: 'online' },
     { appid: '367520', name: 'Hollow Knight', source: 'steam', installed: true, last: now - DAY * 45, min: 1500, size: 2.1e9, kind: 'plain' },
+    { appid: '2668430', name: 'The Legend of Heroes: Trails through Daybreak II · Deluxe Edition', source: 'steam', installed: true, last: now - DAY * 1, min: 1500, size: 2.1e9, kind: 'plain' },
     { appid: '1086940', name: "Baldur's Gate 3", source: 'steam', installed: false, last: 0, min: 0, size: 150e9, kind: 'upscaler' },
     { appid: '620', name: 'Portal 2', source: 'steam', installed: false, last: now - DAY * 200, min: 600, size: 12e9, kind: 'plain' }
   ];
@@ -112,7 +113,7 @@ const Bridge = (() => {
     library: () => ({ root_found: true, owned_known: true, games: GAMES.slice().sort((a, b) => b.installed - a.installed || b.last - a.last).map(g => ({
       appid: g.appid, name: g.name, source: g.source, installed: g.installed, updating: false, playtime_min: g.min, last_played: g.last,
       size_bytes: g.size, art: { capsule: true, hero: true }, launch: g.installed ? 'steam://rungameid/' + g.appid : null })) }),
-    launch: async ([appid]) => { gameOf(appid); SimStoned.sim.steamLaunch(appid); SimPanel.running = appid; SimPanel.refresh && SimPanel.refresh(); return { ok: true }; },
+    launch: async ([appid]) => { gameOf(appid); if (/ask/.test(location.search)) SimPanel.ask = Date.now() + 3000; if (/slow/.test(location.search)) { SimPanel.running = appid; setTimeout(() => SimStoned.sim.steamLaunch(appid), 12000); return { ok: true }; } SimStoned.sim.steamLaunch(appid); SimPanel.running = appid; SimPanel.refresh && SimPanel.refresh(); return { ok: true }; },
     install: async () => ({ ok: true }),
     openSteam: async () => ({ ok: true }), openSteamSettings: async () => ({ ok: true }), restart: async () => ({ ok: true }),
     power: async ([a]) => { toast(`Simulación: «${a === 'off' ? 'Apagar' : 'Reiniciar'}» no hace nada aquí`, false); return { ok: true }; },
@@ -144,8 +145,12 @@ const Bridge = (() => {
     'roms.folders': () => ({ base: '/var/home/stone/Emulation' }), 'roms.add': async () => { await wait(500); return { found: 1, new: 1, added: 1, queued: 0 }; },
     'storage.clearShaderCache': () => ({ ok: true, freed: 1.4 * 2 ** 30 }), 'storage.uninstall': () => ({ ok: true }),
     'game.experience': () => ({ confidence: { level: 'medium', text: 'Medido en esta consola', detail: '2 mediciones limpias' }, last: { avg_fps: 58.4, low1_fps: 41.2, stutters_per_min: 0.6, verdict: 'fluido', gpu_temp_max: 74, config: 'x' }, regression: [], autopilot: { quality: 'a', balanced: 'b', fluid: 'c' } }),
-    'firstrun.status': () => ({ done: true, steam_account: true }), 'firstrun.complete': () => ({ done: true }),
+    'firstrun.status': () => ({ done: !/first/.test(location.search), steam_account: !/nosteam/.test(location.search) }),   /* ?first, ?first&nosteam */ 'firstrun.complete': () => ({ done: true }),
     'prefs.set': ([p]) => (prefs = Object.assign({}, prefs, p)),
+    /* Steam asking: ?ask shows one cloud-save question a few seconds after a game starts */
+    'steam.dialog': () => ({ dialog: SimPanel.ask && SimPanel.running && Date.now() > SimPanel.ask ? { title: 'Conflicto de la nube de Steam', text: 'Los archivos guardados en este equipo no coinciden con los de la nube de Steam. ¿Cuáles quieres conservar?', buttons: ['Usar los de la nube', 'Usar los de este equipo', 'Jugar sin sincronizar'] } : null }),
+    'steam.dialogAnswer': () => { SimPanel.ask = 0; return { ok: true, result: 'ok' }; },
+    'media.screenshots': () => ({ shots: /noshots/.test(location.search) ? [] : GAMES.slice(0, 7).map((g, i) => ({ appid: g.appid, time: Math.round(now - i * 86400 * 1.7), kind: 'shot' + i })) }),
     emulators: () => ['RetroDECK|Todo en uno: la mayoría de consolas clásicas en una sola app|1', 'RetroArch|Consolas clásicas con núcleos de libretro|0', 'Dolphin|GameCube y Wii|0',
       'PCSX2|PlayStation 2|0', 'PPSSPP|PlayStation Portable|0', 'RPCS3|PlayStation 3|0', 'Cemu|Wii U|0', 'Azahar|Nintendo 3DS|0'].map(s => { const [name, plays, i] = s.split('|'); return { key: name.toLowerCase(), name, plays, installed: i === '1', busy: false }; }),
     emuInstall: async ([key]) => { setTimeout(() => emit('emulator', { key, state: 'done', text: 'Simulación: instalación terminada' }), 1800); return { ok: true }; },
@@ -213,6 +218,7 @@ const Bridge = (() => {
   /* covers: generated here (Steam's own artwork is not available in the simulation) */
   const artCache = {};
   function artOf(appid, kind) {
+    if (/^shot\d+$/.test(kind)) { const g = GAMES[+kind.slice(4) % GAMES.length]; return artOf(g.appid, 'hero'); }
     const k = appid + kind; if (artCache[k]) return artCache[k];
     const g = GAMES.find(x => x.appid === appid), w = kind === 'hero' ? 960 : 300, h = kind === 'hero' ? 310 : 450;
     let hsh = 0; for (const c of appid) hsh = (hsh * 31 + c.charCodeAt(0)) % 360;

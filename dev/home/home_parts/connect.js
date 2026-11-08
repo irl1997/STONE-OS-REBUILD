@@ -114,17 +114,17 @@ function storageRows() {
 }
 function storeAct(r, ri) {
   if (r.act === 'storage-again') { play('select'); return cxReset('storage', 'Almacenamiento', ri); }
-  if (r.act === 'steam-dl') { play('select'); return sys('openSteam', 'downloads'); }
+  if (r.act === 'steam-dl') { play('select'); return toast('La descarga sigue sola, también con la consola en reposo. Al terminar, el juego aparece listo para jugar', false); }
   const g = r.game, back = () => { closeDlg(); play('back'); enterSettings({ pane: true, ri }); };
   play('select');
   openDlg(`<h2>${esc(g.name)}</h2><p>Juego: <b>${GB(g.size)}</b> · caché de sombreadores: <b>${GB(g.shader_cache)}</b> · datos de Proton: <b>${GB(g.prefix)}</b></p>
-    <p>La caché de sombreadores se vuelve a crear sola la próxima vez que juegues (el primer arranque irá algo más lento). Desinstalar abre la confirmación de Steam.</p>
+    <p>La caché de sombreadores se vuelve a crear sola la próxima vez que juegues (el primer arranque irá algo más lento).</p>
     <div class="btns"><span class="txt-f" data-f data-b="cache">LIMPIAR CACHÉ</span><span class="txt-f" data-f data-b="uninstall">DESINSTALAR</span><span class="txt-f" data-f data-b="no">VOLVER</span></div>`, {
     onA: el => {
       if (el.dataset.b === 'no') return back();
       closeDlg(); play('select');
       const m = el.dataset.b === 'cache' ? Bridge.call('storage.clearShaderCache', g.appid).then(x => toast(`Caché limpiada: ${GB(x.freed)} libres`, false))
-        : Bridge.call('storage.uninstall', g.appid).then(() => toast(`${g.name}: confirma en Steam para desinstalar`, false));
+        : Bridge.call('storage.uninstall', g.appid).then(() => { steamWatch(15000); toast(`${g.name}: desinstalando`, false); });
       m.catch(e => { play('error'); toast((e && e.message) || 'No se pudo', false); }).then(() => cxReset('storage', 'Almacenamiento', ri));
     }, onB: back });
 }

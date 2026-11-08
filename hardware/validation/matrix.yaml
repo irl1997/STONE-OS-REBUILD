@@ -75,6 +75,12 @@ tests:
   - {id: "T-BOOT-02", title: "Opciones de arranque: Safe Mode y Version anterior desde Energia", phase: F9, kind: P, status: NOT TESTED, runs: [], observed: []}
   - {id: "T-LIB-01", title: "Biblioteca: juegos de la cuenta no instalados visibles; INSTALAR descarga sin dialogo de Steam", phase: F7, kind: P, status: NOT TESTED, runs: [], observed: []}
   - {id: "T-SRCH-01", title: "Buscar con Y: resultados de la biblioteca y de la tienda; un juego gratis se instala", phase: F7, kind: P, status: NOT TESTED, runs: [], observed: []}
+  - {id: "T-SETUP-01", title: "Configuracion del primer encendido a pantalla completa: mando, Wi-Fi con teclado en pantalla, encuadre, sonido, 40 CU solo si se elige, Steam; termina en Home solo con el mando", phase: F9, kind: P, status: NOT TESTED, runs: [], observed: []}
+  - {id: "T-FRAME-01", title: "El encuadre (0-6 %) deja ver las cuatro esquinas en un televisor con sobrebarrido y se conserva al reiniciar", phase: F9, kind: P, status: NOT TESTED, runs: [], observed: []}
+  - {id: "T-LOAD-01", title: "Pantalla de carga de STONE desde JUGAR hasta que el juego queda delante, sin ver la interfaz de Steam", phase: F9, kind: P, status: NOT TESTED, runs: [], observed: []}
+  - {id: "T-ASK-01", title: "Una pregunta de Steam (conflicto de la nube, opciones de arranque) aparece en STONE y la respuesta llega a Steam", phase: F9, kind: P, status: NOT TESTED, runs: [], observed: []}
+  - {id: "T-MEDIA-01", title: "Las capturas hechas en juego (STEAM + R1) aparecen en Media y se ven a pantalla completa", phase: F9, kind: P, status: NOT TESTED, runs: [], observed: []}
+  - {id: "T-UNINST-01", title: "Desinstalar desde Propiedades sin dialogo de Steam; el juego pasa a No instalado", phase: F9, kind: P, status: NOT TESTED, runs: [], observed: []}
   - {id: "T-FR-01", title: "De la instalacion a Home operable solo con el mando", phase: F2, kind: P, status: NOT TESTED, runs: [], observed: []}
   - {id: "T-HLTH-01", title: "Cada valor medido de STONE HEALTH coincide con sysfs/hwmon", phase: F3, kind: P, status: NOT TESTED, runs: [], observed: []}
   - {id: "T-IMG-01", title: "Coste de cada preset de STONE IMAGE registrado", phase: F4, kind: P, status: NOT TESTED, runs: [], observed: []}

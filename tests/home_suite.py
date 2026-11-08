@@ -743,6 +743,14 @@ class FakeSteamUI:
     def owned_games(self):
         return None                                        # Steam's interface not asked in these tests
 
+    def dialog(self):
+        self.calls.append(("dialog",))
+        return {"title": "Nube", "text": "¿Cuáles?", "buttons": ["Nube", "Locales"]} if self.ok else None
+
+    def answer_dialog(self, index, label):
+        self.calls.append(("answer", index, label))
+        return "ok"
+
 
 @test
 def H04_steam_ui_first_for_games_and_steam_settings_only_known_sections():
@@ -770,6 +778,29 @@ def H04_steam_ui_first_for_games_and_steam_settings_only_known_sections():
             pass
     assert system.clean_prefs({"engine": 1})["engine"] == 1 and system.clean_prefs({"engine": 7})["engine"] == 0
     assert "render" not in system.clean_prefs({"render": 2})
+
+
+@test
+def H13_steam_questions_read_and_answered_and_screenshots_served():
+    with Tmp() as d:
+        root = FX.build(os.path.join(d, "Steam"))
+        h = host_mod.Host(lambda *a: None, stoned=FakeStoned(), sysapi=system.System(spawn=lambda *a: None), steam_root=root)
+        ui = h.steam_ui = FakeSteamUI(ok=True)
+        assert run_host(h, {"method": "steam.dialog", "args": []})[0] == {"dialog": {"title": "Nube", "text": "¿Cuáles?", "buttons": ["Nube", "Locales"]}}
+        assert run_host(h, {"method": "steam.dialogAnswer", "args": [1, "Locales"]})[0] == {"ok": True, "result": "ok"}
+        for bad in ([4, "x"], [True, "x"], ["1", "x"], [0, ""], [0, "x" * 41], [0]):
+            assert run_host(h, {"method": "steam.dialogAnswer", "args": bad})[1] == "InvalidValue", bad
+        assert ("answer", 1, "Locales") in ui.calls and len([c for c in ui.calls if c[0] == "answer"]) == 1
+        ui.ok = False
+        assert run_host(h, {"method": "steam.dialog", "args": []})[0] == {"dialog": None}
+        shots = os.path.join(root, "userdata", FX.ACCOUNT, "760", "remote", "1001", "screenshots")
+        os.makedirs(shots)
+        with open(os.path.join(shots, "a.jpg"), "wb") as f:
+            f.write(b"\xff\xd8")
+        r = run_host(h, {"method": "media.screenshots", "args": []})[0]
+        assert [x["appid"] for x in r["shots"]] == ["1001"] and r["shots"][0]["kind"] == "shot0"
+        assert h.art_path("0", "shot0") == os.path.join(shots, "a.jpg") and h.art_path("0", "shot1") is None
+        assert run_host(h, {"method": "media.screenshots", "args": ["../1"]})[1] == "InvalidValue"
 
 
 @test
