@@ -2,5 +2,5 @@
 # STONE HEALTH from a terminal: `stone-doctor` (or `stone-doctor --json`). Reads only.
 import sys
 sys.path.insert(0, "/usr/lib/stone")
-from stone_home.health import main
+from stoned.health import main
 sys.exit(main())

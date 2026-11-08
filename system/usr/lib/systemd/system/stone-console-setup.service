@@ -1,0 +1,12 @@
+[Unit]
+Description=STONE console setup (Decky Loader, STONE theme and plugin)
+Documentation=file:///usr/lib/stone/stone_console_setup.py
+After=local-fs.target systemd-user-sessions.service
+Before=display-manager.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/stone/stone-console-setup
+
+[Install]
+WantedBy=multi-user.target

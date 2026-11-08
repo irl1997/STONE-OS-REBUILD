@@ -1,8 +1,0 @@
-[Desktop Entry]
-Type=Application
-Name=Volver a STONE
-Comment=Cierra el escritorio y vuelve a la consola STONE
-Exec=/usr/bin/stone-session switch stone
-Icon=input-gaming
-Terminal=false
-Categories=System;

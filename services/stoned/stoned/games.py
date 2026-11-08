@@ -34,10 +34,7 @@ def _proc():
     return os.path.join(_root(), "proc")
 
 
-# STONE Home itself is a non-Steam shortcut, so Steam starts it under a reaper too. It is
-# the console's interface, not a game: it never gets a per-game profile and never hides a
-# real game launched from it.
-NOT_GAMES = {"stone-home"}
+NOT_GAMES = frozenset()   # commands Steam starts under a reaper that are not games (none today)
 
 
 def parse_reaper(argv):

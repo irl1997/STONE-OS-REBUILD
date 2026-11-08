@@ -2,7 +2,9 @@
 
 Reconstrucción integral de STONE OS para **STONE MACHINE**: AMD BC-250 con 8 núcleos de CPU y 40 CU de GPU.
 
-**Estado:** F0 (imagen base) terminada en software; F1 (`stoned`) en construcción. Imagen de validación, no para uso diario. Nada está verificado en hardware.
+**Qué es:** Bazzite en Game Mode con el tema y el plugin STONE (D-34), más el módulo de 40 CU, el regulador y `stoned`. Se instala con una ISO y no necesita terminal.
+
+**Estado:** CODE TESTED. Sin verificar todavía en la placa.
 
 | Documento | Contenido |
 | --- | --- |
@@ -20,6 +22,9 @@ Reconstrucción integral de STONE OS para **STONE MACHINE**: AMD BC-250 con 8 n�
 ```
 image/      Containerfile, build_files/ (build.sh, 40 CU, regulador), config/, disk_config/
 system/     archivos que entran en la imagen, con su ruta final
+services/   stoned, el servicio de rendimiento
+themes/     tema STONE para CSS Loader
+plugins/    plugin STONE para Decky Loader
 hardware/   perfil de la placa y matriz de validación
 tests/      pruebas (pytest o como script)
 scripts/    validate.sh, test-all.sh, release-info.sh, build-local.sh, build-iso-local.sh

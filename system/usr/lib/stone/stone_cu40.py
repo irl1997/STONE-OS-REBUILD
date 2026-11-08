@@ -4,7 +4,7 @@ The BC-250 ships with 24 of its GPU's 40 compute units (CU) turned off. STONE OS
 the community unlock (duggasco/bc250-40cu-unlock) built in but off. Nothing here runs by
 itself except the boot check, and that one can only turn the unlock off.
 
-  stone-cu40 status            what this image has, what this boot uses, last test
+  stone-cu40 status [--json]   what this image has, what this boot uses, last test
   sudo stone-cu40 enable       asks for confirmation, then adds amdgpu.bc250_cc_write_mode=3
                                to the kernel arguments (rpm-ostree kargs); takes effect on reboot
   sudo stone-cu40 test [--minutes N]
@@ -12,8 +12,8 @@ itself except the boot check, and that one can only turn the unlock off.
                                temperature, clock and the kernel log. Passed: 40 CU is kept.
                                Failed: 40 CU is turned off again (back to 24 CU on reboot).
   sudo stone-cu40 disable      removes the kernel argument; 24 CU from the next boot
-  enable --yes / disable --yes the same, confirmed in STONE Home's own dialog (run through pkexec,
-                               polkit action org.stonemachine.cu40, console administrator only)
+  enable --yes / disable --yes the same, confirmed in the STONE plugin's own dialog (its backend
+                               runs them as root, only after the person accepted that dialog)
   stone-cu40 guard             (systemd, at boot) GPU errors in the previous 40 CU boot ->
                                turned off again
 
@@ -247,6 +247,18 @@ def cmd_status():
     return 0
 
 
+def status_data():
+    st, info, mode, dev = load(), image_info(), module_mode(), gpu_device()
+    log = kernel_log()
+    return {"image_has": mode is not None, "image_detail": info.get("STONE_CU40"),
+            "active": mode in ACTIVE_MODES, "cus": active_cus(log), "state": st["state"],
+            "reason": st.get("reason"), "ceiling_mhz": ceiling(), "base_ceiling_mhz": CEILING_MHZ,
+            "reboot_pending": booted_with_karg() != (st["state"] in ("trial", "confirmed"))
+            and st["state"] != "reverted",
+            "temp_c": gpu_temp(dev) if dev else None, "clock_mhz": gpu_clock(dev) if dev else None,
+            "last_test": st["tests"][-1] if st["tests"] else None}
+
+
 def confirm(word):
     if not sys.stdin.isatty() and os.environ.get("STONE_CU40_ALLOW_USER") != "1":
         say("Hace falta escribir la confirmación en la consola; no se puede activar sin una persona.")
@@ -419,6 +431,9 @@ def cmd_guard():
 def main(argv=None):
     argv = sys.argv[1:] if argv is None else argv
     cmd = argv[0] if argv else "status"
+    if cmd == "status" and argv[1:] == ["--json"]:
+        print(json.dumps(status_data()))
+        return 0
     if cmd == "status":
         return cmd_status()
     if cmd == "enable" and argv[1:] in ([], ["--yes"]):

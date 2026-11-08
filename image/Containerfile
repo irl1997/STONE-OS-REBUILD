@@ -13,8 +13,7 @@ COPY image/build_files /
 COPY image/config/build.env /build.env
 COPY system /system_files
 COPY services /services
-COPY apps /apps
-COPY modules /modules
+COPY themes /themes
 COPY VERSION /VERSION
 
 FROM ${BASE_IMAGE} AS base
@@ -33,6 +32,12 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     mkdir -p /usr/src/kernels && cp -a /base-usr/src/kernels/. /usr/src/kernels/ 2>/dev/null; \
     bash /ctx/cu40/build-amdgpu.sh
 
+## STONE plugin for Decky Loader, built here so the same lockfile is used everywhere.
+FROM registry.fedoraproject.org/fedora:44 AS plugin
+RUN dnf -y install --setopt=install_weak_deps=False nodejs npm && dnf clean all
+COPY plugins/stone /plugin
+RUN cd /plugin && npm ci --no-audit --no-fund && npm run typecheck && npm run build && test -s dist/index.js
+
 FROM base
 
 ARG BASE_IMAGE
@@ -45,6 +50,7 @@ ARG STONE_CHANNEL="dev"
 ## Every system change is made here, by build.sh; never by hand on an installed console.
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=bind,from=cu40,source=/out,target=/cu40 \
+    --mount=type=bind,from=plugin,source=/plugin,target=/plugin \
     --mount=type=cache,dst=/var/cache \
     --mount=type=cache,dst=/var/log \
     --mount=type=tmpfs,dst=/tmp \
@@ -53,7 +59,7 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     /ctx/build.sh
 
 LABEL org.opencontainers.image.title="stone-os-rebuild" \
-      org.opencontainers.image.description="STONE OS rebuild (F0 base image) for STONE MACHINE, AMD BC-250" \
+      org.opencontainers.image.description="STONE OS (Bazzite with the STONE theme and plugin) for STONE MACHINE, AMD BC-250" \
       org.opencontainers.image.revision="${STONE_COMMIT}" \
       org.opencontainers.image.created="${STONE_BUILD_DATE}" \
       org.opencontainers.image.base.name="${BASE_IMAGE}" \

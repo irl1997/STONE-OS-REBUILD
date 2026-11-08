@@ -5,7 +5,11 @@ For when the interface cannot be used. Commands:
   stonectl status
   stonectl safe-mode on|off
   stonectl restore-defaults
-  stonectl display [--json | diagnostics]   (STONE DISPLAY, see stone_display/cli.py)
+  stonectl profile silent|balanced|performance
+  stonectl game-profile <appid> silent|balanced|performance|global
+  stonectl ui-ready                        Steam's interface is up (the STONE plugin calls this)
+  stonectl --json status|metrics|calibration
+  stonectl calibrate-start quick|standard | calibrate-cancel   (does not wait; for the plugin)
   stonectl calibration                     STONE PERFORMANCE: range, validated maximum, last result
   stonectl calibrate [quick|standard]      search THIS machine's highest stable GPU ceiling
                                            (progress on screen; Ctrl+C cancels and keeps the old result)
@@ -24,8 +28,10 @@ from . import state as S
 
 NAME = "org.stonemachine.Performance1"
 PATH = "/org/stonemachine/Performance1"
-USAGE = ("uso: stonectl status | safe-mode on|off | restore-defaults | display [--json | diagnostics] | "
-         "calibration | calibrate [quick|standard]")
+USAGE = ("uso: stonectl status | safe-mode on|off | restore-defaults | profile <perfil> | "
+         "game-profile <appid> <perfil|global> | ui-ready | --json status|metrics|calibration | "
+         "calibration | calibrate [quick|standard] | calibrate-start quick|standard | calibrate-cancel")
+FACTORY_PROFILES = ("silent", "balanced", "performance")
 
 TEXT = {
     "failures": "dos arranques seguidos sin terminar bien",
@@ -189,6 +195,20 @@ def calibrate(level, out, poll=2.0):
     return calibration(out)
 
 
+JSON_READS = {"status": "GetState", "metrics": "GetMetrics", "calibration": "GetCalibration"}
+
+
+def _act(method, signature, values, out):
+    """One write to stoned, answered in JSON: the result for scripts and for the STONE plugin."""
+    args = None
+    if signature:
+        from gi.repository import GLib
+        args = GLib.Variant(signature, values)
+    st, err = _call(method, args)
+    out.write(json.dumps({"ok": st is not None, "error": err}, default=str) + "\n")
+    return 0 if st is not None else 1
+
+
 def main(argv, out=sys.stdout):
     if argv == ["calibration"]:
         return calibration(out)
@@ -198,23 +218,26 @@ def main(argv, out=sys.stdout):
             out.write(USAGE + "\n")
             return 2
         return calibrate(level, out)
-    if argv[:1] == ["display"]:
-        # STONE DISPLAY (the console user's view: Steam's display state comes from their Steam)
-        try:
-            from stone_display.cli import main as display_main
-        except ImportError:
-            out.write("STONE DISPLAY no está en esta imagen (llega en la fase F4).\n")
-            return 2
-        return display_main(argv[1:], out)
     if argv == ["status"]:
         return status(out)
     if len(argv) == 2 and argv[0] == "safe-mode" and argv[1] in ("on", "off"):
         return safe_mode(argv[1] == "on", out)
     if argv == ["restore-defaults"]:
         return restore_defaults(out)
-    if argv == ["--json", "status"]:
-        st, err = _call("GetState")
+    if len(argv) == 2 and argv[0] == "--json" and argv[1] in JSON_READS:
+        st, err = _call(JSON_READS[argv[1]])
         out.write(json.dumps(st if st is not None else {"error": err}, default=str) + "\n")
         return 0 if st is not None else 1
+    if len(argv) == 2 and argv[0] == "profile" and argv[1] in FACTORY_PROFILES:
+        return _act("SetProfile", "(s)", (argv[1],), out)
+    if len(argv) == 3 and argv[0] == "game-profile" and argv[1].isdigit() \
+            and argv[2] in FACTORY_PROFILES + ("global",):
+        return _act("SetGameProfile", "(ss)", (argv[1], argv[2]), out)
+    if argv == ["ui-ready"]:
+        return _act("HomeReady", None, None, out)
+    if len(argv) == 2 and argv[0] == "calibrate-start" and argv[1] in ("quick", "standard"):
+        return _act("StartCalibration", "(s)", (argv[1],), out)
+    if argv == ["calibrate-cancel"]:
+        return _act("CancelCalibration", None, None, out)
     out.write(USAGE + "\n")
     return 2

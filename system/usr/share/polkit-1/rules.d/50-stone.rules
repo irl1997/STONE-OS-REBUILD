@@ -1,41 +1,9 @@
-// STONE OS: the console user may change performance profiles and power off / restart from
-// STONE Home.
-//
-// The policy's allow_active=yes is not enough in Steam Game Mode: STONE Home runs under the
-// user's systemd manager (gamescope-session-plus@.service), outside the logind session, so
-// polkit sees it as neither local nor active and refused every change (board, RC4:
-// "no tiene los permisos"). Same approach as Bazzite's own Game Mode rules
-// (10-gamescope-session.rules): members of "wheel", the administrator created at install.
+// STONE OS: the console administrator may change performance profiles from a desktop session or
+// SSH without a password prompt. The STONE plugin's backend runs as root and does not need this.
 // stoned still checks every value against the governor's factory range.
 polkit.addRule(function (action, subject) {
     if ((action.id == "org.stonemachine.performance.change" ||
          action.id == "org.stonemachine.performance.tune") &&
-        subject.isInGroup("wheel")) {
-        return polkit.Result.YES;
-    }
-    // Network from STONE Home (Ajustes → Red): NetworkManager asks polkit, and Home runs outside the
-    // logind session in the STONE session. The console administrator only, as for Bazzite's Game Mode.
-    if (action.id.indexOf("org.freedesktop.NetworkManager.") == 0 && subject.isInGroup("wheel")) {
-        return polkit.Result.YES;
-    }
-    // Previous STONE OS version from STONE Home (Opciones de arranque): this exact command line only
-    if (action.id == "org.stonemachine.boot.rollback" && subject.isInGroup("wheel") &&
-        action.lookup("command_line") == "/usr/bin/bootc rollback") {
-        return polkit.Result.YES;
-    }
-    // 40 CU from STONE Home: only these exact command lines (Home asked for confirmation first)
-    if (action.id == "org.stonemachine.cu40" && subject.isInGroup("wheel")) {
-        var cl = action.lookup("command_line");
-        if (cl == "/usr/bin/stone-cu40 enable --yes" || cl == "/usr/bin/stone-cu40 disable --yes" ||
-            cl == "/usr/bin/stone-cu40 test --minutes 3") {
-            return polkit.Result.YES;
-        }
-    }
-    if (action.id == "org.stonemachine.session.select" && subject.isInGroup("wheel")) {
-        return polkit.Result.YES;
-    }
-    if ((action.id == "org.freedesktop.login1.power-off" ||
-         action.id == "org.freedesktop.login1.reboot") &&
         subject.isInGroup("wheel")) {
         return polkit.Result.YES;
     }

@@ -6,8 +6,7 @@
 # F0 (docs/fases/F0_PLAN.md): STONE files, kernel check, pinned GPU governor, no sleep, Handheld
 # Daemon off, BC-250 40 CU module and boot guard, Plymouth, provenance.
 # F1: stoned (STONE System Service) with its recovery, units, D-Bus and polkit policy.
-# F2: STONE Home, STONE DISPLAY and STONE OPTIMIZED (ported, D-27) and the STONE session (M24).
-# The other modules arrive in later phases; this image declares them absent.
+# D-34: Steam Game Mode is the interface, with the STONE theme and plugin on Decky Loader.
 set -ouex pipefail
 
 # shellcheck source=/dev/null
@@ -101,78 +100,32 @@ command -v vkmark >/dev/null 2>&1 || echo "WARNING: vkmark not available; no sta
 python3 -m compileall -q /usr/lib/stone/stoned
 systemctl enable stoned-recover.service stoned.service
 
-### 6c. STONE Home, STONE DISPLAY, STONE OPTIMIZED: user side, ported from rc23 (F2, D-27)
-## Python packages next to stoned; the page, fonts, artwork and boot movie; the built-in game profiles.
-cp -a /ctx/apps/stone-home/stone_home /usr/lib/stone/stone_home
-cp -a /ctx/modules/display/stone_display /usr/lib/stone/stone_display
-cp -a /ctx/modules/games/stone_games /usr/lib/stone/stone_games
-mkdir -p /usr/share/stone-home /usr/share/stone/game-profiles
-cp -a /ctx/apps/stone-home/ui/. /usr/share/stone-home/
-cp -a /ctx/modules/games/game-profiles/. /usr/share/stone/game-profiles/
-## Both engines stay until board test 26 passes (R-02, D-06): Chromium draws on the GPU; the
-## GTK 4 + WebKitGTK 6 shell is the software fallback. The build fails without either.
-dnf5 -y install webkitgtk6.0 gtk4 gobject-introspection chromium   # cairo-1.0 typelib: GTK from Python
-## STONE IMAGE looks (stone_games/look.py) use the vkBasalt Vulkan layer. Without it the looks show
-## "no disponible" and nothing else changes, so a missing package is a warning, not a failure.
-dnf5 -y install --skip-unavailable vkBasalt
-compgen -G "/usr/share/vulkan/implicit_layer.d/*[Bb]asalt*" || echo "WARNING: vkBasalt layer not installed; STONE IMAGE looks unavailable"
-python3 -c "import gi; gi.require_version('Gtk', '4.0'); gi.require_version('WebKit', '6.0'); from gi.repository import Gtk, WebKit" \
-    || { echo "ERROR: WebKitGTK 6 / GTK 4 bindings missing; STONE Home fallback cannot run"; exit 1; }
-CHROMIUM_BIN=""
-for c in /usr/bin/chromium-browser /usr/bin/chromium; do [ -x "$c" ] && CHROMIUM_BIN="$c" && break; done
-test -n "${CHROMIUM_BIN}" || { echo "ERROR: chromium not installed; STONE Home would have no GPU drawing"; exit 1; }
-"${CHROMIUM_BIN}" --version || echo "WARNING: ${CHROMIUM_BIN} --version failed in the build container (root, no display)"
-python3 -c "import gi; gi.require_version('GUdev', '1.0'); from gi.repository import GUdev" \
-    || dnf5 -y install --skip-unavailable libgudev
-python3 -c "import gi; gi.require_version('GUdev', '1.0'); from gi.repository import GUdev" \
-    || echo "WARNING: GUdev not available; STONE DISPLAY will not see display hotplug events"
-python3 -m compileall -q /usr/lib/stone/stone_home /usr/lib/stone/stone_display /usr/lib/stone/stone_games
-## Built-in game profiles pass the same checks as at run time.
-python3 -c "
-import glob, json, sys
-sys.path.insert(0, '/usr/lib/stone')
-from stone_games import schema
-for p in glob.glob('/usr/share/stone/game-profiles/steam/*.json'):
-    schema.clean_profile(json.load(open(p)), 'builtin')
-" || { echo "ERROR: a built-in STONE game profile is invalid"; exit 1; }
-command -v mangohud >/dev/null 2>&1 || ls /usr/lib64/mangohud/libMangoHud*.so >/dev/null 2>&1 \
-    || echo "WARNING: MangoHud not found; STONE OPTIMIZED cannot measure games on this image"
-test -x /usr/libexec/stone-home || { echo "ERROR: /usr/libexec/stone-home missing"; exit 1; }
-test -x /usr/bin/steam || { echo "ERROR: /usr/bin/steam missing; STONE Home launches games through Steam"; exit 1; }
-for f in index.html icon.png fonts/jost-latin-300-normal.woff2 grid/capsule.png boot/stone-startup.webm; do
-    test -s "/usr/share/stone-home/${f}" || { echo "ERROR: STONE Home file missing: ${f}"; exit 1; }
-done
-
-### 6d. STONE session (M24, D-21): gamescope-session-plus@stone, the console's automatic session
-## (D-29, "llegar y jugar"). `sudo stone-session default off` goes back to Bazzite's Game Mode; the
-## boot guard does it by itself after two STONE boots that never reach "Home operable".
-test -x /usr/share/gamescope-session-plus/gamescope-session-plus \
-    || { echo "ERROR: gamescope-session-plus not found; the STONE session cannot run"; exit 1; }
-test -e /usr/lib/systemd/user/gamescope-session-plus@.service \
-    || { echo "ERROR: gamescope-session-plus@.service not found"; exit 1; }
-test -s /usr/share/gamescope-session-plus/sessions.d/stone || { echo "ERROR: sessions.d/stone missing"; exit 1; }
-## Gamescope focus (Home as the main interface, the game in front) is written with python-xlib.
-python3 -c "import Xlib" 2>/dev/null || dnf5 -y install python3-xlib
-python3 -c "import Xlib" || { echo "ERROR: python3-xlib missing; the STONE session cannot keep Gamescope's focus"; exit 1; }
-## The guide button during a game (Home in front, plan B of V-13) is read with python-evdev.
-python3 -c "import evdev" 2>/dev/null || dnf5 -y install python3-evdev
-python3 -c "import evdev" || { echo "ERROR: python3-evdev missing; the guide button cannot bring STONE Home back"; exit 1; }
-## The automatic session: an /etc drop-in that sorts after Bazzite's zz-holo-autologin.conf (SDDM
-## reads /etc/sddm.conf.d in name order, the last file wins). /etc in the image is the default of a
-## new installation; on an existing one ostree keeps a removed file removed (`default off` holds).
-mkdir -p /etc/sddm.conf.d
-printf '%s\n' "# STONE OS: the STONE session is the automatic session (D-29)." \
-    "# Back to Bazzite's Game Mode: sudo stone-session default off" \
-    "[Autologin]" "Session=gamescope-session-stone.desktop" > /etc/sddm.conf.d/zz-stone-session.conf
-test -x /usr/libexec/stone/stone-session-select && test -x /usr/libexec/stone/stone-session-guard \
-    || { echo "ERROR: STONE session helpers missing"; exit 1; }
-systemctl enable stone-session-guard.service stone-blackbox.service
-command -v pkexec >/dev/null || { echo "ERROR: pkexec missing; Escritorio / Volver a STONE cannot switch sessions"; exit 1; }
-ls /usr/share/wayland-sessions/plasma.desktop /usr/share/wayland-sessions/plasmawayland.desktop 2>/dev/null \
-    || echo "WARNING: no Plasma session file; Escritorio will look for gnome.desktop"
-test -s /usr/share/gamescope-session-plus/sessions.d/steam \
-    || echo "WARNING: sessions.d/steam not found; the STONE session runs without Steam's Gamescope settings"
-ls /usr/share/gamescope-session-plus/sessions.d/ /usr/share/wayland-sessions/
+### 6c. The console: Steam Game Mode with the STONE theme and plugin (D-34)
+## Bazzite's own automatic session stays. Decky Loader, CSS Loader, the theme and the plugin are
+## carried in /usr/share/stone/console (pinned by SHA-256) and put in the user's home by
+## stone-console-setup.service, because a home directory cannot be part of the image.
+test -x /usr/bin/steam || { echo "ERROR: /usr/bin/steam missing"; exit 1; }
+compgen -G "/usr/share/wayland-sessions/gamescope-session*.desktop" || { echo "ERROR: Bazzite's Steam session missing"; exit 1; }
+CONSOLE=/usr/share/stone/console
+mkdir -p "${CONSOLE}/plugins/STONE" "${CONSOLE}/themes"
+curl --fail --location --retry 3 --output "${CONSOLE}/PluginLoader" \
+    "https://github.com/SteamDeckHomebrew/decky-loader/releases/download/${DECKY_VERSION}/PluginLoader"
+echo "${DECKY_SHA256}  ${CONSOLE}/PluginLoader" | sha256sum -c -
+chmod 755 "${CONSOLE}/PluginLoader"
+curl --fail --location --retry 3 --output /tmp/css-loader.zip "${CSS_LOADER_URL}"
+echo "${CSS_LOADER_SHA256}  /tmp/css-loader.zip" | sha256sum -c -
+python3 -c "import shutil, sys; shutil.unpack_archive('/tmp/css-loader.zip', sys.argv[1], 'zip')" "${CONSOLE}/plugins"
+test -s "${CONSOLE}/plugins/SDH-CssLoader/plugin.json" || { echo "ERROR: CSS Loader's folder changed name"; exit 1; }
+cp -a /ctx/themes/STONE "${CONSOLE}/themes/STONE"
+for f in plugin.json package.json main.py README.md; do cp "/plugin/${f}" "${CONSOLE}/plugins/STONE/${f}"; done
+mkdir -p "${CONSOLE}/plugins/STONE/dist"
+cp /plugin/dist/index.js "${CONSOLE}/plugins/STONE/dist/index.js"
+test -s "${CONSOLE}/plugins/STONE/dist/index.js" || { echo "ERROR: the STONE plugin was not built"; exit 1; }
+test -s "${CONSOLE}/stone-startup.webm" || { echo "ERROR: STONE's startup movie missing"; exit 1; }
+printf '{"decky":"%s","css_loader":"%s","plugin":"%s","theme":"%s"}\n' \
+    "${DECKY_VERSION}" "${CSS_LOADER_VERSION}" "${STONE_VERSION}" "${STONE_VERSION}" > "${CONSOLE}/manifest.json"
+python3 -m compileall -q /usr/lib/stone/stone_console_setup.py
+systemctl enable stone-console-setup.service stone-blackbox.service
 
 ### 7. STONE boot screen (Plymouth script theme; the base does not ship the script plugin)
 dnf5 -y install plymouth-plugin-script
@@ -190,9 +143,8 @@ rpmfile() { local v; v="$(rpm -qf --qf '%{NAME} %{VERSION}-%{RELEASE}\n' "$1" 2>
 {
     echo "STONE_NAME=\"STONE OS\""
     echo "STONE_VERSION=\"${STONE_VERSION}\""
-    echo "STONE_PHASE=\"1.0\""
-    echo "STONE_MODULES_ABSENT=\"\""
-    echo "STONE_SESSION_DEFAULT=\"on (sudo stone-session default off)\""
+    echo "STONE_DECKY=\"${DECKY_VERSION}\""
+    echo "STONE_CSS_LOADER=\"${CSS_LOADER_VERSION}\""
     echo "STONE_CHANNEL=\"${STONE_CHANNEL:-dev}\""
     echo "STONE_COMMIT=\"${STONE_COMMIT:-unknown}\""
     echo "STONE_BUILD_DATE=\"${STONE_BUILD_DATE:-unknown}\""
@@ -213,4 +165,4 @@ rpmfile() { local v; v="$(rpm -qf --qf '%{NAME} %{VERSION}-%{RELEASE}\n' "$1" 2>
 } > /usr/lib/stone-release
 cat /usr/lib/stone-release
 
-echo "STONE OS ${STONE_VERSION} (1.0): build completed."
+echo "STONE OS ${STONE_VERSION}: build completed."

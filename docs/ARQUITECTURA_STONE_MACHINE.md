@@ -3,6 +3,8 @@
 Versión: 1.2 · Fecha: 2026-11-07 · Resuelve P-14 e integra el prompt maestro (D-25).
 Plataforma única: AMD BC-250 (D-01). Este documento describe el **producto final**. Las fases F0–F9 son etapas de construcción, no recortes del alcance.
 
+> **Actualización (D-34, 2026-11-08):** STONE Home, la sesión STONE, STONE DISPLAY y STONE OPTIMIZED se retiraron en 2.0.0. La interfaz es la de Steam en Game Mode, con el tema y el plugin STONE sobre Decky Loader. Siguen vigentes la imagen, `stoned`, 40 CU y el regulador.
+
 ## Cómo leer este documento
 
 Cada afirmación lleva su grado de certeza:
