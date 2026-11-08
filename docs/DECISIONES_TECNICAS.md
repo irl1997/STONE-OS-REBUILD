@@ -312,6 +312,7 @@ Ninguna fila de esta tabla se marca como validada sin haberla ejecutado en la BC
 | --- | --- | --- |
 | 1 | 2026-11-06 | Primera versión: respuestas del propietario a las preguntas del inventario, hechos documentados, auditoría de motores y clasificación de pruebas |
 | 2 | 2026-11-06 | R-01 a R-12 aprobadas por el propietario; copia de seguridad R-12 realizada |
+| 15 | 2026-11-08 | D-32, corrección: chunkah conservaba `ostree.final-diffid` y `ostree.commit` de la imagen base; apuntaban a una capa inexistente y la ISO de 1.0.0-rc4 falló al instalar en la placa. Se quitan antes de trocear y cada compilación importa la imagen con ostree antes de publicarla. Versión 1.0.0-rc5 |
 | 14 | 2026-11-08 | D-33: auditoría de experiencia de consola y 1.0.0-rc4 (configuración inicial, pantalla de carga, preguntas de Steam en STONE, capturas, sin terminal) |
 | 13 | 2026-11-08 | D-32: troceado de la imagen con chunkah, para que las actualizaciones descarguen solo lo que cambia (rc1 → rc2 pesó ~7 GB). Versión 1.0.0-rc3 |
 | 12 | 2026-11-07 | PR #6 fusionado; imagen F2 construida a partir de `a39ea65`. Fallo en la publicación: cada `podman push` volvía a generar el manifiesto, así que `dev` (`sha256:2156488e…`) y `dev-a39ea65` (`sha256:699a5d91…`, la firmada) tenían digests distintos y `dev` quedó sin firma. Lo mismo pasó en F1. Corregido: una sola subida, las otras etiquetas se copian por digest y el flujo comprueba que todas coinciden con el digest firmado. La imagen F2 no se instala hasta que se reconstruya con esta corrección |

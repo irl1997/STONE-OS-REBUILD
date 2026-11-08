@@ -27,6 +27,22 @@ buildah unshare bash -euo pipefail -c '
 
 work="$(mktemp -d)"; trap 'rm -rf "${work}"' EXIT
 podman image inspect "${img}" > "${work}/config.json"
+# The base image (itself chunked) leaves ostree.final-diffid and ostree.commit in the labels. They name
+# a layer of the old layout: kept, every install and update stops with "Parsing manifest layout: Missing
+# ostree.final-diffid" (1.0.0-rc3 and rc4 on the board). chunkah makes a new layout, so they go.
+python3 - "${work}/config.json" <<'PY'
+import json, sys
+path = sys.argv[1]
+with open(path) as f:
+    data = json.load(f)
+for image in data:
+    for holder in (image, image.get("Config") or {}):
+        for key in ("Labels", "Annotations"):
+            for stale in ("ostree.final-diffid", "ostree.commit"):
+                (holder.get(key) or {}).pop(stale, None)
+with open(path, "w") as f:
+    json.dump(data, f)
+PY
 mkdir "${work}/out"
 podman run --rm --pull=never \
     --mount=type=image,src="${img}",target=/chunkah \
@@ -38,3 +54,12 @@ podman rmi -f "${img}"
 id="$(podman pull -q "oci:${work}/out/chunked")"
 podman tag "${id}" "${img}"
 echo "${img}: $(podman image inspect --format '{{len .RootFS.Layers}}' "${img}") layers"
+
+# What the installer and `bootc upgrade` do first: ostree reads the layout and imports every layer.
+# A bad image stops here, in the build, instead of on the console.
+df -h / | tail -1
+podman run --rm --privileged --security-opt label=disable --pull=never \
+    --volume "${work}/out:/out:ro" --entrypoint /bin/bash "${img}" -euc \
+    'ostree --repo=/var/tmp/check init --mode=bare-user
+     ostree container image pull /var/tmp/check ostree-unverified-image:oci:/out/chunked > /dev/null
+     echo "ostree imported the chunked image"'

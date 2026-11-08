@@ -1,3 +1,12 @@
+# STONE OS (rebuild) 1.0.0-rc5
+
+Corrige la instalación. Trae todo lo de rc4.
+
+## Cambios en rc5
+
+- **La ISO de rc4 no se podía instalar:** el instalador paraba con «Parsing manifest layout: Missing ostree.final-diffid». Las actualizaciones a rc3 y rc4 habrían fallado igual. La imagen conservaba una etiqueta de Bazzite que apuntaba a una capa que ya no existía tras el cambio de capas de rc3.
+- **Comprobación nueva en cada compilación:** la imagen se importa como lo hace el instalador antes de publicarse; una imagen mala se detiene en GitHub y no llega a la consola.
+
 # STONE OS (rebuild) 1.0.0-rc4
 
 Auditoría de experiencia de consola: todo se hace con el mando, sin terminal y sin pantallas de Steam salvo el inicio de sesión. Detalle completo en `docs/AUDITORIA_CONSOLA.md`. **Probado en simulación (CODE TESTED); nada observado todavía en la placa.**

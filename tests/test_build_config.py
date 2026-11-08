@@ -119,6 +119,9 @@ def test_rechunk_uses_signed_chunkah_pinned_by_digest():
     assert re.fullmatch(r"quay\.io/coreos/chunkah:[\w.-]+@sha256:[0-9a-f]{64}", ENV["CHUNKAH_IMAGE"])
     script = _read("scripts", "rechunk.sh")
     assert "cosign verify" in script and "coreos/chunkah/" in script and "--prune /sysroot/" in script
+    # 1.0.0-rc4 on the board: stale labels made the installer fail; the build now imports the image like it
+    assert '"ostree.final-diffid", "ostree.commit"' in script
+    assert script.index("ostree container image pull") > script.index('podman tag "${id}"')
     workflow = _read(".github", "workflows", "build-image.yml")
     assert 'scripts/rechunk.sh "localhost/${IMAGE_NAME}:build"' in workflow
     assert "build-chunked-oci" not in workflow + _read("scripts", "build-local.sh")
