@@ -278,9 +278,16 @@ def probe(port=PORT):
 
 # Every game in the Steam account, installed or not (the library on disk only has installed
 # ones). Fields: appid, name, installed, minutes played, last played (unix), size on disk.
+# Two sources: Big Picture's collectionStore, and appStore, which the client also loads when Steam
+# runs hidden (-silent, the STONE session) and collectionStore may not exist (rc1 on the board:
+# games of the account missing from the library). appStore also holds tools and DLC: games only.
 OWNED_EXPRESSION = (
-    "(async()=>{const cs=window.collectionStore;if(!cs||!cs.allGamesCollection)return null;const o=[];"
-    "for(const a of cs.allGamesCollection.allApps){if(!a||(a.BIsModOrShortcut&&a.BIsModOrShortcut()))continue;"
+    "(async()=>{const cs=window.collectionStore;let src=null;"
+    "if(cs&&cs.allGamesCollection&&cs.allGamesCollection.allApps)src=cs.allGamesCollection.allApps;"
+    "else if(window.appStore){const A=window.appStore;src=A.allApps||(A.m_mapApps&&[...A.m_mapApps.values()])||null;"
+    "if(src)src=src.filter(a=>a&&(a.app_type===1||a.app_type===undefined));}"
+    "if(!src)return null;const o=[];"
+    "for(const a of src){if(!a||(a.BIsModOrShortcut&&a.BIsModOrShortcut()))continue;"
     "const lp=a.local_per_client_data||{};"
     "o.push([a.appid,String(a.display_name||''),!!(a.installed!==undefined?a.installed:lp.installed),"
     "a.minutes_playtime_forever||0,a.rt_last_time_played||0,Number(a.size_on_disk||lp.bytes_downloaded||0)]);}"
@@ -305,19 +312,48 @@ def owned_games(port=PORT):
 
 
 def install_expression(appid):
+    """Install without showing Steam's dialog: in the STONE session Steam's interface is hidden behind
+    STONE Home (rc1 on the board: the dialog opened where nobody could see it). Steam's install wizard
+    is opened and continued on the first library folder; the download then shows in STONE
+    (Ajustes → Almacenamiento) like any Steam download. A game that needs a choice Steam cannot make
+    by itself (an EULA, a second drive) stays in Steam's queue, never half-installed."""
     a = int(appid)
     if not 0 < a < 0x80000000:
         raise ValueError("not a Steam app id")
-    # The game's page in Steam comes over STONE and Steam's own install dialog opens on it
-    # (choice of drive, size, download): STONE does not pick for the person.
-    return ("(async()=>{" + _NAV + f"if(n.App)n.App({a});"
-            "await new Promise(r=>setTimeout(r,300));try{m&&m.CloseSideMenus&&m.CloseSideMenus();}catch(e){}"
-            f"if(window.SteamClient&&SteamClient.Installs&&SteamClient.Installs.OpenInstallWizard)"
-            f"SteamClient.Installs.OpenInstallWizard([{a}]);return 'ok';}})()")
+    return ("(async()=>{const I=window.SteamClient&&SteamClient.Installs;"
+            "if(!I||!I.OpenInstallWizard)return 'no SteamClient.Installs';"
+            f"I.OpenInstallWizard([{a}]);await new Promise(r=>setTimeout(r,1500));"
+            "try{I.SetInstallFolder&&I.SetInstallFolder(0);}catch(e){}"
+            "await new Promise(r=>setTimeout(r,300));"
+            "try{if(I.ContinueInstall)I.ContinueInstall();else return 'wizard open';}catch(e){return 'continue: '+e;}"
+            "return 'ok';})()")
 
 
 def install(appid, port=PORT):
     return ui_eval(install_expression(appid), port)
+
+
+def uninstall_expression(appid):
+    """Uninstall without Steam's dialog (STONE asked first); Steam keeps cloud saves as always."""
+    a = int(appid)
+    if not 0 < a < 0x80000000:
+        raise ValueError("not a Steam app id")
+    return ("(async()=>{const I=window.SteamClient&&SteamClient.Installs;"
+            "if(!I||!I.OpenUninstallWizard)return 'no SteamClient.Installs';"
+            f"I.OpenUninstallWizard([{a}],true);return 'ok';}})()")
+
+
+def uninstall(appid, port=PORT):
+    return ui_eval(uninstall_expression(appid), port)
+
+
+def reachable(port=PORT):
+    """True when Steam's interface answers on the remote debugging port (STONE needs it for the
+    library of the account, installing, Steam's settings and adding shortcuts)."""
+    try:
+        return bool(candidates(targets(port, timeout=1.5)))
+    except (OSError, ValueError):
+        return False
 
 
 def add_shortcut_expression(name, exe, start_dir, launch_options):

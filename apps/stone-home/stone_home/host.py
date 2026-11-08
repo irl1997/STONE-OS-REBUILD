@@ -28,6 +28,7 @@ from . import shortcuts
 from . import steamcef
 from . import steamsettings
 from . import storage
+from . import store
 from . import system
 
 
@@ -39,6 +40,7 @@ class Host:
         self.steam_root = steam_root
         self.games = {}                                       # appid -> launch URL, from the last scan
         self.owned = set()                                    # not installed, in the account: may be installed
+        self.store_free = set()                               # free games of the last store search: may be installed
         self.emu_busy = set()                                 # catalog keys being installed
         self.selftest = None                                  # set by app.py --selftest
         self.restart = None                                   # set by app.py: restart STONE Home
@@ -164,11 +166,13 @@ class Host:
             print(f"[stone] display: game environment failed: {e!r}", flush=True)
 
     def m_install(self, args, done):
-        """Opens Steam's own install dialog for a game of the account that is not installed."""
-        if len(args) != 1 or args[0] not in self.owned or not args[0].isdigit():
+        """Installs a game of the account (or a free game found in the store) without Steam's dialog
+        (steamcef.install); if Steam's interface does not answer, Steam's install URL."""
+        if len(args) != 1 or not isinstance(args[0], str) or not args[0].isdigit() \
+                or (args[0] not in self.owned and args[0] not in self.store_free):
             return done(None, "InvalidValue", "unknown game")
         appid = int(args[0])
-        self._in_steam_ui(lambda: self.steam_ui.install(appid), None, done)
+        self._in_steam_ui(lambda: self.steam_ui.install(appid), lambda: self.sys.open_url(f"steam://install/{appid}"), done)
 
     def m_emulators(self, args, done):
         def work():
@@ -623,6 +627,21 @@ class Host:
     def m_roms_add(self, args, done):
         self._bg(done, lambda: roms.add_to_library(steam_ui=self.steam_ui), "roms")
 
+    # ---- Search (M13): the store's public search; the library is searched in the page -----------
+    def m_store_search(self, args, done):
+        if len(args) != 1 or not isinstance(args[0], str):
+            return done(None, "InvalidValue", "term")
+
+        def work():
+            r = store.search(args[0])
+            if "error" in r:
+                res = (None, "Unsupported", r["error"])
+            else:
+                self.store_free |= {g["appid"] for g in r["results"] if g["free"]}
+                res = (r, None, "")
+            GLib.idle_add(lambda: (done(*res), False)[1])
+        threading.Thread(target=work, daemon=True).start()
+
     # ---- STONE STORAGE and DOWNLOADS (M20, M13) ---------------------------------------------
     def m_storage_status(self, args, done):
         root = self.root()
@@ -642,14 +661,12 @@ class Host:
         done(r) if "error" not in r else done(None, "InvalidValue", r["error"])
 
     def m_storage_uninstall(self, args, done):
-        """Steam's own uninstall dialog for an installed game (Steam asks for confirmation)."""
-        if len(args) != 1 or not isinstance(args[0], str) or not args[0].isdigit():
+        """Uninstall an installed game (STONE Home asked first): through Steam's interface without its
+        dialog, else Steam's uninstall URL (Steam then asks in its own dialog)."""
+        if len(args) != 1 or not isinstance(args[0], str) or not args[0].isdigit() or not 0 < len(args[0]) <= 10:
             return done(None, "InvalidValue", "appid")
-        try:
-            self.sys.open_url(f"steam://uninstall/{args[0]}")
-        except ValueError as e:
-            return done(None, "InvalidValue", str(e))
-        done({"ok": True})
+        appid = int(args[0])
+        self._in_steam_ui(lambda: self.steam_ui.uninstall(appid), lambda: self.sys.open_url(f"steam://uninstall/{appid}"), done)
 
     # ---- STONE HEALTH (M19) ---------------------------------------------------------------
     def m_health_status(self, args, done):

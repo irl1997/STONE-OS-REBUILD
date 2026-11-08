@@ -25,7 +25,7 @@ async function loadLibrary() {
     h: Math.round(x.playtime_min / 60), lastT: x.last_played, last: ago(x.last_played), sz: sizeText(x.size_bytes),
     inst: x.installed, upd: x.updating, art: x.art || {}, fav: favs.has(x.appid), perf: null }));
   recent = G.filter(g => g.inst || g.src === 'shortcut').slice(0, 6).map(g => g.i);
-  S.libReady = true; S.libFound = r ? r.root_found : false;
+  S.libReady = true; S.libFound = r ? r.root_found : false; S.libOwnedKnown = !!(r && r.owned_known);
   if (S.st) adopt(S.st);
 }
 const capUrl = g => g.art.capsule ? `url("${Bridge.artUrl(g.appid, 'capsule')}")` : 'none';

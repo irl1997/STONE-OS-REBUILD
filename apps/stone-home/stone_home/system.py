@@ -186,7 +186,9 @@ class System:
     def open_url(self, url):
         # rungameid takes a 64-bit game id (non-Steam shortcuts: appid << 32 | 0x02000000)
         ok_game = (url.startswith("steam://rungameid/") and url[18:].isdigit() and len(url) <= 18 + 20) or \
-                  (url.startswith("steam://uninstall/") and url[18:].isdigit() and len(url) <= 18 + 10)
+                  (url.startswith("steam://uninstall/") and url[18:].isdigit() and len(url) <= 18 + 10) or \
+                  (url.startswith("steam://install/") and url[16:].isdigit() and len(url) <= 16 + 10) or \
+                  (url.startswith("steam://store/") and url[14:].isdigit() and len(url) <= 14 + 10)
         if not ok_game and url not in STEAM_URLS.values():
             raise ValueError("url not allowed")
         self.spawn(url)

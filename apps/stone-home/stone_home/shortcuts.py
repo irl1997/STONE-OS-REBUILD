@@ -339,6 +339,13 @@ def prepare_session(root=None, proc="/proc"):
         return {"result": "skipped", "reason": "steam is running"}
     out = {"result": "ok"}
     if os.environ.get("STONE_HOME_CEF", "1") != "0":
+        # A new installation has no Steam folder before Steam's first start: create it with the flag
+        # in it, or Steam's interface stays unreachable for the whole first session (rc1 on the board).
+        # Steam's bootstrap installs into an existing folder.
+        try:
+            os.makedirs(root, exist_ok=True)
+        except OSError:
+            pass
         out["steam_ui_launch"] = os.path.isdir(root) and steamcef.enable(root)
     from . import emulators
     extra = emulators.pending_entries()

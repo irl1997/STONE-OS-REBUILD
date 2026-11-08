@@ -413,14 +413,17 @@ def P02_only_known_steam_urls_can_be_opened():
     s = system.System(spawn=seen.append)
     s.open_url("steam://rungameid/1001")
     s.open_url(system.STEAM_URLS["store"])
-    for bad in ("steam://rungameid/1001;rm", "steam://install/1", "https://example.com", "file:///etc/passwd",
-                "steam://rungameid/", "steam://rungameid/12 3"):
+    s.open_url("steam://install/1001")                    # rc2: install fallback (Steam's interface first)
+    s.open_url("steam://uninstall/1001")
+    for bad in ("steam://rungameid/1001;rm", "steam://install/1;x", "steam://install/", "steam://install/" + "1" * 11,
+                "https://example.com", "file:///etc/passwd", "steam://rungameid/", "steam://rungameid/12 3",
+                "steam://uninstall/1 2"):
         try:
             s.open_url(bad)
             raise AssertionError(f"accepted {bad}")
         except ValueError:
             pass
-    assert seen == ["steam://rungameid/1001", "steam://url/StoreFrontPage"]
+    assert seen == ["steam://rungameid/1001", "steam://url/StoreFrontPage", "steam://install/1001", "steam://uninstall/1001"]
 
 
 @test
@@ -683,6 +686,22 @@ def H11_previous_version_only_through_the_fixed_rollback_command():
     h.rollback_cmd = ["sh", "-c", "echo no rollback deployment >&2; exit 1"]
     r = run_host(h, {"method": "boot.rollback", "args": []}, timeout=15)
     assert r[1] == "Unsupported"
+
+
+@test
+def H12_install_without_steam_ui_falls_back_to_the_install_url_and_free_store_games():
+    seen = []
+
+    class UI:
+        @staticmethod
+        def install(appid):
+            return "cef unavailable (URLError)"
+    h = host_mod.Host(lambda *a: None, stoned=FakeStoned(), sysapi=system.System(spawn=seen.append), steam_root="/nonexistent")
+    h.steam_ui = UI
+    assert run_host(h, {"method": "install", "args": ["570"]})[1] == "InvalidValue"      # not owned, not a free store game
+    h.store_free = {"570"}
+    r = run_host(h, {"method": "install", "args": ["570"]}, timeout=15)
+    assert r[0] == {"ok": True, "via": "url"} and seen == ["steam://install/570"], (r, seen)
 
 
 @test

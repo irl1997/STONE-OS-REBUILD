@@ -1,4 +1,16 @@
-# STONE OS (rebuild) 1.0.0-rc1
+# STONE OS (rebuild) 1.0.0-rc2
+
+Primera corrección tras instalar 1.0.0-rc1 en la BC-250.
+
+## Cambios en rc2
+
+- **La biblioteca muestra los juegos de tu cuenta que no están instalados.** Hasta ahora STONE solo los leía de la interfaz de Big Picture, que no se carga con Steam oculto en la sesión STONE. Ahora usa también la lista de aplicaciones que Steam carga siempre. Y en una instalación nueva, la conexión con la interfaz de Steam funciona desde el primer arranque.
+- **Instalar desde STONE:** INSTALAR descarga el juego sin abrir el diálogo de Steam, que en la sesión STONE quedaba oculto. La descarga se ve en Ajustes → Almacenamiento. Desinstalar tampoco abre diálogos: STONE pregunta antes.
+- **Buscar juegos:** botón Y o «Buscar» en Inicio y en la Biblioteca. El teclado en pantalla busca en tu biblioteca y en la tienda de Steam. Un juego gratis se instala desde STONE; uno de pago se compra en Steam y aparece en tu biblioteca.
+- **Ajustes → Salud** dice si la interfaz de Steam responde.
+
+## Lo que trae 1.0.0-rc1
+
 
 La primera versión candidata de STONE OS para STONE MACHINE (AMD BC-250, 8 núcleos, 40 CU), con todo el plan del prompt maestro (D-31). Se instala desde cero con la ISO y arranca directamente en STONE.
 
