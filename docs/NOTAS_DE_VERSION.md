@@ -1,8 +1,14 @@
-# STONE OS (rebuild) 1.0.0-rc2
+# STONE OS (rebuild) 1.0.0-rc3
 
-Primera corrección tras instalar 1.0.0-rc1 en la BC-250.
+## Cambios en rc3
+
+- **Actualizaciones más pequeñas.** La imagen se reparte ahora en capas estables (chunkah, igual que Bazzite): cada paquete va siempre en la misma capa, así que la consola solo descarga lo que cambia entre versiones. Hasta rc2, cambiar un solo archivo obligaba a bajar casi toda la imagen (rc1 → rc2: unos 7 GB).
+- **Aviso:** la actualización de rc2 a rc3 todavía es grande, una sola vez, porque las capas cambian de forma. A partir de rc3, cada actualización baja solo las capas que cambian.
+- Cada compilación dice en su resumen cuánto descargará una consola que esté en la versión anterior del canal.
 
 ## Cambios en rc2
+
+Primera corrección tras instalar 1.0.0-rc1 en la BC-250.
 
 - **La biblioteca muestra los juegos de tu cuenta que no están instalados.** Hasta ahora STONE solo los leía de la interfaz de Big Picture, que no se carga con Steam oculto en la sesión STONE. Ahora usa también la lista de aplicaciones que Steam carga siempre. Y en una instalación nueva, la conexión con la interfaz de Steam funciona desde el primer arranque.
 - **Instalar desde STONE:** INSTALAR descarga el juego sin abrir el diálogo de Steam, que en la sesión STONE quedaba oculto. La descarga se ve en Ajustes → Almacenamiento. Desinstalar tampoco abre diálogos: STONE pregunta antes.

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Build the STONE OS (rebuild) image on your own Linux machine, the same way the build-image workflow does.
 #   scripts/build-local.sh [--owner <github-user>] [--no-rechunk]
-# Needs podman (and skopeo to pin the base digest). Produces localhost/stone-os-rebuild:<version>.
+# Needs podman (and skopeo to pin the base digest; buildah and cosign to rechunk). Produces localhost/stone-os-rebuild:<version>.
 # On a Mac: use the GitHub workflow (docs/CONSTRUIR.md); container builds of bootc images need Linux.
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -33,13 +33,6 @@ podman build --pull=newer \
     --label "org.opencontainers.image.source=https://github.com/${owner}/${IMAGE_NAME}" \
     --tag "localhost/${IMAGE_NAME}:${version}" --file image/Containerfile .
 if [[ "${rechunk}" == 1 ]]; then
-    graphroot="$(podman info --format '{{.Store.GraphRoot}}')"
-    podman run --rm --pull=never --privileged \
-        --mount=type=image,src="localhost/${IMAGE_NAME}:${version}",target=/rpm-ostree \
-        --mount=type=bind,src="${graphroot}",target=/run/host-container-storage,rw \
-        --mount=type=tmpfs,target=/run/rpm-ostree-storage \
-        --entrypoint /usr/bin/rpm-ostree "localhost/${IMAGE_NAME}:${version}" \
-        compose build-chunked-oci --max-layers 127 --format-version=2 --bootc --rootfs /rpm-ostree \
-        --output "containers-storage:[overlay@/run/host-container-storage+/run/rpm-ostree-storage]localhost/${IMAGE_NAME}:${version}"
+    scripts/rechunk.sh "localhost/${IMAGE_NAME}:${version}"
 fi
 echo "Done: localhost/${IMAGE_NAME}:${version}"

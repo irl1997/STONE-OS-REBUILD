@@ -114,5 +114,17 @@ def test_executable_bits():
         assert os.access(os.path.join(REPO, rel), os.X_OK), rel
 
 
+def test_rechunk_uses_signed_chunkah_pinned_by_digest():
+    # D-32: stable layers, so console updates download only what changed
+    assert re.fullmatch(r"quay\.io/coreos/chunkah:[\w.-]+@sha256:[0-9a-f]{64}", ENV["CHUNKAH_IMAGE"])
+    script = _read("scripts", "rechunk.sh")
+    assert "cosign verify" in script and "coreos/chunkah/" in script and "--prune /sysroot/" in script
+    workflow = _read(".github", "workflows", "build-image.yml")
+    assert 'scripts/rechunk.sh "localhost/${IMAGE_NAME}:build"' in workflow
+    assert "build-chunked-oci" not in workflow + _read("scripts", "build-local.sh")
+    assert workflow.index("Install cosign") < workflow.index("scripts/rechunk.sh")
+
+
 if __name__ == "__main__":
     sys.exit(run_module(globals()))
+
