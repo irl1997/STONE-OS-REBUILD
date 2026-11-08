@@ -28,7 +28,7 @@ function linkRows(D) {
   const goalMax = D.goal === 'max_res';
   return [
     { l: 'Conexión', s: L.reaches_4k60 ? 'Lleva 4K a 60 Hz o más' : (L.display_offers_4k60 ? '4K a 60 Hz no cabe en esta conexión' : 'Lo máximo que lleva la conexión'),
-      v: f(L.target), act: 'info', where: L.advice || `Fluida: ${f(L.best_fluid)}. Máxima resolución: ${f(L.best_max_res)}. Detalle: stonectl display` },
+      v: f(L.target), act: 'info', where: L.advice || `Fluida: ${f(L.best_fluid)}. Máxima resolución: ${f(L.best_max_res)}.` },
     { l: 'Meta de imagen', s: goalMax ? 'La resolución más alta, aunque sean menos Hz' : 'La más alta a 60 Hz o más (recomendado para jugar)',
       v: goalMax ? 'Máxima resolución' : 'Fluidez', key: 'dispgoal' }];
 }
@@ -49,11 +49,12 @@ function displayRows() {
   const games = D.game_env ? `${D.game_env.w} × ${D.game_env.h}` : 'Desconocida';
   return [
     { l: 'Televisor', s: `${D.name || 'Pantalla'}${D.connection ? ' · ' + D.connection : ''}${caps ? ' · ' + caps : ''}`, v: resTxt(D.native), act: 'info',
-      where: warn ? warn.text : `Nativa ${resTxt(D.native)}. Salida actual ${resTxt(D.output)}. Diagnóstico completo: stonectl display` },
+      where: warn ? warn.text : `Nativa ${resTxt(D.native)}. Salida actual ${resTxt(D.output)}.` },
     { l: 'Salida', s: D.output ? (D.native && D.output.w < D.native.w ? 'Por debajo de la nativa del televisor' : 'La que envía la consola al televisor') : 'Steam no respondió todavía',
       v: resTxt(D.output), act: 'info', where: D.native && D.output && D.output.w < D.native.w
-        ? 'Botón STEAM → Ajustes → Pantalla → Resolución: elige la nativa del televisor' : 'La resolución de salida la fija Steam (Ajustes → Pantalla)' },
+        ? 'El cable o el adaptador no llevan la nativa: «Conexión» dice lo máximo que llevan' : 'La consola envía esta resolución al televisor' },
     ...linkRows(D),
+    { l: 'Encuadre', s: 'Si los bordes se cortan en tu televisor, reduce la imagen hasta ver las esquinas', v: `${FRAME} %`, key: 'frame' },
     { l: 'Juegos ven', s: D.policy === 'native' ? 'La resolución del televisor; cada juego decide cómo dibujar' : 'Lo que Steam da por defecto',
       v: D.policy === 'native' ? `Televisor · ${games}` : `Steam · ${games}`, key: 'gameres' }];
 }
@@ -73,11 +74,16 @@ function steamSetRows() {
   const rows = (ss.settings || []).slice().sort((a, b) => a.area.localeCompare(b.area) || a.label.localeCompare(b.label)).map(x => ({
     l: x.label, s: x.area, v: x.type === 'bool' ? (x.value ? 'Sí' : 'No') : String(x.value),
     act: x.writable ? 'sset' : 'info', sset: x, where: `${x.area}: ${x.label} = ${x.value}${x.writable ? '' : ' (solo lectura)'}` }));
-  return [head, ...rows];
+  if (S.steamAcct === undefined) { S.steamAcct = null; Sys.firstrunStatus().then(f => { S.steamAcct = !!f.steam_account; }, () => { S.steamAcct = false; }).then(() => { if (S.screen === 'settings' && CATS[cat] === 'Steam') enterSettings({ pane: !!NAV.pane, ri: NAV.pane ? NAV.c : 0 }); }); }
+  const acct = { l: 'Cuenta de Steam', s: S.steamAcct ? 'Conectada en esta consola' : S.steamAcct === null ? 'Leyendo…' : 'Sin iniciar sesión: Steam muestra su pantalla de inicio de sesión una vez',
+    v: S.steamAcct ? 'Conectada' : 'Iniciar sesión', act: 'sset', login: !S.steamAcct };
+  return [acct, head, ...rows];
 }
 function ssetA(r) {
   play('select');
+  if (r.login) { S.steamAcct = undefined; return Sys.openSteam('store').catch(() => toast('Steam no respondió', false)); }
   if (r.refresh) { S.ss = null; return loadSteamSet(true); }
+  if (!r.sset) return;
   const x = r.sset;
   Bridge.call('steam.setSetting', x.id, !x.value).then(res => {
     toast(res && res.ok ? `${x.label}: ${!x.value ? 'Sí' : 'No'}` : 'Steam no aceptó el cambio', false);
@@ -166,7 +172,7 @@ const LVL = { ok: 'Bien', warn: 'Aviso', fail: 'Fallo' };
 function healthRows() {
   const H = S.health;
   if (!H) { loadHealth(); return [{ l: 'Leyendo…', s: 'CPU, memoria, discos, servicios y registros', v: '' }]; }
-  if (H.error) return [{ l: 'No se pudo leer el estado', s: 'Prueba de nuevo o usa stone-doctor en una terminal', v: '' }];
+  if (H.error) return [{ l: 'No se pudo leer el estado', s: 'Vuelve a intentarlo en unos segundos; si sigue, reinicia la consola', v: '' }];
   const st = S.st || {};
   const rows = H.checks.map(([lvl, t, d]) => ({ l: t, s: d, v: LVL[lvl] || lvl, act: 'info', where: d }));
   rows.push({ l: 'Estabilidad', s: st.safe_mode ? `Safe Mode activo (${SAFE_REASON[st.safe_reason] || st.safe_reason})` : st.last_failure ? 'Hubo un fallo reciente: STONE volvió a la última configuración buena' : 'Sin fallos de rendimiento recientes',
@@ -221,7 +227,7 @@ function catRows() {
       { l: 'Hardware', s: S.caps ? (S.caps.board ? `AMD BC-250 detectada · Zen 2 ${cores()} núcleos · GPU ${cu40Top() ? 40 : 24} CU · 16 GB GDDR6` : 'No se detectó una AMD BC-250: el ajuste de rendimiento está desactivado') : 'Leyendo…', v: '' },
       { l: 'Sistema base', s: rel.STONE_BASE_IMAGE ? `Bazzite · ${rel.STONE_BASE_IMAGE}${rel.STONE_BASE_DIGEST ? ' @ ' + rel.STONE_BASE_DIGEST.slice(7, 19) : ''}` : 'Bazzite (imagen derivada de bazzite-deck)', v: '' },
       { l: 'Componentes', s: [rel.STONE_KERNEL && `kernel ${rel.STONE_KERNEL}`, rel.STONE_MESA && `Mesa ${rel.STONE_MESA}`, rel.STONE_GOVERNOR_VERSION && `regulador ${rel.STONE_GOVERNOR_VERSION}`].filter(Boolean).join(' · ') || '—', v: '' },
-      { l: 'Modo escritorio', s: 'Para usuarios avanzados', v: 'Energía', act: 'info', where: 'Energía → Escritorio. Para volver: «Volver a STONE» en el escritorio, o reiniciar' },
+      { l: 'Modo escritorio', s: 'Avanzado: el escritorio de Linux, fuera de la experiencia de consola', v: 'Abrir', act: 'desktop' },
       { l: 'NEURAL RENDER', s: 'Experimental: sin backends; ninguno funciona hoy de forma medible en la GPU de la BC-250', v: 'Sin backend' }] };
     case 'Actualizaciones': return { d: 'Las actualizaciones llegan como una imagen completa y se aplican al reiniciar. Si una falla, la anterior sigue disponible.', rows: [
       { l: 'Estado', s: !dep ? 'No se pudo leer el estado del sistema' : dep.staged ? `Actualización lista: ${dep.staged.version || 'nueva versión'}. Se aplica al reiniciar` : `Instalada: ${(dep.booted && dep.booted.version) || rel.STONE_VERSION || '—'}`, v: '' },

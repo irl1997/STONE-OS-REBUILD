@@ -69,6 +69,7 @@ PREFS = {
     "game_res": (_intr(0, 1), 0),
     "display_goal": (lambda v: v if v in ("fluid", "max_res") else None, "fluid"),   # STONE DISPLAY link goal
     "optimized": (_intr(0, 1), 1),        # STONE OPTIMIZED: JUGAR launches with the game profile
+    "frame": (_intr(0, 6), 0),            # TV framing: % of the picture kept clear on each side (overscan)
 }
 
 

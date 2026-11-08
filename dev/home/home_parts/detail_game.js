@@ -5,8 +5,9 @@ function enterDetail(i, opts = {}) {
   S.screen = 'detail';
   const canPlay = g.inst || g.src === 'shortcut';
   const prim = running ? 'REANUDAR' : canPlay ? 'JUGAR' : 'INSTALAR';
+  /* Five actions at most on one line (they always fit the 1920 stage); the image options live in GRÁFICOS. */
   const sec = [[g.fav ? 'Quitar de favoritos' : 'Favorito', 'fav'], [`Rendimiento: ${g.perf ? profOf(g.perf).n : 'Global'}`, 'perf'], ['Propiedades', 'opt']];
-  if (g.src === 'steam' && g.inst) sec.splice(2, 0, [imgLabel(g), 'img'], [preLabel(g), 'pre'], [lookLabel(g), 'look'], [fgLabel(g), 'fg'], ['Experiencia', 'xp'], [optLabel(g), 'ins'], ['Instalar HelixSR', 'hlx'], [optzLabel(g), 'opz']);
+  if (g.src === 'steam' && g.inst) sec.splice(2, 0, ['Gráficos', 'gfx'], ['Experiencia', 'xp']);
   $('#detail').innerHTML = `
     <div class="col"><div class="origin">${esc(g.o)}</div><h1${g.n.length > 22 ? ' class="long"' : ''}>${esc(g.n.toUpperCase())}</h1>
       <div class="stats">${playText(g)} · Última sesión: ${running ? 'ahora' : g.last}</div>
@@ -103,18 +104,6 @@ async function insOpti(g, i) {
     toast(r && r.ok ? 'FSR (OptiScaler) instalado. Elige «Imagen: OptiScaler» para usarlo' : ((r && r.error) || 'No se pudo instalar'), false);
   } catch (e) { play('error'); toast('No se pudo: ' + ((e && e.message) || 'sin respuesta') + '. Si fue la descarga, revisa internet y vuelve a pulsar', false); }
 }
-async function insHelix(g, i) {
-  try {
-    let r = await Sys.gamePlan(g.appid, 'helixsr');
-    if (r && r.needs_download) {
-      toast('Descargando HelixSR del autor (GitHub)… puede tardar', false);
-      await Sys.components('helixsr');
-      r = await Sys.gamePlan(g.appid, 'helixsr');
-    }
-    if (!r || !r.ok) { play('error'); return toast(((r && r.error) || 'No se pudo preparar') + '', false); }
-    toast(`HelixSR ${r.tag} descargado. Para instalarlo en tus juegos sin anti-cheat, en la terminal (Ctrl+Alt+F3): stone-game install ${g.appid} helixsr`, false);
-  } catch (e) { play('error'); toast('No se pudo: ' + ((e && e.message) || 'sin respuesta') + '. Revisa internet y vuelve a pulsar', false); }
-}
 /* STONE OPTIMIZED: GAME -> STONE RECOMMENDED -> PLAY. The host says what JUGAR will use and why;
    nothing is shown that was not measured or is not in the profile database. */
 async function experience(g, i) {
@@ -131,17 +120,17 @@ function detailA(el) {
   if (a === 'primary') {
     play('select');
     if (S.running === g.i) return resumeGame();
-    if (!g.inst && g.src !== 'shortcut') return sys('install', g.appid).then(r => { if (r) toast(`${g.n}: elige dónde instalarlo en Steam. Al terminar aparece aquí listo para jugar`, false); });
+    if (!g.inst && g.src !== 'shortcut') return sys('install', g.appid).then(r => { if (!r) return; steamWatch(20000); toast(`${g.n}: instalando. La descarga se ve en Ajustes → Almacenamiento; al terminar, JUGAR`, false); });
     return launch(g);
   }
-  if (a === 'opt') { play('select'); return toast('Propiedades, logros y compatibilidad: en la ficha del juego en Steam', false); }
+  if (a === 'opt') { play('select'); return propsDlg(g); }
   if (a === 'fav') {
     play('select'); g.fav = !g.fav; if (g.fav) favs.add(g.appid); else favs.delete(g.appid); savePrefs();
     enterDetail(curG, { r: 1, c: 0 }); return toast(g.fav ? 'Añadido a favoritos' : 'Quitado de favoritos', false);
   }
   if (a === 'opz') { play('select'); return optimizar(g, curG); }
   if (a === 'ins') { play('select'); return insOpti(g, curG); }
-  if (a === 'hlx') { play('select'); return insHelix(g, curG); }
+  if (a === 'gfx') { play('select'); return gfxPanel(g); }
   if (a === 'xp') { play('select'); return xpDlg(g); }
   if (a === 'fg') {
     if (!g.fg) { play('error'); return toast('Leyendo…', false); }
@@ -189,31 +178,71 @@ function detailA(el) {
    Steam starts the game; Gamescope puts it in front of STONE Home. stoned sees the session through
    Steam's reaper process and reports it in its state, which is what this screen follows: when the
    game ends, Home comes back. */
-let tagT = 0, launchT = 0;
+let tagT = 0, launchT = 0, ldT = [];
+/* The launch sound: the line rising into the game (the same voice as the start of the console). */
+SND.launch = () => { tone(220, 1.6, .05, { glide: 440, attack: .05, lp: 1400, wet: .5 }); tone(660, 1.8, .018, { attack: .2, delay: .35, lp: 3000, wet: .8 }); };
 async function launch(g, starter) {
   if (S.launching !== null) return;
   const ok = await (starter ? starter() : sys('launch', g.appid));
   if (!ok) return;
-  if (g.exp && g.exp.settings && g.exp.status !== 'UNKNOWN') toast(g.exp.settings, false);
   S.launching = g.i; S.running = g.i; S.screen = 'transition';
   recent = [g.i, ...recent.filter(i => i !== g.i)].slice(0, 6);
-  const b = stageBox(focusEl());
+  const el = focusEl(), b = el ? stageBox(el) : { x: 960, y: 540, w: 0, h: 0 };
   chrome(false, false); $('#hints').classList.add('hide');
+  play('launch');
+  /* The focus line leaves the card and becomes the loading vein of the game's own screen. */
   $('#black').classList.remove('fast'); $('#black').classList.add('on');
   setLine(b.x + b.w / 2, b.y + b.h + 16, 0, { slow: true });
-  await wait(1200);
-  line.classList.add('off');
+  await wait(700);
   showGame(g, true);
-  /* If stoned does not see the game within 90 s (Steam updating it first, or stoned not running),
-     STONE stops waiting; B on this screen always goes back to Home. */
-  clearTimeout(launchT); launchT = setTimeout(() => { S.launching = null; }, 90000);
+  steamWatch(95000);
+  /* stoned may have seen the game before STONE started waiting for it */
+  if (S.game && S.game.appid === g.appid) launchFound(g.i);
+  /* Steam updating the game first, a long first start or a game that never opens: after 90 s STONE asks. */
+  clearTimeout(launchT); launchT = setTimeout(() => launchStalled(g), 90000);
+}
+const LD_STEPS = [[0, 'PREPARANDO', ''], [1400, 'STEAM ABRE EL JUEGO', ''],
+  [7000, 'CARGANDO', 'La primera vez que juegas, el juego prepara sus sombreadores: puede tardar unos minutos.'],
+  [40000, 'SIGUE CARGANDO', 'B vuelve al inicio; el juego seguirá abriéndose.']];
+function loadingOn(g) {
+  const gm = $('#game');
+  if (!gm.querySelector('.ld')) gm.insertAdjacentHTML('beforeend', '<div class="ld"><div class="col"><div class="ld-kick"></div><div class="ld-title"></div><div class="ld-sub"></div><div class="ld-bar"><i></i></div><div class="ld-step"></div><div class="ld-note"></div></div><div class="ld-foot"><span class="g">B</span>INICIO</div></div>');
+  const set = (k, v) => { gm.querySelector('.ld-' + k).textContent = v; };
+  set('kick', `${g.o} · ${profOf(g.perf || effective()).n}`);
+  set('title', g.n.toUpperCase());
+  gm.querySelector('.ld-title').classList.toggle('long', g.n.length > 22);
+  set('sub', g.exp && g.exp.settings && g.exp.status !== 'UNKNOWN' ? g.exp.settings : '');
+  ldT.forEach(clearTimeout);
+  ldT = LD_STEPS.map(([t, step, note]) => setTimeout(() => { set('step', step); set('note', note); }, t));
+  const tag = gm.querySelector('.tag'); tag.textContent = `${g.n} · en curso. A: volver al juego · ☰: menú de STONE · B: inicio`; tag.classList.add('gone');
+  gm.classList.add('loading');
+}
+function loadingOff() {
+  ldT.forEach(clearTimeout); ldT = [];
+  $('#game').classList.remove('loading');
+}
+function launchStalled(g) {
+  if (S.launching !== g.i) return;
+  if (S.screen === 'dlg') { launchT = setTimeout(() => launchStalled(g), 15000); return; }
+  play('notify');
+  openDlg(`<h2>${esc(g.n.toUpperCase())}</h2><p>El juego todavía no se ha abierto. Si Steam lo está actualizando, la descarga aparece en Ajustes → Almacenamiento.</p>
+    <div class="btns"><span class="txt-f" data-f data-b="wait">ESPERAR</span><span class="txt-f" data-f data-b="home">VOLVER AL INICIO</span></div>`, {
+    onA: el => {
+      closeDlg(); play('select');
+      if (el.dataset.b === 'wait') { S.screen = 'game'; NAV = null; line.classList.add('off'); $('#hints').classList.add('hide'); steamWatch(95000); launchT = setTimeout(() => launchStalled(g), 90000); return; }
+      S.launching = null; S.running = null; loadingOff(); returnHome();
+    } });
+}
+function launchFound(i) {
+  S.launching = null; clearTimeout(launchT);
+  setTimeout(() => { loadingOff(); if (S.running === i) showTag(G[i]); }, 1500);
 }
 /* Called from adopt(): stoned's view of the running game is the truth. */
 function gameSync(st, before) {
   const appid = st.game ? st.game.appid : null;
   const i = appid ? G.findIndex(g => g.appid === appid) : -1;
   if (appid) {
-    if (i >= 0) { S.running = i; if (S.launching === i) { S.launching = null; clearTimeout(launchT); } }
+    if (i >= 0) { S.running = i; if (S.launching === i) launchFound(i); }
     return;
   }
   if (S.running !== null && S.launching === null) gameEnded(before);
@@ -230,7 +259,7 @@ function gameEnded(before) {
   loadLibrary().then(() => { if (S.screen === 'home') enterHome(); });     /* play time and order changed */
 }
 function returnHome() {
-  closeQuick(true);
+  closeQuick(true); loadingOff();
   $('#black').classList.add('fast', 'on');
   setTimeout(() => {
     S.section = 0; if (NAV) NAV.id = ''; NAV = null;
@@ -251,14 +280,17 @@ function showGame(g, fresh) {
   S.screen = 'game'; NAV = null;
   const gm = $('#game'), hu = heroUrl(g);
   gm.querySelector('.art').style.backgroundImage = hu ? `url("${hu}")` : neutralBg;
-  const tag = gm.querySelector('.tag'); tag.textContent = `${g.n} · en curso. A: volver al juego · ☰: menú de STONE · B: inicio`;
-  tag.classList.remove('gone'); clearTimeout(tagT); tagT = setTimeout(() => tag.classList.add('gone'), 6000);
+  if (S.launching === g.i) loadingOn(g); else { loadingOff(); showTag(g); }
   showScreen('game'); setBg('', 'none'); chrome(false, false);
   $('#hints').classList.add('hide');
   line.classList.add('off');
   setTimeout(() => $('#black').classList.remove('on'), fresh ? 200 : 0);
   setMetrics(S.tech);
   gameMode();
+}
+function showTag(g) {
+  const tag = $('#game .tag'); tag.textContent = `${g.n} · en curso. A: volver al juego · ☰: menú de STONE · B: inicio`;
+  tag.classList.remove('gone'); clearTimeout(tagT); tagT = setTimeout(() => tag.classList.add('gone'), 6000);
 }
 /* In the STONE session the session puts the game back in front (guide button, plan B of V-13);
    elsewhere Steam does it when it is asked to start the game again. [VERIFICAR EN PLACA] */
@@ -297,4 +329,92 @@ async function xpDlg(g) {
   if (r.regression.length) rows.push(`<p>Desde la última medición ${esc(r.regression.join(', '))}: conviene volver a medir.</p>`);
   if (r.autopilot) rows.push(`<p>Mejor medido: ${Object.entries(r.autopilot).filter(([, v]) => v).map(([k]) => GOAL_TXT[k]).join(' · ') || '—'}. STONE RECOMMENDED usa el de EQUILIBRIO.</p>`);
   openDlg(`<h2>EXPERIENCIA</h2>${rows.join('')}<div class="btns"><span class="txt-f" data-f data-b="ok">VOLVER</span></div>`, { onA: back, onB: back });
+}
+
+/* GRÁFICOS: the image options of one game in a list, each line with its value; A changes it in place. */
+const GFX = [['img', g => imgLabel(g)], ['pre', g => preLabel(g)], ['look', g => lookLabel(g)], ['fg', g => fgLabel(g)], ['ins', g => optLabel(g)], ['opz', g => optzLabel(g)]];
+function gfxPanel(g, at = 0) {
+  const row = ([k, f]) => { const [l, v] = f(g).split(/: (.*)/s); return `<span class="txt-f sres" data-f data-act="${k}">${esc(l)}<small>${esc(v || '')}</small></span>`; };
+  const back = () => { closeDlg(); play('back'); enterDetail(curG, { r: 1, c: 2 }); };
+  openDlg(`<h2>GRÁFICOS</h2><p>${esc(g.n)} · cada cambio se aplica la próxima vez que juegues.</p><div class="slist">${GFX.map(row).join('')}</div>
+    <div class="btns"><span class="txt-f" data-f data-b="no">VOLVER</span></div>`, {
+    onA: el => {
+      if (el.dataset.b === 'no') return back();
+      const k = el.dataset.act, r = NAV.r;
+      if (k === 'opz') { closeDlg(); enterDetail(curG, { r: 1, c: 2 }); return detailA({ dataset: { act: 'opz' } }); }
+      Promise.resolve(detailA({ dataset: { act: k } })).then(() => { if (S.screen === 'dlg' && $('#dlg h2') && $('#dlg h2').textContent === 'GRÁFICOS') gfxPanel(g, r); });
+    }, onB: back });
+  const d = $('#dlg');
+  NAV = mkNav([...d.querySelectorAll('.slist [data-f]')].map(e => [e]).concat([[...d.querySelectorAll('.btns [data-f]')]]), { r: at, place: (el, b) => ({ x: b.x, y: b.y + b.h + 4, w: b.w }) });
+  NAV.id = 'dlg'; requestAnimationFrame(() => applyFocus());
+  if (!g.img) imgLoad(g, curG).then(() => { if (S.screen === 'dlg' && $('#dlg h2') && $('#dlg h2').textContent === 'GRÁFICOS') gfxPanel(g, NAV ? NAV.r : 0); });
+}
+/* PROPIEDADES: what STONE knows of the game, and uninstalling it (asked twice, done without Steam's dialog). */
+function propsDlg(g) {
+  const back = () => { closeDlg(); play('back'); enterDetail(curG, { r: 1, c: [...$('#detail').querySelectorAll('.second [data-f]')].length - 1 }); };
+  const kv = (k, v) => `<span class="sres">${k}<small>${esc(v)}</small></span>`;
+  const canRemove = g.src === 'steam' && g.inst && S.running !== g.i;
+  openDlg(`<h2>PROPIEDADES</h2><div class="slist">${kv('Origen', g.o)}${kv('Tamaño', g.sz || '—')}${kv('Tiempo jugado', playText(g))}${kv('Última sesión', g.last || '—')}${kv('Al iniciarse', g.perf ? profOf(g.perf).n : 'Perfil global')}${g.src === 'steam' ? kv('Steam App ID', g.appid) : ''}</div>
+    <div class="btns">${canRemove ? '<span class="txt-f" data-f data-b="rm">DESINSTALAR</span>' : ''}<span class="txt-f" data-f data-b="no">VOLVER</span></div>`, {
+    onA: el => {
+      if (el.dataset.b === 'no') return back();
+      play('select');
+      openDlg(`<h2>DESINSTALAR</h2><p>Se borra ${esc(g.n)} de la consola (${esc(g.sz || 'su tamaño en disco')}). Tus partidas en la nube de Steam se conservan. Puedes volver a instalarlo cuando quieras.</p>
+        <div class="btns"><span class="txt-f" data-f data-b="no">CANCELAR</span><span class="txt-f" data-f data-b="yes">DESINSTALAR</span></div>`, {
+        onA: e2 => {
+          if (e2.dataset.b !== 'yes') { closeDlg(); play('back'); return propsDlg(g); }
+          closeDlg(); play('select');
+          S.section = 0; if (NAV) NAV.id = ''; enterHome({ r: 0, c: 0 });
+          Bridge.call('storage.uninstall', g.appid).then(() => { steamWatch(15000); toast(`${g.n}: desinstalando`, false); }, e => { play('error'); toast((e && e.message) || 'No se pudo desinstalar', false); })
+            .then(() => loadLibrary()).then(() => { if (S.screen === 'home') enterHome({ r: 0, c: 0 }); });
+        }, onB: () => { closeDlg(); play('back'); propsDlg(g); } });
+    }, onB: back });
+}
+
+/* ---------- STEAM ASKS, STONE ANSWERS ----------
+   Steam sometimes stops to ask (saves in the cloud that do not match, which way to start a game,
+   a licence, a first-launch question). Its interface is hidden in the STONE session, so STONE reads
+   the question (steamcef.dialog) and asks it with its own screen; the answer presses Steam's button.
+   Watched while a game starts, installs or uninstalls. [VERIFICAR EN PLACA] */
+let swT = 0, swUntil = 0, swBusy = false, swSkip = { key: '', until: 0 };
+function steamWatch(ms) {
+  swUntil = Math.max(swUntil, Date.now() + ms);
+  if (!swT) swT = setTimeout(swTick, 1200);
+}
+async function swTick() {
+  swT = 0;
+  if (Date.now() > swUntil) return;
+  if (!swBusy && !['dlg', 'power', 'quick'].includes(S.screen)) {
+    swBusy = true;
+    const r = await Sys.steamDialog().catch(() => null);
+    swBusy = false;
+    const d = r && r.dialog, key = d ? d.title + '|' + d.buttons.join('|') : '';
+    if (d && !(key === swSkip.key && Date.now() < swSkip.until) && !['dlg', 'power', 'quick'].includes(S.screen)) steamAsk(d, key);
+  }
+  swT = setTimeout(swTick, 2500);
+}
+function steamAsk(d, key) {
+  const from = S.screen, nav = NAV;
+  const back = () => {
+    closeDlg();
+    if (from === 'game') { S.screen = 'game'; NAV = null; line.classList.add('off'); $('#hints').classList.add('hide'); return; }
+    if (from === 'detail') return enterDetail(curG, { r: 0, c: 0 });
+    if (from === 'library') return enterLibrary();
+    if (from === 'settings') return enterSettings();
+    if (NAV !== nav) { if (NAV) NAV.id = ''; enterHome({ r: 0, c: 0 }); }
+  };
+  play('notify');
+  openDlg(`<span class="st-cap">STEAM PREGUNTA</span><h2>${esc((d.title || 'Steam').toUpperCase())}</h2>${d.text ? `<p>${esc(d.text)}</p>` : ''}
+    <div class="slist">${d.buttons.map((b, i) => `<span class="txt-f sres" data-f data-i="${i}">${esc(b)}</span>`).join('')}</div>`, {
+    onA: el => {
+      const i = +el.dataset.i; play('select'); back();
+      Sys.steamAnswer(i, d.buttons[i]).then(r => { if (!r.ok) toast(r.result === 'changed' ? 'Steam cambió la pregunta: aparecerá de nuevo' : 'Steam ya no lo pregunta', false); },
+        () => toast('No se pudo responder a Steam', false));
+      steamWatch(10000);
+    },
+    onB: () => { play('back'); swSkip = { key, until: Date.now() + 30000 }; back(); } });
+  const dl = $('#dlg');
+  NAV = mkNav([...dl.querySelectorAll('.slist [data-f]')].map(e => [e]), { place: (el, b) => ({ x: b.x, y: b.y + b.h + 4, w: b.w }) });
+  NAV.id = 'dlg'; requestAnimationFrame(() => applyFocus());
+  hints([['A', 'Responder'], ['B', 'Más tarde']]);
 }

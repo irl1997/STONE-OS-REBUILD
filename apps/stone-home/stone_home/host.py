@@ -23,6 +23,7 @@ from . import emulators
 from . import firstrun
 from . import health
 from . import library
+from . import media
 from . import roms
 from . import shortcuts
 from . import steamcef
@@ -479,6 +480,33 @@ class Host:
         call = (lambda: self.steam_ui.open_page(page)) if page else (lambda: "cef: not used")
         self._in_steam_ui(call, lambda: self.sys.open_url(url), done)
 
+    def m_steam_dialog(self, args, done):
+        """steam.dialog(): the question Steam is asking now (steamcef.dialog), or {"dialog": null}."""
+        def work():
+            try:
+                d = self.steam_ui.dialog()
+            except Exception as e:  # noqa: BLE001  (Steam's interface not there: nothing asked)
+                print(f"[stone] steam dialog: not read ({e!r})", flush=True)
+                d = None
+            GLib.idle_add(lambda: (done({"dialog": d}), False)[1])
+        threading.Thread(target=work, daemon=True).start()
+
+    def m_steam_dialogAnswer(self, args, done):
+        """steam.dialogAnswer(index, label): press that button of Steam's dialog."""
+        if len(args) != 2 or not isinstance(args[0], int) or isinstance(args[0], bool) or not 0 <= args[0] < 4 \
+                or not isinstance(args[1], str) or not 0 < len(args[1]) <= 40:
+            return done(None, "InvalidValue", "dialog button")
+        index, label = args
+
+        def work():
+            try:
+                r = self.steam_ui.answer_dialog(index, label)
+            except Exception as e:  # noqa: BLE001
+                r = f"error: {e!r}"
+            print(f"[stone] steam dialog: answered {label!r}: {r}", flush=True)
+            GLib.idle_add(lambda: (done({"ok": r == "ok", "result": r}), False)[1])
+        threading.Thread(target=work, daemon=True).start()
+
     def m_openSteamSettings(self, args, done):
         if len(args) != 1 or args[0] not in steamcef.SETTINGS_SECTIONS:
             return done(None, "InvalidValue", "unknown settings section")
@@ -493,7 +521,24 @@ class Host:
         GLib.timeout_add(300, lambda: (self.restart(), False)[1])
 
     def art_path(self, appid, kind):
+        if isinstance(kind, str) and kind.startswith("shot"):
+            return media.path(self.root(), appid, kind)          # STONE MEDIA: a screenshot
         return library.art_path(self.root(), appid, kind)
+
+    def m_media_screenshots(self, args, done):
+        """media.screenshots(appid?): Steam's screenshots, newest first (served as art kind shot<N>)."""
+        appid = args[0] if args else "0"
+        if not isinstance(appid, str) or not appid.isdigit() or len(appid) > 10:
+            return done(None, "InvalidValue", "appid")
+        root = self.root()
+
+        def work():
+            try:
+                res = ({"shots": media.screenshots(root, appid)}, None, "")
+            except OSError as e:
+                res = (None, "HardwareError", f"media: {e!r}")
+            GLib.idle_add(lambda: (done(*res), False)[1])
+        threading.Thread(target=work, daemon=True).start()
 
     # ---- system --------------------------------------------------------------------------
     def m_power(self, args, done):

@@ -1,3 +1,20 @@
+# STONE OS (rebuild) 1.0.0-rc4
+
+Auditoría de experiencia de consola: todo se hace con el mando, sin terminal y sin pantallas de Steam salvo el inicio de sesión. Detalle completo en `docs/AUDITORIA_CONSOLA.md`. **Probado en simulación (CODE TESTED); nada observado todavía en la placa.**
+
+## Cambios en rc4
+
+- **Configuración del primer encendido** a pantalla completa, como la de una consola: mando, internet (Wi-Fi con teclado en pantalla), pantalla y encuadre, sonido, rendimiento (40 CU solo si lo eliges), cuenta de Steam.
+- **Encuadre** para televisores que cortan los bordes: Ajustes → Pantalla → Encuadre.
+- **Pantalla de carga** al jugar, con el arte del juego, los ajustes que se usarán y una barra que avanza hasta que el juego está delante. Si el juego no se abre, STONE pregunta qué hacer.
+- **Preguntas de Steam en STONE:** si Steam pregunta algo (partidas de la nube, opciones de arranque), STONE lo muestra con su diseño y responde por ti.
+- **Ficha del juego ordenada:** las opciones de imagen están en «Gráficos»; «Propiedades» muestra los datos del juego y permite desinstalarlo.
+- **Media:** tus capturas (STEAM + R1 durante el juego), con visor a pantalla completa.
+- **Explorar:** Buscar juegos, Descargas y Emuladores, sin abrir Steam.
+- Sin terminal: se quitaron todas las indicaciones de comandos. HelixSR ya no se instala desde la consola (su instalador solo funciona en terminal).
+- El escritorio de Linux pasa a Ajustes → Sistema → Modo escritorio.
+- Corregidos textos superpuestos o cortados en la ficha del juego, al jugar, en Inicio con nombres largos, en Ajustes y en el visor.
+
 # STONE OS (rebuild) 1.0.0-rc3
 
 ## Cambios en rc3

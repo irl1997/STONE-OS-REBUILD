@@ -347,6 +347,62 @@ def uninstall(appid, port=PORT):
     return ui_eval(uninstall_expression(appid), port)
 
 
+# ---- Steam asking the person something, answered from STONE Home -----------------------------
+# A cloud-save conflict, a choice of launch options, a licence or a first-launch question: Steam
+# shows it in its own interface, which the STONE session keeps hidden. STONE Home reads the topmost
+# dialog of Steam's interface as text and buttons, asks the same with its own screen and presses the
+# button the person chose. Only reading and one click; nothing is typed into Steam. [VERIFICAR EN PLACA]
+_DIALOG_FIND = (
+    "const vis=e=>{const r=e.getBoundingClientRect();return r.width>1&&r.height>1;};"
+    "const ms=[...document.querySelectorAll('[class*=\"ModalPosition\"],[role=\"dialog\"],[class*=\"DialogContent\"]')]"
+    ".filter(vis).filter((m,i,a)=>!a.some(o=>o!==m&&m.contains(o)));"
+    "const m=ms[ms.length-1];"
+    "const btns=m?[...m.querySelectorAll('button,[class*=\"DialogButton\"]')].filter(vis)"
+    ".filter((b,i,a)=>!a.some(o=>o!==b&&o.contains(b))).filter(b=>(b.innerText||'').trim()).slice(0,4):[];")
+DIALOG_EXPRESSION = (
+    "(()=>{" + _DIALOG_FIND + "if(!m||!btns.length)return null;"
+    "const t=e=>(e&&e.innerText||'').replace(/\\s+/g,' ').trim();"
+    "const head=m.querySelector('[class*=\"DialogHeader\"],[class*=\"Title\"],h1,h2');"
+    "const body=m.querySelector('[class*=\"DialogBodyText\"],[class*=\"DialogBody\"]')||m;"
+    "let text=t(body);for(const b of btns)text=text.split(t(b)).join(' ');if(head)text=text.split(t(head)).join(' ');"
+    "return JSON.stringify({title:t(head).slice(0,120),text:text.replace(/\\s+/g,' ').trim().slice(0,600),"
+    "buttons:btns.map(t).map(x=>x.slice(0,40))});})()")
+
+
+def answer_expression(index, label):
+    """Press button `index` of Steam's topmost dialog, only if it still reads `label`."""
+    if not isinstance(index, int) or not 0 <= index < 4 or not isinstance(label, str) or not 0 < len(label) <= 40:
+        raise ValueError("dialog button")
+    want = json.dumps(label)               # ASCII-only JSON string: a safe JavaScript literal
+    return ("(()=>{" + _DIALOG_FIND + f"const b=btns[{index}];"
+            "if(!b)return null;if((b.innerText||'').replace(/\\s+/g,' ').trim().slice(0,40)!==" + want + ")return 'changed';"
+            "b.click();return 'ok';})()")
+
+
+def parse_dialog(raw):
+    """The dialog as {"title", "text", "buttons"} or None (nothing asked, or not readable)."""
+    try:
+        d = json.loads(raw) if isinstance(raw, str) else None
+    except ValueError:
+        return None
+    if not isinstance(d, dict) or not isinstance(d.get("buttons"), list):
+        return None
+    buttons = [b for b in d["buttons"] if isinstance(b, str) and b.strip()][:4]
+    if not buttons:
+        return None
+    return {"title": str(d.get("title") or "")[:120], "text": str(d.get("text") or "")[:600], "buttons": buttons}
+
+
+def dialog(port=PORT):
+    return parse_dialog(ui_value(DIALOG_EXPRESSION, port))
+
+
+def answer_dialog(index, label, port=PORT):
+    """'ok' (pressed), 'changed' (another dialog is there now) or 'gone'."""
+    v = ui_value(answer_expression(index, label), port)
+    return v if v in ("ok", "changed") else "gone"
+
+
 def reachable(port=PORT):
     """True when Steam's interface answers on the remote debugging port (STONE needs it for the
     library of the account, installing, Steam's settings and adding shortcuts)."""
