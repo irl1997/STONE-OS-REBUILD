@@ -413,14 +413,17 @@ def P02_only_known_steam_urls_can_be_opened():
     s = system.System(spawn=seen.append)
     s.open_url("steam://rungameid/1001")
     s.open_url(system.STEAM_URLS["store"])
-    for bad in ("steam://rungameid/1001;rm", "steam://install/1", "https://example.com", "file:///etc/passwd",
-                "steam://rungameid/", "steam://rungameid/12 3"):
+    s.open_url("steam://install/1001")                    # rc2: install fallback (Steam's interface first)
+    s.open_url("steam://uninstall/1001")
+    for bad in ("steam://rungameid/1001;rm", "steam://install/1;x", "steam://install/", "steam://install/" + "1" * 11,
+                "https://example.com", "file:///etc/passwd", "steam://rungameid/", "steam://rungameid/12 3",
+                "steam://uninstall/1 2"):
         try:
             s.open_url(bad)
             raise AssertionError(f"accepted {bad}")
         except ValueError:
             pass
-    assert seen == ["steam://rungameid/1001", "steam://url/StoreFrontPage"]
+    assert seen == ["steam://rungameid/1001", "steam://url/StoreFrontPage", "steam://install/1001", "steam://uninstall/1001"]
 
 
 @test
