@@ -1,0 +1,11 @@
+{
+  "name": "STONE",
+  "author": "STONE MACHINE",
+  "flags": ["root"],
+  "api_version": 1,
+  "publish": {
+    "tags": ["root", "bc-250"],
+    "description": "Rendimiento, 40 CU y salud de STONE MACHINE (AMD BC-250).",
+    "image": ""
+  }
+}

@@ -1,0 +1,84 @@
+/* Controls in every Steam window: square edges, a warm fill, and focus as the amber vein. */
+.focusring_FocusRing {
+  outline: 2px solid var(--stone-vein) !important;
+  outline-offset: 2px !important;
+  border-radius: var(--stone-radius);
+  box-shadow: 0 0 18px var(--stone-vein-glow);
+  animation: none;
+}
+
+button.gamepaddialog_Button.DialogButton,
+button.gamepaddialog_Button.DialogButton:enabled {
+  background: var(--stone-graphite) !important;
+  color: var(--stone-warm) !important;
+  border: 1px solid var(--stone-shale) !important;
+  border-radius: var(--stone-radius) !important;
+  box-shadow: none !important;
+  letter-spacing: 0.04em;
+  transition: background-color var(--stone-fast) var(--stone-ease), color var(--stone-fast) var(--stone-ease),
+    border-color var(--stone-fast) var(--stone-ease) !important;
+}
+
+button.gamepaddialog_Button.DialogButton.gpfocus,
+button.gamepaddialog_Button.DialogButton:enabled.gpfocus,
+button.gamepaddialog_Button.DialogButton.gpfocus.Primary,
+button.gamepaddialog_Button.DialogButton:enabled.gpfocus.Primary {
+  background: var(--stone-vein) !important;
+  color: var(--stone-void) !important;
+  border-color: var(--stone-vein) !important;
+}
+
+button.gamepaddialog_Button.DialogButton.gpfocus.gamepadcontextmenu_Destructive,
+button.gamepaddialog_Button.DialogButton:enabled.gpfocus.gamepadcontextmenu_Destructive {
+  background: var(--stone-error) !important;
+  border-color: var(--stone-error) !important;
+  color: var(--stone-void) !important;
+}
+
+.gamepaddialog_Field.gamepaddialog_HighlightOnFocus.gpfocus,
+.gamepaddialog_Field.gamepaddialog_HighlightOnFocus.gpfocuswithin {
+  background: var(--stone-graphite) !important;
+  box-shadow: inset 3px 0 0 var(--stone-vein) !important;
+  border-radius: var(--stone-radius);
+}
+
+.gamepaddialog_Toggle { border-radius: var(--stone-radius) !important; }
+.gamepaddialog_Toggle.gamepaddialog_On .gamepaddialog_ToggleRail { background: var(--stone-vein) !important; }
+.gamepaddialog_ToggleRail { border-radius: var(--stone-radius) !important; }
+
+.gamepaddialog_BasicTextInput {
+  background: var(--stone-void) !important;
+  border: 1px solid var(--stone-shale) !important;
+  border-radius: var(--stone-radius) !important;
+}
+
+.gamepadcontextmenu_contextMenuContents {
+  background: var(--stone-basalt) !important;
+  border: 1px solid var(--stone-shale);
+  border-radius: var(--stone-radius) !important;
+}
+
+.gamepadcontextmenu_contextMenuItem.gpfocus,
+.gamepadcontextmenu_contextMenuItem.gpfocuswithin {
+  background: var(--stone-vein) !important;
+  color: var(--stone-void) !important;
+}
+
+.virtualkeyboard_Keyboard { background: var(--stone-basalt) !important; }
+.virtualkeyboard_KeyboardKey {
+  background: var(--stone-graphite) !important;
+  border-radius: var(--stone-radius) !important;
+  color: var(--stone-warm) !important;
+}
+.virtualkeyboard_KeyboardKey.virtualkeyboard_Focused,
+.virtualkeyboard_KeyboardKey.virtualkeyboard_Touched {
+  background: var(--stone-vein) !important;
+  color: var(--stone-void) !important;
+}
+
+.shorttemplates_ShortTemplate,
+.standardtemplates_StandardTemplate {
+  background: var(--stone-basalt) !important;
+  border-left: 3px solid var(--stone-vein);
+  border-radius: var(--stone-radius) !important;
+}

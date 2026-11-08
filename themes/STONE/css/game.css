@@ -1,0 +1,43 @@
+/* A game's page: the play bar is the deep stratum and JUGAR is the vein. */
+.basicappdetailssectionstyler_PlaySection,
+.appdetailsplaysection_PlayBar,
+.appdetailsplaysection_StickyHeader {
+  background: rgba(13, 14, 15, 0.94) !important;
+  border-top: 2px solid var(--stone-vein);
+}
+
+.appactionbutton_PlayButton,
+.basicappdetailssectionstyler_AppActionButton .appactionbutton_PlayButton,
+.appactionbutton_Green {
+  background: var(--stone-vein) !important;
+  color: var(--stone-void) !important;
+  border-radius: var(--stone-radius) !important;
+  box-shadow: none !important;
+}
+.appactionbutton_ButtonText {
+  font-family: var(--stone-display) !important;
+  font-weight: 300 !important;
+  letter-spacing: 0.2em !important;
+  color: inherit !important;
+}
+.appactionbutton_ButtonChild.gpfocus, .appactionbutton_PlayButton.gpfocus {
+  background: var(--stone-warm) !important;
+  color: var(--stone-void) !important;
+}
+.appactionbutton_ShutdownAppButton, .appactionbutton_ForceShutdownButton {
+  background: var(--stone-error) !important;
+  color: var(--stone-void) !important;
+  border-radius: var(--stone-radius) !important;
+}
+
+.appdetailsplaysection_PlayBarLabel, .appdetailsplaysection_PlayBarDetailLabel {
+  font-family: var(--stone-mono) !important;
+  letter-spacing: 0.1em !important;
+  color: var(--stone-ash) !important;
+}
+.appdetailsplaysection_MenuButton, .appdetailsplaysection_FavoriteButton { border-radius: var(--stone-radius) !important; }
+.appdetailsplaysection_MenuButton.gpfocus, .appdetailsplaysection_FavoriteButton.gpfocus {
+  background: var(--stone-vein) !important;
+  color: var(--stone-void) !important;
+}
+.appdetailssection_AppDetailsSectionContainer { border-radius: var(--stone-radius) !important; }

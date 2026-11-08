@@ -1,0 +1,31 @@
+{
+  "name": "STONE",
+  "display_name": "STONE",
+  "version": "1.0.0",
+  "author": "STONE MACHINE",
+  "manifest_version": 9,
+  "tabs": {
+    "all": ["SP", "QuickAccess", "MainMenu", "notificationtoasts.*"],
+    "sp": ["SP"],
+    "menu": ["MainMenu"],
+    "qam": ["QuickAccess"],
+    "default": ["all"]
+  },
+  "inject": {
+    "css/tokens.css": [],
+    "css/controls.css": [],
+    "css/shell.css": ["sp"],
+    "css/game.css": ["sp"],
+    "css/menus.css": ["menu", "qam"]
+  },
+  "patches": {
+    "Animaciones": {
+      "type": "checkbox",
+      "default": "Sí",
+      "values": {
+        "Sí": {},
+        "No": { "css/no-motion.css": [] }
+      }
+    }
+  }
+}

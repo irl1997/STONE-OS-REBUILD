@@ -1,7 +1,0 @@
-[Desktop Entry]
-Encoding=UTF-8
-Name=STONE
-Comment=STONE OS: STONE Home in Gamescope, Steam in the background
-Exec=gamescope-session-plus stone
-Type=Application
-DesktopNames=gamescope

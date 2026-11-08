@@ -1,6 +1,6 @@
 [Unit]
 Description=STONE black box (keep the previous boot's errors and last lines)
-Documentation=file:///usr/lib/stone/stone_home/blackbox.py
+Documentation=file:///usr/lib/stone/stoned/blackbox.py
 After=local-fs.target systemd-journald.service
 
 [Service]

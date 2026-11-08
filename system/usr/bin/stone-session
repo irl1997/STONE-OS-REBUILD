@@ -1,6 +1,0 @@
-#!/usr/bin/python3 -I
-# STONE session supervisor (see /usr/lib/stone/stone_home/supervisor.py).
-import sys
-sys.path.insert(0, "/usr/lib/stone")
-from stone_home.supervisor import main
-sys.exit(main(sys.argv[1:]))

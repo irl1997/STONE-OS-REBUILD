@@ -6,17 +6,9 @@ RUN dnf -y install --setopt=install_weak_deps=False \
         bash git-core findutils diffutils which \
         python3 python3-pip python3-pytest python3-pyyaml \
         ShellCheck systemd dbus-broker dbus-daemon python3-gobject libxml2 procps-ng \
-        python3-xlib python3-evdev xorg-x11-server-Xvfb xorg-x11-xauth \
-        chromium webkitgtk6.0 gtk4 gobject-introspection mesa-dri-drivers nodejs npm \
-    && dnf clean all \
-    && command -v xvfb-run chromium-browser node
-# STONE Home page tests (tests/test_ui.py): Playwright drives the system Chromium, ESLint checks
-# the page's script. Locked by dev/e2e/package-lock.json; the browser is not downloaded.
-COPY e2e/package.json e2e/package-lock.json /opt/stone-e2e/
-RUN cd /opt/stone-e2e && PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 npm ci --no-audit --no-fund
+    && dnf clean all
 # Pinned like CI (.github/workflows/ci.yml).
 RUN python3 -m pip install --no-cache-dir --break-system-packages ruff==0.16.9 actionlint-py==1.7.11.24
 # /src is mounted read only (dev/run-tests.sh): tool caches go to /tmp, never next to the sources.
-ENV PYTHONDONTWRITEBYTECODE=1 STONE_REQUIRE_ALL=1 RUFF_CACHE_DIR=/tmp/ruff_cache \
-    STONE_E2E_MODULES=/opt/stone-e2e/node_modules STONE_CHROMIUM=/usr/bin/chromium-browser
+ENV PYTHONDONTWRITEBYTECODE=1 STONE_REQUIRE_ALL=1 RUFF_CACHE_DIR=/tmp/ruff_cache
 WORKDIR /src

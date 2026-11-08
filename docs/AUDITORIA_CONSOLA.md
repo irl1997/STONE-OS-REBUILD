@@ -1,5 +1,7 @@
 # Auditoría de experiencia de consola (1.0.0-rc4)
 
+> **Histórico.** Describe la interfaz STONE Home, retirada en 2.0.0 por decisión del propietario (D-34).
+
 Fecha: 2026-11-08. Pedida por el propietario tras instalar 1.0.0-rc1/rc2 en la BC-250: «la experiencia debe ser como una consola de Sony o Xbox, sin terminal y sin ver la interfaz de Steam».
 
 **Estado de todo lo de este documento: CODE TESTED** (simulación de STONE Home en el navegador y pruebas automáticas). Nada está observado todavía en la placa; las pruebas de placa nuevas son T-SETUP-01, T-FRAME-01, T-LOAD-01, T-ASK-01, T-MEDIA-01 y T-UNINST-01 (`hardware/validation/matrix.yaml`).
