@@ -11,6 +11,8 @@ function dormantCheck() {
   document.body.classList.toggle('dormant', on);
   console.info(`[stone] ${on ? 'asleep: game in front' : 'awake'}`);
   if (on) {
+    /* the game is in front: its loading screen and label are done, and nothing may change the page now */
+    loadingOff(); clearTimeout(tagT); $('#game .tag').classList.add('gone');
     if (loopH) { cancelAnimationFrame(loopH); clearTimeout(loopH); loopH = 0; }
     stopHold();
     audioSleep();

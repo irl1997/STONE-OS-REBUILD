@@ -1397,7 +1397,7 @@ function launchStalled(g) {
 }
 function launchFound(i) {
   S.launching = null; clearTimeout(launchT);
-  setTimeout(() => { loadingOff(); if (S.running === i) showTag(G[i]); }, 1500);
+  setTimeout(() => { if (S.dormant) return; loadingOff(); if (S.running === i) showTag(G[i]); }, 1500);
 }
 /* Called from adopt(): stoned's view of the running game is the truth. */
 function gameSync(st, before) {
@@ -1547,12 +1547,12 @@ function steamWatch(ms) {
 async function swTick() {
   swT = 0;
   if (Date.now() > swUntil) return;
-  if (!swBusy && !['dlg', 'power', 'quick'].includes(S.screen)) {
+  if (!swBusy && !S.dormant && !['dlg', 'power', 'quick'].includes(S.screen)) {
     swBusy = true;
     const r = await Sys.steamDialog().catch(() => null);
     swBusy = false;
     const d = r && r.dialog, key = d ? d.title + '|' + d.buttons.join('|') : '';
-    if (d && !(key === swSkip.key && Date.now() < swSkip.until) && !['dlg', 'power', 'quick'].includes(S.screen)) steamAsk(d, key);
+    if (d && !S.dormant && !(key === swSkip.key && Date.now() < swSkip.until) && !['dlg', 'power', 'quick'].includes(S.screen)) steamAsk(d, key);
   }
   swT = setTimeout(swTick, 2500);
 }
@@ -2689,7 +2689,6 @@ function suLR(d, el) {
 }
 function suGo(i) { SU.at = null; SU.i = Math.max(0, Math.min(SU_STEPS.length - 1, i)); return SU_FN[SU_STEPS[SU.i][0]](); }
 const suNext = () => suGo(SU.i + 1);
-const suRedraw = r => { const st = SU_FN[SU_STEPS[SU.i][0]]; SU.at = r; return st(); };
 const SU_FN = {
   hola() {
     const [cfgHtml] = frConfigText(), hl = S.health;
@@ -2946,6 +2945,8 @@ function dormantCheck() {
   document.body.classList.toggle('dormant', on);
   console.info(`[stone] ${on ? 'asleep: game in front' : 'awake'}`);
   if (on) {
+    /* the game is in front: its loading screen and label are done, and nothing may change the page now */
+    loadingOff(); clearTimeout(tagT); $('#game .tag').classList.add('gone');
     if (loopH) { cancelAnimationFrame(loopH); clearTimeout(loopH); loopH = 0; }
     stopHold();
     audioSleep();

@@ -214,7 +214,6 @@ function suLR(d, el) {
 }
 function suGo(i) { SU.at = null; SU.i = Math.max(0, Math.min(SU_STEPS.length - 1, i)); return SU_FN[SU_STEPS[SU.i][0]](); }
 const suNext = () => suGo(SU.i + 1);
-const suRedraw = r => { const st = SU_FN[SU_STEPS[SU.i][0]]; SU.at = r; return st(); };
 const SU_FN = {
   hola() {
     const [cfgHtml] = frConfigText(), hl = S.health;

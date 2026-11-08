@@ -235,7 +235,7 @@ function launchStalled(g) {
 }
 function launchFound(i) {
   S.launching = null; clearTimeout(launchT);
-  setTimeout(() => { loadingOff(); if (S.running === i) showTag(G[i]); }, 1500);
+  setTimeout(() => { if (S.dormant) return; loadingOff(); if (S.running === i) showTag(G[i]); }, 1500);
 }
 /* Called from adopt(): stoned's view of the running game is the truth. */
 function gameSync(st, before) {
@@ -384,12 +384,12 @@ function steamWatch(ms) {
 async function swTick() {
   swT = 0;
   if (Date.now() > swUntil) return;
-  if (!swBusy && !['dlg', 'power', 'quick'].includes(S.screen)) {
+  if (!swBusy && !S.dormant && !['dlg', 'power', 'quick'].includes(S.screen)) {
     swBusy = true;
     const r = await Sys.steamDialog().catch(() => null);
     swBusy = false;
     const d = r && r.dialog, key = d ? d.title + '|' + d.buttons.join('|') : '';
-    if (d && !(key === swSkip.key && Date.now() < swSkip.until) && !['dlg', 'power', 'quick'].includes(S.screen)) steamAsk(d, key);
+    if (d && !S.dormant && !(key === swSkip.key && Date.now() < swSkip.until) && !['dlg', 'power', 'quick'].includes(S.screen)) steamAsk(d, key);
   }
   swT = setTimeout(swTick, 2500);
 }
