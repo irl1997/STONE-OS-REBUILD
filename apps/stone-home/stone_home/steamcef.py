@@ -278,20 +278,37 @@ def probe(port=PORT):
 
 # Every game in the Steam account, installed or not (the library on disk only has installed
 # ones). Fields: appid, name, installed, minutes played, last played (unix), size on disk.
-# Two sources: Big Picture's collectionStore, and appStore, which the client also loads when Steam
-# runs hidden (-silent, the STONE session) and collectionStore may not exist (rc1 on the board:
-# games of the account missing from the library). appStore also holds tools and DLC: games only.
+# Every source this Steam build has is read and joined: Big Picture's collectionStore (all games,
+# all apps) and appStore, which the client also loads when Steam runs hidden (-silent, the STONE
+# session) and collectionStore may not exist (rc1 on the board: games of the account missing from
+# the library). appStore also holds tools and DLC: games only. Returns null when Steam has no
+# store object yet (not answering), "[]" when it has them and they are empty (loading, signed out).
 OWNED_EXPRESSION = (
-    "(async()=>{const cs=window.collectionStore;let src=null;"
-    "if(cs&&cs.allGamesCollection&&cs.allGamesCollection.allApps)src=cs.allGamesCollection.allApps;"
-    "else if(window.appStore){const A=window.appStore;src=A.allApps||(A.m_mapApps&&[...A.m_mapApps.values()])||null;"
-    "if(src)src=src.filter(a=>a&&(a.app_type===1||a.app_type===undefined));}"
-    "if(!src)return null;const o=[];"
-    "for(const a of src){if(!a||(a.BIsModOrShortcut&&a.BIsModOrShortcut()))continue;"
-    "const lp=a.local_per_client_data||{};"
+    "(async()=>{const cs=window.collectionStore,A=window.appStore;if(!cs&&!A)return null;"
+    "const lists=[];const add=f=>{try{const x=f();if(!x)return;"
+    "const a=Array.isArray(x)?x:(typeof x.values==='function'?[...x.values()]:[...x]);"
+    "if(a&&a.length)lists.push(a);}catch(e){}};"
+    "if(cs){add(()=>cs.allGamesCollection.allApps);add(()=>cs.allAppsCollection.allApps);}"
+    "if(A){add(()=>A.allApps);add(()=>A.m_mapApps);}"
+    "const seen=new Set(),o=[];"
+    "for(const src of lists)for(const a of src){if(!a||typeof a.appid!=='number'||seen.has(a.appid))continue;"
+    "if(!(a.app_type===1||a.app_type===undefined))continue;"
+    "try{if(a.BIsModOrShortcut&&a.BIsModOrShortcut())continue;}catch(e){}"
+    "seen.add(a.appid);const lp=a.local_per_client_data||(a.per_client_data&&a.per_client_data[0])||{};"
     "o.push([a.appid,String(a.display_name||''),!!(a.installed!==undefined?a.installed:lp.installed),"
     "a.minutes_playtime_forever||0,a.rt_last_time_played||0,Number(a.size_on_disk||lp.bytes_downloaded||0)]);}"
     "return JSON.stringify(o);})()")
+
+# Whether someone is signed in to Steam: "in", "out", or null when this Steam build does not say.
+LOGIN_EXPRESSION = (
+    "(()=>{try{const A=window.App;if(!A||!('m_CurrentUser' in A))return null;const u=A.m_CurrentUser;"
+    "const id=u?String(u.strSteamID||''):'';return /^[1-9][0-9]{4,19}$/.test(id)?'in':'out';}catch(e){return null;}})()")
+
+
+def login_state(port=PORT):
+    """"in", "out" or None (Steam's interface does not answer, or does not say)."""
+    v = ui_value(LOGIN_EXPRESSION, port)
+    return v if v in ("in", "out") else None
 
 
 def owned_games(port=PORT):

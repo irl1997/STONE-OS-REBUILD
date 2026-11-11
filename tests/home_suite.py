@@ -24,9 +24,20 @@ from gi.repository import GLib  # noqa: E402
 
 import steam_fixture as FX  # noqa: E402
 from stone_home import bootmetrics as BM, bridge, firstrun as FR, host as host_mod, library, shortcuts as SC, system, vdf  # noqa: E402
+from stone_home import account as AC, artcache as ART, store as ST  # noqa: E402
 from stoned import games  # noqa: E402
 
 TESTS = []
+
+
+def _no_network(url, timeout=None):
+    raise OSError("tests never reach the internet")
+
+
+# The host fetches store pages and artwork by itself: here it reaches nothing, and what it keeps
+# goes to a private cache, never to the developer's own ~/.cache.
+ART._get = ST._get = _no_network
+os.environ["XDG_CACHE_HOME"] = tempfile.mkdtemp(prefix="stone-home-cache-")
 
 
 def test(fn):
@@ -723,6 +734,22 @@ def H02_launch_only_games_from_the_last_library_scan():
                         "steam://url/StoreFrontPage"]
 
 
+def spin(seconds):
+    """Let the main loop run: timers, worker threads' answers."""
+    loop = GLib.MainLoop()
+    GLib.timeout_add(int(seconds * 1000), loop.quit)
+    loop.run()
+
+
+def wait_for(cond, timeout=10):
+    end = time.time() + timeout
+    while time.time() < end:
+        if cond():
+            return True
+        spin(0.05)
+    return False
+
+
 class FakeSteamUI:
     def __init__(self, ok=True):
         self.ok, self.calls = ok, []
@@ -829,6 +856,212 @@ def H05_library_lists_account_games_not_installed_and_installs_through_steam():
             raise AssertionError(bad)
         except ValueError:
             pass
+
+
+@test
+def H14_library_follows_the_account_steam_answering_late_kept_list_and_sign_in():
+    with Tmp() as d:
+        os.environ["XDG_CACHE_HOME"] = os.path.join(d, "cache")
+        root = FX.build(os.path.join(d, "Steam"))
+        events = []
+        h = host_mod.Host(lambda n, data: events.append((n, data)), stoned=FakeStoned(), sysapi=system.System(spawn=lambda u: None), steam_root=root)
+        ui = h.steam_ui = FakeSteamUI(ok=True)
+        h._lib_tick()                                      # nobody asked for the library yet: nothing is watched
+        spin(0.3)
+        assert events == [] and h.lib_last is None
+        lib, _ = run_host(h, {"method": "library", "args": []})         # the boot: Steam's interface is not up yet
+        assert lib["owned_known"] is False and lib["owned_cached"] is False and lib["logged"] is None and lib["account"] is True
+        assert len(lib["games"]) == 4 and all("header" in g["art"] for g in lib["games"])
+        h.lib_next = 0
+        h._lib_tick()
+        spin(0.4)
+        assert events == []                                # nothing changed: STONE Home is not disturbed
+        owned = [(1001, "Marea Lenta", True, 5, 10, 1), (35140, "Batman: Arkham Asylum", False, 48, 99, 0), (620, "Portal 2", False, 0, 0, 0)]
+        ui.owned_games = lambda: owned                     # Steam answers some seconds later
+        h.lib_next = 0
+        h._lib_tick()
+        assert wait_for(lambda: events), "the library change was not announced"
+        assert events == [("library", {"reason": "changed"})]
+        lib, _ = run_host(h, {"method": "library", "args": []})
+        assert lib["owned_known"] is True and lib["logged"] == "in" and {"35140", "620"} <= {g["appid"] for g in lib["games"]}
+        assert "35140" in h.owned and AC.load(FX.ACCOUNT) == owned         # kept for the next boot
+        del events[:]
+        h.lib_next = 0
+        h._lib_tick()
+        spin(0.4)
+        assert events == []
+        owned.append((730, "Counter-Strike 2", False, 0, 0, 0))            # bought on the phone
+        h.lib_next = 0
+        h._lib_tick()
+        assert wait_for(lambda: events) and events == [("library", {"reason": "changed"})]
+
+        # the next boot: Steam is not answering yet, the list it gave last time fills the library
+        h2 = host_mod.Host(lambda *a: None, stoned=FakeStoned(), sysapi=system.System(spawn=lambda u: None), steam_root=root)
+        h2.steam_ui = FakeSteamUI(ok=True)
+        lib, _ = run_host(h2, {"method": "library", "args": []})
+        assert lib["owned_known"] is False and lib["owned_cached"] is True and lib["logged"] is None
+        assert {"35140", "620", "730"} <= {g["appid"] for g in lib["games"]} and "35140" in h2.owned
+        # Steam says nobody is signed in, and keeps saying it: the kept list is not shown
+        h2.steam_ui.owned_games = lambda: []
+        h2.steam_ui.login_state = lambda: "out"
+        h2.lib_last = None
+        lib, _ = run_host(h2, {"method": "library", "args": []})
+        assert lib["owned_known"] is True and lib["logged"] is None and lib["owned_cached"] is True     # not believed yet
+        h2.signin.out_since -= AC.OUT_CONFIRM_S + 1
+        h2.lib_last = None
+        lib, _ = run_host(h2, {"method": "library", "args": []})
+        assert lib["logged"] == "out" and lib["owned_cached"] is False and "35140" not in {g["appid"] for g in lib["games"]}
+
+        # a console where nobody ever signed in: known without Steam
+        root3 = os.path.join(d, "Steam3")
+        os.makedirs(os.path.join(root3, "steamapps"))
+        h3 = host_mod.Host(lambda *a: None, stoned=FakeStoned(), sysapi=system.System(spawn=lambda u: None), steam_root=root3)
+        h3.steam_ui = FakeSteamUI(ok=False)
+        lib, _ = run_host(h3, {"method": "library", "args": []})
+        assert lib["logged"] == "out" and lib["account"] is False and lib["games"] == [] and lib["root_found"] is True
+        st, _ = run_host(h3, {"method": "steam.status", "args": []})
+        assert st["account"] is False and st["logged"] == "out" and st["front"] is False and st["root_found"] is True
+        del os.environ["XDG_CACHE_HOME"]
+        os.environ["XDG_CACHE_HOME"] = tempfile.mkdtemp(prefix="stone-home-cache-")
+
+
+class FakeFront:
+    """gamescope_x11.Focus as the host uses it for Steam's own window."""
+
+    def __init__(self):
+        self.value, self.window = 0, 0
+
+    def steam_value(self):
+        return self.value
+
+    def set_steam_value(self, v):
+        self.value = v
+
+    def shown(self):
+        return [413091, 769], self.window
+
+
+@test
+def H15_steam_in_front_for_the_sign_in_and_the_store_and_plan_b():
+    with Tmp() as d:
+        root = FX.build(os.path.join(d, "Steam"))
+        seen, events, asked = [], [], []
+        h = host_mod.Host(lambda n, data: events.append((n, data)), stoned=FakeStoned(), sysapi=system.System(spawn=seen.append), steam_root=root)
+        for bad in ([], ["desktop"], ["app"], ["app", "x"], ["app", "0"], ["store", "620"], ["login", "1"], ["app", "620", "1"]):
+            assert run_host(h, {"method": "steam.show", "args": bad})[1] == "InvalidValue", bad
+        # outside the STONE session (Steam's own Game Mode, development): Steam shows its page itself
+        assert run_host(h, {"method": "steam.show", "args": ["app", "620"]})[0] == {"managed": False, "sent": True}
+        assert run_host(h, {"method": "steam.show", "args": ["login"]})[0] == {"managed": False, "sent": False}
+        assert seen == ["steam://store/620"] and h.front is None
+        assert run_host(h, {"method": "steam.hide", "args": []})[0] == {"managed": False}
+        assert run_host(h, {"method": "steam.full", "args": ["store"]})[1] == "Unsupported"
+        os.environ["STONE_SESSION"] = "stone"
+        try:
+            del seen[:]
+            f = h.session_focus = FakeFront()
+            h.request_session = asked.append
+            assert run_host(h, {"method": "steam.show", "args": ["app", "620"]})[0] == {"managed": True}
+            assert f.value == 3 and seen == ["steam://open/bigpicture"]            # Big Picture first, the page after
+            spin(0.8)
+            assert seen == ["steam://open/bigpicture"] and events == []
+            f.window = 0x600020                                                    # the supervisor shows Steam's window
+            assert wait_for(lambda: events) and events == [("steam", {"front": True, "shown": True, "what": "app"})]
+            assert wait_for(lambda: len(seen) == 2, timeout=6) and seen[1] == "steam://store/620"
+            f.value = 0                                                            # guide button (supervisor), or Steam closed it
+            assert wait_for(lambda: len(events) == 2)
+            assert events[1] == ("steam", {"front": False, "why": "closed", "what": "app"})
+            assert seen[2:] == ["steam://close/bigpicture"] and h.front is None and h.front_timer is None
+
+            del seen[:], events[:]
+            f.window = 0
+            assert run_host(h, {"method": "steam.show", "args": ["store"]})[0] == {"managed": True}
+            f.value = 2                                                            # the supervisor: Steam showed no window
+            assert wait_for(lambda: events) and events == [("steam", {"front": False, "why": "nowindow", "what": "store"})]
+            assert seen == ["steam://open/bigpicture", "steam://close/bigpicture"]   # the page was never sent blind
+
+            del seen[:], events[:]
+            assert run_host(h, {"method": "steam.show", "args": ["login"]})[0] == {"managed": True}
+            assert f.value == 1 and seen == []                                     # the sign-in window: no page, no Big Picture
+            assert run_host(h, {"method": "steam.hide", "args": []})[0] == {"managed": True} and f.value == 0
+            assert wait_for(lambda: events) and events == [("steam", {"front": False, "why": "closed", "what": "login"})] and seen == []
+
+            assert run_host(h, {"method": "steam.full", "args": ["shell"]})[1] == "InvalidValue"
+            assert run_host(h, {"method": "steam.full", "args": ["login"]})[0] == {"ok": True} and asked == ["login"]
+
+            # the sign-in on a console without an account: STONE takes the screen back by itself
+            root2 = os.path.join(d, "Steam2")
+            os.makedirs(os.path.join(root2, "steamapps"))
+            ev2 = []
+            h2 = host_mod.Host(lambda n, data: ev2.append((n, data)), stoned=FakeStoned(), sysapi=system.System(spawn=seen.append), steam_root=root2)
+            f2 = h2.session_focus = FakeFront()
+            assert run_host(h2, {"method": "steam.show", "args": ["login"]})[0] == {"managed": True}
+            f2.window = 0x600010
+            spin(1.2)
+            assert f2.value == 1 and ev2 == [("steam", {"front": True, "shown": True, "what": "login"})]
+            os.makedirs(os.path.join(root2, "userdata", "424242", "config"))       # the person signed in
+            assert wait_for(lambda: len(ev2) == 2, timeout=8)
+            assert ev2[1] == ("steam", {"front": False, "why": "signed", "what": "login"}) and f2.value == 0
+        finally:
+            del os.environ["STONE_SESSION"]
+
+
+@test
+def H16_store_pages_through_the_host_and_artwork_from_stones_own_cache():
+    with Tmp() as d:
+        os.environ["XDG_CACHE_HOME"] = os.path.join(d, "cache")
+        root = FX.build(os.path.join(d, "Steam"))
+        events = []
+        h = host_mod.Host(lambda n, data: events.append((n, data)), stoned=FakeStoned(), sysapi=system.System(spawn=lambda u: None), steam_root=root)
+        h.steam_ui = FakeSteamUI(ok=True)
+        fetched = []
+        jpeg = b"\xff\xd8\xff\xe0" + b"j" * 4000
+
+        def get(url, timeout=None):
+            fetched.append(url)
+            return jpeg
+        old_art, old_featured, old_details, old_search = ART._get, ST.featured, ST.details, ST.search
+        ART._get = get
+        ST.featured = lambda: {"sections": [{"key": "specials", "title": "Ofertas", "items": [
+            {"appid": "266410", "name": "iRacing", "free": False, "price": "2.645 CLP", "was": "6.613 CLP", "discount": 60,
+             "_header": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/266410/header.jpg?t=1"},
+            {"appid": "1001", "name": "Marea Lenta", "free": False, "price": "9 CLP", "was": None, "discount": 0, "_header": "https://evil.example/x.jpg"},
+            {"appid": "570", "name": "Dota 2", "free": True, "price": None, "was": None, "discount": 0, "_header": None}]}]}
+        ST.details = lambda appid: {"error": "Juego desconocido"} if appid == "5" else {
+            "appid": appid, "name": "PEAK", "about": "Sube.", "price": "2.604 CLP", "was": None, "discount": 0, "free": False, "soon": False,
+            "genres": ["Acción"], "release": "16 JUN 2025", "by": ["Team PEAK"], "kind": "game", "_header": None}
+        ST.search = lambda term: {"results": [{"appid": "620", "name": "Portal 2", "free": False, "price": "5 USD"}]}
+        try:
+            assert run_host(h, {"method": "art.want", "args": ["266410"]})[1] == "InvalidValue"     # never seen: not fetched
+            run_host(h, {"method": "library", "args": []})
+            r, code = run_host(h, {"method": "store.featured", "args": []})
+            items = r["sections"][0]["items"]
+            assert code is None and [i["appid"] for i in items] == ["266410", "1001", "570"]
+            assert all("_header" not in i for i in items)                           # addresses never reach the page
+            assert [i["have"] for i in items] == [None, "installed", None]
+            assert "570" in h.store_free and "266410" not in h.store_free and {"266410", "570"} <= h.store_seen
+            assert wait_for(lambda: any(n == "art" and "266410" in data["art"] for n, data in events)), events
+            assert "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/266410/header.jpg?t=1" in fetched
+            assert "https://evil.example/x.jpg" not in fetched
+            assert h.art_path("266410", "header").endswith(os.path.join("266410", "header.jpg"))
+            assert h.art_path("266410", "../header") is None and h.art_path("../266410", "header") is None
+            assert h.art_path("1001", "capsule").endswith("1001_library_600x900.jpg")       # Steam's own cache first
+            r2, _ = run_host(h, {"method": "store.featured", "args": []})                   # kept: not asked of Steam again
+            assert r2["sections"][0]["items"][0]["art"] is True and "_header" not in r2["sections"][0]["items"][0]
+            r, code = run_host(h, {"method": "store.details", "args": ["3527290"]})
+            assert code is None and r["url"] == "https://store.steampowered.com/app/3527290" and r["have"] is None and "_header" not in r
+            assert run_host(h, {"method": "store.details", "args": ["5"]})[1] == "Unsupported"
+            for bad in ([], ["x"], ["0"], ["1", "2"], [620]):
+                assert run_host(h, {"method": "store.details", "args": bad})[1] == "InvalidValue", bad
+            assert run_host(h, {"method": "art.want", "args": ["3527290"]})[1] is None
+            assert wait_for(lambda: h.art_path("3527290", "hero") is not None)
+            r, _ = run_host(h, {"method": "store.search", "args": ["portal"]})
+            assert r["results"][0]["have"] is None and "620" in h.store_seen and "620" not in h.store_free
+            assert run_host(h, {"method": "install", "args": ["570"]})[1] is None          # free, seen in the store (no install
+            #                                       in this fake of Steam's interface: the install URL is the way then)
+            assert run_host(h, {"method": "install", "args": ["266410"]})[1] == "InvalidValue"   # paid: bought in Steam first
+        finally:
+            ART._get, ST.featured, ST.details, ST.search = old_art, old_featured, old_details, old_search
+            os.environ["XDG_CACHE_HOME"] = tempfile.mkdtemp(prefix="stone-home-cache-")
 
 
 @test

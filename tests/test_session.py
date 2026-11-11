@@ -98,6 +98,114 @@ def test_steam_that_stops_is_restarted_and_home_keeps_running():
         b.close()
 
 
+def _lines(path):
+    try:
+        with open(path) as f:
+            return f.read().split()
+    except OSError:
+        return []
+
+
+def _wait(cond, timeout=20):
+    end = time.time() + timeout
+    while time.time() < end:
+        if cond():
+            return True
+        time.sleep(0.1)
+    return False
+
+
+def _request(b, why, age=0):
+    os.makedirs(os.path.join(b.state, "stone"), exist_ok=True)
+    with open(os.path.join(b.state, "stone", "session.request"), "w") as f:
+        json.dump({"want": "steam", "why": why, "time": time.time() - age}, f)
+
+
+def test_plan_b_steam_takes_the_session_and_home_comes_back_when_it_ends():
+    b = Box(steam="", home="")
+    homes, steams, fulls = b.path("homes"), b.path("steams"), b.path("fulls")
+    b.env["STONE_SESSION_HOME"] = f"sh -c 'echo x >> {homes}; exec sleep 600'"
+    b.env["STONE_SESSION_STEAM"] = f"sh -c 'echo x >> {steams}; exec sleep 600'"
+    b.env["STONE_SESSION_FALLBACK"] = f"sh -c 'echo x >> {fulls}; sleep 2'"      # Steam's interface, then it ends
+    _request(b, "store", age=3600)                 # left by an older session: must not be obeyed
+    p = b.start("run")
+    try:
+        assert _wait(lambda: len(_lines(homes)) == 1 and len(_lines(steams)) == 1)
+        time.sleep(1.5)
+        assert _lines(fulls) == [], "a stale request was obeyed"
+        _request(b, "store")
+        assert _wait(lambda: len(_lines(fulls)) == 1), "Steam's Game Mode interface did not start"
+        assert _wait(lambda: len(_lines(homes)) == 2 and len(_lines(steams)) == 2), "STONE Home did not come back"
+        assert p.poll() is None and not os.path.exists(os.path.join(b.state, "stone", "session.request"))
+        with open(os.path.join(b.state, "stone", "session.log")) as f:
+            log = f.read()
+        assert "plan B: Steam's own Game Mode interface takes the session (store)" in log and "plan B ends (Steam ended (0))" in log
+    finally:
+        p.send_signal(signal.SIGTERM)
+        p.wait(timeout=30)
+        b.close()
+
+
+def test_plan_b_for_the_sign_in_returns_by_itself_once_an_account_exists():
+    b = Box(steam="", home="")
+    homes, fulls = b.path("homes"), b.path("fulls")
+    b.env["STONE_SESSION_HOME"] = f"sh -c 'echo x >> {homes}; exec sleep 600'"
+    b.env["STONE_SESSION_STEAM"] = "sleep 600"
+    b.env["STONE_SESSION_FALLBACK"] = f"sh -c 'echo $$ >> {fulls}; exec sleep 600'"
+    b.env["STONE_SESSION_SIGNED_GRACE"] = "1"
+    p = b.start("run")
+    try:
+        assert _wait(lambda: len(_lines(homes)) == 1)
+        _request(b, "login")
+        assert _wait(lambda: len(_lines(fulls)) == 1)
+        time.sleep(2.5)
+        assert len(_lines(homes)) == 1, "STONE Home came back before anyone signed in"
+        os.makedirs(os.path.join(b.env["STONE_STEAM_ROOT"], "userdata", "123456", "config"))
+        assert _wait(lambda: len(_lines(homes)) == 2), "STONE Home did not come back after the sign-in"
+        full = int(_lines(fulls)[0])
+        try:
+            os.kill(full, 0)
+            raise AssertionError("Steam's Game Mode interface was left running")
+        except ProcessLookupError:
+            pass
+        with open(os.path.join(b.state, "stone", "session.log")) as f:
+            assert "plan B ends (signed in)" in f.read()
+    finally:
+        p.send_signal(signal.SIGTERM)
+        p.wait(timeout=30)
+        b.close()
+
+
+def test_requests_are_validated():
+    b = Box(steam="true", home="true")
+    old = os.environ.get("XDG_STATE_HOME")
+    os.environ["XDG_STATE_HOME"] = b.state
+    sys.path.insert(0, HOME_LIB)
+    try:
+        from stone_home import supervisor as SV
+        assert SV.take_request() is None
+        SV.write_request("login")
+        assert SV.take_request() == "login" and SV.take_request() is None
+        for bad in ("desktop", "", None, "rm -rf"):
+            try:
+                SV.write_request(bad)
+                raise AssertionError(bad)
+            except ValueError:
+                pass
+        for doc in ('{"want": "steam", "why": "shell", "time": %f}' % time.time(), "not json", '["steam"]',
+                    '{"want": "steam", "why": "store", "time": "now"}', '{"want": "steam", "why": "store", "time": 1}'):
+            with open(SV.request_path(), "w") as f:
+                f.write(doc)
+            assert SV.take_request() is None and not os.path.exists(SV.request_path()), doc
+    finally:
+        sys.path.remove(HOME_LIB)
+        if old is None:
+            del os.environ["XDG_STATE_HOME"]
+        else:
+            os.environ["XDG_STATE_HOME"] = old
+        b.close()
+
+
 def test_session_end_stops_both_children():
     b = Box(steam="", home="")
     pids = b.path("pids")

@@ -8,6 +8,7 @@ done(result) or done(None, code, message), with the same error codes as stoned.
 import os
 import subprocess
 import threading
+import time
 
 from gi.repository import GLib
 
@@ -16,6 +17,8 @@ from stone_games import optimizer as games_opt
 from stone_games import schema as games_schema
 from stone_games.perf import PerfAsync
 
+from . import account
+from . import artcache
 from . import bootmetrics
 from . import connect
 from . import bridge
@@ -33,6 +36,17 @@ from . import store
 from . import system
 
 
+LIB_FAST_S = 4               # the library is read again this often while something is expected ...
+LIB_SLOW_S = 45              # ... and this often the rest of the time (a game bought on the phone)
+LIB_FAST_FOR_S = 150         # "expected": the boot, an install, coming back from Steam's store
+LIB_FRESH_S = 3              # a read this recent is not repeated
+FRONT_POLL_MS = 500          # Steam's own window in front: how often its state is looked at
+FRONT_URL_WAIT_S = 8         # the page is asked of Steam at the latest this long after Big Picture
+FRONT_URL_SETTLE_S = 1.5     # ... or this long after Big Picture is on screen
+STORE_FRESH_S = 600          # the shop window is read from Steam again after this long
+SHOW_WHAT = ("login", "store", "app")
+
+
 class Host:
     def __init__(self, emit, stoned=None, sysapi=None, steam_root=None):
         self.emit = emit                                      # emit(event_name, data)
@@ -41,7 +55,24 @@ class Host:
         self.steam_root = steam_root
         self.games = {}                                       # appid -> launch URL, from the last scan
         self.owned = set()                                    # not installed, in the account: may be installed
-        self.store_free = set()                               # free games of the last store search: may be installed
+        self.store_free = set()                               # free games seen in the store: may be installed
+        self.store_seen = set()                               # games seen in the store: their pages may be asked for
+        self.store_window = None                              # (monotonic time, the shop window as read)
+        # The library is watched: Steam answers about the account some seconds after it starts,
+        # and games arrive later (bought on the phone, installed). STONE Home is told ("library").
+        self.account_rows = None                              # the account's games as Steam last gave them
+        self.saved_rows = None                                # ... and as kept for the next boot (account.py)
+        self.signin = account.SignIn()
+        self.lib_sig = None                                   # what STONE Home was last given
+        self.lib_last = None                                  # (monotonic time, the last read)
+        self.lib_busy = False
+        self.lib_next = 0.0
+        self.lib_fast_until = time.monotonic() + LIB_FAST_FOR_S
+        self.running_game = None                              # set lazily: gamescope_x11.running_game
+        self.art = artcache.Fetcher(self._art_news, lookup=store.header_url)
+        self.front = None                                     # Steam's own window asked in front (D-30)
+        self.front_timer = None
+        self.request_session = None                           # tests: a fake of supervisor.write_request
         self.emu_busy = set()                                 # catalog keys being installed
         self.selftest = None                                  # set by app.py --selftest
         self.restart = None                                   # set by app.py: restart STONE Home
@@ -61,6 +92,7 @@ class Host:
                                           perf=PerfAsync(self.stoned), log=lambda m: print(m, flush=True))
         self._opt_busy = False
         GLib.timeout_add_seconds(3, self._opt_monitor)
+        GLib.timeout_add_seconds(LIB_FAST_S, self._lib_tick)
         GLib.timeout_add_seconds(8, lambda: (self._opt_work(self.optimized.recover, "recover"), False)[1])
 
     def game_policy(self):
@@ -122,21 +154,131 @@ class Host:
             return done(None, "HardwareError", f"internal error: {e!r}")
 
     # ---- library and launching --------------------------------------------------------
-    def m_library(self, args, done):
+    def _lib_read(self):
+        """The library as it is now (off the UI thread): Steam's files, the account's games from
+        Steam's interface (or the list it gave last time), artwork flags, who is signed in."""
         root = self.root()
+        try:
+            res = library.scan(root)
+        except Exception as e:  # damaged Steam files: show an empty library, say why
+            res = {"root_found": False, "games": [], "error": repr(e)}
+        # Games in the account that are not installed come from Steam's interface (the files on
+        # disk only list installed ones).
+        owned = None
+        if not res.get("error"):
+            try:
+                owned = self.steam_ui.owned_games()
+            except Exception as e:  # noqa: BLE001  (Steam's interface changed: the installed games remain)
+                print(f"[stone] library: account not read ({e!r})", flush=True)
+        live = owned is not None
+        acct = library.account_id(root)
+        raw = None
+        if live and not owned:
+            ask = getattr(self.steam_ui, "login_state", None)
+            try:
+                raw = ask() if ask else None
+            except Exception:  # noqa: BLE001
+                raw = None
+        # No account folder: nobody has ever signed in on this console (certain, without Steam).
+        logged = "out" if acct is None and not owned else self.signin.state(raw, has_games=bool(owned))
+        rows, cached = owned, False
+        if owned:
+            self.account_rows = owned
+            if acct and account.signature_rows(owned) != self.saved_rows and account.save(acct, owned):
+                self.saved_rows = account.signature_rows(owned)
+        elif logged != "out":
+            rows = self.account_rows or account.load(acct)      # Steam not answering yet: what it said last
+            cached = bool(rows)
+        res["games"] += library.not_installed(root, rows, {g["appid"] for g in res["games"]})
+        for g in res["games"]:
+            art = g.setdefault("art", {})
+            art.setdefault("header", False)
+            if g.get("source") != "steam" or (art.get("capsule") and art.get("hero")):
+                continue
+            kept = artcache.flags(g["appid"])                   # fetched by STONE: Steam had not cached it
+            art["capsule"] = bool(art.get("capsule") or kept["capsule"])
+            art["hero"] = bool(art.get("hero") or kept["hero"])
+            art["header"] = kept["header"] and not art["capsule"]
+            if not art["capsule"]:
+                self.art.want(g["appid"], ("capsule",))
+        res["owned_known"] = live
+        res["owned_cached"] = cached
+        res["logged"] = logged
+        res["account"] = acct is not None
+        return res, account.signature(res["games"], live) + (logged,)
+
+    def m_library(self, args, done):
+        last = self.lib_last
+        if last is not None and time.monotonic() - last[0] < LIB_FRESH_S:
+            return self._lib_done(last[1], last[2], done)       # read a moment ago by the watcher
+
+        def work():
+            res, sig = self._lib_read()
+            GLib.idle_add(lambda: (self._lib_done(res, sig, done), False)[1])
+        threading.Thread(target=work, daemon=True).start()
+
+    def _lib_done(self, res, sig, done):
+        self.lib_sig = sig
+        self.lib_last = (time.monotonic(), res, sig)
+        self._scanned(res, done)
+
+    def _lib_kick(self, seconds=LIB_FAST_FOR_S):
+        """Something is expected to change (an install, a purchase): look often for a while."""
+        self.lib_fast_until = max(self.lib_fast_until, time.monotonic() + seconds)
+        self.lib_next = 0.0
+
+    def _game_running(self):
+        if self.running_game is None:
+            from . import gamescope_x11
+            self.running_game = gamescope_x11.running_game
+        try:
+            return self.running_game() is not None
+        except Exception:  # noqa: BLE001
+            return False
+
+    def _lib_tick(self):
+        now = time.monotonic()
+        if self.lib_busy or now < self.lib_next or self.lib_sig is None:     # nobody has asked yet
+            return True
+        if now >= self.lib_fast_until and self._game_running():
+            self.lib_next = now + LIB_SLOW_S                                 # a game has the console
+            return True
+        self.lib_busy = True
 
         def work():
             try:
-                res = library.scan(root)
-            except Exception as e:  # damaged Steam files: show an empty library, say why
-                res = {"root_found": False, "games": [], "error": repr(e)}
-            # Games in the account that are not installed come from Steam's interface (the
-            # files on disk only list installed ones). Without it, the library is what is installed.
-            owned = self.steam_ui.owned_games() if not res.get("error") else None
-            res["games"] += library.not_installed(root, owned, {g["appid"] for g in res["games"]})
-            res["owned_known"] = owned is not None
-            GLib.idle_add(lambda: (self._scanned(res, done), False)[1])
+                out = self._lib_read()
+            except Exception as e:  # noqa: BLE001
+                print(f"[stone] library: watch failed: {e!r}", flush=True)
+                out = None
+            GLib.idle_add(lambda: (self._lib_watched(out), False)[1])
         threading.Thread(target=work, daemon=True).start()
+        return True
+
+    def _lib_watched(self, out):
+        self.lib_busy = False
+        now = time.monotonic()
+        self.lib_next = now + (LIB_FAST_S if now < self.lib_fast_until else LIB_SLOW_S)
+        if out is None:
+            return
+        res, sig = out
+        self.lib_last = (now, res, sig)
+        if sig != self.lib_sig:
+            self.lib_sig = sig
+            print(f"[stone] library: changed ({len(res['games'])} games, account "
+                  f"{'live' if res['owned_known'] else 'kept' if res['owned_cached'] else 'unknown'}, signed {res['logged']})", flush=True)
+            self.emit("library", {"reason": "changed"})
+
+    def _art_news(self, news):
+        """Artwork fetched by STONE (artcache worker thread): STONE Home redraws those games."""
+        GLib.idle_add(lambda: (self.emit("art", {"art": news}), False)[1])
+
+    def m_art_want(self, args, done):
+        """art.want(appid): the big picture of a game the person is looking at, fetched first."""
+        if len(args) != 1 or not library.valid_appid(args[0]) or \
+                (args[0] not in self.games and args[0] not in self.owned and args[0] not in self.store_seen):
+            return done(None, "InvalidValue", "unknown game")
+        done({"queued": self.art.want(args[0], ("hero", "capsule"), first=True)})
 
     def _scanned(self, res, done):
         self.games = {g["appid"]: g["launch"] for g in res["games"] if g.get("launch")}
@@ -173,6 +315,7 @@ class Host:
                 or (args[0] not in self.owned and args[0] not in self.store_free):
             return done(None, "InvalidValue", "unknown game")
         appid = int(args[0])
+        self._lib_kick()
         self._in_steam_ui(lambda: self.steam_ui.install(appid), lambda: self.sys.open_url(f"steam://install/{appid}"), done)
 
     def m_emulators(self, args, done):
@@ -206,7 +349,10 @@ class Host:
         """Ask Steam's interface first (in Game Mode steam:// URLs are received and ignored for
         some targets, board RC3); the steam:// URL is the fallback. Runs off the UI thread."""
         def work():
-            st = call()
+            try:
+                st = str(call())
+            except Exception as e:  # noqa: BLE001  (Steam's interface changed: the request is still answered)
+                st = f"steam ui error: {e!r}"
             ok = st.endswith(": ok")
             err = None
             if not ok and fallback:
@@ -523,7 +669,144 @@ class Host:
     def art_path(self, appid, kind):
         if isinstance(kind, str) and kind.startswith("shot"):
             return media.path(self.root(), appid, kind)          # STONE MEDIA: a screenshot
-        return library.art_path(self.root(), appid, kind)
+        # Steam's own cache first; else what STONE fetched for games Steam has not shown (artcache.py)
+        return library.art_path(self.root(), appid, kind) or artcache.have(appid, kind)
+
+    # ---- Steam's own interface in front of STONE Home (D-30) ---------------------------------
+    def _focus(self):
+        if self.session_focus is None:
+            from . import gamescope_x11
+            self.session_focus = gamescope_x11.Focus()
+        return self.session_focus
+
+    def _steam_url(self, url):
+        try:
+            self.sys.open_url(url)
+            return True
+        except (OSError, ValueError) as e:
+            print(f"[stone] steam: {url} not sent ({e})", flush=True)
+            return False
+
+    def m_steam_show(self, args, done):
+        """steam.show(what[, appid]): Steam's own interface in front. "login": its sign-in window;
+        "store": its store; "app": a game's store page (to buy it). In the STONE session the
+        supervisor shows Steam's window and gives the screen back (guide button, Steam closing it,
+        a game starting): a "steam" event says when. Passwords and payments are typed into Steam,
+        never into STONE."""
+        what = args[0] if args else None
+        if what not in SHOW_WHAT or len(args) != (2 if what == "app" else 1) or \
+                (what == "app" and not library.valid_appid(args[1])):
+            return done(None, "InvalidValue", "what to show")
+        url = None if what == "login" else system.STEAM_URLS["store"] if what == "store" else f"steam://store/{args[1]}"
+        if os.environ.get("STONE_SESSION") != "stone":
+            # Inside Steam's own Game Mode (or in development) Steam shows its pages by itself.
+            if url:
+                self._steam_url(url)
+            return done({"managed": False, "sent": bool(url)})
+        try:
+            from . import supervisor
+            self._focus().set_steam_value(supervisor.STEAM_ON if what == "login" else supervisor.STEAM_ON_BIG)
+        except Exception as e:  # noqa: BLE001  (no Xlib or display)
+            self.session_focus = None
+            return done(None, "Unsupported", f"gamescope focus: {e}")
+        self.front = {"what": what, "url": url, "since": time.monotonic(), "sent": url is None, "shown": None,
+                      "big": what != "login", "had_account": library.account_id(self.root()) is not None, "signed": None}
+        if what != "login":
+            self._steam_url(system.FRONT_URLS["bigpicture"])     # the interface made for a controller
+        print(f"[stone] steam: its own window asked in front ({what})", flush=True)
+        if self.front_timer is None:
+            self.front_timer = GLib.timeout_add(FRONT_POLL_MS, self._front_tick)
+        done({"managed": True})
+
+    def m_steam_hide(self, args, done):
+        """steam.hide(): STONE Home back in front (the guide button, seen by the page)."""
+        if self.front is None:
+            return done({"managed": False})
+        try:
+            self._focus().set_steam_value(0)
+        except Exception as e:  # noqa: BLE001
+            return done(None, "Unsupported", f"gamescope focus: {e}")
+        done({"managed": True})
+
+    def _front_tick(self):
+        fr = self.front
+        if fr is None:
+            self.front_timer = None
+            return False
+        try:
+            value = self.session_focus.steam_value()
+            window = self.session_focus.shown()[1]
+        except Exception as e:  # noqa: BLE001  (the display is gone: nothing is in front any more)
+            print(f"[stone] steam: front state not read ({e!r})", flush=True)
+            value, window = 0, 0
+        now = time.monotonic()
+        if value not in (1, 3):
+            return self._front_end("nowindow" if value == 2 else "closed")
+        if window and fr["shown"] is None:
+            fr["shown"] = now
+            self.emit("steam", {"front": True, "shown": True, "what": fr["what"]})
+        if not fr["sent"] and ((fr["shown"] is not None and now - fr["shown"] >= FRONT_URL_SETTLE_S)
+                               or now - fr["since"] >= FRONT_URL_WAIT_S):
+            fr["sent"] = True
+            self._steam_url(fr["url"])
+        if fr["what"] == "login" and not fr["had_account"]:
+            # The sign-in is done when the account's folder exists: STONE takes the screen back by
+            # itself (Steam may open its main window then, which is not for a controller).
+            if fr["signed"] is None and library.account_id(self.root()) is not None:
+                fr["signed"] = now
+            if fr["signed"] is not None and now - fr["signed"] >= 3:
+                try:
+                    self.session_focus.set_steam_value(0)
+                except Exception:  # noqa: BLE001
+                    pass
+                return self._front_end("signed")
+        return True
+
+    def _front_end(self, why):
+        fr, self.front, self.front_timer = self.front, None, None
+        if fr["big"]:
+            self._steam_url(system.FRONT_URLS["bigpicture_close"])   # Steam back to a hidden component
+        self._lib_kick()                                              # a purchase or a sign-in shows up soon
+        print(f"[stone] steam: its own window left the front ({why})", flush=True)
+        self.emit("steam", {"front": False, "why": why, "what": fr["what"]})
+        return False
+
+    def m_steam_full(self, args, done):
+        """steam.full(why): plan B of D-30. Steam's own Game Mode interface takes the whole session
+        (the supervisor stops STONE Home and brings it back: after the sign-in, when the guide
+        button is held, or when Steam ends). why: "login" | "store"."""
+        if len(args) != 1 or args[0] not in ("login", "store"):
+            return done(None, "InvalidValue", "why")
+        if os.environ.get("STONE_SESSION") != "stone":
+            return done(None, "Unsupported", "only in the STONE session")
+        try:
+            if self.request_session is not None:
+                self.request_session(args[0])
+            else:
+                from . import supervisor
+                supervisor.write_request(args[0])
+        except (OSError, ValueError) as e:
+            return done(None, "HardwareError", str(e))
+        print(f"[stone] steam: its Game Mode interface asked to take the session ({args[0]})", flush=True)
+        done({"ok": True})
+
+    def m_steam_status(self, args, done):
+        """steam.status(): what STONE knows about Steam now, for the console's own diagnosis."""
+        root = self.root()
+
+        def work():
+            reach = getattr(self.steam_ui, "reachable", None)
+            try:
+                cef = bool(reach()) if reach else None
+            except Exception:  # noqa: BLE001
+                cef = None
+            last = self.lib_last[1] if self.lib_last else {}
+            res = {"session": os.environ.get("STONE_SESSION") or "other", "interface": cef,
+                   "account": library.account_id(root) is not None, "logged": last.get("logged"),
+                   "owned_known": bool(last.get("owned_known")), "owned_cached": bool(last.get("owned_cached")),
+                   "front": self.front is not None, "root_found": os.path.isdir(os.path.join(root, "steamapps"))}
+            GLib.idle_add(lambda: (done(res), False)[1])
+        threading.Thread(target=work, daemon=True).start()
 
     def m_media_screenshots(self, args, done):
         """media.screenshots(appid?): Steam's screenshots, newest first (served as art kind shot<N>)."""
@@ -672,20 +955,77 @@ class Host:
     def m_roms_add(self, args, done):
         self._bg(done, lambda: roms.add_to_library(steam_ui=self.steam_ui), "roms")
 
-    # ---- Search (M13): the store's public search; the library is searched in the page -----------
+    # ---- Steam's store read by STONE (M13, D-30): search, the shop window, a game's page ---------
+    def _store_row(self, row):
+        """One game of the store for the page: what STONE knows about it, its picture queued."""
+        appid = row["appid"]
+        self.store_seen.add(appid)
+        if row.get("free"):
+            self.store_free.add(appid)
+        self.art.want(appid, ("header",), {"header": row.pop("_header", None)})
+        row["have"] = "installed" if appid in self.games else "owned" if appid in self.owned else None
+        row["art"] = artcache.have(appid, "header") is not None or library.art_path(self.root(), appid, "header") is not None
+        return row
+
     def m_store_search(self, args, done):
         if len(args) != 1 or not isinstance(args[0], str):
             return done(None, "InvalidValue", "term")
 
         def work():
             r = store.search(args[0])
+            res = (None, "Unsupported", r["error"]) if "error" in r else (r, None, "")
+            GLib.idle_add(lambda: (self._store_done(res, done), False)[1])
+        threading.Thread(target=work, daemon=True).start()
+
+    def _store_done(self, res, done):
+        r = res[0]
+        if r is not None:
+            for row in r.get("results") or []:
+                self._store_row(row)
+            for sec in r.get("sections") or []:
+                for row in sec["items"]:
+                    self._store_row(row)
+            if "name" in r:
+                self._store_row(r)
+        done(*res)
+
+    def m_store_featured(self, args, done):
+        """store.featured(): the store's own lists (offers, top sellers, new, coming soon)."""
+        kept = self.store_window
+        if kept is not None and time.monotonic() - kept[0] < STORE_FRESH_S:
+            return self._store_done((_copy(kept[1]), None, ""), done)
+
+        def work():
+            r = store.featured()
             if "error" in r:
                 res = (None, "Unsupported", r["error"])
             else:
-                self.store_free |= {g["appid"] for g in r["results"] if g["free"]}
+                self.store_window = (time.monotonic(), _copy(r))
                 res = (r, None, "")
-            GLib.idle_add(lambda: (done(*res), False)[1])
+            GLib.idle_add(lambda: (self._store_done(res, done), False)[1])
         threading.Thread(target=work, daemon=True).start()
+
+    def m_store_details(self, args, done):
+        """store.details(appid): a game's page (name, text, price, genres) and where to buy it."""
+        if len(args) != 1 or not library.valid_appid(args[0]):
+            return done(None, "InvalidValue", "appid")
+        appid = args[0]
+
+        def work():
+            r = store.details(appid)
+            if "error" in r:
+                res = (None, "Unsupported", r["error"])
+            else:
+                r["url"] = store.page_url(appid)
+                res = (r, None, "")
+            GLib.idle_add(lambda: (self._details_done(appid, res, done), False)[1])
+        threading.Thread(target=work, daemon=True).start()
+
+    def _details_done(self, appid, res, done):
+        if res[0] is not None:
+            self.store_seen.add(appid)
+            self.art.want(appid, ("hero",), first=True)
+        self._store_done(res, done)
 
     # ---- STONE STORAGE and DOWNLOADS (M20, M13) ---------------------------------------------
     def m_storage_status(self, args, done):
@@ -766,6 +1106,15 @@ class Host:
             return done(None, "InvalidValue", "not in self-test mode")
         done({"ok": True})
         self.selftest(args[0] if args else None)
+
+
+def _copy(d):
+    """A deep copy of plain JSON data (what the store answered is kept and given out many times)."""
+    if isinstance(d, dict):
+        return {k: _copy(v) for k, v in d.items()}
+    if isinstance(d, list):
+        return [_copy(v) for v in d]
+    return d
 
 
 class _SteamUIProxy:

@@ -58,6 +58,22 @@ def test_baselayer_lists_match_what_steam_writes():
     assert GX.baselayer_for(1091500) == [413091, 1091500, 769]
 
 
+def test_steam_windows_are_told_from_games_and_the_one_to_show_is_chosen():
+    assert GX.is_steam_class(("steamwebhelper", "steam")) and GX.is_steam_class(("steam", "Steam"))
+    assert not GX.is_steam_class(("steam_app_1091500", "steam_app_1091500"))      # a Proton game
+    assert not GX.is_steam_class(("stone", "STONE")) and not GX.is_steam_class(None)
+    menu, sign, big, store = (1, 220, 90, ""), (2, 705, 440, "Sign in to Steam"), (3, 1920, 1080, "Steam Big Picture Mode"), (4, 1280, 800, "Steam")
+    assert GX.choose_steam([]) is None and GX.choose_steam([menu]) is None        # menus and tooltips: never
+    assert GX.choose_steam([menu, sign]) == 2
+    assert GX.choose_steam([store, sign]) == 2                                     # the sign-in before the client
+    assert GX.choose_steam([store, sign, big, menu]) == 3                          # Big Picture before all
+    assert GX.choose_steam([store, menu]) == 4
+    assert GX.choose_steam([(5, 800, 600, None), (6, 900, 700, None)]) == 6       # else the largest
+    assert GX.choose_steam([store, sign, menu], big_only=True) is None             # the store: Big Picture or nothing
+    assert GX.choose_steam([store, big], big_only=True) == 3
+    assert GX.is_big_picture("Steam Big Picture Mode") and not GX.is_big_picture("Steam") and not GX.is_big_picture(None)
+
+
 def test_properties_land_on_the_home_window_and_the_root():
     need(shutil.which("Xvfb") is not None, "Xvfb not installed (dev container, CI)")
     try:
@@ -99,6 +115,30 @@ def test_properties_land_on_the_home_window_and_the_root():
         assert f.home_front() is True and GX.Focus(disp).home_front() is True     # another client sees it
         f.set_home_front(False)
         assert f.home_front() is False
+
+        # Steam's own window in front (D-30): only mapped, Steam-class windows count
+        assert f.steam_windows() == [] and f.steam_value() == 0
+        big = root.create_window(0, 0, 800, 600, 0, d.screen().root_depth, X.InputOutput, X.CopyFromParent)
+        big.set_wm_class("steamwebhelper", "steam")
+        big.set_wm_name("Sign in to Steam")
+        big.map()
+        other.map()
+        d.sync()
+        wins = f.steam_windows()
+        assert sorted((w.id, wd, ht) for w, wd, ht, _t in wins) == sorted([(big.id, 800, 600), (other.id, 10, 10)]), wins
+        assert GX.choose_steam([(w.id, wd, ht, t) for w, wd, ht, t in wins]) == big.id
+        assert [t for w, _wd, _ht, t in wins if w.id == big.id] == ["Sign in to Steam"]
+        f.mark_steam(big)
+        assert f.get(big, "STEAM_GAME") == [769] and f.get(big, "STEAM_INPUT_FOCUS") is None
+        f.front_window(big.id)
+        assert f.shown() == ([413091, 769], big.id)
+        f.unmark_steam(big)
+        assert f.get(big, "STEAM_GAME") == [0]
+        f.front(None)
+        assert f.shown() == ([413091, 769], 0)
+        f.set_steam_value(2)
+        assert f.steam_value() == 2 and GX.Focus(disp).steam_value() == 2
+        f.set_steam_value(0)
     finally:
         xvfb.terminate()
         xvfb.wait(timeout=10)

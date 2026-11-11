@@ -106,6 +106,12 @@ def _accounts_by_recent(root):
     return sorted(SC.accounts(root), key=mt, reverse=True)
 
 
+def account_id(root):
+    """The Steam account last used on this console (its userdata folder name), or None."""
+    accts = _accounts_by_recent(root)
+    return os.path.basename(accts[0]) if accts else None
+
+
 def apply_localconfig(root, games):
     accts = _accounts_by_recent(root)
     if not accts:

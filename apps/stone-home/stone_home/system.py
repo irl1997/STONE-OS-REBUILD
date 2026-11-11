@@ -28,6 +28,8 @@ STEAM_URLS = {
     "downloads": "steam://open/downloads",
     "screenshots": "steam://open/screenshots",
 }
+# Steam's own interface in front of STONE Home (D-30): Big Picture is the one made for a controller.
+FRONT_URLS = {"bigpicture": "steam://open/bigpicture", "bigpicture_close": "steam://close/bigpicture"}
 RELEASE = os.environ.get("STONE_RELEASE_FILE", "/usr/lib/stone-release")
 
 
@@ -70,6 +72,9 @@ PREFS = {
     "display_goal": (lambda v: v if v in ("fluid", "max_res") else None, "fluid"),   # STONE DISPLAY link goal
     "optimized": (_intr(0, 1), 1),        # STONE OPTIMIZED: JUGAR launches with the game profile
     "frame": (_intr(0, 6), 0),            # TV framing: % of the picture kept clear on each side (overscan)
+    # Games bought away from the console (the phone): installed by STONE as soon as Steam lists them.
+    "wanted": (_favs, []),
+    "report": (_bool, True),              # PARTE DE SESIÓN: the summary shown when a game ends
 }
 
 
@@ -190,7 +195,7 @@ class System:
                   (url.startswith("steam://uninstall/") and url[18:].isdigit() and len(url) <= 18 + 10) or \
                   (url.startswith("steam://install/") and url[16:].isdigit() and len(url) <= 16 + 10) or \
                   (url.startswith("steam://store/") and url[14:].isdigit() and len(url) <= 14 + 10)
-        if not ok_game and url not in STEAM_URLS.values():
+        if not ok_game and url not in STEAM_URLS.values() and url not in FRONT_URLS.values():
             raise ValueError("url not allowed")
         self.spawn(url)
 
