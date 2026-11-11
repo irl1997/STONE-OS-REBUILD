@@ -40,6 +40,7 @@ LIB_FAST_S = 4               # the library is read again this often while someth
 LIB_SLOW_S = 45              # ... and this often the rest of the time (a game bought on the phone)
 LIB_FAST_FOR_S = 150         # "expected": the boot, an install, coming back from Steam's store
 LIB_FRESH_S = 3              # a read this recent is not repeated
+LIB_FIRST_WAIT_S = 1.5       # the first read waits this long for Steam's interface, no more (boot)
 FRONT_POLL_MS = 500          # Steam's own window in front: how often its state is looked at
 FRONT_URL_WAIT_S = 8         # the page is asked of Steam at the latest this long after Big Picture
 FRONT_URL_SETTLE_S = 1.5     # ... or this long after Big Picture is on screen
@@ -154,7 +155,29 @@ class Host:
             return done(None, "HardwareError", f"internal error: {e!r}")
 
     # ---- library and launching --------------------------------------------------------
-    def _lib_read(self):
+    def _owned(self, limit=None):
+        """The account's games from Steam's interface, or None. limit: seconds to wait at most (the
+        first read, at boot, must not wait for a Steam that is still starting)."""
+        box = {}
+
+        def ask():
+            try:
+                box["rows"] = self.steam_ui.owned_games()
+            except Exception as e:  # noqa: BLE001  (Steam's interface changed: the installed games remain)
+                print(f"[stone] library: account not read ({e!r})", flush=True)
+                box["rows"] = None
+        if limit is None:
+            ask()
+            return box["rows"]
+        t = threading.Thread(target=ask, daemon=True)
+        t.start()
+        t.join(limit)
+        if t.is_alive():
+            print(f"[stone] library: Steam's interface did not answer in {limit:g} s; the kept list is shown meanwhile", flush=True)
+            return None
+        return box.get("rows")
+
+    def _lib_read(self, limit=None):
         """The library as it is now (off the UI thread): Steam's files, the account's games from
         Steam's interface (or the list it gave last time), artwork flags, who is signed in."""
         root = self.root()
@@ -164,12 +187,7 @@ class Host:
             res = {"root_found": False, "games": [], "error": repr(e)}
         # Games in the account that are not installed come from Steam's interface (the files on
         # disk only list installed ones).
-        owned = None
-        if not res.get("error"):
-            try:
-                owned = self.steam_ui.owned_games()
-            except Exception as e:  # noqa: BLE001  (Steam's interface changed: the installed games remain)
-                print(f"[stone] library: account not read ({e!r})", flush=True)
+        owned = None if res.get("error") else self._owned(limit)
         live = owned is not None
         acct = library.account_id(root)
         raw = None
@@ -212,8 +230,10 @@ class Host:
         if last is not None and time.monotonic() - last[0] < LIB_FRESH_S:
             return self._lib_done(last[1], last[2], done)       # read a moment ago by the watcher
 
+        first = self.lib_sig is None        # the boot: Home's first frame waits for this answer
+
         def work():
-            res, sig = self._lib_read()
+            res, sig = self._lib_read(LIB_FIRST_WAIT_S if first else None)
             GLib.idle_add(lambda: (self._lib_done(res, sig, done), False)[1])
         threading.Thread(target=work, daemon=True).start()
 
@@ -875,6 +895,11 @@ class Host:
 
     def m_systemInfo(self, args, done):
         self.sys.info(done)
+
+    def m_session_info(self, args, done):
+        """session.info(): which session STONE Home runs in, at once (systemInfo also reads the
+        image's versions, which takes longer than Home's first frame should wait)."""
+        done({"session": os.environ.get("STONE_SESSION") or "other"})
 
     # ---- STONE session (M24): the game back in front after the guide button -----------------
     def m_session_resume(self, args, done):

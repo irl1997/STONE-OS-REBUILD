@@ -75,13 +75,23 @@ function steamSetRows() {
     l: x.label, s: x.area, v: x.type === 'bool' ? (x.value ? 'Sí' : 'No') : String(x.value),
     act: x.writable ? 'sset' : 'info', sset: x, where: `${x.area}: ${x.label} = ${x.value}${x.writable ? '' : ' (solo lectura)'}` }));
   if (S.steamAcct === undefined) { S.steamAcct = null; Sys.firstrunStatus().then(f => { S.steamAcct = !!f.steam_account; }, () => { S.steamAcct = false; }).then(() => { if (S.screen === 'settings' && CATS[cat] === 'Steam') enterSettings({ pane: !!NAV.pane, ri: NAV.pane ? NAV.c : 0 }); }); }
-  const acct = { l: 'Cuenta de Steam', s: S.steamAcct ? 'Conectada en esta consola' : S.steamAcct === null ? 'Leyendo…' : 'Sin iniciar sesión: Steam muestra su pantalla de inicio de sesión una vez',
-    v: S.steamAcct ? 'Conectada' : 'Iniciar sesión', act: 'sset', login: !S.steamAcct };
-  return [acct, head, ...rows];
+  /* signed in: Steam says so (S.libLogged), or at least an account has signed in on this console */
+  const inn = S.libLogged === 'in' || (S.libLogged !== 'out' && S.steamAcct);
+  const acct = { l: 'Cuenta de Steam', s: inn ? 'Conectada en esta consola' : S.steamAcct === null && S.libLogged !== 'out' ? 'Leyendo…' : 'Sin iniciar sesión: Steam muestra su ventana, con un código QR para la app de Steam del móvil',
+    v: inn ? 'Conectada' : 'Iniciar sesión', act: 'sset', login: !inn };
+  const more = [
+    { l: 'Tienda de Steam', s: 'La tienda propia de Steam, en pantalla: para comprar con tu cuenta. El botón guía vuelve a STONE', v: 'Abrir', act: 'sset', front: 'store' },
+    { l: 'Steam completo', s: 'Steam ocupa la pantalla con su propia interfaz; STONE vuelve después', v: 'Abrir', act: 'sset', full: true },
+    { l: 'Estado de Steam', s: 'Lo que STONE sabe de Steam ahora: cuenta, sesión y biblioteca', v: 'Ver', act: 'sset', status: true }];
+  return [acct, ...more, head, ...rows];
 }
 function ssetA(r) {
+  if (r.login) return steamOpen('login');
+  if (r.front) return steamOpen(r.front);
   play('select');
-  if (r.login) { S.steamAcct = undefined; return Sys.openSteam('store').catch(() => toast('Steam no respondió', false)); }
+  if (r.full) return steamFullAsk(S.libLogged === 'out' ? 'login' : 'store');
+  if (r.status) return steamStatusDlg();
+  if ('login' in r) return toast('Ya hay una cuenta de Steam conectada en esta consola', false);
   if (r.refresh) { S.ss = null; return loadSteamSet(true); }
   if (!r.sset) return;
   const x = r.sset;
@@ -99,17 +109,63 @@ function loadEmulators() {
     if (S.screen === 'settings' && CATS[cat] === 'Emuladores') enterSettings({ pane: !!NAV.pane, ri: NAV.pane ? NAV.c : 0 });
   });
 }
+/* Which installed emulators have a newer version on Flathub (asked of Flathub: needs internet). */
+const EMU_UPD = { keys: new Set(), busy: false, checked: false, err: null };
+const emuUpdText = () => EMU_UPD.busy ? 'Preguntando a Flathub…' : EMU_UPD.err ? EMU_UPD.err : !EMU_UPD.checked ? 'Pregunta a Flathub si hay versiones nuevas de tus emuladores'
+  : EMU_UPD.keys.size ? `${EMU_UPD.keys.size} con versión nueva en Flathub` : 'Todos tus emuladores están al día';
+const emuRedraw = () => { if (S.screen === 'settings' && CATS[cat] === 'Emuladores') enterSettings({ pane: !!NAV.pane, ri: NAV.pane ? NAV.c : 0 }); };
+function emuCheck(quiet) {
+  if (EMU_UPD.busy) return;
+  EMU_UPD.busy = true; EMU_UPD.err = null; emuRedraw();
+  Sys.emuCheck().then(r => { EMU_UPD.keys = new Set(r.keys); EMU_UPD.checked = true; },
+    e => { EMU_UPD.checked = true; EMU_UPD.err = (e && e.message) || 'No se pudo consultar Flathub'; if (!quiet) play('error'); })
+    .then(() => { EMU_UPD.busy = false; if (!quiet) toast(emuUpdText(), false); emuRedraw(); });
+}
+const emuBusy = k => EMU_STATE[k] && ['installing', 'updating'].includes(EMU_STATE[k].state);
 Bridge.on('emulator', d => {
+  if (d.key === 'all') { toast(`Emuladores revisados: ${d.of}. Los que tenían versión nueva están actualizados`, false); EMU_UPD.keys = new Set(); EMU_UPD.err = null; return loadEmulators(); }
+  const was = EMU_STATE[d.key] && EMU_STATE[d.key].state;
   EMU_STATE[d.key] = d;
   toast(d.text, false);
-  if (d.state === 'done') { loadEmulators(); loadLibrary(); }
-  else if (S.screen === 'settings' && CATS[cat] === 'Emuladores') enterSettings({ pane: !!NAV.pane, ri: NAV.pane ? NAV.c : 0 });
+  if (d.state === 'done') { EMU_UPD.keys.delete(d.key); loadEmulators(); if (was !== 'updating') reloadLibrary(); }
+  else emuRedraw();
 });
+function emuRows() {
+  const have = S.emu.filter(e => e.installed);
+  /* asked once by itself when the list is opened with emulators installed */
+  if (have.length && !EMU_UPD.checked && !EMU_UPD.busy) setTimeout(() => { if (!EMU_UPD.checked) emuCheck(true); }, 0);
+  const head = have.length ? [{ l: 'Buscar actualizaciones', s: emuUpdText(), v: EMU_UPD.busy ? 'Buscando…' : 'Buscar', act: 'emu', check: true },
+    ...(EMU_UPD.keys.size ? [{ l: 'Actualizar todos', s: 'Cada emulador con versión nueva se actualiza desde Flathub', v: 'Actualizar', act: 'emu', all: true }] : [])] : [];
+  return head.concat(S.emu.map(e => {
+    if (e.not_yet) return { l: e.name, s: 'Todavía no hay un emulador que instalar. Pulsa A para saber por qué', v: 'No disponible', act: 'emu', emu: e };
+    const st = EMU_STATE[e.key], busy = emuBusy(e.key), upd = e.installed && EMU_UPD.keys.has(e.key);
+    return { l: e.name, s: busy ? st.text : e.plays + (e.installed && e.version ? ` · versión ${e.version}` : '') + (upd ? ' · hay una versión nueva' : ''),
+      v: busy ? (st.state === 'updating' ? 'Actualizando…' : 'Instalando…') : upd ? 'Actualizar' : e.installed ? 'Instalado' : 'Instalar', act: 'emu', emu: e };
+  }));
+}
 function emuA(r) {
+  if (r.check) { play('select'); return emuCheck(false); }
+  if (r.all) {
+    play('select');
+    [...EMU_UPD.keys].forEach(k => { EMU_STATE[k] = { state: 'updating', text: 'En cola para actualizar…' }; });
+    emuRedraw();
+    return sys('emuUpdate', 'all');
+  }
   const e = r.emu;
-  if (e.installed) { play('select'); return toast(`${e.name} está en tu biblioteca, como acceso directo`, false); }
-  if (EMU_STATE[e.key] && EMU_STATE[e.key].state === 'installing') { play('error'); return toast(`${e.name} se está instalando`, false); }
+  if (e.not_yet) {
+    play('select');
+    const back = dlgOver();
+    return openDlg(`<span class="st-cap">EMULADORES</span><h2>${esc(e.name.toUpperCase())}</h2><p>${esc(e.not_yet)}</p>
+      <div class="btns"><span class="txt-f" data-f data-b="no">ENTENDIDO</span></div>`, { onA: () => { play('back'); back(); }, onB: () => { play('back'); back(); } });
+  }
+  if (emuBusy(e.key)) { play('error'); return toast(`${e.name}: ${EMU_STATE[e.key].state === 'updating' ? 'se está actualizando' : 'se está instalando'}`, false); }
   play('select');
+  if (e.installed) {
+    /* installed: A updates this emulator (Flathub answers "already up to date" when there is nothing new) */
+    EMU_STATE[e.key] = { state: 'updating', text: `Actualizando ${e.name} desde Flathub…` };
+    emuRedraw();
+    return sys('emuUpdate', e.key);
+  }
   EMU_STATE[e.key] = { state: 'installing', text: `Instalando ${e.name}…` };
   enterSettings({ pane: true, ri: NAV.c });
   return sys('emuInstall', e.key);
@@ -204,16 +260,16 @@ function catRows() {
     case 'Bluetooth': return { d: 'Mandos, auriculares y teclados. Para emparejar, ponlos en modo emparejamiento y busca.', rows: btRows() };
     case 'Almacenamiento': return { d: 'Espacio en cada disco, lo que ocupa cada juego y las descargas de Steam en curso.', rows: storageRows() };
     case 'Salud': return { d: 'El estado de STONE MACHINE, leído ahora. Nada de esta pantalla cambia la consola.', rows: healthRows() };
-    case 'Steam': return { d: 'Los ajustes de Steam, con el aspecto de STONE. La lista sale de lo que ofrece este Steam; los de sí/no se cambian con A.', rows: steamSetRows() };
+    case 'Steam': return { d: 'Tu cuenta, la tienda y los ajustes de Steam, con el aspecto de STONE. Los ajustes de sí/no se cambian con A.', rows: steamSetRows() };
     case 'Emuladores': {
       if (!S.emu) { if (!S.emuLoading) loadEmulators(); return { d: 'Emuladores de otras consolas, desde Flathub.', rows: [{ l: 'Leyendo…', s: 'Buscando qué emuladores están instalados', v: '', ro: true }] }; }
-      return { d: 'Se instalan desde Flathub y aparecen en tu biblioteca como accesos directos. Los juegos y BIOS los pones tú. RetroDECK reúne la mayoría de consolas en una sola app.',
-        rows: S.emu.map(e => { const st = EMU_STATE[e.key]; const busy = st && st.state === 'installing';
-          return { l: e.name, s: busy ? st.text : e.plays, v: e.installed ? 'Instalado' : busy ? 'Instalando…' : 'Instalar', act: 'emu', emu: e }; }).concat(romRows()) };
+      return { d: 'Se instalan desde Flathub y aparecen en tu biblioteca como accesos directos. Pulsa A sobre uno instalado para actualizarlo. Los juegos, las BIOS y las claves de cada consola los pones tú.',
+        rows: emuRows().concat(romRows()) };
     }
     case 'Rendimiento': return { d: `Perfil activo: ${profOf(S.prof).n}. Elige entre silencio y rendimiento, o ajusta tu propio perfil.`, rows: [
       { l: 'Performance Center', s: 'SILENT, BALANCED, PERFORMANCE y CUSTOM', v: 'Abrir', act: 'perf' },
       { l: 'Modo técnico', s: 'Temperaturas, frecuencia y consumo en el menú de STONE durante el juego', v: S.tech ? 'Activado' : 'Desactivado', key: 'tech' },
+      { l: 'Parte de sesión', s: 'Al terminar un juego: cuánto jugaste y la temperatura de la GPU en ese momento', v: S.report ? 'Activado' : 'Desactivado', key: 'report' },
       cu40Row(),
       { l: 'Safe Mode', s: S.safeMode ? `Activo: ${SAFE_REASON[S.safeReason] || 'valores de fábrica'}` : 'Sólo valores de fábrica: sin CUSTOM, sin perfiles por juego ni pruebas', v: S.safeMode ? 'Salir' : 'Activar', act: 'safe' }] };
     case 'Energía': return { d: 'STONE MACHINE no tiene modo de reposo. Apagarla cuando no se usa ahorra entre 55 y 105 W.', rows: [

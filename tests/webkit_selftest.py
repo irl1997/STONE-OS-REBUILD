@@ -43,6 +43,7 @@ def main():
             f.write('{"done": true}')
         e = dict(env.env, STONE_STEAM_ROOT=root, STONE_HOME_UI=os.path.join(REPO, "apps/stone-home/ui"),
                  STONE_RELEASE_FILE=rel, XDG_CONFIG_HOME=os.path.join(tmp, "config"), HOME=tmp,
+                 XDG_CACHE_HOME=os.path.join(tmp, "cache"), STONE_HOME_NO_FETCH="1",     # no artwork fetched from the internet
                  # test machines (root here, AppArmor-restricted user namespaces on CI runners) cannot
                  # start WebKit's bubblewrap sandbox; the console runs with it
                  WEBKIT_DISABLE_SANDBOX_THIS_IS_DANGEROUS="1",

@@ -34,7 +34,7 @@ window.__overlap = () => {
   const stage = document.getElementById('stage'), sb = stage.getBoundingClientRect(), k = sb.width / 1920;
   const shown = el => { for (let e = el; e && e !== document.body; e = e.parentElement) { const c = getComputedStyle(e); if (c.display === 'none' || c.visibility === 'hidden' || +c.opacity < 0.05) return false; } return true; };
   /* With a full-screen layer on (dialog, setup, power, quick menu), only it and the toast are in front */
-  const top = ['#dlg.on', '#setup.on', '#power.on', '#quick.on'].map(q => document.querySelector(q)).find(Boolean);
+  const top = ['#sfront.on', '#dlg.on', '#setup.on', '#power.on', '#quick.on'].map(q => document.querySelector(q)).find(Boolean);
   const boxes = [], w = document.createTreeWalker(stage, NodeFilter.SHOW_TEXT, { acceptNode: n => !top || top.contains(n) || n.parentElement.closest('#toast,#hints') ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT });
   for (let n; (n = w.nextNode());) {
     if (!n.textContent.trim() || !shown(n.parentElement)) continue;

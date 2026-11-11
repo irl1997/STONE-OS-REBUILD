@@ -66,6 +66,7 @@ def main():
         e = dict(env.env, STONE_STEAM_ROOT=root, STONE_HOME_UI=os.path.join(REPO, "apps/stone-home/ui"),
                  STONE_RELEASE_FILE=rel, XDG_CONFIG_HOME=os.path.join(tmp, "config"), XDG_STATE_HOME=os.path.join(tmp, "state"),
                  HOME=tmp, STONE_CHROMIUM=binary, GDK_BACKEND="x11", PYTHONPATH=LIB,
+                 XDG_CACHE_HOME=os.path.join(tmp, "cache"), STONE_HOME_NO_FETCH="1",     # no artwork fetched from the internet
                  # test machines run as root and without a GPU; the console runs sandboxed on its GPU
                  STONE_CHROMIUM_EXTRA="--no-sandbox --test-type --use-angle=swiftshader --enable-unsafe-swiftshader")
         code = ("import sys; sys.path[0:0] = %r; from stone_home import chromium; "

@@ -7,6 +7,9 @@ from Steam's image servers and keeps them:
     ~/.cache/stone/art/<appid>/<kind>.jpg|.png     kind: capsule | hero | header
     ~/.cache/stone/art/<appid>/<kind>.none         looked for and not there (asked again after MISS_DAYS)
 
+Without internet nothing is kept and the same pictures are asked for again later, with a pause
+after repeated failures (PAUSE_S). STONE_HOME_NO_FETCH=1 (tests, development) turns fetching off.
+
 Nothing here takes a path or an address from the page: the app id is validated, the kind is one
 of KINDS, and an address (from Steam's store API) is fetched only if it is https on one of
 Steam's image hosts. What comes back is kept only if it really is a JPEG or PNG picture.
@@ -32,6 +35,13 @@ MISS_DAYS = 7
 MAX_FILES = 12000                # the cache is pruned (oldest first) beyond this
 WORKERS = 3
 BATCH_S = 2.0                    # news of fetched artwork is given at most this often
+RETRY_S = 300                    # a picture that could not be asked for (no network) waits this long
+PAUSE_AFTER = 3                  # this many network failures in a row ...
+PAUSE_S = 120                    # ... and nothing is asked for this long
+
+
+def disabled():
+    return os.environ.get("STONE_HOME_NO_FETCH") == "1"
 
 
 def root():
@@ -78,6 +88,8 @@ def allowed(url):
 
 
 def _get(url, timeout=12):
+    if disabled():
+        raise OSError("fetching is off (STONE_HOME_NO_FETCH)")
     req = urllib.request.Request(url, headers={"User-Agent": "STONE-OS"})
     with urllib.request.urlopen(req, timeout=timeout) as r:
         return r.read(MAX_BYTES + 1)
@@ -92,8 +104,9 @@ def _ext(data):
 
 
 def fetch(appid, kind, url=None, get=None):
-    """Fetch one picture into the cache. True if it is there afterwards. Never raises: a network
-    error leaves nothing behind (asked again next time); "not found" is remembered for MISS_DAYS."""
+    """Fetch one picture into the cache. True: it is there. False: Steam does not have it
+    (remembered for MISS_DAYS) or it may not be fetched. None: it could not be asked for (no
+    network): nothing is left behind and it is asked for again later. Never raises."""
     if not valid(appid, kind):
         return False
     if have(appid, kind):
@@ -108,7 +121,7 @@ def fetch(appid, kind, url=None, get=None):
     except (OSError, ValueError):
         data = None
     if data is None:
-        return False
+        return None
     ext = _ext(data) if MIN_BYTES <= len(data) <= MAX_BYTES else None
     try:
         os.makedirs(d, exist_ok=True)
@@ -121,7 +134,7 @@ def fetch(appid, kind, url=None, get=None):
             f.write(data)
         os.replace(tmp, os.path.join(d, kind + ext))
     except OSError:
-        return False
+        return None
     return True
 
 
@@ -167,9 +180,15 @@ class Fetcher:
         self.last_news = 0.0
         self.workers = workers
         self.started = False
+        self.retry = {}                  # (appid, kind) -> monotonic time before which it is not asked again
+        self.errors = 0                  # network failures in a row
+        self.pause_until = 0.0
 
     def want(self, appid, kinds=("capsule",), urls=None, first=False):
         """Queue the missing pictures of a game. urls: {kind: address from Steam's store API}."""
+        now = time.monotonic()
+        if disabled() or now < self.pause_until:
+            return 0
         with self.lock:
             start, self.started = not self.started, True
         if start:
@@ -180,7 +199,7 @@ class Fetcher:
             if not valid(appid, kind) or have(appid, kind) or missed(appid, kind):
                 continue
             with self.lock:
-                if (appid, kind) in self.pending:
+                if (appid, kind) in self.pending or now < self.retry.get((appid, kind), 0):
                     continue
                 self.pending.add((appid, kind))
             url = (urls or {}).get(kind)
@@ -198,13 +217,22 @@ class Fetcher:
             ok = False
             try:
                 ok = self.fetch_one(appid, kind, url)
-                if not ok and kind == "header" and url is None and self.lookup is not None and not have(appid, kind):
+                with self.lock:
+                    if ok is None:               # no network: this one later, and all of them after a few
+                        self.retry[(appid, kind)] = time.monotonic() + RETRY_S
+                        self.errors += 1
+                        if self.errors >= PAUSE_AFTER:
+                            self.pause_until, self.errors = time.monotonic() + PAUSE_S, 0
+                    else:
+                        self.errors = 0
+                        self.retry.pop((appid, kind), None)
+                if ok is False and kind == "header" and url is None and self.lookup is not None and not have(appid, kind):
                     # newer games keep their pictures under an address only the store API knows
                     found = self.lookup(appid)
                     if allowed(found):
                         self._forget_miss(appid, kind)
                         ok = self.fetch_one(appid, kind, found)
-                if not ok and kind == "capsule" and not have(appid, "header") and not missed(appid, "header"):
+                if ok is False and kind == "capsule" and not have(appid, "header") and not missed(appid, "header"):
                     self.want(appid, ("header",))        # no tall cover: the store's wide picture instead
             except Exception as e:  # noqa: BLE001  (artwork never takes anything down)
                 print(f"[stone] art: {appid}/{kind}: {e!r}", flush=True)

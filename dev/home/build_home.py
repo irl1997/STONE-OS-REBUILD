@@ -78,13 +78,24 @@ def build(src):
     t = replace_once(t, " + (m.simulated ? '<div class=\"kv\"><span>Datos</span><span>simulados</span></div>' : '')", "", "tuning simulated")
     t = replace_span(t, "/* ---------- Example library ---------- */", "/* ---------- Sound ----------", part("library.js") + "\n\n", "library")
     t = replace_span(t, "function bgGame(g, sharp, veil) {", "const neutralBg", part("bggame.js") + "\n", "bgGame")
-    t = replace_span(t, "/* ---------- HOME ---------- */", "/* ---------- LIBRARY ---------- */", part("home.js") + "\n\n", "home")
+    # HOME, then what 3.0 adds next to it: the store and a game's store page, the QR code for the
+    # phone, Steam's own window in front (D-30), and the library following Steam.
+    t = replace_span(t, "/* ---------- HOME ---------- */", "/* ---------- LIBRARY ---------- */",
+                     "\n".join(part(n) for n in ("home.js", "store.js", "qr.js", "steamfront.js", "libwatch.js")) + "\n\n", "home")
+    t = replace_once(t, "<span>EXPLORAR</span><span>MEDIA</span></div>", "<span>EXPLORAR</span><span>MEDIA</span><span>TIENDA</span></div>", "store tab")
     t = replace_span(t, "const FILTERS = [", "function enterLibrary(", part("libfilter.js") + "\n", "filters")
     t = replace_once(t, "<div class=\"count\">${list.length} juegos · Recientes</div>", "<div class=\"count\">${list.length} juegos · recientes primero</div>", "count")
     t = replace_once(t, "${list.length ? '' : '<div class=\"empty\">No hay juegos con este filtro.</div>'}", "${list.length ? '' : `<div class=\"empty\">${emptyText()}</div>`}", "empty")
     t = replace_once(t, "if (el.dataset.g !== undefined) { const g = G[+el.dataset.g]; s.textContent = `${g.n} · ${g.inst ? (g.h ? g.last + ' · ' + g.h + ' h' : 'Sin jugar') : 'No instalado · ' + g.sz} · ${g.o}`; }",
                      "if (el.dataset.g !== undefined) { const g = G[+el.dataset.g]; s.textContent = `${g.n} · ${g.upd ? 'Actualizando en Steam' : g.min ? g.last + ' · ' + playText(g) : 'Sin jugar'} · ${g.o}`; }", "lib onFocus")
     t = replace_span(t, "function libCard(g, row, col) {", "function libraryA(el) {", part("libcard.js") + "\n", "libCard")
+    # The last "filter" is SORPRÉNDEME (libwatch.js); a library redrawn in place keeps its scroll.
+    t = replace_once(t, "function libraryA(el) {\n  if (el.dataset.filter !== undefined) {",
+                     "function libraryA(el) {\n  if (+el.dataset.filter === FILTER_SURPRISE) return surprise();\n  if (el.dataset.filter !== undefined) {", "surprise")
+    t = replace_once(t, "  NAV.ensure = ensure;\n  NAV.id = 'library';\n",
+                     "  NAV.ensure = ensure;\n  NAV.id = 'library';\n  if (opts.keep && opts.sy) { grid.style.transition = 'none'; grid.dataset.sy = opts.sy; grid.style.transform = `translateY(${opts.sy}px)`; requestAnimationFrame(() => { grid.style.transition = ''; }); }\n", "library keep")
+    t = replace_once(t, "  S.screen = 'library'; S.from = 'library'; S.section = 1;\n  const list = libList(), L = $('#library');\n",
+                     "  S.screen = 'library'; S.from = 'library'; S.section = 1;\n  const list = libList(), L = $('#library');\n  if (opts.keep && L.querySelector('.grid')) opts.sy = L.querySelector('.grid').dataset.sy;\n", "library keep sy")
     t = replace_span(t, "/* ---------- DETAIL ---------- */", "/* ---------- QUICK MENU ---------- */", part("detail_game.js") + "\n\n", "detail+game")
     t = replace_span(t, "function openQuick() {", "/* Quick Menu: this game session only", part("quick.js") + "\n", "quick")
     t = replace_once(t, "const CATS = ['Sistema', 'Pantalla', 'Audio', 'Mandos', 'Red', 'Bluetooth', 'Almacenamiento', 'Rendimiento',",
@@ -93,7 +104,7 @@ def build(src):
     t = replace_once(t, "  if (master) master.gain.setTargetAtTime(S.sound ? S.vol : 0, AC.currentTime, .05);\n  $('#bSound').textContent = `Sonido: ${S.sound ? 'activado' : 'desactivado'}`;\n",
                      "  if (master) master.gain.setTargetAtTime(S.sound ? S.vol : 0, AC.currentTime, .05);\n", "applyPrefs bar")
     t = replace_once(t, "  else if (key === 'tech') { S.tech = !S.tech; }\n",
-                     "  else if (key === 'tech') { S.tech = !S.tech; }\n  else if (key === 'sysvol') { return setSysVol(d, ri); }\n  else if (key === 'frame') { const n = FRAME + d; if (n < 0 || n > 6) return bump(d); FRAME = n; fit(); }\n  else if (key === 'render') { S.render = (S.render + d + RENDER.length) % RENDER.length; play('select'); return applyRender(); }\n  else if (key === 'gameres') { return setGamePolicy(); }\n  else if (key === 'dispgoal') { return setDisplayGoal(); }\n", "adjust render")
+                     "  else if (key === 'tech') { S.tech = !S.tech; }\n  else if (key === 'report') { S.report = !S.report; }\n  else if (key === 'sysvol') { return setSysVol(d, ri); }\n  else if (key === 'frame') { const n = FRAME + d; if (n < 0 || n > 6) return bump(d); FRAME = n; fit(); }\n  else if (key === 'render') { S.render = (S.render + d + RENDER.length) % RENDER.length; play('select'); return applyRender(); }\n  else if (key === 'gameres') { return setGamePolicy(); }\n  else if (key === 'dispgoal') { return setDisplayGoal(); }\n", "adjust render")
     t = replace_once(t, "  applyPrefs(); play('nav'); enterSettings({ pane: true, ri });\n}", "  applyPrefs(); savePrefs(); armIdleOff(); play('nav'); enterSettings({ pane: true, ri });\n}", "adjust save")
     t = replace_span(t, "  if (r.act === 'steam') { play('select'); return toast('Se abre el panel de Steam con el tema de STONE (fuera del prototipo)', false); }\n  if (r.act === 'desk') { play('error'); return toast('El modo escritorio queda oculto en el producto final', false); }\n",
                      "  if (r.act === 'perf')", "  if (r.act === 'info') { play('select'); return toast(r.where, false); }\n  if (['audio-out', 'wifi', 'wifi-scan', 'wifi-off', 'bt', 'bt-scan'].includes(r.act)) return cxAct(r, NAV.c);\n  if (['storage-again', 'steam-dl', 'game-store'].includes(r.act)) return storeAct(r, NAV.c);\n  if (['roms-folders', 'roms-add'].includes(r.act)) return romAct(r, NAV.c);\n  if (r.act === 'cu40') { play('select'); return cu40Dlg(NAV.c); }\n  if (r.act === 'health') { play('select'); S.health = null; return enterSettings({ pane: true, ri: NAV.c }); }\n  if (r.act === 'reboot') { play('select'); return shutdown(true); }\n  if (r.act === 'steam') { play('select'); return openSteamSettings(r); }\n  if (r.act === 'emu') return emuA(r);\n  if (r.act === 'sset') return ssetA(r);\n  if (r.act === 'measure') { play('select'); return measureSmoothness(); }\n  if (r.act === 'desktop') { play('select'); return desktopDlg(NAV.c); }\n", "settingsA steam")
@@ -116,6 +127,9 @@ def build(src):
     t = replace_span(t, "/* ---------- POWER ---------- */", "/* ---------- Input dispatch ---------- */", part("power_boot.js") + "\n\n", "power+boot")
     t = replace_span(t, "function act(a) {", "  const dirs = ['up', 'down', 'left', 'right'];", part("act_head.js") + "\n", "act head")
     t = replace_once(t, "    if (a === 'y') return toast('Búsqueda: fuera de este prototipo', false);\n", "    if (a === 'y') { play('select'); return openSearch(); }\n", "search")
+    # Back from Ajustes lands on "Ajustes" in Home's system row, whatever its position there.
+    t = replace_once(t, "if (NAV.pane) return enterSettings(); if (NAV) NAV.id = ''; return enterHome({ r: 1, c: 2 }); }",
+                     "if (NAV.pane) return enterSettings(); if (NAV) NAV.id = ''; return enterHome({ sys: 'settings' }); }", "settings back")
     t = replace_once(t, "    if (a === 'lt' || a === 'rt') return letterJump(a === 'lt' ? -1 : 1);\n", "    if (a === 'lt' || a === 'rt') return letterJump(a === 'lt' ? -1 : 1);\n    if (a === 'y') { play('select'); return openSearch(); }\n", "library search")
     t = replace_once(t, "    if (a === 'b') { play('back'); clearInterval(installT); installT = 0; line.classList.remove('load'); return S.from === 'library'",
                      "    if (a === 'b') { play('back'); return S.from === 'library'", "detail back")

@@ -112,7 +112,7 @@ def test_only_steams_image_servers_and_real_pictures_reach_the_cache():
 
         def offline(url):
             raise OSError("no network")
-        assert not ART.fetch("730", "capsule", get=offline)
+        assert ART.fetch("730", "capsule", get=offline) is None                 # could not be asked for: later
         assert not ART.missed("730", "capsule")                                 # a network error is not "not there"
 
         def gone(url):
@@ -164,6 +164,32 @@ def test_fetcher_falls_back_to_the_stores_wide_picture_and_tells_what_arrived():
         assert f.want("620", ("capsule",)) == 0 and f.want("999", ("capsule", "header")) == 0   # there, or known missing
         time.sleep(0.1)
         assert len(asked) == n
+
+
+def test_without_network_the_fetcher_waits_instead_of_asking_again_and_again():
+    with Cache():
+        asked = []
+
+        def offline(a, k, u=None):
+            asked.append((a, k))
+            return ART.fetch(a, k, u, get=lambda url: (_ for _ in ()).throw(OSError("no network")))
+        f = ART.Fetcher(lambda news: None, fetch_one=offline, workers=1, batch_s=0)
+        for a in ("1", "2", "3"):
+            assert f.want(a, ("capsule",)) == 1
+        assert _wait(f.idle) and len(asked) == ART.PAUSE_AFTER
+        assert f.pause_until > time.monotonic()
+        assert f.want("4", ("capsule",)) == 0 and f.want("1", ("capsule",)) == 0      # paused: nothing is asked
+        f.pause_until = 0
+        assert f.want("1", ("capsule",)) == 0                                          # this one waits RETRY_S
+        assert f.want("4", ("capsule",)) == 1 and _wait(f.idle)
+        assert not ART.missed("1", "capsule")                                          # still not "missing"
+        os.environ["STONE_HOME_NO_FETCH"] = "1"
+        try:
+            f.pause_until = 0
+            assert ART.disabled() and f.want("5", ("capsule",)) == 0
+            assert ART.fetch("5", "capsule") is None and not ART.missed("5", "capsule")
+        finally:
+            del os.environ["STONE_HOME_NO_FETCH"]
 
 
 if __name__ == "__main__":

@@ -65,7 +65,8 @@ def main():
         root = FX.build(os.path.join(tmp, "Steam"))
         launches, power = os.path.join(tmp, "launches.jsonl"), os.path.join(tmp, "power.jsonl")
         port = free_port()
-        e = dict(env.env, XDG_CONFIG_HOME=os.path.join(tmp, "config"), STONE_RELEASE_FILE=os.path.join(tmp, "rel"))
+        e = dict(env.env, XDG_CONFIG_HOME=os.path.join(tmp, "config"), STONE_RELEASE_FILE=os.path.join(tmp, "rel"),
+                 XDG_CACHE_HOME=os.path.join(tmp, "cache"), STONE_HOME_NO_FETCH="1")     # nothing fetched, nothing kept outside tmp
         with open(e["STONE_RELEASE_FILE"], "w") as f:
             f.write('STONE_VERSION="e2e"\n')
         os.makedirs(os.path.join(tmp, "config", "stone"), exist_ok=True)     # FIRST RUN already seen (it has its own test)

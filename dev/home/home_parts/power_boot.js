@@ -21,7 +21,7 @@ function closePower() {
   if (powerFrom === 'game') { S.screen = 'game'; NAV = null; line.classList.add('off'); $('#hints').classList.add('hide'); return; }
   if (powerFrom === 'settings') return enterSettings();
   if (NAV) NAV.id = '';
-  enterHome({ r: 1, c: 3 });
+  enterHome({ sys: 'power' });
 }
 async function powerA(el) {
   const a = el.dataset.act; play('select');
@@ -35,7 +35,7 @@ async function powerA(el) {
    and asks before restarting. */
 function bootOptions() {
   const dep = S.info && S.info.deployments, prev = dep && dep.rollback;
-  const back = () => { closeDlg(); play('back'); S.section = 0; if (NAV) NAV.id = ''; enterHome({ r: 1, c: 3 }); };
+  const back = () => { closeDlg(); play('back'); S.section = 0; if (NAV) NAV.id = ''; enterHome({ sys: 'power' }); };
   openDlg(`<h2>OPCIONES DE ARRANQUE</h2>
     <p><b>Safe Mode</b>: STONE arranca con los valores de fábrica, sin perfiles CUSTOM ni perfiles por juego.</p>
     <p><b>Versión anterior</b>: ${prev ? `el próximo arranque usa ${esc(prev.version || 'la versión anterior')}. Puedes volver a la actual de la misma forma.` : 'no hay una versión anterior guardada todavía.'}</p>
@@ -64,7 +64,7 @@ async function toDesktop() {
     $('#offmsg').textContent = 'Abriendo el escritorio… Para volver: «Volver a STONE» en el escritorio, o reiniciar.'; $('#offmsg').classList.add('on');
   } catch (e) {
     $('#black').classList.remove('on'); line.classList.remove('off');
-    S.section = 0; if (NAV) NAV.id = ''; enterHome({ r: 1, c: 3 });
+    S.section = 0; if (NAV) NAV.id = ''; enterHome({ sys: 'power' });
     play('error'); toast(`No se pudo abrir el escritorio (${ERR_TEXT[e.code] || e.message})`, false);
   }
 }
@@ -84,7 +84,7 @@ async function shutdown(reboot) {
     $('#offmsg').textContent = reboot ? 'Reiniciando…' : 'Apagando…'; $('#offmsg').classList.add('on');
   } catch (e) {
     $('#black').classList.remove('on'); line.classList.remove('off');
-    S.section = 0; if (NAV) NAV.id = ''; enterHome({ r: 1, c: 3 });
+    S.section = 0; if (NAV) NAV.id = ''; enterHome({ sys: 'power' });
     play('error'); toast(`No se pudo ${reboot ? 'reiniciar' : 'apagar'} (${ERR_TEXT[e.code] || e.message}). Usa el botón STEAM → Energía`, false);
   }
 }
@@ -100,7 +100,7 @@ function armIdleOff() {
   clearTimeout(idleOffT);
   const min = IDLE_MIN[S.idle]; if (!min) return;
   idleOffT = setTimeout(() => {
-    if (S.running !== null || S.game || testUI || stonedBusy() || ['game', 'quick', 'transition', 'dlg'].includes(S.screen)) return armIdleOff();
+    if (S.running !== null || S.game || S.steamFront || testUI || stonedBusy() || ['game', 'quick', 'transition', 'dlg'].includes(S.screen)) return armIdleOff();
     shutdown(false);
   }, min * 60000);
 }
@@ -108,39 +108,46 @@ let saveT = 0;
 function savePrefs() {
   clearTimeout(saveT);
   saveT = setTimeout(() => Sys.prefsSet({ sound: S.sound, vol: S.vol, hc: S.hc, rm: S.rm, ts: S.ts, safe: S.safe, idle: S.idle,
-    tech: S.tech, adv_ack: S.advAck, engine: S.render, favorites: [...favs], frame: FRAME }).catch(() => {}), 400);
+    tech: S.tech, adv_ack: S.advAck, engine: S.render, favorites: [...favs], frame: FRAME, wanted: [...WANT], report: S.report }).catch(() => {}), 400);
 }
 function loadPrefs(p) {
   if (!p) return;
   S.sound = p.sound; S.vol = p.vol; S.hc = p.hc; S.rm = p.rm || reduceOS; S.ts = p.ts; S.safe = p.safe; S.idle = p.idle;
   S.tech = p.tech; S.advAck = p.adv_ack; S.render = p.engine === 1 ? 1 : 0; favs.clear(); (p.favorites || []).forEach(a => favs.add(a));
   FRAME = p.frame > 0 && p.frame <= 6 ? p.frame : 0; fit();
+  WANT.clear(); (p.wanted || []).forEach(a => WANT.add(a)); S.report = p.report !== false;
   applyPrefs();
 }
 
 /* ---------- BOOT ----------
-   Plymouth and Steam already showed the line while the machine started; this is STONE Home
-   arriving. The animation runs while the library, settings and stoned answer, so it adds
-   no waiting of its own; Home appears as soon as both are done. */
+   Plymouth already showed the line while the machine started; this is STONE Home arriving. The
+   animation runs while the settings, the machine's capabilities and the library answer, so it adds
+   no waiting of its own beyond BOOT_MIN_MS: Home appears as soon as it has what its first frame
+   needs. The library is answered from Steam's files and the list kept from the last boot (the host
+   does not wait for Steam, which starts after STONE Home); the system's versions (rpm-ostree, slow)
+   are read behind, no screen needs them at the start. */
+const BOOT_WORD_MS = 350, BOOT_MIN_MS = 650, BOOT_OUT_MS = 250, BOOT_MAX_MS = 5000;
 async function boot() {
   S.screen = 'transition';
   $('#black').classList.add('on'); line.classList.add('boot');
   Sys.bootMark('visual').catch(() => {});          /* BOOT TO VISUAL: STONE Home's first frame */
   const first = Sys.firstrunStatus().catch(() => ({ done: true }));
   const prefs = Sys.prefsGet().then(loadPrefs).catch(() => {});
-  const prep = Promise.all([prefs, refreshCaps(), Sys.info().then(i => { S.info = i; }).catch(() => {}), prefs.then(loadLibrary)]);
+  Bridge.call('session.info').then(i => { if (!S.info) S.info = i; }).catch(() => {});
+  Sys.info().then(i => { S.info = i; }).catch(() => {});
+  const prep = Promise.all([prefs, refreshCaps(), prefs.then(loadLibrary)]);
   /* Home is about to be on screen: only now may stoned apply the saved profile (factory or validated) */
   const home = prep.then(() => PerfAPI.homeReady()).then(st => { adopt(st); return st; })
     .catch(e => { if (e && e.code === 'ServiceUnavailable') S.actual = { error: 'ServiceUnavailable' }; return null; });
-  /* The frame before this one (Plymouth, then STONE's Steam startup movie) is black with the full
-     line at 82 % of the height and 25 % of the width: STONE Home starts on that same frame. */
+  /* The frame before this one (Plymouth) is black with the full line at 82 % of the height and
+     25 % of the width: STONE Home starts on that same frame. */
   setLine(720, 886, 480); line.classList.remove('off');
   play('start');
-  await wait(1000);
+  await wait(BOOT_WORD_MS);
   $('#bootword').classList.add('on');
-  await Promise.race([prep, new Promise(r => setTimeout(r, 8000))]).then(() => wait(700));
+  await Promise.all([Promise.race([prep, wait(BOOT_MAX_MS)]), wait(BOOT_MIN_MS)]);
   $('#bootword').classList.remove('on');
-  await wait(300);
+  await wait(BOOT_OUT_MS);
   $('#black').classList.remove('on');
   S.section = 0; if (NAV) NAV.id = ''; NAV = null;
   const fr = await Promise.race([first, wait(3000).then(() => ({ done: true }))]);
@@ -151,6 +158,7 @@ async function boot() {
   setTimeout(() => line.classList.remove('boot'), 1300);
   armIdleOff();
   home.then(st => { if (st) setTimeout(() => bootNotices(st), 1400); });
+  wantedArrived();
 }
 
 /* ---------- SETUP: the first start (M22) ----------
@@ -316,13 +324,11 @@ const SU_FN = {
     const has = SU.fr.steam_account;
     suDraw({ key: 'steam', title: 'STEAM',
       lead: has ? 'Tu cuenta de Steam ya está en esta consola: tu biblioteca aparece en STONE.'
-        : 'Tus juegos vienen de tu cuenta de Steam. Steam muestra su propia pantalla de inicio de sesión una sola vez (puedes usar el código QR con la app de Steam del móvil); después todo sigue en STONE.',
+        : 'Tus juegos vienen de tu cuenta de Steam. Steam muestra su propia ventana de inicio de sesión: escanea su código QR con la app de Steam del móvil, o escribe con un teclado. STONE nunca ve tu contraseña y vuelve sola cuando termines.',
       rows: [{ l: 'Cuenta', v: has ? 'conectada' : 'sin iniciar sesión' }],
       buttons: has ? [['next', 'CONTINUAR']] : [['login', 'INICIAR SESIÓN'], ['next', 'MÁS TARDE']],
-      onButton: async b => {
-        if (b === 'login') { await Sys.openSteam('store').catch(() => {}); SU.fr = await Sys.firstrunStatus().catch(() => SU.fr); }
-        suNext();
-      } });
+      /* the sign-in is Steam's own window (steamOpen); when it is done this step is drawn again (sfEnd) */
+      onButton: b => { if (b === 'login') return steamOpen('login'); suNext(); } });
   },
   listo() {
     suDraw({ key: 'listo', title: 'TODO LISTO.', lead: 'Tu STONE MACHINE está preparada. Pulsa Y en Inicio para buscar un juego, y el botón STONE para volver aquí desde cualquier juego.',

@@ -57,7 +57,13 @@ const Sys = {
   gameExperience: appid => Bridge.call('game.experience', appid), gameLook: appid => Bridge.call('game.look', appid), gameSetLook: (appid, k) => Bridge.call('game.setLook', appid, k),
   /* Steam asking something (steamcef.dialog), answered from STONE; STONE MEDIA */
   steamDialog: () => Bridge.call('steam.dialog'), steamAnswer: (i, label) => Bridge.call('steam.dialogAnswer', i, label),
-  shots: appid => Bridge.call('media.screenshots', ...(appid ? [appid] : []))
+  shots: appid => Bridge.call('media.screenshots', ...(appid ? [appid] : [])),
+  /* Steam's own interface in front (D-30), Steam's store read by the host, artwork, emulator updates */
+  steamShow: (what, appid) => Bridge.call('steam.show', ...(appid ? [what, appid] : [what])), steamHide: () => Bridge.call('steam.hide'),
+  steamFull: why => Bridge.call('steam.full', why), steamStatus: () => Bridge.call('steam.status'),
+  storeFeatured: () => Bridge.call('store.featured'), storeDetails: appid => Bridge.call('store.details', appid),
+  artWant: appid => Bridge.call('art.want', appid),
+  emuCheck: () => Bridge.call('emuCheck'), emuUpdate: k => Bridge.call('emuUpdate', k)
 };
 async function sys(method, ...a) {
   try { return await Sys[method](...a); }

@@ -5,7 +5,9 @@ const S = {
   hc: false, rm: reduceOS, ts: 0, safe: 5, section: 0, filter: 0, from: 'home',
   prof: 'balanced', lkg: 'balanced', adv: false, advAck: false, idle: 2,
   caps: null, actual: null, safeMode: false, game: null, provisional: false, pending: null,
-  render: 0, info: null, libReady: false, libFound: true, launching: null, st: null
+  render: 0, info: null, libReady: false, libFound: true, launching: null, st: null,
+  /* 3.0: who is signed in to Steam ("in", "out", null: not known yet), Steam's own window in front, the session report */
+  libLogged: null, libCached: false, libNone: false, steamFront: null, report: true
 };
 /* Performance profiles: all values stay inside the range documented as stable on every BC-250 (≤ 2000 MHz at 1000 mV, ≤ 85 °C).
    stoned holds the same table (profiles.py) and is the one that applies it; these are for display. */

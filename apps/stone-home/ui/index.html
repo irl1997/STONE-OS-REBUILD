@@ -399,6 +399,56 @@ body.dormant *,body.dormant *::before,body.dormant *::after{animation-play-state
 /* Home context: one line for the name (long names end in «…»), so the line under it never reaches stratum 02 */
 #home .ctx-title{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:1728px}
 #home .ctx .meta{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:1728px}
+
+/* ---- 3.0 ---- names on cards without artwork; a card with only the store's wide picture */
+.card .nm{position:absolute;left:20px;right:20px;bottom:24px;font-family:var(--f-display);font-weight:300;letter-spacing:.2em;font-size:18px;line-height:1.3;color:var(--warm);overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:4;overflow-wrap:anywhere}
+.card.hdr{background-size:100% auto;background-position:center 18%;background-repeat:no-repeat;background-color:#0e0f10}
+.card.wide.vein{border-top:3px solid var(--vein)}
+.card.wide.vein b{color:var(--vein)}
+.card.hero.dim,.card.cap.dim{opacity:.6}
+/* TIENDA: the same strata as the library; wide cards (Steam's store pictures), the name and the price under each */
+#store::before{content:"";position:absolute;left:0;top:0;width:1920px;height:196px;background:var(--st-head);border-bottom:1px solid var(--st-rule)}
+#store .filters{position:absolute;left:96px;top:206px;display:flex;gap:40px;font-size:22px}
+#store .filters span{max-width:420px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#store .filters span.cur{color:var(--warm)}
+#store .filters span.cur::after{content:"";display:block;height:2px;background:var(--vein);margin-top:8px}
+#store .count{position:absolute;right:96px;top:214px;font-family:var(--f-mono);font-size:15px;letter-spacing:.16em;text-transform:uppercase;color:var(--text-2)}
+#store .count::before{content:"ESTRATO 01 · "}
+#store .gclip{position:absolute;left:0;top:276px;width:1920px;height:680px;overflow:hidden}
+#store .grid{position:absolute;left:96px;top:4px;width:1728px;transition:transform var(--d-step) var(--e-step)}
+#store .scard{position:absolute;width:400px;height:187px;background-color:#0e0f10}
+#store .scard .off{position:absolute;left:0;top:0;padding:6px 12px;background:var(--vein);color:#0a0a0b;font-family:var(--f-mono);font-size:16px;letter-spacing:.06em;border-radius:4px 0 4px 0}
+#store .scard .cap2{position:absolute;left:0;right:0;top:calc(100% + 26px);display:flex;flex-direction:column;gap:4px}
+#store .scard .cap2 b{font-weight:400;font-size:20px;line-height:26px;color:var(--warm);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#store .scard .cap2 i{font-style:normal;font-family:var(--f-mono);font-size:15px;line-height:20px;letter-spacing:.08em;color:var(--text-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#store .scard .cap2 s{margin-right:12px;opacity:.7}
+#store .empty{position:absolute;left:96px;top:300px;font-size:24px;color:var(--text-2);max-width:1400px}
+#store .sel{position:absolute;left:96px;top:994px;font-size:20px;color:var(--text-2);max-width:900px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* a game's page in the store reuses the game page; its description */
+#detail .stats.about{font-size:calc(22px * var(--ts));line-height:1.45;max-width:900px;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}
+#detail .stats.about:empty{display:none}
+/* Steam's own window is coming in front (D-30) */
+#sfront{position:absolute;inset:0;z-index:44;background:#0a0a0b;visibility:hidden;opacity:0;transition:opacity var(--d-enter) var(--e-light),visibility 0s linear var(--d-enter)}
+#sfront.on{visibility:visible;opacity:1;transition:opacity var(--d-enter) var(--e-light),visibility 0s}
+#sfront .sf-box{position:absolute;left:96px;top:300px;width:1100px;display:flex;flex-direction:column;gap:26px;border-top:3px solid var(--vein);padding-top:40px}
+#sfront .st-cap{font-family:var(--f-mono);font-size:16px;letter-spacing:.2em;color:var(--vein)}
+#sfront h2{margin:0;font-family:var(--f-display);font-weight:200;font-size:64px;line-height:76px;letter-spacing:.2em;color:var(--warm)}
+#sfront p{margin:0;font-size:26px;line-height:38px;color:var(--text-2);max-width:940px}
+#sfront .sf-foot{display:flex;gap:14px;align-items:center;font-size:22px;color:var(--warm);margin-top:14px}
+#sfront .sf-foot .g{border-color:var(--vein);color:var(--vein);padding:0 12px}
+/* the QR code for the phone */
+#dlg .qrrow{display:flex;gap:40px;align-items:flex-start}
+#dlg .qrrow .qr{flex:none;border-radius:4px}
+#dlg .qrrow div{display:flex;flex-direction:column;gap:18px;min-width:0}
+#dlg .qrrow .url{font-family:var(--f-mono);font-size:17px;line-height:24px;letter-spacing:.04em;color:var(--warm);word-break:break-all}
+/* Messages have their own lane, top right under the clock: they never cover the bottom row
+   (Home's system row, the library's and the store's selection line were under them before) */
+#toast{left:auto;right:96px;top:136px;max-width:760px;text-align:right;line-height:28px;transform:translateY(-8px)}
+/* Home with large text (Ajustes → Accesibilidad, up to 1.5×): the game's name and its line grow up to
+   1.3× and the block starts higher, so its last line never reaches the label of stratum 02 */
+#home .ctx{top:calc(700px - (var(--ts) - 1) * 36px);gap:6px}
+#home .ctx-title{font-size:calc(40px * min(var(--ts), 1.3))}
+#home .ctx .meta{font-size:calc(20px * min(var(--ts), 1.3))}
 </style>
 
 <div id="app">
@@ -423,7 +473,7 @@ body.dormant *,body.dormant *::before,body.dormant *::after{animation-play-state
           <span id="clock">--:--</span>
         </div>
       </div>
-      <div id="tabs" class="hide"><span>INICIO</span><span>BIBLIOTECA</span><span>EXPLORAR</span><span>MEDIA</span></div>
+      <div id="tabs" class="hide"><span>INICIO</span><span>BIBLIOTECA</span><span>EXPLORAR</span><span>MEDIA</span><span>TIENDA</span></div>
 
       <div id="quick"><div class="dim"></div><div class="panel"></div></div>
       <div id="power"><div class="dim"></div><div class="box"></div></div>
@@ -465,7 +515,9 @@ const S = {
   hc: false, rm: reduceOS, ts: 0, safe: 5, section: 0, filter: 0, from: 'home',
   prof: 'balanced', lkg: 'balanced', adv: false, advAck: false, idle: 2,
   caps: null, actual: null, safeMode: false, game: null, provisional: false, pending: null,
-  render: 0, info: null, libReady: false, libFound: true, launching: null, st: null
+  render: 0, info: null, libReady: false, libFound: true, launching: null, st: null,
+  /* 3.0: who is signed in to Steam ("in", "out", null: not known yet), Steam's own window in front, the session report */
+  libLogged: null, libCached: false, libNone: false, steamFront: null, report: true
 };
 /* Performance profiles: all values stay inside the range documented as stable on every BC-250 (≤ 2000 MHz at 1000 mV, ≤ 85 °C).
    stoned holds the same table (profiles.py) and is the one that applies it; these are for display. */
@@ -573,7 +625,13 @@ const Sys = {
   gameExperience: appid => Bridge.call('game.experience', appid), gameLook: appid => Bridge.call('game.look', appid), gameSetLook: (appid, k) => Bridge.call('game.setLook', appid, k),
   /* Steam asking something (steamcef.dialog), answered from STONE; STONE MEDIA */
   steamDialog: () => Bridge.call('steam.dialog'), steamAnswer: (i, label) => Bridge.call('steam.dialogAnswer', i, label),
-  shots: appid => Bridge.call('media.screenshots', ...(appid ? [appid] : []))
+  shots: appid => Bridge.call('media.screenshots', ...(appid ? [appid] : [])),
+  /* Steam's own interface in front (D-30), Steam's store read by the host, artwork, emulator updates */
+  steamShow: (what, appid) => Bridge.call('steam.show', ...(appid ? [what, appid] : [what])), steamHide: () => Bridge.call('steam.hide'),
+  steamFull: why => Bridge.call('steam.full', why), steamStatus: () => Bridge.call('steam.status'),
+  storeFeatured: () => Bridge.call('store.featured'), storeDetails: appid => Bridge.call('store.details', appid),
+  artWant: appid => Bridge.call('art.want', appid),
+  emuCheck: () => Bridge.call('emuCheck'), emuUpdate: k => Bridge.call('emuUpdate', k)
 };
 async function sys(method, ...a) {
   try { return await Sys[method](...a); }
@@ -662,6 +720,7 @@ const SIZES = ['Normal', '1.25×', '1.5×'];
    The host sorts by last played, installed first. Artwork comes from Steam's own cache through stone://art. */
 let G = [], recent = [];
 const favs = new Set();
+const WANT = new Set();          /* games being bought away from the console: installed when Steam lists them */
 const SRC = { steam: 'Steam', shortcut: 'Acceso directo' };
 function ago(t) {
   if (!t) return 'Nunca';
@@ -680,16 +739,31 @@ async function loadLibrary() {
   let r = null;
   try { r = await Sys.library(); } catch (e) { r = null; }
   const list = r ? r.games : [];
+  /* S.running, S.launching and the open game page are positions in G: each one follows its game */
+  const idOf = i => i !== null && i !== undefined && G[i] ? G[i].appid : null;
+  const run = idOf(S.running), lau = idOf(S.launching), cur = typeof curG === 'number' ? idOf(curG) : null;
   G = list.map((x, i) => ({ i, appid: x.appid, n: x.name, o: SRC[x.source] || 'Steam', src: x.source, min: x.playtime_min,
     h: Math.round(x.playtime_min / 60), lastT: x.last_played, last: ago(x.last_played), sz: sizeText(x.size_bytes),
-    inst: x.installed, upd: x.updating, art: x.art || {}, fav: favs.has(x.appid), perf: null }));
+    inst: x.installed, upd: x.updating, art: Object.assign({ capsule: false, hero: false, header: false }, x.art), fav: favs.has(x.appid), perf: null }));
+  const at = a => { const k = a === null ? -1 : G.findIndex(g => g.appid === a); return k < 0 ? null : k; };
+  S.running = at(run); S.launching = at(lau);
+  S.detailGone = cur !== null && at(cur) === null;
+  if (cur !== null && at(cur) !== null) curG = at(cur);
   recent = G.filter(g => g.inst || g.src === 'shortcut').slice(0, 6).map(g => g.i);
+  /* nothing installed yet (a new console): the account's games take the first row, ready to install */
+  S.libNone = !recent.length;
+  if (S.libNone) recent = G.slice(0, 6).map(g => g.i);
   S.libReady = true; S.libFound = r ? r.root_found : false; S.libOwnedKnown = !!(r && r.owned_known);
+  /* "out": nobody is signed in to Steam on this console; "in"; null while Steam has not said */
+  S.libLogged = r ? r.logged : null; S.libCached = !!(r && r.owned_cached);
   if (S.st) adopt(S.st);
 }
-const capUrl = g => g.art.capsule ? `url("${Bridge.artUrl(g.appid, 'capsule')}")` : 'none';
-const heroUrl = g => g.art.hero || g.art.capsule ? Bridge.artUrl(g.appid, g.art.hero ? 'hero' : 'capsule') : null;
-const nameTag = g => `<span style="position:absolute;left:20px;right:20px;bottom:24px;font-family:var(--f-display);font-weight:300;letter-spacing:.2em;font-size:18px;line-height:1.3;color:var(--warm)">${esc(g.n.toUpperCase())}</span>`;
+/* Artwork: Steam's own cache, or what STONE fetched for games Steam had not shown (host artcache).
+   A game with only the store's wide picture shows it at the top of its card, the name under it. */
+const capUrl = g => g.art.capsule ? `url("${Bridge.artUrl(g.appid, 'capsule')}")` : g.art.header ? `url("${Bridge.artUrl(g.appid, 'header')}")` : 'none';
+const capWide = g => !g.art.capsule && !!g.art.header;
+const heroUrl = g => g.art.hero || g.art.capsule || g.art.header ? Bridge.artUrl(g.appid, g.art.hero ? 'hero' : g.art.capsule ? 'capsule' : 'header') : null;
+const nameTag = g => `<span class="nm">${esc(g.n.toUpperCase())}</span>`;
 /* Background blur from a 64×36 copy of the hero: one tiny image scaled up, no live blur filter.
    A small LRU keeps the last ones; game mode empties it. */
 const BLUR = new Map(), BLUR_MAX = 24;
@@ -896,16 +970,19 @@ const runTag = i => S.running === i ? '<span class="run">EN CURSO</span>' : '';
 function homeHTML() {
   let cards = '';
   if (S.section === 0) {
-    if (G.length) {
+    /* Nobody signed in to Steam on this console: the first thing Home offers */
+    if (S.libLogged === 'out') cards += `<div class="card wide vein" data-f data-act="login"><b>INICIA SESIÓN EN STEAM</b><span>Tus juegos vienen de tu cuenta de Steam</span></div>`;
+    if (G.length && recent.length) {
       const g0 = G[recent[0]], hu = heroUrl(g0);
-      cards += `<div class="card hero" data-f data-g="${g0.i}" style="background-image:${hu ? `url(&quot;${hu}&quot;)` : 'none'};background-color:var(--shale)">${hu ? '' : nameTag(g0)}${runTag(g0.i)}</div>`;
-      recent.slice(1).forEach(i => { const g = G[i]; cards += `<div class="card cap" data-f data-g="${i}" style="background-image:${capUrl(g).replace(/"/g, '&quot;')}">${g.art.capsule ? '' : nameTag(g)}${runTag(i)}</div>`; });
-    } else {
-      cards += `<div class="card wide" data-f data-act="search"><b>${S.libReady ? 'SIN JUEGOS' : 'BIBLIOTECA'}</b><span>${S.libReady ? 'Busca un juego para instalarlo (Y)' : 'Leyendo la biblioteca de Steam…'}</span></div>`;
+      cards += `<div class="card hero${g0.inst || g0.src === 'shortcut' ? '' : ' dim'}" data-f data-g="${g0.i}" style="background-image:${hu ? `url(&quot;${hu}&quot;)` : 'none'};background-color:var(--shale)">${hu ? '' : nameTag(g0)}${runTag(g0.i)}</div>`;
+      recent.slice(1).forEach(i => { const g = G[i]; cards += `<div class="card cap${g.inst || g.src === 'shortcut' ? '' : ' dim'}${capWide(g) ? ' hdr' : ''}" data-f data-g="${i}" style="background-image:${capUrl(g).replace(/"/g, '&quot;')}">${g.art.capsule ? '' : nameTag(g)}${runTag(i)}</div>`; });
+    } else if (S.libLogged !== 'out') {
+      cards += `<div class="card wide" data-f data-act="${S.libReady ? 'store' : 'library'}"><b>${S.libReady ? 'SIN JUEGOS' : 'BIBLIOTECA'}</b><span>${S.libReady ? 'Abre la tienda para conseguir el primero' : 'Leyendo la biblioteca de Steam…'}</span></div>`;
     }
-    cards += `<div class="card tile" data-f data-act="library">BIBLIOTECA</div>`;
+    cards += `<div class="card tile" data-f data-act="library">BIBLIOTECA</div><div class="card tile" data-f data-act="store">TIENDA</div>`;
   } else if (S.section === 2) {
-    [['BUSCAR JUEGOS', 'Tu biblioteca y la tienda de Steam', 'search'], ['DESCARGAS', 'Descargas y actualizaciones de juegos', 'downloads'], ['EMULADORES', 'Juegos de otras consolas', 'emu']]
+    [['TIENDA', 'Ofertas, novedades y lo más vendido en Steam', 'store'], ['BUSCAR JUEGOS', 'Tu biblioteca y la tienda de Steam', 'search'],
+      ['SORPRÉNDEME', 'STONE elige uno de tus juegos instalados', 'surprise'], ['DESCARGAS', 'Descargas y actualizaciones de juegos', 'downloads'], ['EMULADORES', 'Juegos de otras consolas', 'emu']]
       .forEach(([t, s, k]) => { cards += `<div class="card wide" data-f data-act="${k}"><b>${t}</b><span>${s}</span></div>`; });
   } else {
     if (!SHOTS) loadShots();
@@ -916,9 +993,11 @@ function homeHTML() {
     lib: '<svg width="26" height="26" viewBox="0 0 26 26" fill="none" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="6" height="18"/><rect x="11" y="4" width="6" height="18"/><path d="M19 5l4 1-3 16-4-1"/></svg>',
     exp: '<svg width="26" height="26" viewBox="0 0 26 26" fill="none" stroke-width="2" aria-hidden="true"><circle cx="13" cy="13" r="9"/><path d="M16.5 9.5l-2 5-5 2 2-5z"/></svg>',
     set: '<svg width="26" height="26" viewBox="0 0 26 26" fill="none" stroke-width="2" aria-hidden="true"><path d="M4 7h18M4 13h18M4 19h18"/><rect x="8" y="5" width="4" height="4" fill="#141517"/><rect x="15" y="11" width="4" height="4" fill="#141517"/><rect x="6" y="17" width="4" height="4" fill="#141517"/></svg>',
-    pow: '<svg width="26" height="26" viewBox="0 0 26 26" fill="none" stroke-width="2" aria-hidden="true"><path d="M13 3v9"/><path d="M7.5 7a8 8 0 1 0 11 0"/></svg>'
+    pow: '<svg width="26" height="26" viewBox="0 0 26 26" fill="none" stroke-width="2" aria-hidden="true"><path d="M13 3v9"/><path d="M7.5 7a8 8 0 1 0 11 0"/></svg>',
+    sea: '<svg width="26" height="26" viewBox="0 0 26 26" fill="none" stroke-width="2" aria-hidden="true"><circle cx="11.5" cy="11.5" r="7"/><path d="M17 17l6 6"/></svg>',
+    sto: '<svg width="26" height="26" viewBox="0 0 26 26" fill="none" stroke-width="2" aria-hidden="true"><path d="M5 9h16l-1.5 13h-13z"/><path d="M9 9V7a4 4 0 0 1 8 0v2"/></svg>'
   };
-  const label = S.section === 0 ? `ESTRATO 01 · <b>RECIENTES</b>${G.length ? ` · ${G.length} JUEGO${G.length === 1 ? '' : 'S'}` : ''}`
+  const label = S.section === 0 ? `ESTRATO 01 · <b>${S.libNone && G.length ? 'TU CUENTA' : 'RECIENTES'}</b>${G.length ? ` · ${G.length} JUEGO${G.length === 1 ? '' : 'S'}` : ''}`
     : S.section === 2 ? 'ESTRATO 01 · <b>EXPLORAR</b>' : 'ESTRATO 01 · <b>MEDIA</b>';
   return `<div class="st-head"></div><div class="st-deep"></div>
     <div class="st-label l1">${label}</div>
@@ -928,7 +1007,8 @@ function homeHTML() {
     <div class="strata" id="strata">${strataHTML()}</div>
     <div class="ctx"><div class="kicker" id="hk"></div><div class="ctx-title" id="ht"></div><div class="meta" id="hm"></div></div>
     <div class="sys">
-      <span class="txt-f" data-f data-act="search">${ico.exp}Buscar</span>
+      <span class="txt-f" data-f data-act="search">${ico.sea}Buscar</span>
+      <span class="txt-f" data-f data-act="store">${ico.sto}Tienda</span>
       <span class="txt-f" data-f data-act="library">${ico.lib}Biblioteca</span>
       <span class="txt-f" data-f data-act="explore">${ico.exp}Explorar</span>
       <span class="txt-f" data-f data-act="settings">${ico.set}Ajustes</span>
@@ -950,20 +1030,23 @@ function homeContext(el) {
   hm.classList.remove('on'); clearTimeout(metaT);
   const gi = el.dataset.g;
   if (gi !== undefined) {
-    const g = G[+gi], first = el.classList.contains('hero');
-    hk.innerHTML = first ? `CONTINUAR${S.running === g.i ? ' · <span class="now">EN CURSO</span>' : ''}` : 'RECIENTE';
+    const g = G[+gi], first = el.classList.contains('hero'), playable = g.inst || g.src === 'shortcut';
+    hk.innerHTML = !playable ? 'EN TU CUENTA · SIN INSTALAR' : first ? `CONTINUAR${S.running === g.i ? ' · <span class="now">EN CURSO</span>' : ''}` : 'RECIENTE';
     ht.textContent = g.n;
-    hm.textContent = `${S.running === g.i ? 'Abierto ahora' : g.last} · ${playText(g)}${g.o !== 'Steam' ? ' · ' + g.o : ''}`;
+    hm.textContent = !playable ? `${g.upd ? 'Instalándose' : 'Pulsa A para instalarlo'} · ${playText(g)}`
+      : `${S.running === g.i ? 'Abierto ahora' : g.last} · ${playText(g)}${g.o !== 'Steam' ? ' · ' + g.o : ''}`;
     metaT = setTimeout(() => hm.classList.add('on'), S.rm ? 150 : 600);
     bgGame(g, false, '');
     [NAV && NAV.rows[0][NAV.c + 1], NAV && NAV.rows[0][NAV.c - 1]].forEach(nx => { if (nx && nx.dataset.g !== undefined) blurOf(G[+nx.dataset.g]); });
   } else {
     const a = el.dataset.act;
-    const label = { search: ['BUSCAR', 'Tus juegos y la tienda de Steam (Y)'], library: ['BIBLIOTECA', S.libReady ? `${G.length} juego${G.length === 1 ? '' : 's'}` : 'Leyendo…'], explore: ['EXPLORAR', 'Buscar, descargas y emuladores'], settings: ['AJUSTES', 'Pantalla, audio, rendimiento y más'], power: ['APAGAR', 'Apagar o reiniciar'],
+    const label = { login: ['STEAM', 'Con el código QR de Steam y tu móvil, sin escribir contraseñas'], store: ['TIENDA', 'Ofertas, novedades y lo más vendido en Steam'],
+      surprise: ['SORPRÉNDEME', 'Para cuando no sabes a qué jugar'], search: ['BUSCAR', 'Tus juegos y la tienda de Steam (Y)'], library: ['BIBLIOTECA', S.libReady ? `${G.length} juego${G.length === 1 ? '' : 's'}` : 'Leyendo…'], explore: ['EXPLORAR', 'Tienda, descargas y emuladores'], settings: ['AJUSTES', 'Pantalla, audio, rendimiento y más'], power: ['APAGAR', 'Apagar o reiniciar'],
       downloads: ['DESCARGAS', 'Lo que se descarga y el espacio libre'], emu: ['EMULADORES', 'Juegos de otras consolas'], noshots: ['CAPTURAS', 'Durante el juego: botón STEAM + R1'],
       shot: (() => { const sh = SHOTS && SHOTS[+el.dataset.k], g = sh && G.find(x => x.appid === sh.appid); return ['CAPTURA', sh ? `${g ? g.n : 'Juego ' + sh.appid} · ${new Date(sh.time * 1000).toLocaleDateString('es-CL')}` : '']; })() }[a] || ['', ''];
     hk.textContent = S.section === 2 ? 'EXPLORAR' : S.section === 3 ? 'MEDIA' : 'SISTEMA';
     if (a === 'search') hk.textContent = 'BUSCAR';
+    if (a === 'login') hk.textContent = 'TU CUENTA';
     ht.textContent = label[0]; hm.textContent = label[1];
     metaT = setTimeout(() => hm.classList.add('on'), S.rm ? 150 : 600);
     if (el.closest('.sys') == null || S.section !== 0) setBg(neutralBg, '');
@@ -971,12 +1054,18 @@ function homeContext(el) {
 }
 function enterHome(opts = {}) {
   S.screen = 'home'; S.from = 'home';
-  if (S.section === 1) S.section = 0;
-  const h = $('#home'); h.innerHTML = homeHTML();
+  if (S.section === 1 || S.section === 4) S.section = 0;
+  const h = $('#home');
+  /* keep: redrawn in place (the library changed): the row does not slide back from the start */
+  const keepSx = opts.keep && h.querySelector('.track') ? h.querySelector('.track').dataset.sx : null;
+  h.innerHTML = homeHTML();
   showScreen('home'); chrome(true, true);
   const track = h.querySelector('.track');
+  if (keepSx !== null) { track.style.transition = 'none'; track.dataset.sx = keepSx; track.style.transform = `translateX(${keepSx}px)`; requestAnimationFrame(() => { track.style.transition = ''; }); }
   const rows = [[...track.children], [...h.querySelectorAll('.sys [data-f]')]];
   const prev = NAV && NAV.id === 'home' ? NAV : null;
+  /* sys: one of the system row's items by name (the row has changed over time; names do not) */
+  if (opts.sys) { opts.r = 1; opts.c = Math.max(0, rows[1].findIndex(e => e.dataset.act === opts.sys)); }
   NAV = mkNav(rows, {
     r: opts.r ?? (prev ? prev.r : 0), c: opts.c ?? (prev ? prev.c : 0),
     place: (el, b, r) => r === 0 ? { x: b.x, y: 668, w: b.w * (S.rm ? 1 : 1.06) } : { x: b.x, y: b.y + b.h + 14, w: b.w },
@@ -1001,6 +1090,9 @@ function homeA(el) {
     play('select'); return enterDetail(g.i);
   }
   if (a === 'search') { play('select'); return openSearch(); }
+  if (a === 'login') return steamOpen('login');
+  if (a === 'store') { play('select'); return enterStore(); }
+  if (a === 'surprise') return surprise();
   if (a === 'library') { play('select'); S.section = 1; return enterLibrary(); }
   if (a === 'explore') { play('select'); S.section = 2; return enterHome({ r: 0, c: 0 }); }
   if (a === 'settings') { play('select'); return enterSettings(); }
@@ -1012,9 +1104,9 @@ function homeA(el) {
 }
 function section(d) {
   const n = S.section + d;
-  if (n < 0 || n > 3) return bump(d);
+  if (n < 0 || n > 4) return bump(d);
   play('nav'); S.section = n;
-  if (n === 1) enterLibrary(); else { if (NAV) NAV.id = ''; enterHome({ r: 0, c: 0 }); }
+  if (n === 1) enterLibrary(); else if (n === 4) enterStore(); else { if (NAV) NAV.id = ''; enterHome({ r: 0, c: 0 }); }
 }
 
 /* EXPERIENCE ENGINE · Thermal Forecast (experience.py thermal_forecast, same rule): least squares over
@@ -1041,18 +1133,19 @@ function thermalForecast(limit) {
 const fold = t => String(t).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 function openSearch() {
   const from = S.screen;
-  osk('BUSCAR JUEGOS', q => { if (q === null || !q.trim()) return from === 'library' ? enterLibrary() : enterHome({ r: 1, c: 0 }); searchResults(q.trim(), from); });
+  osk('BUSCAR JUEGOS', q => { if (q === null || !q.trim()) return from === 'library' ? enterLibrary() : enterHome({ sys: 'search' }); searchResults(q.trim(), from); });
 }
 function searchResults(q, from) {
   const words = fold(q).split(/\s+/).filter(Boolean);
   const lib = G.filter(g => words.every(w => fold(g.n).includes(w))).slice(0, 8);
   let store = null, storeErr = null;
-  const back = () => { closeDlg(); play('back'); return from === 'library' ? enterLibrary() : enterHome({ r: 1, c: 0 }); };
+  const under = () => from === 'library' ? enterLibrary() : enterHome({ sys: 'search' });
+  const back = () => { closeDlg(); play('back'); return under(); };
   const draw = () => {
     const mine = new Set(G.map(g => g.appid));
     const libRows = lib.map(g => `<span class="txt-f sres" data-f data-g="${g.i}">${esc(g.n)}<small>${g.inst ? 'Instalado · JUGAR' : 'En tu cuenta · INSTALAR'}</small></span>`).join('');
     const st = store === null ? '<p>Buscando en la tienda de Steam…</p>' : storeErr ? `<p>${esc(storeErr)}</p>`
-      : store.filter(s => !mine.has(s.appid)).slice(0, 8).map(s => `<span class="txt-f sres" data-f data-s="${s.appid}" data-free="${s.free ? 1 : 0}">${esc(s.name)}<small>${s.free ? 'Gratis · INSTALAR' : 'De pago · se compra en Steam'}</small></span>`).join('') || '<p>Nada más en la tienda.</p>';
+      : store.filter(s => !mine.has(s.appid)).slice(0, 8).map((s, k) => `<span class="txt-f sres" data-f data-s="${k}">${esc(s.name)}<small>${s.free ? 'Gratis · VER' : esc(s.price || 'De pago') + ' · VER'}</small></span>`).join('') || '<p>Nada más en la tienda.</p>';
     openDlg(`<h2>«${esc(q)}»</h2><div class="slist"><span class="st-cap">EN TU BIBLIOTECA</span>${libRows || '<p>Ningún juego tuyo coincide.</p>'}<span class="st-cap">EN LA TIENDA DE STEAM</span>${st}</div>
       <div class="btns"><span class="txt-f" data-f data-b="again">BUSCAR OTRA COSA</span><span class="txt-f" data-f data-b="no">VOLVER</span></div>`, {
       onA: el => {
@@ -1060,9 +1153,9 @@ function searchResults(q, from) {
         if (el.dataset.b === 'again') { closeDlg(); return openSearch(); }
         play('select'); closeDlg();
         if (el.dataset.g !== undefined) return enterDetail(+el.dataset.g);
-        const appid = el.dataset.s, name = el.textContent;
-        if (el.dataset.free === '1') return sys('install', appid).then(r => { if (r) toast('Instalando: la descarga aparece en Ajustes → Almacenamiento', false); return back(); });
-        openDlg(`<h2>DE PAGO</h2><p>STONE no hace compras. Cómpralo con tu cuenta en la app de Steam del móvil o en store.steampowered.com/app/${appid}: aparecerá aquí, en tu biblioteca, listo para instalar.</p><div class="btns"><span class="txt-f" data-f data-b="ok">ENTENDIDO</span></div>`, { onA: () => { closeDlg(); draw(); }, onB: () => { closeDlg(); draw(); } });
+        /* a game of the store: its page (price, COMPRAR EN STEAM, the phone, or INSTALAR when free) */
+        const row = store.filter(s => !mine.has(s.appid))[+el.dataset.s];
+        enterStorePage(row.appid, () => { under(); draw(); }, row);
       }, onB: back });
     const d = $('#dlg');
     const rows = [...d.querySelectorAll('.slist [data-f]')].map(e => [e]).concat([[...d.querySelectorAll('.btns [data-f]')]]);
@@ -1095,22 +1188,548 @@ function shotViewer(k) {
     onB: back }, false, true);
   $('#dlg').classList.add('viewer');
 }
+/* ---------- TIENDA (M13, D-30): Steam's store, read by the host and drawn by STONE ----------
+   The lists and prices are Steam's own (its public store, in the place the console connects from).
+   STONE shows them and takes the person to buy: in Steam's own interface (COMPRAR EN STEAM) or on the
+   phone (a QR code of the game's page). A free game, and a game already in the account, install here. */
+const STORE = { data: null, err: null, busy: false, tab: 0, found: null, q: '', t: 0 };
+const STORE_COLS = 4, STORE_W = 400, STORE_H = 187, STORE_GAP = (1728 - STORE_COLS * STORE_W) / (STORE_COLS - 1), STORE_ROW = 312;
+const storeTabs = () => [...(STORE.data || []).map(s => s.title), STORE.found ? `«${STORE.q}»` : 'Buscar'];
+const storeIsSearch = () => STORE.tab >= (STORE.data || []).length;
+const storeItems = () => storeIsSearch() ? (STORE.found || []) : STORE.data[STORE.tab].items;
+const storeMine = appid => G.find(g => g.appid === appid && g.src === 'steam') || null;
+function storeLoad() {
+  if (STORE.busy) return;
+  const first = !STORE.data;           /* the first lists: the focus goes to the first game */
+  STORE.busy = true; STORE.err = null;
+  Sys.storeFeatured().then(r => { STORE.data = r.sections; STORE.t = Date.now(); }, e => { STORE.err = (e && e.message) || 'La tienda de Steam no responde'; })
+    .then(() => { STORE.busy = false; if (S.screen === 'store') enterStore(first ? {} : { r: NAV.r, c: NAV.c }); });
+}
+function storePrice(it) {
+  const mine = storeMine(it.appid);
+  if (mine) return mine.inst ? 'Instalado' : mine.upd ? 'Instalándose' : 'En tu cuenta';
+  if (it.soon) return 'Próximamente';
+  if (it.free) return 'Gratis';
+  return it.price || 'Ver precio';
+}
+function storeCard(it, k) {
+  const row = Math.floor(k / STORE_COLS), col = k % STORE_COLS;
+  const img = it.art ? `url(&quot;${Bridge.artUrl(it.appid, 'header')}&quot;)` : 'none';
+  return `<div class="card scard" data-f data-s="${k}" data-a="${it.appid}" style="left:${(col * (STORE_W + STORE_GAP)).toFixed(2)}px;top:${row * STORE_ROW}px;background-image:${img}">
+    ${it.art ? '' : `<span class="nm">${esc(it.name.toUpperCase())}</span>`}${it.discount ? `<span class="off">−${it.discount} %</span>` : ''}
+    <span class="cap2"><b>${esc(it.name)}</b><i>${it.was && !storeMine(it.appid) ? `<s>${esc(it.was)}</s>` : ''}${esc(storePrice(it))}</i></span></div>`;
+}
+function enterStore(opts = {}) {
+  S.screen = 'store'; S.from = 'store'; S.section = 4;
+  let st = $('#store');
+  if (!st) { st = document.createElement('section'); st.id = 'store'; st.className = 'screen'; stage.insertBefore(st, $('#game')); }
+  if (!STORE.data && !STORE.err) storeLoad();
+  else if (STORE.data && Date.now() - STORE.t > 900000) storeLoad();          /* the shop window changes during the day */
+  if (STORE.tab > (STORE.data || []).length) STORE.tab = 0;
+  const ready = !!STORE.data, items = ready ? storeItems() : [];
+  const keepSy = opts.keep && st.querySelector('.grid') ? st.querySelector('.grid').dataset.sy : null;
+  const msg = !ready ? (STORE.err ? `${STORE.err}` : 'Leyendo la tienda de Steam…')
+    : !items.length ? (storeIsSearch() ? (STORE.found ? 'Steam no tiene juegos con ese nombre.' : 'Pulsa A en «Buscar» (o Y) y escribe el nombre de un juego.') : 'Steam no tiene juegos en esta lista ahora.') : '';
+  const tabs = ready ? storeTabs() : (STORE.err ? ['Reintentar'] : []);
+  st.innerHTML = `<div class="filters">${tabs.map((t, k) => `<span class="txt-f${ready && k === STORE.tab ? ' cur' : ''}" data-f data-tab="${k}">${esc(t)}</span>`).join('')}</div>
+    <div class="count">${ready && items.length ? `${items.length} juegos · precios de Steam` : 'Tienda de Steam'}</div>
+    <div class="gclip"><div class="grid" data-sy="0" style="height:${Math.ceil(items.length / STORE_COLS) * STORE_ROW}px">${items.map(storeCard).join('')}</div></div>
+    ${msg ? `<div class="empty">${esc(msg)}</div>` : ''}
+    <div class="sel" id="ssel"></div>`;
+  showScreen('store'); chrome(true, true); setBg(neutralBg, '');
+  const grid = st.querySelector('.grid'), cards = [...grid.children];
+  const rows = [[...st.querySelectorAll('.filters [data-f]')]];
+  for (let k = 0; k < cards.length; k += STORE_COLS) rows.push(cards.slice(k, k + STORE_COLS));
+  if (!rows[0].length) rows[0] = [st.querySelector('.count')];
+  let r = opts.r ?? (cards.length ? 1 : 0), c = opts.c ?? 0;
+  if (r >= rows.length) r = rows.length - 1;
+  if (c >= rows[r].length) c = rows[r].length - 1;
+  if (keepSy !== null) { grid.style.transition = 'none'; grid.dataset.sy = keepSy; grid.style.transform = `translateY(${keepSy}px)`; requestAnimationFrame(() => { grid.style.transition = ''; }); }
+  NAV = mkNav(rows, {
+    r, c,
+    place: (el, b, rr) => rr === 0 ? { x: b.x, y: b.y + b.h + 6, w: b.w } : { x: b.x, y: b.y + STORE_H + 12, w: STORE_W * (S.rm ? 1 : 1.06) },
+    scroll: el => {
+      if (!el.closest('.grid')) return;
+      let sy = +grid.dataset.sy; const t = el.offsetTop, bot = t + STORE_ROW, view = 676;
+      if (t - 30 + sy < 0) sy = -(t - 4); else if (bot + sy > view) sy = view - bot;
+      grid.dataset.sy = sy; grid.style.transform = `translateY(${sy}px)`;
+    },
+    onFocus: el => {
+      const s = $('#ssel');
+      if (el.dataset.s === undefined) { s.textContent = ready ? 'Las listas de la tienda de Steam' : ''; return; }
+      const it = storeItems()[+el.dataset.s], mine = storeMine(it.appid);
+      s.textContent = `${it.name} · ${storePrice(it)}${it.was && !mine ? ` · antes ${it.was} · −${it.discount} %` : ''}`;
+    }
+  });
+  NAV.id = 'store';
+  requestAnimationFrame(() => applyFocus());
+  hints([['A', 'Ver'], ['Y', 'Buscar'], ['LB RB', 'Sección'], ['B', 'Inicio']]);
+}
+function storeA(el) {
+  if (!el) return;
+  if (el.dataset.tab !== undefined) {
+    play('select');
+    if (!STORE.data) { STORE.err = null; storeLoad(); return enterStore({ r: 0, c: 0 }); }
+    const k = +el.dataset.tab;
+    if (k >= STORE.data.length && (STORE.tab === k || !STORE.found)) return storeSearch();
+    STORE.tab = k; return enterStore({ r: 0, c: k });
+  }
+  if (el.dataset.s === undefined) return;
+  const it = storeItems()[+el.dataset.s], at = { r: NAV.r, c: NAV.c };
+  play('select');
+  enterStorePage(it.appid, () => enterStore(at), it);
+}
+function storeSearch() {
+  const at = NAV && NAV.id === 'store' ? { r: NAV.r, c: NAV.c } : { r: 0, c: 0 };
+  osk('BUSCAR EN LA TIENDA', q => {
+    if (q === null || !q.trim()) return enterStore(at);
+    STORE.q = q.trim().slice(0, 40); STORE.found = []; STORE.tab = (STORE.data || []).length;
+    enterStore({ r: 0, c: STORE.tab });
+    toast('Buscando en la tienda de Steam…', false);
+    Bridge.call('store.search', q.trim()).then(r => { STORE.found = r.results; }, e => { STORE.found = []; play('error'); toast((e && e.message) || 'La tienda no responde', false); })
+      .then(() => { if (S.screen === 'store' && storeIsSearch()) enterStore({ r: STORE.found.length ? 1 : 0, c: STORE.found.length ? 0 : STORE.tab }); });
+  });
+}
+function storeInput(a) {
+  if (['up', 'down', 'left', 'right'].includes(a)) return move(a);
+  if (a === 'a') return storeA(focusEl());
+  if (a === 'lb' || a === 'rb') return section(a === 'lb' ? -1 : 1);
+  if (a === 'y') { play('select'); return storeSearch(); }
+  if (a === 'b' || a === 'home') { play('back'); S.section = 0; if (NAV) NAV.id = ''; return enterHome({ r: 0, c: 0 }); }
+}
+/* Pictures fetched by the host after the list was drawn */
+function storeArt(got) {
+  const lists = [...(STORE.data || []).map(s => s.items), STORE.found || []];
+  lists.forEach(items => items.forEach(it => { if (got[it.appid] && got[it.appid].header) it.art = true; }));
+  document.querySelectorAll('#store .scard').forEach(el => {
+    const a = got[el.dataset.a]; if (!a || !a.header) return;
+    el.style.backgroundImage = `url("${Bridge.artUrl(el.dataset.a, 'header')}")`;
+    const nm = el.querySelector('.nm'); if (nm) nm.remove();
+  });
+  if (S.screen === 'spage' && got[SPG.id]) { if (got[SPG.id].hero) SPG.hero = true; if (got[SPG.id].header) SPG.header = true; storePageBg(); }
+}
+
+/* ---------- A game's page in the store ---------- */
+const SPG = { id: null, d: null, err: null, back: null, row: null, hero: false, header: false, installing: false };
+function enterStorePage(appid, back, row) {
+  Object.assign(SPG, { id: appid, d: null, err: null, back, row: row || null, hero: false, header: !!(row && row.art), installing: false });
+  storePageDraw();
+  Sys.storeDetails(appid).then(d => { if (SPG.id === appid) SPG.d = d; }, e => { if (SPG.id === appid) SPG.err = (e && e.message) || 'La tienda de Steam no responde'; })
+    .then(() => { if (S.screen === 'spage' && SPG.id === appid) storePageDraw({ r: NAV.r, c: NAV.c }); });
+  Sys.artWant(appid).catch(() => {});
+}
+function storePageBg() {
+  const u = SPG.hero ? Bridge.artUrl(SPG.id, 'hero') : SPG.header ? Bridge.artUrl(SPG.id, 'header') : null;
+  setBg(u ? `url("${u}")` : neutralBg, 'side');
+}
+function storePageDraw(opts = {}) {
+  S.screen = 'spage';
+  const d = SPG.d, row = SPG.row, mine = storeMine(SPG.id);
+  const name = (d && d.name) || (row && row.name) || (mine && mine.n) || 'Juego';
+  const free = d ? d.free : !!(row && row.free), soon = d ? d.soon : !!(row && row.soon);
+  const price = d ? d.price : row && row.price, was = d ? d.was : row && row.was, pct = d ? d.discount : row && row.discount;
+  let prim, act, sec;
+  if (mine) { prim = mine.inst ? 'ABRIR EN TU BIBLIOTECA' : mine.upd ? 'INSTALÁNDOSE…' : 'INSTALAR DESDE TU BIBLIOTECA'; act = 'lib'; sec = [['Volver', 'back']]; }
+  else if (SPG.err && !row) { prim = 'VOLVER'; act = 'back'; sec = []; }
+  else if (!d && !row) { prim = 'LEYENDO…'; act = 'wait'; sec = [['Volver', 'back']]; }
+  else if (soon) { prim = 'PRÓXIMAMENTE'; act = 'soon'; sec = [['Ver en el móvil', 'qr'], ['Volver', 'back']]; }
+  else if (free) { prim = SPG.installing ? 'INSTALANDO…' : 'INSTALAR'; act = 'install'; sec = [['Volver', 'back']]; }
+  else { prim = 'COMPRAR EN STEAM'; act = 'buy'; sec = [['Comprar con el móvil', 'qr'], ['Volver', 'back']]; }
+  const state = mine ? (mine.inst ? 'Instalado' : mine.upd ? 'Instalándose' : 'En tu cuenta') : WANT.has(SPG.id) ? 'STONE lo instala al comprarlo' : 'No está en tu cuenta';
+  const tags = d && d.genres && d.genres.length ? ' · ' + d.genres.slice(0, 3).join(' · ') : '';
+  const by = d ? [d.by && d.by.join(', '), d.release].filter(Boolean).join(' · ') : '';
+  $('#detail').innerHTML = `
+    <div class="col"><div class="origin">TIENDA DE STEAM${esc(tags)}</div><h1${name.length > 22 ? ' class="long"' : ''}>${esc(name.toUpperCase())}</h1>
+      <div class="stats">${esc(by || (SPG.err ? SPG.err : d ? '' : 'Leyendo la ficha de Steam…'))}</div>
+      <div class="stats about">${esc(d && d.about ? d.about : '')}</div></div>
+    <div class="primary txt-f" data-f data-act="${act}" id="dprim">${prim}</div>
+    <div class="second">${sec.map(([s, a]) => `<span class="txt-f" data-f data-act="${a}">${s}</span>`).join('')}</div>
+    <div class="info"><div><span>Precio</span><b>${esc(soon ? 'Sin precio todavía' : free ? 'Gratis' : price || '—')}</b></div>
+      ${was ? `<div><span>Antes</span><b>${esc(was)} · −${pct} %</b></div>` : ''}
+      <div><span>Lanzamiento</span><b>${esc((d && d.release) || '—')}</b></div><div><span>Estado</span><b>${esc(state)}</b></div></div>`;
+  showScreen('detail'); chrome(true, false);
+  storePageBg();
+  const el = $('#detail'), second = [...el.querySelectorAll('.second [data-f]')];
+  const rows = [[el.querySelector('#dprim')]]; if (second.length) rows.push(second);
+  let r = opts.r || 0, c = opts.c || 0;
+  if (r >= rows.length) r = 0;
+  if (c >= rows[r].length) c = 0;
+  NAV = mkNav(rows, { r, c, place: (e, b, rr) => ({ x: b.x, y: b.y + b.h + (rr === 0 ? 16 : 12), w: b.w }) });
+  NAV.id = 'spage';
+  requestAnimationFrame(() => applyFocus());
+  hints([['A', 'Elegir'], ['B', 'Volver']]);
+}
+function storePageInput(a) {
+  /* down from the big button goes to the first of the small ones (not to the nearest one by position) */
+  if (a === 'down' && NAV.r === 0 && NAV.rows[1]) { NAV.r = 1; NAV.c = 0; play('nav'); return applyFocus(); }
+  if (['up', 'down', 'left', 'right'].includes(a)) return move(a);
+  if (a === 'b') { play('back'); return SPG.back(); }
+  if (a === 'home') { S.section = 0; if (NAV) NAV.id = ''; return enterHome({ r: 0, c: 0 }); }
+  if (a !== 'a') return;
+  const el = focusEl(), k = el && el.dataset.act, mine = storeMine(SPG.id);
+  if (k === 'back') { play('back'); return SPG.back(); }
+  if (k === 'wait') { play('error'); return toast('Leyendo la ficha de Steam…', false); }
+  if (k === 'soon') { play('error'); return toast('Todavía no está a la venta en Steam', false); }
+  if (k === 'lib' && mine) { play('select'); S.from = 'home'; return enterDetail(mine.i); }
+  if (k === 'install') {
+    if (SPG.installing) { play('error'); return toast('Ya se está instalando: la descarga se ve en Ajustes → Almacenamiento', false); }
+    play('select');
+    return sys('install', SPG.id).then(r => {
+      if (!r) return;
+      SPG.installing = true; steamWatch(20000);
+      toast('Instalando: la descarga se ve en Ajustes → Almacenamiento', false);
+      if (S.screen === 'spage') storePageDraw({ r: 0, c: 0 });
+    });
+  }
+  if (k === 'buy') { WANT.add(SPG.id); savePrefs(); return steamOpen('app', SPG.id); }
+  if (k === 'qr') { play('select'); return storeQr(SPG.id); }
+}
+/* COMPRAR CON EL MÓVIL: the game's page on Steam's web store as a QR code. Nothing is typed on the
+   console and STONE installs the game by itself when Steam lists it in the account (WANT). */
+function storeQr(appid) {
+  const back = dlgOver(), url = `https://store.steampowered.com/app/${appid}`;
+  WANT.add(appid); savePrefs();
+  openDlg(`<span class="st-cap">COMPRAR CON EL MÓVIL</span><h2>ESCANEA EL CÓDIGO</h2>
+    <div class="qrrow">${qrSvg(url, 300)}<div><p>Abre la cámara del móvil, apunta al código y compra el juego con tu cuenta de Steam.</p>
+    <p>Cuando Steam lo añada a tu cuenta, STONE lo instala sola: no hace falta volver a esta pantalla.</p><p class="url">${esc(url.slice(8))}</p></div></div>
+    <div class="btns"><span class="txt-f" data-f data-b="ok">LISTO</span><span class="txt-f" data-f data-b="no">NO INSTALAR SOLA</span></div>`, {
+    onA: el => {
+      play('select');
+      if (el.dataset.b === 'no') { WANT.delete(appid); savePrefs(); toast('STONE no lo instalará sola: aparecerá en tu biblioteca para instalarlo tú', false); }
+      back(); if (S.screen === 'spage') storePageDraw({ r: NAV.r, c: NAV.c });
+    }, onB: () => { play('back'); back(); if (S.screen === 'spage') storePageDraw({ r: NAV.r, c: NAV.c }); } });
+}
+/* ---------- QR code (byte mode, error correction M, versions 1 to 6: up to 106 bytes) ----------
+   Drawn by STONE itself so a phone can open a game's page on Steam's web store: the page never
+   loads anything from the internet. ISO/IEC 18004: Reed-Solomon over GF(256) with polynomial 0x11d,
+   the 8 masks scored by the standard's penalty rules, format bits with BCH(15,5). tests/test_qr.py
+   compares it, module by module, with matrices recorded from the python-qrcode library. */
+const QR_M = [null, [1, 16, 10], [1, 28, 16], [1, 44, 26], [2, 32, 18], [2, 43, 24], [4, 27, 16]];   /* blocks, data per block, ec per block */
+function qrMatrix(text) {
+  const data = [...new TextEncoder().encode(String(text))];
+  let ver = 1;
+  while (ver <= 6 && data.length > QR_M[ver][0] * QR_M[ver][1] - 2) ver++;
+  if (ver > 6) return null;
+  const [nb, nd, ne] = QR_M[ver], total = nb * nd, n = 17 + 4 * ver;
+  /* data bits: mode 0100, length (8 bits), bytes, terminator, pad bytes 0xEC 0x11 */
+  const bits = [];
+  const put = (v, len) => { for (let i = len - 1; i >= 0; i--) bits.push((v >> i) & 1); };
+  put(4, 4); put(data.length, 8); data.forEach(b => put(b, 8));
+  put(0, Math.min(4, total * 8 - bits.length));
+  while (bits.length % 8) bits.push(0);
+  const cw = [];
+  for (let i = 0; i < bits.length; i += 8) cw.push(bits.slice(i, i + 8).reduce((a, b) => a * 2 + b, 0));
+  for (let k = 0; cw.length < total; k++) cw.push(k % 2 ? 0x11 : 0xEC);
+  /* Reed-Solomon */
+  const EXP = [], LOG = [];
+  for (let i = 0, x = 1; i < 255; i++) { EXP[i] = x; LOG[x] = i; x <<= 1; if (x & 256) x ^= 0x11d; }
+  const mul = (a, b) => a && b ? EXP[(LOG[a] + LOG[b]) % 255] : 0;
+  let gen = [1];
+  for (let i = 0; i < ne; i++) { const nx = Array(gen.length + 1).fill(0); gen.forEach((c, k) => { nx[k] ^= c; nx[k + 1] ^= mul(c, EXP[i]); }); gen = nx; }
+  const blocks = [], ecs = [];
+  for (let b = 0; b < nb; b++) {
+    const blk = cw.slice(b * nd, b * nd + nd), rem = blk.concat(Array(ne).fill(0));
+    for (let i = 0; i < nd; i++) { const f = rem[i]; if (f) gen.forEach((c, k) => { rem[i + k] ^= mul(c, f); }); }
+    blocks.push(blk); ecs.push(rem.slice(nd));
+  }
+  const stream = [];
+  for (let i = 0; i < nd; i++) blocks.forEach(b => stream.push(b[i]));
+  for (let i = 0; i < ne; i++) ecs.forEach(e => stream.push(e[i]));
+  /* function patterns */
+  const M = Array.from({ length: n }, () => Array(n).fill(null));
+  const set = (r, c, v) => { if (r >= 0 && r < n && c >= 0 && c < n) M[r][c] = v; };
+  const finder = (r0, c0) => { for (let r = -1; r <= 7; r++) for (let c = -1; c <= 7; c++) set(r0 + r, c0 + c, r >= 0 && r <= 6 && c >= 0 && c <= 6 && (r === 0 || r === 6 || c === 0 || c === 6 || (r >= 2 && r <= 4 && c >= 2 && c <= 4))); };
+  finder(0, 0); finder(0, n - 7); finder(n - 7, 0);
+  if (ver > 1) { const p = n - 7; for (let r = -2; r <= 2; r++) for (let c = -2; c <= 2; c++) M[p + r][p + c] = Math.max(Math.abs(r), Math.abs(c)) !== 1; }
+  for (let i = 8; i < n - 8; i++) { if (M[6][i] === null) M[6][i] = i % 2 === 0; if (M[i][6] === null) M[i][6] = i % 2 === 0; }
+  M[n - 8][8] = true;                                                   /* the dark module */
+  const fmt = [];                                                        /* format cells (bit 0 first), reserved now, written per mask */
+  for (let i = 0; i <= 5; i++) fmt.push([[i, 8], [8, n - 1 - i]]);
+  fmt.push([[7, 8], [8, n - 7]], [[8, 8], [8, n - 8]], [[n - 7, 8], [8, 7]]);
+  for (let i = 9; i <= 14; i++) fmt.push([[n - 15 + i, 8], [8, 14 - i]]);
+  fmt.forEach(pair => pair.forEach(([r, c]) => { M[r][c] = false; }));
+  /* data, zigzag from the bottom right */
+  const isData = M.map(row => row.map(v => v === null));
+  let bi = 0;
+  for (let right = n - 1, up = true; right >= 1; right -= 2, up = !up) {
+    if (right === 6) right = 5;
+    for (let k = 0; k < n; k++) {
+      const r = up ? n - 1 - k : k;
+      for (const c of [right, right - 1]) {
+        if (!isData[r][c]) continue;
+        const byte = stream[bi >> 3];
+        M[r][c] = byte !== undefined && ((byte >> (7 - (bi & 7))) & 1) === 1;
+        bi++;
+      }
+    }
+  }
+  const MASKS = [(r, c) => (r + c) % 2 === 0, r => r % 2 === 0, (r, c) => c % 3 === 0, (r, c) => (r + c) % 3 === 0,
+    (r, c) => (Math.floor(r / 2) + Math.floor(c / 3)) % 2 === 0, (r, c) => (r * c) % 2 + (r * c) % 3 === 0,
+    (r, c) => ((r * c) % 2 + (r * c) % 3) % 2 === 0, (r, c) => ((r + c) % 2 + (r * c) % 3) % 2 === 0];
+  const build = m => {
+    const Q = M.map((row, r) => row.map((v, c) => isData[r][c] ? v !== MASKS[m](r, c) : v));
+    let d = (0 << 3) | m, rem = d;                                        /* level M = 00 */
+    for (let i = 0; i < 10; i++) rem = (rem << 1) ^ ((rem >> 9) * 0x537);
+    const f = ((d << 10) | rem) ^ 0x5412;
+    fmt.forEach((pair, i) => pair.forEach(([r, c]) => { Q[r][c] = ((f >> i) & 1) === 1; }));
+    return Q;
+  };
+  const penalty = Q => {
+    let p = 0;
+    const runs = line => { let run = 1; for (let i = 1; i <= n; i++) { if (i < n && line[i] === line[i - 1]) run++; else { if (run >= 5) p += run - 2; run = 1; } } };
+    const cols = Q[0].map((_, c) => Q.map(row => row[c]));
+    Q.forEach(runs); cols.forEach(runs);
+    for (let r = 0; r < n - 1; r++) for (let c = 0; c < n - 1; c++) if (Q[r][c] === Q[r][c + 1] && Q[r][c] === Q[r + 1][c] && Q[r][c] === Q[r + 1][c + 1]) p += 3;
+    const pat = line => { for (let i = 0; i + 11 <= n; i++) { const s = line.slice(i, i + 11).map(v => v ? 1 : 0).join(''); if (s === '10111010000' || s === '00001011101') p += 40; } };
+    Q.forEach(pat); cols.forEach(pat);
+    const dark = Q.reduce((a, row) => a + row.filter(Boolean).length, 0);
+    p += Math.floor(Math.abs(dark * 100 / (n * n) - 50) / 5) * 10;
+    return p;
+  };
+  let best = null, bp = Infinity, bm = 0;
+  for (let m = 0; m < 8; m++) { const Q = build(m), p = penalty(Q); if (p < bp) { bp = p; best = Q; bm = m; } }
+  best.version = ver; best.mask = bm;
+  return best;
+}
+/* The code as one SVG path on a light plate with the quiet zone the standard asks for (4 modules). */
+function qrSvg(text, px) {
+  const Q = qrMatrix(text);
+  if (!Q) return '';
+  const n = Q.length, s = n + 8;
+  let d = '';
+  Q.forEach((row, r) => row.forEach((v, c) => { if (v) d += `M${c + 4} ${r + 4}h1v1h-1z`; }));
+  return `<svg class="qr" width="${px}" height="${px}" viewBox="0 0 ${s} ${s}" shape-rendering="crispEdges" role="img" aria-label="Código QR"><rect width="${s}" height="${s}" fill="#ede9e3"/><path d="${d}" fill="#0a0a0b"/></svg>`;
+}
+/* ---------- STEAM IN FRONT (D-30) ----------
+   Signing in and paying are done in Steam's own interface: STONE never sees a password or a card.
+   In the STONE session Steam runs hidden, so STONE asks the session for Steam's window (steam.show):
+   the session puts it in front and gives the screen back with the guide button, when Steam closes
+   it or when the sign-in is done. While it is in front STONE ignores the controller (it is Steam's).
+   If Steam shows no window, plan B hands the whole session to Steam's own Game Mode interface. */
+const SF_TEXT = {
+  login: ['INICIA SESIÓN EN STEAM', 'Steam muestra ahora su propia ventana. Escanea su código QR con la app de Steam del móvil, o escribe tu usuario con un teclado. STONE nunca ve tu contraseña.'],
+  store: ['ABRIENDO LA TIENDA DE STEAM', 'La tienda y el pago son de Steam: se usan tu cuenta y tu forma de pago de Steam. Lo que compres aparece después en tu biblioteca de STONE.'],
+  app: ['ABRIENDO EL JUEGO EN STEAM', 'La compra se hace en Steam, con tu cuenta y tu forma de pago. Al volver, STONE instala el juego en cuanto Steam lo añada a tu cuenta.']
+};
+let sfT = 0;
+function sfVeil(what, title, text) {
+  let v = $('#sfront');
+  if (!v) {
+    v = document.createElement('div'); v.id = 'sfront';
+    v.innerHTML = '<div class="sf-box"><span class="st-cap">STEAM</span><h2></h2><p></p><div class="sf-foot"><span class="g">STONE</span>El botón guía del mando vuelve a STONE</div></div>';
+    stage.appendChild(v);
+  }
+  if (!what) return v.classList.remove('on');
+  v.querySelector('h2').textContent = title || SF_TEXT[what][0];
+  v.querySelector('p').textContent = text || SF_TEXT[what][1];
+  v.classList.add('on');
+}
+async function steamOpen(what, appid) {
+  if (S.steamFront) return;
+  play('select');
+  let r = null;
+  try { r = await (what === 'app' ? Sys.steamShow('app', appid) : Sys.steamShow(what)); }
+  catch (e) { return steamNoWindow(what, appid); }
+  if (!r.managed) {
+    /* not the STONE session (Steam's own Game Mode, or development): Steam shows its pages itself */
+    return toast(what === 'login' ? 'Steam muestra su inicio de sesión en su propia pantalla' : 'Steam abre su tienda en su propia pantalla', false);
+  }
+  S.steamFront = { what, appid: appid || null, t: Date.now() };
+  line.classList.add('off'); $('#hints').classList.add('hide');
+  sfVeil(what);
+  clearInterval(sfT); sfT = setInterval(sfCheck, 5000);
+}
+/* The host says when Steam's window leaves the front and why: closed (guide button, Steam closed it,
+   a game started), signed (the sign-in is done) or nowindow (Steam showed nothing). */
+function sfEnd(why) {
+  const fr = S.steamFront;
+  if (!fr) return;
+  S.steamFront = null; clearInterval(sfT); sfVeil(null);
+  line.classList.remove('off'); applyFocus(); showHints(); armIdleOff();
+  if (why === 'nowindow') return steamNoWindow(fr.what, fr.appid);
+  if (why === 'signed') { play('notify'); longToast('Sesión iniciada en Steam. STONE está leyendo tu biblioteca…', 7000); }
+  else toast(fr.what === 'login' ? 'De vuelta en STONE' : 'De vuelta en STONE. Lo que hayas comprado aparece en tu biblioteca', false);
+  if (typeof SU !== 'undefined' && SU && SU.cur && SU.cur.key === 'steam') Sys.firstrunStatus().then(f => { SU.fr = f; if (SU && SU.cur && SU.cur.key === 'steam') SU_FN.steam(); }, () => {});
+  S.steamAcct = undefined;
+  reloadLibrary();
+}
+Bridge.on('steam', d => { if (d && d.front === false) sfEnd(d.why); });
+/* If the event was lost (the host restarted), the lock never stays on: the host is asked. */
+function sfCheck() {
+  if (!S.steamFront) return clearInterval(sfT);
+  Sys.steamStatus().then(st => { if (S.steamFront && st && st.front === false && Date.now() - S.steamFront.t > 4000) sfEnd('closed'); }, () => {});
+}
+function longToast(msg, ms) {
+  toast(msg, false);
+  clearTimeout(toastT); toastT = setTimeout(() => $('#toast').classList.remove('on'), ms);
+}
+/* What was under the dialog comes back as it was (dialogs here are opened over any screen). */
+function dlgOver() {
+  const scr = S.screen === 'dlg' && dlgPrev ? dlgPrev.screen : S.screen, nav = NAV;
+  return () => { closeDlg(); S.screen = scr; NAV = nav; if (NAV) { line.classList.remove('off'); requestAnimationFrame(() => applyFocus()); } };
+}
+function steamNoWindow(what, appid) {
+  const back = dlgOver();
+  play('notify');
+  const buy = what === 'app' && appid;
+  openDlg(`<span class="st-cap">STEAM</span><h2>STEAM NO MOSTRÓ SU VENTANA</h2>
+    <p>STONE pidió a Steam su ventana y no apareció. Hay otro camino: Steam ocupa toda la pantalla con su propia interfaz, hecha para el mando, y STONE vuelve después.</p>
+    <div class="btns"><span class="txt-f" data-f data-b="full">STEAM COMPLETO</span>${buy ? '<span class="txt-f" data-f data-b="qr">CON EL MÓVIL</span>' : ''}<span class="txt-f" data-f data-b="no">VOLVER</span></div>`, {
+    onA: el => {
+      const b = el.dataset.b; play(b === 'no' ? 'back' : 'select'); back();
+      if (b === 'full') return steamFullAsk(what === 'login' ? 'login' : 'store');
+      if (b === 'qr') return storeQr(appid);
+    }, onB: () => { play('back'); back(); } });
+}
+/* Plan B: Steam's own Game Mode interface takes the session (the session supervisor stops STONE Home
+   and starts it again afterwards). */
+function steamFullAsk(why) {
+  const back = dlgOver();
+  openDlg(`<span class="st-cap">STEAM COMPLETO</span><h2>STEAM OCUPA LA PANTALLA</h2>
+    <p>STONE se cierra un momento y Steam abre su propia interfaz, con su tienda y su inicio de sesión.</p>
+    <p>${why === 'login' ? 'Cuando inicies sesión, STONE vuelve sola. Para volver antes,' : 'Para volver a STONE,'} mantén pulsado el botón guía del mando 3 segundos; reiniciar la consola también vuelve a STONE.</p>
+    <div class="btns"><span class="txt-f" data-f data-b="no">CANCELAR</span><span class="txt-f" data-f data-b="yes">ABRIR STEAM</span></div>`, {
+    onA: el => {
+      if (el.dataset.b !== 'yes') { play('back'); return back(); }
+      play('select'); back();
+      Sys.steamFull(why).then(() => {
+        S.steamFront = { what: why, appid: null, t: Date.now(), full: true };
+        line.classList.add('off'); $('#hints').classList.add('hide');
+        sfVeil(why, 'CAMBIANDO A STEAM', 'Steam abre su propia interfaz. Para volver a STONE: mantén pulsado el botón guía 3 segundos.');
+        /* the supervisor stops STONE Home in about a second; if it does not, the lock is released */
+        setTimeout(() => { if (S.steamFront && S.steamFront.full) { S.steamFront = null; sfVeil(null); line.classList.remove('off'); applyFocus(); toast('Steam no tomó la pantalla. Reinicia la consola e inténtalo de nuevo', false); } }, 20000);
+      }, e => { play('error'); toast(e && e.code === 'Unsupported' ? 'Solo disponible en la sesión STONE de la consola' : 'No se pudo cambiar a Steam', false); });
+    }, onB: () => { play('back'); back(); } });
+}
+/* What STONE knows about Steam, said on the console itself (Ajustes → Steam → Estado de Steam). */
+async function steamStatusDlg() {
+  const back = dlgOver();
+  const st = await Sys.steamStatus().catch(() => null);
+  const kv = (k, v) => `<span class="sres">${k}<small>${esc(v)}</small></span>`;
+  const rows = !st ? '<p>No se pudo leer el estado.</p>' : `<div class="slist">
+    ${kv('Carpeta de Steam', st.root_found ? 'Encontrada' : 'No encontrada: Steam no ha arrancado nunca')}
+    ${kv('Interfaz de Steam', st.interface === true ? 'Responde' : st.interface === false ? 'No responde (Steam está arrancando o cerrado)' : 'Sin dato')}
+    ${kv('Cuenta en esta consola', st.account ? 'Sí' : 'Ninguna: falta iniciar sesión')}
+    ${kv('Sesión de Steam', st.logged === 'in' ? 'Iniciada' : st.logged === 'out' ? 'Sin iniciar' : 'Steam todavía no lo ha dicho')}
+    ${kv('Juegos de la cuenta', st.owned_known ? 'Leídos de Steam ahora' : st.owned_cached ? 'Los que Steam dio la última vez' : 'Todavía sin leer: solo los instalados')}
+    ${kv('Sesión de la consola', st.session === 'stone' ? 'STONE' : 'Otra (Steam o escritorio)')}</div>`;
+  openDlg(`<span class="st-cap">DIAGNÓSTICO</span><h2>ESTADO DE STEAM</h2>${rows}
+    <div class="btns"><span class="txt-f" data-f data-b="no">VOLVER</span></div>`, { onA: () => { play('back'); back(); }, onB: () => { play('back'); back(); } });
+}
+/* ---------- The library follows Steam ----------
+   The host watches Steam (the account answering some seconds after the start, a game bought on the
+   phone, an install that ends) and says "library"; artwork STONE fetches for games Steam had not
+   cached arrives as "art". The screen in front is redrawn in place: same focus, same scroll. */
+let libBusy = false, libAgain = false;
+const libSnap = () => JSON.stringify([G.map(g => [g.appid, g.n, g.inst, g.upd, g.art.capsule, g.art.hero, g.art.header]), S.libLogged, S.libFound, recent.map(i => G[i] && G[i].appid)]);
+async function reloadLibrary() {
+  if (libBusy) { libAgain = true; return; }
+  libBusy = true;
+  const before = libSnap(), f = focusEl();
+  const focus = f && f.dataset && f.dataset.g !== undefined && G[+f.dataset.g] ? G[+f.dataset.g].appid : null;
+  await loadLibrary();
+  libBusy = false;
+  wantedArrived();
+  if (libSnap() !== before) libRedraw(focus);
+  if (libAgain) { libAgain = false; reloadLibrary(); }
+}
+function libRedraw(focusAppid) {
+  const k = focusAppid === null ? -1 : G.findIndex(g => g.appid === focusAppid);
+  if (S.steamFront || !NAV) return;
+  if (S.screen === 'home' && NAV.id === 'home') {
+    if (S.section !== 0) return;
+    const c = k >= 0 ? recent.indexOf(k) : -1;
+    return enterHome(NAV.r === 0 && c >= 0 ? { r: 0, c, keep: true } : { keep: true });
+  }
+  if (S.screen === 'library' && NAV.id === 'library') {
+    const list = libList(), rowsN = Math.ceil(list.length / 6), pos = k >= 0 ? list.findIndex(g => g.i === k) : -1;
+    if (pos >= 0 && NAV.r > 0) return enterLibrary({ r: Math.floor(pos / 6) + 1, c: pos % 6, keep: true });
+    if (!list.length || NAV.r === 0) return enterLibrary({ r: 0, c: Math.min(NAV.c, FILTERS.length), keep: true });
+    const r = Math.min(NAV.r, rowsN), len = Math.min(6, list.length - (r - 1) * 6);
+    return enterLibrary({ r, c: Math.min(NAV.c, len - 1), keep: true });
+  }
+  if (S.screen === 'detail' && NAV.id === 'detail') return S.detailGone ? enterHome({ r: 0, c: 0 }) : enterDetail(curG, { r: NAV.r, c: NAV.c });
+  if (S.screen === 'spage') return storePageDraw({ r: 0, c: 0 });      /* the game arrived: its big button changed */
+  if (S.screen === 'store') return enterStore({ r: NAV.r, c: NAV.c, keep: true });
+}
+Bridge.on('library', () => { if (S.libReady) reloadLibrary(); });
+Bridge.on('art', d => {
+  const got = (d && d.art) || {}, ids = new Set(Object.keys(got));
+  G.forEach(g => {
+    const a = got[g.appid]; if (!a) return;
+    g.art.capsule = g.art.capsule || !!a.capsule; g.art.hero = g.art.hero || !!a.hero;
+    g.art.header = !g.art.capsule && (g.art.header || !!a.header);
+  });
+  document.querySelectorAll('#home .card[data-g], #library .card[data-g]').forEach(el => {
+    const g = G[+el.dataset.g]; if (!g || !ids.has(g.appid)) return;
+    const nm = el.querySelector('.nm');
+    if (el.classList.contains('hero')) { const u = heroUrl(g); if (u) { el.style.backgroundImage = `url("${u}")`; if (nm) nm.remove(); } return; }
+    el.style.backgroundImage = capUrl(g); el.classList.toggle('hdr', capWide(g));
+    if (nm && g.art.capsule) nm.remove();
+  });
+  /* the big picture behind the game being looked at */
+  if (S.bgFor && G[S.bgFor.i] && ids.has(G[S.bgFor.i].appid) && ['home', 'detail'].includes(S.screen)) { bgCur = ''; bgGame(G[S.bgFor.i], S.bgFor.sharp, S.bgFor.veil); }
+  storeArt(got);
+});
+/* Games bought away from the console (the phone, Steam's own store): installed as soon as Steam
+   lists them in the account, without anyone asking again. */
+function wantedArrived() {
+  if (!WANT.size || !S.libOwnedKnown) return;
+  let changed = false;
+  G.forEach(g => {
+    if (!WANT.has(g.appid) || g.src !== 'steam') return;
+    WANT.delete(g.appid); changed = true;
+    if (g.inst || g.upd) return;
+    Sys.install(g.appid).then(() => { steamWatch(20000); play('notify'); longToast(`${g.n} ya está en tu cuenta: STONE lo está instalando`, 8000); },
+      () => longToast(`${g.n} ya está en tu cuenta. Instálalo desde tu biblioteca`, 8000));
+  });
+  if (changed) savePrefs();
+}
+/* SORPRÉNDEME: STONE picks one of the installed games, the ones not played for longest first. */
+function surprise() {
+  const pool = G.filter(g => (g.inst || g.src === 'shortcut') && S.running !== g.i);
+  if (!pool.length) { play('error'); return toast('Aún no hay juegos instalados entre los que elegir', false); }
+  const old = [...pool].sort((a, b) => (a.lastT || 0) - (b.lastT || 0)).slice(0, Math.max(1, Math.ceil(pool.length / 2)));
+  const g = old[Math.floor(Math.random() * old.length)];
+  play('select'); enterDetail(g.i);
+  toast(`STONE elige: ${g.n}${g.min ? '' : ' · todavía sin jugar'}`, false);
+}
+/* PARTE DE SESIÓN: when a game ends, how long it was played and how the console was (read then from
+   stoned, never estimated). Shown once, at Home. */
+let playT0 = 0;
+function sessionStart() { if (!playT0) playT0 = Date.now(); }
+function sessionReport(g) {
+  const t0 = playT0; playT0 = 0;
+  if (!S.report || !g || !t0) return;
+  const min = Math.round((Date.now() - t0) / 60000);
+  if (min < 1) return;
+  const dur = min < 60 ? `${min} min` : `${Math.floor(min / 60)} h ${String(min % 60).padStart(2, '0')} min`;
+  PerfAPI.getMetrics().then(m => m, () => null).then(m => {
+    const temp = m && m.gpu_temp_c != null ? ` · GPU ${Math.round(m.gpu_temp_c)} °C al terminar` : '';
+    setTimeout(() => longToast(`PARTE DE SESIÓN · ${g.n} · ${dur}${temp} · ${profOf(g.perf || S.prof).n}`, 9000), 1400);
+  });
+}
 
 /* ---------- LIBRARY ---------- */
-const FILTERS = ['Todos', 'Steam', 'Accesos directos', 'Favoritos'];
+const FILTERS = ['Todos', 'Steam', 'Accesos directos', 'Favoritos', 'Por instalar', 'Sorpréndeme'];
+const FILTER_SURPRISE = FILTERS.length - 1;       /* not a filter: STONE picks a game (surprise()) */
 function libList() {
   const f = S.filter;
-  return G.filter(g => f === 0 || (f === 1 && g.src === 'steam') || (f === 2 && g.src === 'shortcut') || (f === 3 && g.fav));
+  return G.filter(g => f === 0 || f === FILTER_SURPRISE || (f === 1 && g.src === 'steam') || (f === 2 && g.src === 'shortcut') || (f === 3 && g.fav)
+    || (f === 4 && g.src === 'steam' && !g.inst));
 }
 function emptyText() {
-  if (!S.libFound) return 'No se encontró la biblioteca de Steam. Inicia sesión en Steam y vuelve a STONE.';
+  if (S.libLogged === 'out') return 'Nadie ha iniciado sesión en Steam en esta consola. En Inicio, elige «Inicia sesión en Steam».';
+  if (!S.libFound) return 'Steam todavía no ha creado su biblioteca. Si la consola acaba de encenderse, espera unos segundos.';
   if (S.filter === 3) return 'Aún no hay favoritos. Márcalos desde la ficha de cada juego.';
   if (S.filter === 2) return 'Sin accesos directos. Los lanzadores y emuladores que añaden sus juegos a Steam aparecen aquí.';
-  return G.length ? 'No hay juegos con este filtro.' : 'Aún no hay juegos instalados. Instálalos desde la Tienda de Steam.';
+  if (S.filter === 4) return G.length ? 'Todos los juegos de tu cuenta están instalados.' : 'Aún no hay juegos en tu cuenta.';
+  return G.length ? 'No hay juegos con este filtro.' : 'Aún no hay juegos. Abre la Tienda (RB) para conseguir el primero.';
 }
 function enterLibrary(opts = {}) {
   S.screen = 'library'; S.from = 'library'; S.section = 1;
   const list = libList(), L = $('#library');
+  if (opts.keep && L.querySelector('.grid')) opts.sy = L.querySelector('.grid').dataset.sy;
   L.innerHTML = `<div class="filters">${FILTERS.map((f, k) => `<span class="txt-f${k === S.filter ? ' cur' : ''}" data-f data-filter="${k}">${f}</span>`).join('')}</div>
     <div class="count">${list.length} juegos · recientes primero</div>
     <div class="gclip"><div class="grid" data-sy="0" style="height:${Math.ceil(list.length / 6) * LIB_ROW_H}px"></div></div>
@@ -1147,15 +1766,17 @@ function enterLibrary(opts = {}) {
   });
   NAV.ensure = ensure;
   NAV.id = 'library';
+  if (opts.keep && opts.sy) { grid.style.transition = 'none'; grid.dataset.sy = opts.sy; grid.style.transform = `translateY(${opts.sy}px)`; requestAnimationFrame(() => { grid.style.transition = ''; }); }
   requestAnimationFrame(() => applyFocus());
   hints([['A', 'Abrir'], ['LB RB', 'Sección'], ['B', 'Volver']]);
 }
 const LIB_ROW_H = 437, LIB_COL_W = (1728 - 5 * 40) / 6;
 function libCard(g, row, col) {
   const name = g.art.capsule ? '' : nameTag(g);
-  return `<div class="card${g.inst ? '' : ' dim'}" data-f data-g="${g.i}" data-row="${row}" style="left:${(col * (LIB_COL_W + 40)).toFixed(2)}px;top:${row * LIB_ROW_H}px;background-image:${capUrl(g).replace(/"/g, '&quot;')}">${name}${runTag(g.i)}</div>`;
+  return `<div class="card${g.inst || g.src === 'shortcut' ? '' : ' dim'}${capWide(g) ? ' hdr' : ''}" data-f data-g="${g.i}" data-row="${row}" style="left:${(col * (LIB_COL_W + 40)).toFixed(2)}px;top:${row * LIB_ROW_H}px;background-image:${capUrl(g).replace(/"/g, '&quot;')}">${name}${runTag(g.i)}</div>`;
 }
 function libraryA(el) {
+  if (+el.dataset.filter === FILTER_SURPRISE) return surprise();
   if (el.dataset.filter !== undefined) { play('select'); S.filter = +el.dataset.filter; return enterLibrary({ r: 0, c: S.filter }); }
   play('select'); enterDetail(+el.dataset.g);
 }
@@ -1166,7 +1787,7 @@ function enterDetail(i, opts = {}) {
   curG = i; const g = G[i], running = S.running === i;
   S.screen = 'detail';
   const canPlay = g.inst || g.src === 'shortcut';
-  const prim = running ? 'REANUDAR' : canPlay ? 'JUGAR' : 'INSTALAR';
+  const prim = running ? 'REANUDAR' : canPlay ? 'JUGAR' : g.upd ? 'INSTALANDO…' : 'INSTALAR';
   /* Five actions at most on one line (they always fit the 1920 stage); the image options live in GRÁFICOS. */
   const sec = [[g.fav ? 'Quitar de favoritos' : 'Favorito', 'fav'], [`Rendimiento: ${g.perf ? profOf(g.perf).n : 'Global'}`, 'perf'], ['Propiedades', 'opt']];
   if (g.src === 'steam' && g.inst) sec.splice(2, 0, ['Gráficos', 'gfx'], ['Experiencia', 'xp']);
@@ -1176,7 +1797,7 @@ function enterDetail(i, opts = {}) {
       <div class="stats exp" id="dexp" style="margin-top:.35em;opacity:.85"></div></div>
     <div class="primary txt-f" data-f data-act="primary" id="dprim">${prim}</div>
     <div class="second">${sec.map(([s, a]) => `<span class="txt-f" data-f data-act="${a}">${s}</span>`).join('')}</div>
-    <div class="info"><div><span>Tamaño</span><b>${g.sz}</b></div><div><span>Origen</span><b>${esc(g.o)}</b></div><div><span>Estado</span><b>${g.upd ? 'Actualizando en Steam' : g.inst ? 'Instalado' : 'No instalado'}</b></div><div><span>Al iniciarse</span><b>${g.perf ? profOf(g.perf).n : 'Perfil global'}${S.safeMode && g.perf ? ' (en pausa: Safe Mode)' : ''}</b></div></div>`;
+    <div class="info"><div><span>Tamaño</span><b>${g.sz}</b></div><div><span>Origen</span><b>${esc(g.o)}</b></div><div><span>Estado</span><b>${g.upd ? (g.inst ? 'Actualizando en Steam' : 'Instalándose') : g.inst ? 'Instalado' : 'En tu cuenta · sin instalar'}</b></div><div><span>Al iniciarse</span><b>${g.perf ? profOf(g.perf).n : 'Perfil global'}${S.safeMode && g.perf ? ' (en pausa: Safe Mode)' : ''}</b></div></div>`;
   showScreen('detail'); chrome(true, false);
   bgGame(g, true, 'side');
   const d = $('#detail');
@@ -1188,6 +1809,7 @@ function enterDetail(i, opts = {}) {
   requestAnimationFrame(() => applyFocus());
   hints([['A', prim.charAt(0) + prim.slice(1).toLowerCase()], ['B', 'Volver']]);
   if (g.src === 'steam' && g.inst) { experience(g, i); imgLoad(g, i); }
+  if (g.src === 'steam' && !g.art.hero) Sys.artWant(g.appid).catch(() => {});      /* its big picture, if Steam had not cached it */
 }
 /* Image enhancement: the person's own explicit choice (Nativo / FSR del juego / FSR de pantalla / HelixSR),
    from the host (stone_games). Only what is available is offered; STONE decides again with "STONE decide". */
@@ -1282,7 +1904,10 @@ function detailA(el) {
   if (a === 'primary') {
     play('select');
     if (S.running === g.i) return resumeGame();
-    if (!g.inst && g.src !== 'shortcut') return sys('install', g.appid).then(r => { if (!r) return; steamWatch(20000); toast(`${g.n}: instalando. La descarga se ve en Ajustes → Almacenamiento; al terminar, JUGAR`, false); });
+    if (!g.inst && g.src !== 'shortcut') {
+      if (g.upd) { play('error'); return toast(`${g.n} ya se está instalando: la descarga se ve en Ajustes → Almacenamiento`, false); }
+      return sys('install', g.appid).then(r => { if (!r) return; steamWatch(20000); toast(`${g.n}: instalando. La descarga se ve en Ajustes → Almacenamiento; al terminar, JUGAR`, false); });
+    }
     return launch(g);
   }
   if (a === 'opt') { play('select'); return propsDlg(g); }
@@ -1396,7 +2021,7 @@ function launchStalled(g) {
     } });
 }
 function launchFound(i) {
-  S.launching = null; clearTimeout(launchT);
+  S.launching = null; clearTimeout(launchT); sessionStart();
   setTimeout(() => { if (S.dormant) return; loadingOff(); if (S.running === i) showTag(G[i]); }, 1500);
 }
 /* Called from adopt(): stoned's view of the running game is the truth. */
@@ -1404,7 +2029,7 @@ function gameSync(st, before) {
   const appid = st.game ? st.game.appid : null;
   const i = appid ? G.findIndex(g => g.appid === appid) : -1;
   if (appid) {
-    if (i >= 0) { S.running = i; if (S.launching === i) launchFound(i); }
+    if (i >= 0) { S.running = i; sessionStart(); if (S.launching === i) launchFound(i); }
     return;
   }
   if (S.running !== null && S.launching === null) gameEnded(before);
@@ -1418,6 +2043,7 @@ function gameEnded(before) {
     returnHome();
   }
   if (k >= 0) setTimeout(() => toast(`${g ? g.n + ' terminó. ' : ''}CUSTOM 0${k + 1} validado: la partida terminó sin errores de GPU`), back ? 1200 : 0);
+  else sessionReport(g);
   loadLibrary().then(() => { if (S.screen === 'home') enterHome(); });     /* play time and order changed */
 }
 function returnHome() {
@@ -1718,13 +2344,23 @@ function steamSetRows() {
     l: x.label, s: x.area, v: x.type === 'bool' ? (x.value ? 'Sí' : 'No') : String(x.value),
     act: x.writable ? 'sset' : 'info', sset: x, where: `${x.area}: ${x.label} = ${x.value}${x.writable ? '' : ' (solo lectura)'}` }));
   if (S.steamAcct === undefined) { S.steamAcct = null; Sys.firstrunStatus().then(f => { S.steamAcct = !!f.steam_account; }, () => { S.steamAcct = false; }).then(() => { if (S.screen === 'settings' && CATS[cat] === 'Steam') enterSettings({ pane: !!NAV.pane, ri: NAV.pane ? NAV.c : 0 }); }); }
-  const acct = { l: 'Cuenta de Steam', s: S.steamAcct ? 'Conectada en esta consola' : S.steamAcct === null ? 'Leyendo…' : 'Sin iniciar sesión: Steam muestra su pantalla de inicio de sesión una vez',
-    v: S.steamAcct ? 'Conectada' : 'Iniciar sesión', act: 'sset', login: !S.steamAcct };
-  return [acct, head, ...rows];
+  /* signed in: Steam says so (S.libLogged), or at least an account has signed in on this console */
+  const inn = S.libLogged === 'in' || (S.libLogged !== 'out' && S.steamAcct);
+  const acct = { l: 'Cuenta de Steam', s: inn ? 'Conectada en esta consola' : S.steamAcct === null && S.libLogged !== 'out' ? 'Leyendo…' : 'Sin iniciar sesión: Steam muestra su ventana, con un código QR para la app de Steam del móvil',
+    v: inn ? 'Conectada' : 'Iniciar sesión', act: 'sset', login: !inn };
+  const more = [
+    { l: 'Tienda de Steam', s: 'La tienda propia de Steam, en pantalla: para comprar con tu cuenta. El botón guía vuelve a STONE', v: 'Abrir', act: 'sset', front: 'store' },
+    { l: 'Steam completo', s: 'Steam ocupa la pantalla con su propia interfaz; STONE vuelve después', v: 'Abrir', act: 'sset', full: true },
+    { l: 'Estado de Steam', s: 'Lo que STONE sabe de Steam ahora: cuenta, sesión y biblioteca', v: 'Ver', act: 'sset', status: true }];
+  return [acct, ...more, head, ...rows];
 }
 function ssetA(r) {
+  if (r.login) return steamOpen('login');
+  if (r.front) return steamOpen(r.front);
   play('select');
-  if (r.login) { S.steamAcct = undefined; return Sys.openSteam('store').catch(() => toast('Steam no respondió', false)); }
+  if (r.full) return steamFullAsk(S.libLogged === 'out' ? 'login' : 'store');
+  if (r.status) return steamStatusDlg();
+  if ('login' in r) return toast('Ya hay una cuenta de Steam conectada en esta consola', false);
   if (r.refresh) { S.ss = null; return loadSteamSet(true); }
   if (!r.sset) return;
   const x = r.sset;
@@ -1742,17 +2378,63 @@ function loadEmulators() {
     if (S.screen === 'settings' && CATS[cat] === 'Emuladores') enterSettings({ pane: !!NAV.pane, ri: NAV.pane ? NAV.c : 0 });
   });
 }
+/* Which installed emulators have a newer version on Flathub (asked of Flathub: needs internet). */
+const EMU_UPD = { keys: new Set(), busy: false, checked: false, err: null };
+const emuUpdText = () => EMU_UPD.busy ? 'Preguntando a Flathub…' : EMU_UPD.err ? EMU_UPD.err : !EMU_UPD.checked ? 'Pregunta a Flathub si hay versiones nuevas de tus emuladores'
+  : EMU_UPD.keys.size ? `${EMU_UPD.keys.size} con versión nueva en Flathub` : 'Todos tus emuladores están al día';
+const emuRedraw = () => { if (S.screen === 'settings' && CATS[cat] === 'Emuladores') enterSettings({ pane: !!NAV.pane, ri: NAV.pane ? NAV.c : 0 }); };
+function emuCheck(quiet) {
+  if (EMU_UPD.busy) return;
+  EMU_UPD.busy = true; EMU_UPD.err = null; emuRedraw();
+  Sys.emuCheck().then(r => { EMU_UPD.keys = new Set(r.keys); EMU_UPD.checked = true; },
+    e => { EMU_UPD.checked = true; EMU_UPD.err = (e && e.message) || 'No se pudo consultar Flathub'; if (!quiet) play('error'); })
+    .then(() => { EMU_UPD.busy = false; if (!quiet) toast(emuUpdText(), false); emuRedraw(); });
+}
+const emuBusy = k => EMU_STATE[k] && ['installing', 'updating'].includes(EMU_STATE[k].state);
 Bridge.on('emulator', d => {
+  if (d.key === 'all') { toast(`Emuladores revisados: ${d.of}. Los que tenían versión nueva están actualizados`, false); EMU_UPD.keys = new Set(); EMU_UPD.err = null; return loadEmulators(); }
+  const was = EMU_STATE[d.key] && EMU_STATE[d.key].state;
   EMU_STATE[d.key] = d;
   toast(d.text, false);
-  if (d.state === 'done') { loadEmulators(); loadLibrary(); }
-  else if (S.screen === 'settings' && CATS[cat] === 'Emuladores') enterSettings({ pane: !!NAV.pane, ri: NAV.pane ? NAV.c : 0 });
+  if (d.state === 'done') { EMU_UPD.keys.delete(d.key); loadEmulators(); if (was !== 'updating') reloadLibrary(); }
+  else emuRedraw();
 });
+function emuRows() {
+  const have = S.emu.filter(e => e.installed);
+  /* asked once by itself when the list is opened with emulators installed */
+  if (have.length && !EMU_UPD.checked && !EMU_UPD.busy) setTimeout(() => { if (!EMU_UPD.checked) emuCheck(true); }, 0);
+  const head = have.length ? [{ l: 'Buscar actualizaciones', s: emuUpdText(), v: EMU_UPD.busy ? 'Buscando…' : 'Buscar', act: 'emu', check: true },
+    ...(EMU_UPD.keys.size ? [{ l: 'Actualizar todos', s: 'Cada emulador con versión nueva se actualiza desde Flathub', v: 'Actualizar', act: 'emu', all: true }] : [])] : [];
+  return head.concat(S.emu.map(e => {
+    if (e.not_yet) return { l: e.name, s: 'Todavía no hay un emulador que instalar. Pulsa A para saber por qué', v: 'No disponible', act: 'emu', emu: e };
+    const st = EMU_STATE[e.key], busy = emuBusy(e.key), upd = e.installed && EMU_UPD.keys.has(e.key);
+    return { l: e.name, s: busy ? st.text : e.plays + (e.installed && e.version ? ` · versión ${e.version}` : '') + (upd ? ' · hay una versión nueva' : ''),
+      v: busy ? (st.state === 'updating' ? 'Actualizando…' : 'Instalando…') : upd ? 'Actualizar' : e.installed ? 'Instalado' : 'Instalar', act: 'emu', emu: e };
+  }));
+}
 function emuA(r) {
+  if (r.check) { play('select'); return emuCheck(false); }
+  if (r.all) {
+    play('select');
+    [...EMU_UPD.keys].forEach(k => { EMU_STATE[k] = { state: 'updating', text: 'En cola para actualizar…' }; });
+    emuRedraw();
+    return sys('emuUpdate', 'all');
+  }
   const e = r.emu;
-  if (e.installed) { play('select'); return toast(`${e.name} está en tu biblioteca, como acceso directo`, false); }
-  if (EMU_STATE[e.key] && EMU_STATE[e.key].state === 'installing') { play('error'); return toast(`${e.name} se está instalando`, false); }
+  if (e.not_yet) {
+    play('select');
+    const back = dlgOver();
+    return openDlg(`<span class="st-cap">EMULADORES</span><h2>${esc(e.name.toUpperCase())}</h2><p>${esc(e.not_yet)}</p>
+      <div class="btns"><span class="txt-f" data-f data-b="no">ENTENDIDO</span></div>`, { onA: () => { play('back'); back(); }, onB: () => { play('back'); back(); } });
+  }
+  if (emuBusy(e.key)) { play('error'); return toast(`${e.name}: ${EMU_STATE[e.key].state === 'updating' ? 'se está actualizando' : 'se está instalando'}`, false); }
   play('select');
+  if (e.installed) {
+    /* installed: A updates this emulator (Flathub answers "already up to date" when there is nothing new) */
+    EMU_STATE[e.key] = { state: 'updating', text: `Actualizando ${e.name} desde Flathub…` };
+    emuRedraw();
+    return sys('emuUpdate', e.key);
+  }
   EMU_STATE[e.key] = { state: 'installing', text: `Instalando ${e.name}…` };
   enterSettings({ pane: true, ri: NAV.c });
   return sys('emuInstall', e.key);
@@ -1847,16 +2529,16 @@ function catRows() {
     case 'Bluetooth': return { d: 'Mandos, auriculares y teclados. Para emparejar, ponlos en modo emparejamiento y busca.', rows: btRows() };
     case 'Almacenamiento': return { d: 'Espacio en cada disco, lo que ocupa cada juego y las descargas de Steam en curso.', rows: storageRows() };
     case 'Salud': return { d: 'El estado de STONE MACHINE, leído ahora. Nada de esta pantalla cambia la consola.', rows: healthRows() };
-    case 'Steam': return { d: 'Los ajustes de Steam, con el aspecto de STONE. La lista sale de lo que ofrece este Steam; los de sí/no se cambian con A.', rows: steamSetRows() };
+    case 'Steam': return { d: 'Tu cuenta, la tienda y los ajustes de Steam, con el aspecto de STONE. Los ajustes de sí/no se cambian con A.', rows: steamSetRows() };
     case 'Emuladores': {
       if (!S.emu) { if (!S.emuLoading) loadEmulators(); return { d: 'Emuladores de otras consolas, desde Flathub.', rows: [{ l: 'Leyendo…', s: 'Buscando qué emuladores están instalados', v: '', ro: true }] }; }
-      return { d: 'Se instalan desde Flathub y aparecen en tu biblioteca como accesos directos. Los juegos y BIOS los pones tú. RetroDECK reúne la mayoría de consolas en una sola app.',
-        rows: S.emu.map(e => { const st = EMU_STATE[e.key]; const busy = st && st.state === 'installing';
-          return { l: e.name, s: busy ? st.text : e.plays, v: e.installed ? 'Instalado' : busy ? 'Instalando…' : 'Instalar', act: 'emu', emu: e }; }).concat(romRows()) };
+      return { d: 'Se instalan desde Flathub y aparecen en tu biblioteca como accesos directos. Pulsa A sobre uno instalado para actualizarlo. Los juegos, las BIOS y las claves de cada consola los pones tú.',
+        rows: emuRows().concat(romRows()) };
     }
     case 'Rendimiento': return { d: `Perfil activo: ${profOf(S.prof).n}. Elige entre silencio y rendimiento, o ajusta tu propio perfil.`, rows: [
       { l: 'Performance Center', s: 'SILENT, BALANCED, PERFORMANCE y CUSTOM', v: 'Abrir', act: 'perf' },
       { l: 'Modo técnico', s: 'Temperaturas, frecuencia y consumo en el menú de STONE durante el juego', v: S.tech ? 'Activado' : 'Desactivado', key: 'tech' },
+      { l: 'Parte de sesión', s: 'Al terminar un juego: cuánto jugaste y la temperatura de la GPU en ese momento', v: S.report ? 'Activado' : 'Desactivado', key: 'report' },
       cu40Row(),
       { l: 'Safe Mode', s: S.safeMode ? `Activo: ${SAFE_REASON[S.safeReason] || 'valores de fábrica'}` : 'Sólo valores de fábrica: sin CUSTOM, sin perfiles por juego ni pruebas', v: S.safeMode ? 'Salir' : 'Activar', act: 'safe' }] };
     case 'Energía': return { d: 'STONE MACHINE no tiene modo de reposo. Apagarla cuando no se usa ahorra entre 55 y 105 W.', rows: [
@@ -2145,6 +2827,7 @@ function adjust(key, d, ri) {
   else if (key === 'hc') { S.hc = !S.hc; }
   else if (key === 'rm') { S.rm = !S.rm; }
   else if (key === 'tech') { S.tech = !S.tech; }
+  else if (key === 'report') { S.report = !S.report; }
   else if (key === 'sysvol') { return setSysVol(d, ri); }
   else if (key === 'frame') { const n = FRAME + d; if (n < 0 || n > 6) return bump(d); FRAME = n; fit(); }
   else if (key === 'render') { S.render = (S.render + d + RENDER.length) % RENDER.length; play('select'); return applyRender(); }
@@ -2496,7 +3179,7 @@ function closePower() {
   if (powerFrom === 'game') { S.screen = 'game'; NAV = null; line.classList.add('off'); $('#hints').classList.add('hide'); return; }
   if (powerFrom === 'settings') return enterSettings();
   if (NAV) NAV.id = '';
-  enterHome({ r: 1, c: 3 });
+  enterHome({ sys: 'power' });
 }
 async function powerA(el) {
   const a = el.dataset.act; play('select');
@@ -2510,7 +3193,7 @@ async function powerA(el) {
    and asks before restarting. */
 function bootOptions() {
   const dep = S.info && S.info.deployments, prev = dep && dep.rollback;
-  const back = () => { closeDlg(); play('back'); S.section = 0; if (NAV) NAV.id = ''; enterHome({ r: 1, c: 3 }); };
+  const back = () => { closeDlg(); play('back'); S.section = 0; if (NAV) NAV.id = ''; enterHome({ sys: 'power' }); };
   openDlg(`<h2>OPCIONES DE ARRANQUE</h2>
     <p><b>Safe Mode</b>: STONE arranca con los valores de fábrica, sin perfiles CUSTOM ni perfiles por juego.</p>
     <p><b>Versión anterior</b>: ${prev ? `el próximo arranque usa ${esc(prev.version || 'la versión anterior')}. Puedes volver a la actual de la misma forma.` : 'no hay una versión anterior guardada todavía.'}</p>
@@ -2539,7 +3222,7 @@ async function toDesktop() {
     $('#offmsg').textContent = 'Abriendo el escritorio… Para volver: «Volver a STONE» en el escritorio, o reiniciar.'; $('#offmsg').classList.add('on');
   } catch (e) {
     $('#black').classList.remove('on'); line.classList.remove('off');
-    S.section = 0; if (NAV) NAV.id = ''; enterHome({ r: 1, c: 3 });
+    S.section = 0; if (NAV) NAV.id = ''; enterHome({ sys: 'power' });
     play('error'); toast(`No se pudo abrir el escritorio (${ERR_TEXT[e.code] || e.message})`, false);
   }
 }
@@ -2559,7 +3242,7 @@ async function shutdown(reboot) {
     $('#offmsg').textContent = reboot ? 'Reiniciando…' : 'Apagando…'; $('#offmsg').classList.add('on');
   } catch (e) {
     $('#black').classList.remove('on'); line.classList.remove('off');
-    S.section = 0; if (NAV) NAV.id = ''; enterHome({ r: 1, c: 3 });
+    S.section = 0; if (NAV) NAV.id = ''; enterHome({ sys: 'power' });
     play('error'); toast(`No se pudo ${reboot ? 'reiniciar' : 'apagar'} (${ERR_TEXT[e.code] || e.message}). Usa el botón STEAM → Energía`, false);
   }
 }
@@ -2575,7 +3258,7 @@ function armIdleOff() {
   clearTimeout(idleOffT);
   const min = IDLE_MIN[S.idle]; if (!min) return;
   idleOffT = setTimeout(() => {
-    if (S.running !== null || S.game || testUI || stonedBusy() || ['game', 'quick', 'transition', 'dlg'].includes(S.screen)) return armIdleOff();
+    if (S.running !== null || S.game || S.steamFront || testUI || stonedBusy() || ['game', 'quick', 'transition', 'dlg'].includes(S.screen)) return armIdleOff();
     shutdown(false);
   }, min * 60000);
 }
@@ -2583,39 +3266,46 @@ let saveT = 0;
 function savePrefs() {
   clearTimeout(saveT);
   saveT = setTimeout(() => Sys.prefsSet({ sound: S.sound, vol: S.vol, hc: S.hc, rm: S.rm, ts: S.ts, safe: S.safe, idle: S.idle,
-    tech: S.tech, adv_ack: S.advAck, engine: S.render, favorites: [...favs], frame: FRAME }).catch(() => {}), 400);
+    tech: S.tech, adv_ack: S.advAck, engine: S.render, favorites: [...favs], frame: FRAME, wanted: [...WANT], report: S.report }).catch(() => {}), 400);
 }
 function loadPrefs(p) {
   if (!p) return;
   S.sound = p.sound; S.vol = p.vol; S.hc = p.hc; S.rm = p.rm || reduceOS; S.ts = p.ts; S.safe = p.safe; S.idle = p.idle;
   S.tech = p.tech; S.advAck = p.adv_ack; S.render = p.engine === 1 ? 1 : 0; favs.clear(); (p.favorites || []).forEach(a => favs.add(a));
   FRAME = p.frame > 0 && p.frame <= 6 ? p.frame : 0; fit();
+  WANT.clear(); (p.wanted || []).forEach(a => WANT.add(a)); S.report = p.report !== false;
   applyPrefs();
 }
 
 /* ---------- BOOT ----------
-   Plymouth and Steam already showed the line while the machine started; this is STONE Home
-   arriving. The animation runs while the library, settings and stoned answer, so it adds
-   no waiting of its own; Home appears as soon as both are done. */
+   Plymouth already showed the line while the machine started; this is STONE Home arriving. The
+   animation runs while the settings, the machine's capabilities and the library answer, so it adds
+   no waiting of its own beyond BOOT_MIN_MS: Home appears as soon as it has what its first frame
+   needs. The library is answered from Steam's files and the list kept from the last boot (the host
+   does not wait for Steam, which starts after STONE Home); the system's versions (rpm-ostree, slow)
+   are read behind, no screen needs them at the start. */
+const BOOT_WORD_MS = 350, BOOT_MIN_MS = 650, BOOT_OUT_MS = 250, BOOT_MAX_MS = 5000;
 async function boot() {
   S.screen = 'transition';
   $('#black').classList.add('on'); line.classList.add('boot');
   Sys.bootMark('visual').catch(() => {});          /* BOOT TO VISUAL: STONE Home's first frame */
   const first = Sys.firstrunStatus().catch(() => ({ done: true }));
   const prefs = Sys.prefsGet().then(loadPrefs).catch(() => {});
-  const prep = Promise.all([prefs, refreshCaps(), Sys.info().then(i => { S.info = i; }).catch(() => {}), prefs.then(loadLibrary)]);
+  Bridge.call('session.info').then(i => { if (!S.info) S.info = i; }).catch(() => {});
+  Sys.info().then(i => { S.info = i; }).catch(() => {});
+  const prep = Promise.all([prefs, refreshCaps(), prefs.then(loadLibrary)]);
   /* Home is about to be on screen: only now may stoned apply the saved profile (factory or validated) */
   const home = prep.then(() => PerfAPI.homeReady()).then(st => { adopt(st); return st; })
     .catch(e => { if (e && e.code === 'ServiceUnavailable') S.actual = { error: 'ServiceUnavailable' }; return null; });
-  /* The frame before this one (Plymouth, then STONE's Steam startup movie) is black with the full
-     line at 82 % of the height and 25 % of the width: STONE Home starts on that same frame. */
+  /* The frame before this one (Plymouth) is black with the full line at 82 % of the height and
+     25 % of the width: STONE Home starts on that same frame. */
   setLine(720, 886, 480); line.classList.remove('off');
   play('start');
-  await wait(1000);
+  await wait(BOOT_WORD_MS);
   $('#bootword').classList.add('on');
-  await Promise.race([prep, new Promise(r => setTimeout(r, 8000))]).then(() => wait(700));
+  await Promise.all([Promise.race([prep, wait(BOOT_MAX_MS)]), wait(BOOT_MIN_MS)]);
   $('#bootword').classList.remove('on');
-  await wait(300);
+  await wait(BOOT_OUT_MS);
   $('#black').classList.remove('on');
   S.section = 0; if (NAV) NAV.id = ''; NAV = null;
   const fr = await Promise.race([first, wait(3000).then(() => ({ done: true }))]);
@@ -2626,6 +3316,7 @@ async function boot() {
   setTimeout(() => line.classList.remove('boot'), 1300);
   armIdleOff();
   home.then(st => { if (st) setTimeout(() => bootNotices(st), 1400); });
+  wantedArrived();
 }
 
 /* ---------- SETUP: the first start (M22) ----------
@@ -2791,13 +3482,11 @@ const SU_FN = {
     const has = SU.fr.steam_account;
     suDraw({ key: 'steam', title: 'STEAM',
       lead: has ? 'Tu cuenta de Steam ya está en esta consola: tu biblioteca aparece en STONE.'
-        : 'Tus juegos vienen de tu cuenta de Steam. Steam muestra su propia pantalla de inicio de sesión una sola vez (puedes usar el código QR con la app de Steam del móvil); después todo sigue en STONE.',
+        : 'Tus juegos vienen de tu cuenta de Steam. Steam muestra su propia ventana de inicio de sesión: escanea su código QR con la app de Steam del móvil, o escribe con un teclado. STONE nunca ve tu contraseña y vuelve sola cuando termines.',
       rows: [{ l: 'Cuenta', v: has ? 'conectada' : 'sin iniciar sesión' }],
       buttons: has ? [['next', 'CONTINUAR']] : [['login', 'INICIAR SESIÓN'], ['next', 'MÁS TARDE']],
-      onButton: async b => {
-        if (b === 'login') { await Sys.openSteam('store').catch(() => {}); SU.fr = await Sys.firstrunStatus().catch(() => SU.fr); }
-        suNext();
-      } });
+      /* the sign-in is Steam's own window (steamOpen); when it is done this step is drawn again (sfEnd) */
+      onButton: b => { if (b === 'login') return steamOpen('login'); suNext(); } });
   },
   listo() {
     suDraw({ key: 'listo', title: 'TODO LISTO.', lead: 'Tu STONE MACHINE está preparada. Pulsa Y en Inicio para buscar un juego, y el botón STONE para volver aquí desde cualquier juego.',
@@ -2828,7 +3517,11 @@ async function suFinish() {
 
 /* ---------- Input dispatch ---------- */
 function act(a) {
+  /* Steam's own window is in front (D-30): the controller is Steam's; only the guide button is STONE's */
+  if (S.steamFront) { if (a === 'home' && !S.steamFront.full) Sys.steamHide().catch(() => {}); return; }
   if (S.screen === 'transition') return;
+  if (S.screen === 'store') { showHints(); return storeInput(a); }
+  if (S.screen === 'spage') { showHints(); return storePageInput(a); }
   if (S.screen === 'game') {
     if (a === 'home' || a === 'menu') return openQuick();
     if (a === 'a') { play('select'); return resumeGame(); }
@@ -2874,7 +3567,7 @@ function act(a) {
   if (S.screen === 'settings') {
     if (dirs.includes(a)) return settingsMove(a);
     if (a === 'a') return settingsA(focusEl());
-    if (a === 'b') { play('back'); $('#safe').classList.remove('on'); if (NAV.pane) return enterSettings(); if (NAV) NAV.id = ''; return enterHome({ r: 1, c: 2 }); }
+    if (a === 'b') { play('back'); $('#safe').classList.remove('on'); if (NAV.pane) return enterSettings(); if (NAV) NAV.id = ''; return enterHome({ sys: 'settings' }); }
     if (a === 'home') return enterHome({ r: 0, c: 0 });
     return;
   }

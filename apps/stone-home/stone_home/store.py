@@ -18,6 +18,7 @@ only fetches from Steam's own image servers; they never reach the page.
 
 import html
 import json
+import os
 import re
 import urllib.parse
 import urllib.request
@@ -33,6 +34,8 @@ OFFLINE = "La tienda de Steam no responde ({}): ¿hay conexión a internet?"
 
 
 def _get(url, timeout=10):
+    if os.environ.get("STONE_HOME_NO_FETCH") == "1":          # tests and development: nothing is fetched
+        raise OSError("fetching is off (STONE_HOME_NO_FETCH)")
     req = urllib.request.Request(url, headers={"User-Agent": "STONE-OS"})
     with urllib.request.urlopen(req, timeout=timeout) as r:
         return r.read(2 * 2**20).decode("utf-8", "replace")

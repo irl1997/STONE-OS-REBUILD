@@ -146,3 +146,53 @@
 /* Home context: one line for the name (long names end in «…»), so the line under it never reaches stratum 02 */
 #home .ctx-title{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:1728px}
 #home .ctx .meta{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:1728px}
+
+/* ---- 3.0 ---- names on cards without artwork; a card with only the store's wide picture */
+.card .nm{position:absolute;left:20px;right:20px;bottom:24px;font-family:var(--f-display);font-weight:300;letter-spacing:.2em;font-size:18px;line-height:1.3;color:var(--warm);overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:4;overflow-wrap:anywhere}
+.card.hdr{background-size:100% auto;background-position:center 18%;background-repeat:no-repeat;background-color:#0e0f10}
+.card.wide.vein{border-top:3px solid var(--vein)}
+.card.wide.vein b{color:var(--vein)}
+.card.hero.dim,.card.cap.dim{opacity:.6}
+/* TIENDA: the same strata as the library; wide cards (Steam's store pictures), the name and the price under each */
+#store::before{content:"";position:absolute;left:0;top:0;width:1920px;height:196px;background:var(--st-head);border-bottom:1px solid var(--st-rule)}
+#store .filters{position:absolute;left:96px;top:206px;display:flex;gap:40px;font-size:22px}
+#store .filters span{max-width:420px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#store .filters span.cur{color:var(--warm)}
+#store .filters span.cur::after{content:"";display:block;height:2px;background:var(--vein);margin-top:8px}
+#store .count{position:absolute;right:96px;top:214px;font-family:var(--f-mono);font-size:15px;letter-spacing:.16em;text-transform:uppercase;color:var(--text-2)}
+#store .count::before{content:"ESTRATO 01 · "}
+#store .gclip{position:absolute;left:0;top:276px;width:1920px;height:680px;overflow:hidden}
+#store .grid{position:absolute;left:96px;top:4px;width:1728px;transition:transform var(--d-step) var(--e-step)}
+#store .scard{position:absolute;width:400px;height:187px;background-color:#0e0f10}
+#store .scard .off{position:absolute;left:0;top:0;padding:6px 12px;background:var(--vein);color:#0a0a0b;font-family:var(--f-mono);font-size:16px;letter-spacing:.06em;border-radius:4px 0 4px 0}
+#store .scard .cap2{position:absolute;left:0;right:0;top:calc(100% + 26px);display:flex;flex-direction:column;gap:4px}
+#store .scard .cap2 b{font-weight:400;font-size:20px;line-height:26px;color:var(--warm);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#store .scard .cap2 i{font-style:normal;font-family:var(--f-mono);font-size:15px;line-height:20px;letter-spacing:.08em;color:var(--text-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#store .scard .cap2 s{margin-right:12px;opacity:.7}
+#store .empty{position:absolute;left:96px;top:300px;font-size:24px;color:var(--text-2);max-width:1400px}
+#store .sel{position:absolute;left:96px;top:994px;font-size:20px;color:var(--text-2);max-width:900px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* a game's page in the store reuses the game page; its description */
+#detail .stats.about{font-size:calc(22px * var(--ts));line-height:1.45;max-width:900px;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}
+#detail .stats.about:empty{display:none}
+/* Steam's own window is coming in front (D-30) */
+#sfront{position:absolute;inset:0;z-index:44;background:#0a0a0b;visibility:hidden;opacity:0;transition:opacity var(--d-enter) var(--e-light),visibility 0s linear var(--d-enter)}
+#sfront.on{visibility:visible;opacity:1;transition:opacity var(--d-enter) var(--e-light),visibility 0s}
+#sfront .sf-box{position:absolute;left:96px;top:300px;width:1100px;display:flex;flex-direction:column;gap:26px;border-top:3px solid var(--vein);padding-top:40px}
+#sfront .st-cap{font-family:var(--f-mono);font-size:16px;letter-spacing:.2em;color:var(--vein)}
+#sfront h2{margin:0;font-family:var(--f-display);font-weight:200;font-size:64px;line-height:76px;letter-spacing:.2em;color:var(--warm)}
+#sfront p{margin:0;font-size:26px;line-height:38px;color:var(--text-2);max-width:940px}
+#sfront .sf-foot{display:flex;gap:14px;align-items:center;font-size:22px;color:var(--warm);margin-top:14px}
+#sfront .sf-foot .g{border-color:var(--vein);color:var(--vein);padding:0 12px}
+/* the QR code for the phone */
+#dlg .qrrow{display:flex;gap:40px;align-items:flex-start}
+#dlg .qrrow .qr{flex:none;border-radius:4px}
+#dlg .qrrow div{display:flex;flex-direction:column;gap:18px;min-width:0}
+#dlg .qrrow .url{font-family:var(--f-mono);font-size:17px;line-height:24px;letter-spacing:.04em;color:var(--warm);word-break:break-all}
+/* Messages have their own lane, top right under the clock: they never cover the bottom row
+   (Home's system row, the library's and the store's selection line were under them before) */
+#toast{left:auto;right:96px;top:136px;max-width:760px;text-align:right;line-height:28px;transform:translateY(-8px)}
+/* Home with large text (Ajustes → Accesibilidad, up to 1.5×): the game's name and its line grow up to
+   1.3× and the block starts higher, so its last line never reaches the label of stratum 02 */
+#home .ctx{top:calc(700px - (var(--ts) - 1) * 36px);gap:6px}
+#home .ctx-title{font-size:calc(40px * min(var(--ts), 1.3))}
+#home .ctx .meta{font-size:calc(20px * min(var(--ts), 1.3))}

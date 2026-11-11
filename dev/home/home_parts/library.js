@@ -3,6 +3,7 @@
    The host sorts by last played, installed first. Artwork comes from Steam's own cache through stone://art. */
 let G = [], recent = [];
 const favs = new Set();
+const WANT = new Set();          /* games being bought away from the console: installed when Steam lists them */
 const SRC = { steam: 'Steam', shortcut: 'Acceso directo' };
 function ago(t) {
   if (!t) return 'Nunca';
@@ -21,16 +22,31 @@ async function loadLibrary() {
   let r = null;
   try { r = await Sys.library(); } catch (e) { r = null; }
   const list = r ? r.games : [];
+  /* S.running, S.launching and the open game page are positions in G: each one follows its game */
+  const idOf = i => i !== null && i !== undefined && G[i] ? G[i].appid : null;
+  const run = idOf(S.running), lau = idOf(S.launching), cur = typeof curG === 'number' ? idOf(curG) : null;
   G = list.map((x, i) => ({ i, appid: x.appid, n: x.name, o: SRC[x.source] || 'Steam', src: x.source, min: x.playtime_min,
     h: Math.round(x.playtime_min / 60), lastT: x.last_played, last: ago(x.last_played), sz: sizeText(x.size_bytes),
-    inst: x.installed, upd: x.updating, art: x.art || {}, fav: favs.has(x.appid), perf: null }));
+    inst: x.installed, upd: x.updating, art: Object.assign({ capsule: false, hero: false, header: false }, x.art), fav: favs.has(x.appid), perf: null }));
+  const at = a => { const k = a === null ? -1 : G.findIndex(g => g.appid === a); return k < 0 ? null : k; };
+  S.running = at(run); S.launching = at(lau);
+  S.detailGone = cur !== null && at(cur) === null;
+  if (cur !== null && at(cur) !== null) curG = at(cur);
   recent = G.filter(g => g.inst || g.src === 'shortcut').slice(0, 6).map(g => g.i);
+  /* nothing installed yet (a new console): the account's games take the first row, ready to install */
+  S.libNone = !recent.length;
+  if (S.libNone) recent = G.slice(0, 6).map(g => g.i);
   S.libReady = true; S.libFound = r ? r.root_found : false; S.libOwnedKnown = !!(r && r.owned_known);
+  /* "out": nobody is signed in to Steam on this console; "in"; null while Steam has not said */
+  S.libLogged = r ? r.logged : null; S.libCached = !!(r && r.owned_cached);
   if (S.st) adopt(S.st);
 }
-const capUrl = g => g.art.capsule ? `url("${Bridge.artUrl(g.appid, 'capsule')}")` : 'none';
-const heroUrl = g => g.art.hero || g.art.capsule ? Bridge.artUrl(g.appid, g.art.hero ? 'hero' : 'capsule') : null;
-const nameTag = g => `<span style="position:absolute;left:20px;right:20px;bottom:24px;font-family:var(--f-display);font-weight:300;letter-spacing:.2em;font-size:18px;line-height:1.3;color:var(--warm)">${esc(g.n.toUpperCase())}</span>`;
+/* Artwork: Steam's own cache, or what STONE fetched for games Steam had not shown (host artcache).
+   A game with only the store's wide picture shows it at the top of its card, the name under it. */
+const capUrl = g => g.art.capsule ? `url("${Bridge.artUrl(g.appid, 'capsule')}")` : g.art.header ? `url("${Bridge.artUrl(g.appid, 'header')}")` : 'none';
+const capWide = g => !g.art.capsule && !!g.art.header;
+const heroUrl = g => g.art.hero || g.art.capsule || g.art.header ? Bridge.artUrl(g.appid, g.art.hero ? 'hero' : g.art.capsule ? 'capsule' : 'header') : null;
+const nameTag = g => `<span class="nm">${esc(g.n.toUpperCase())}</span>`;
 /* Background blur from a 64×36 copy of the hero: one tiny image scaled up, no live blur filter.
    A small LRU keeps the last ones; game mode empties it. */
 const BLUR = new Map(), BLUR_MAX = 24;

@@ -4,7 +4,7 @@ function enterDetail(i, opts = {}) {
   curG = i; const g = G[i], running = S.running === i;
   S.screen = 'detail';
   const canPlay = g.inst || g.src === 'shortcut';
-  const prim = running ? 'REANUDAR' : canPlay ? 'JUGAR' : 'INSTALAR';
+  const prim = running ? 'REANUDAR' : canPlay ? 'JUGAR' : g.upd ? 'INSTALANDO…' : 'INSTALAR';
   /* Five actions at most on one line (they always fit the 1920 stage); the image options live in GRÁFICOS. */
   const sec = [[g.fav ? 'Quitar de favoritos' : 'Favorito', 'fav'], [`Rendimiento: ${g.perf ? profOf(g.perf).n : 'Global'}`, 'perf'], ['Propiedades', 'opt']];
   if (g.src === 'steam' && g.inst) sec.splice(2, 0, ['Gráficos', 'gfx'], ['Experiencia', 'xp']);
@@ -14,7 +14,7 @@ function enterDetail(i, opts = {}) {
       <div class="stats exp" id="dexp" style="margin-top:.35em;opacity:.85"></div></div>
     <div class="primary txt-f" data-f data-act="primary" id="dprim">${prim}</div>
     <div class="second">${sec.map(([s, a]) => `<span class="txt-f" data-f data-act="${a}">${s}</span>`).join('')}</div>
-    <div class="info"><div><span>Tamaño</span><b>${g.sz}</b></div><div><span>Origen</span><b>${esc(g.o)}</b></div><div><span>Estado</span><b>${g.upd ? 'Actualizando en Steam' : g.inst ? 'Instalado' : 'No instalado'}</b></div><div><span>Al iniciarse</span><b>${g.perf ? profOf(g.perf).n : 'Perfil global'}${S.safeMode && g.perf ? ' (en pausa: Safe Mode)' : ''}</b></div></div>`;
+    <div class="info"><div><span>Tamaño</span><b>${g.sz}</b></div><div><span>Origen</span><b>${esc(g.o)}</b></div><div><span>Estado</span><b>${g.upd ? (g.inst ? 'Actualizando en Steam' : 'Instalándose') : g.inst ? 'Instalado' : 'En tu cuenta · sin instalar'}</b></div><div><span>Al iniciarse</span><b>${g.perf ? profOf(g.perf).n : 'Perfil global'}${S.safeMode && g.perf ? ' (en pausa: Safe Mode)' : ''}</b></div></div>`;
   showScreen('detail'); chrome(true, false);
   bgGame(g, true, 'side');
   const d = $('#detail');
@@ -26,6 +26,7 @@ function enterDetail(i, opts = {}) {
   requestAnimationFrame(() => applyFocus());
   hints([['A', prim.charAt(0) + prim.slice(1).toLowerCase()], ['B', 'Volver']]);
   if (g.src === 'steam' && g.inst) { experience(g, i); imgLoad(g, i); }
+  if (g.src === 'steam' && !g.art.hero) Sys.artWant(g.appid).catch(() => {});      /* its big picture, if Steam had not cached it */
 }
 /* Image enhancement: the person's own explicit choice (Nativo / FSR del juego / FSR de pantalla / HelixSR),
    from the host (stone_games). Only what is available is offered; STONE decides again with "STONE decide". */
@@ -120,7 +121,10 @@ function detailA(el) {
   if (a === 'primary') {
     play('select');
     if (S.running === g.i) return resumeGame();
-    if (!g.inst && g.src !== 'shortcut') return sys('install', g.appid).then(r => { if (!r) return; steamWatch(20000); toast(`${g.n}: instalando. La descarga se ve en Ajustes → Almacenamiento; al terminar, JUGAR`, false); });
+    if (!g.inst && g.src !== 'shortcut') {
+      if (g.upd) { play('error'); return toast(`${g.n} ya se está instalando: la descarga se ve en Ajustes → Almacenamiento`, false); }
+      return sys('install', g.appid).then(r => { if (!r) return; steamWatch(20000); toast(`${g.n}: instalando. La descarga se ve en Ajustes → Almacenamiento; al terminar, JUGAR`, false); });
+    }
     return launch(g);
   }
   if (a === 'opt') { play('select'); return propsDlg(g); }
@@ -234,7 +238,7 @@ function launchStalled(g) {
     } });
 }
 function launchFound(i) {
-  S.launching = null; clearTimeout(launchT);
+  S.launching = null; clearTimeout(launchT); sessionStart();
   setTimeout(() => { if (S.dormant) return; loadingOff(); if (S.running === i) showTag(G[i]); }, 1500);
 }
 /* Called from adopt(): stoned's view of the running game is the truth. */
@@ -242,7 +246,7 @@ function gameSync(st, before) {
   const appid = st.game ? st.game.appid : null;
   const i = appid ? G.findIndex(g => g.appid === appid) : -1;
   if (appid) {
-    if (i >= 0) { S.running = i; if (S.launching === i) launchFound(i); }
+    if (i >= 0) { S.running = i; sessionStart(); if (S.launching === i) launchFound(i); }
     return;
   }
   if (S.running !== null && S.launching === null) gameEnded(before);
@@ -256,6 +260,7 @@ function gameEnded(before) {
     returnHome();
   }
   if (k >= 0) setTimeout(() => toast(`${g ? g.n + ' terminó. ' : ''}CUSTOM 0${k + 1} validado: la partida terminó sin errores de GPU`), back ? 1200 : 0);
+  else sessionReport(g);
   loadLibrary().then(() => { if (S.screen === 'home') enterHome(); });     /* play time and order changed */
 }
 function returnHome() {
