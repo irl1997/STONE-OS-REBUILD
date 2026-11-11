@@ -32,8 +32,28 @@ SYSTEMS = {
     "gba": ("gba", "Game Boy Advance", "mgba", (".gba", ".gb", ".gbc"), ["-f"]),
     "dreamcast": ("dreamcast", "Dreamcast", "flycast", (".gdi", ".cdi", ".chd"), []),
     "xbox": ("xbox", "Xbox", "xemu", (".iso", ".xiso"), ["-full-screen", "-dvd_path"]),
+    # Nintendo Switch: Eden (-f fullscreen, -g game) [VERIFICAR EN PLACA: T-EMU-03]
+    "switch": ("switch", "Nintendo Switch", "eden", (".nsp", ".xci", ".nca", ".nso", ".nro"), ["-f", "-g"]),
+}
+# Another emulator that also opens a system's games, used when the first one is not installed:
+# system -> [(catalog key, arguments before the file)]
+ALTERNATES = {
+    "switch": [("ryujinx", ["--fullscreen"])],
 }
 MAX_PER_SYSTEM = 300
+
+
+# Said in the system's LEEME.txt: what the emulator needs from the person's own console.
+NOTES = {
+    "switch": "Eden y Ryujinx piden las claves (prod.keys) y el firmware de tu propia consola: se indican dentro del emulador.",
+}
+
+
+def launch_args(system, emulator):
+    """The arguments before the game file for this system with this emulator."""
+    if emulator != SYSTEMS[system][2]:
+        return dict(ALTERNATES.get(system, [])).get(emulator, SYSTEMS[system][4])
+    return SYSTEMS[system][4]
 
 
 def base_dir():
@@ -49,8 +69,10 @@ def folders(base=None):
         readme = os.path.join(d, "LEEME.txt")
         if not os.path.exists(readme):
             with open(readme, "w") as f:
-                f.write(f"Juegos de {name} ({', '.join(exts)}). Se abren con {emulators.CATALOG[emu][1]}.\n"
-                        "Después: STONE Home → Ajustes → Emuladores → Añadir juegos a la biblioteca.\n")
+                others = "".join(f" o {emulators.CATALOG[alt][1]}" for alt, _a in ALTERNATES.get(folder, []))
+                f.write(f"Juegos de {name} ({', '.join(exts)}). Se abren con {emulators.CATALOG[emu][1]}{others}.\n"
+                        + (NOTES[folder] + "\n" if folder in NOTES else "")
+                        + "Después: STONE Home → Ajustes → Emuladores → Añadir juegos a la biblioteca.\n")
     os.makedirs(os.path.join(base, "bios"), exist_ok=True)
     return base
 
@@ -61,6 +83,8 @@ def scan(base=None, installed=None):
     installed = installed if installed is not None else {c["key"] for c in emulators.catalog() if c["installed"]}
     out = []
     for key, (folder, name, emu, exts, _) in SYSTEMS.items():
+        if emu not in installed:                     # the other emulator for this system, if it is the one installed
+            emu = next((alt for alt, _args in ALTERNATES.get(key, []) if alt in installed), emu)
         d = os.path.join(base, "roms", folder)
         games = []
         try:
@@ -104,7 +128,7 @@ def entries(scanned):
         if not s["installed"] or not s["games"]:
             continue
         fid = emulators.CATALOG[s["emulator_key"]][0]
-        args = SYSTEMS[s["key"]][4]
+        args = launch_args(s["key"], s["emulator_key"])
         for g in s["games"]:
             opts = " ".join(["run", fid, *args, _dq(g["path"])])
             out.append({"name": f"{g['name']} ({s['name']})", "exe": f'"{emulators.FLATPAK}"', "start": '"/"', "options": opts})

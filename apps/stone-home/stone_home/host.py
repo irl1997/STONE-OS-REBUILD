@@ -327,7 +327,7 @@ class Host:
         threading.Thread(target=work, daemon=True).start()
 
     def m_emuInstall(self, args, done):
-        if len(args) != 1 or args[0] not in emulators.CATALOG:
+        if len(args) != 1 or args[0] not in emulators.CATALOG:       # NOT_YET entries cannot be installed
             return done(None, "InvalidValue", "unknown emulator")
         key = args[0]
         if key in self.emu_busy:
@@ -342,6 +342,50 @@ class Host:
                 emulators.install(key, progress, steam_ui=self.steam_ui)
             finally:
                 self.emu_busy.discard(key)
+        threading.Thread(target=work, daemon=True).start()
+        done({"ok": True})
+
+    def m_emuCheck(self, args, done):
+        """emuCheck(): which installed emulators have a newer version on Flathub (asks Flathub)."""
+        def work():
+            try:
+                r = emulators.updates()
+            except Exception as e:  # noqa: BLE001
+                r = {"error": f"No se pudo consultar Flathub: {e!r}"}
+            res = (None, "Unsupported", r["error"]) if "error" in r else (r, None, "")
+            GLib.idle_add(lambda: (done(*res), False)[1])
+        threading.Thread(target=work, daemon=True).start()
+
+    def m_emuUpdate(self, args, done):
+        """emuUpdate(key | "all"): update one installed emulator, or every installed one, from
+        Flathub. Progress arrives as "emulator" events (state updating|done|error)."""
+        if len(args) != 1 or (args[0] != "all" and args[0] not in emulators.CATALOG):
+            return done(None, "InvalidValue", "unknown emulator")
+        target = args[0]
+
+        def progress_for(key):
+            return lambda state, text: GLib.idle_add(
+                lambda: (self.emit("emulator", {"key": key, "state": state, "text": text}), False)[1])
+
+        def work():
+            try:
+                keys = [target] if target != "all" else [r["key"] for r in emulators.catalog() if r["installed"]]
+            except Exception as e:  # noqa: BLE001
+                print(f"[stone] emulators: {e!r}", flush=True)
+                keys = []
+            ok = 0
+            for key in keys:
+                if key in self.emu_busy:
+                    continue
+                self.emu_busy.add(key)
+                try:
+                    ok += 1 if emulators.update(key, progress_for(key)) else 0
+                except Exception as e:  # noqa: BLE001
+                    progress_for(key)("error", f"No se pudo actualizar: {e!r}")
+                finally:
+                    self.emu_busy.discard(key)
+            if target == "all":
+                GLib.idle_add(lambda: (self.emit("emulator", {"key": "all", "state": "done", "updated": ok, "of": len(keys)}), False)[1])
         threading.Thread(target=work, daemon=True).start()
         done({"ok": True})
 

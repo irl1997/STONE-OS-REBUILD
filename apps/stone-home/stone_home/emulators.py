@@ -8,9 +8,13 @@ else can be installed from STONE Home: the page sends a catalog key, never a pac
              shortcut so it appears in STONE's library and launches like a game:
              while Steam runs, through Steam's interface (steamcef.add_shortcut); otherwise
              it is queued and written by `stone-home-session register` before Steam starts.
-  installed  which catalog entries are installed (user or system Flatpak).
+  installed  which catalog entries are installed (user or system Flatpak), and their version.
+  updates    which installed ones have a newer version on Flathub (`flatpak remote-ls --updates`).
+  update     `flatpak update --user <id>` for one emulator, or for every installed one.
 
-Games (ROMs) and BIOS files are the person's own; STONE does not download them.
+Games (ROMs), BIOS files, console keys and firmware are the person's own; STONE does not download
+them. A console without a usable emulator on Flathub is listed in NOT_YET and said plainly in
+STONE Home (D-18): nothing is installed for it and nothing is promised.
 """
 
 import json
@@ -36,6 +40,20 @@ CATALOG = {
     "mgba": ("io.mgba.mGBA", "mGBA", "Game Boy Advance"),
     "flycast": ("org.flycast.Flycast", "Flycast", "Dreamcast"),
     "xemu": ("app.xemu.xemu", "xemu", "Xbox original"),
+    # Nintendo Switch (Flathub ids and versions checked on 2026-11-11: Eden 0.2.1, Ryujinx 1.3.3).
+    # Both need the person's own console keys (prod.keys) and firmware, set up in the emulator.
+    "eden": ("dev.eden_emu.eden", "Eden", "Nintendo Switch"),
+    "ryujinx": ("io.github.ryubing.Ryujinx", "Ryujinx (Ryubing)", "Nintendo Switch"),
+}
+
+# key -> (console, why there is no emulator to install). Checked on 2026-11-11: no Switch 2 emulator
+# is published on Flathub; the projects that exist are early experiments (builds for Windows only,
+# or sources that start very few games).
+NOT_YET = {
+    "switch2": ("Nintendo Switch 2",
+                "Todavía no hay un emulador de Switch 2 que se pueda instalar en esta consola. Los proyectos que existen "
+                "son experimentales: no están publicados en Flathub y arrancan muy pocos juegos. Cuando haya uno publicado, "
+                "llegará a esta lista con una actualización de STONE OS."),
 }
 
 PENDING = "pending-shortcuts.json"
@@ -56,9 +74,83 @@ def installed_ids(run=_run):
     return out
 
 
+def installed_versions(run=_run):
+    """{Flathub id: version text} of the installed apps (user and system Flatpak)."""
+    out = {}
+    for scope in ("--user", "--system"):
+        try:
+            r = run([FLATPAK, "list", scope, "--app", "--columns=application,version"], 30)
+        except (OSError, subprocess.SubprocessError):
+            continue
+        for line in r.stdout.splitlines():
+            parts = line.split("\t") if "\t" in line else line.split(None, 1)
+            if parts and parts[0].strip():
+                out.setdefault(parts[0].strip(), parts[1].strip()[:40] if len(parts) > 1 else "")
+    return out
+
+
 def catalog(run=_run):
+    vers = installed_versions(run)
+    ids = set(vers) or installed_ids(run)
+    rows = [{"key": k, "name": n, "plays": p, "installed": fid in ids, "version": vers.get(fid) or None}
+            for k, (fid, n, p) in CATALOG.items()]
+    return rows + [{"key": k, "name": n, "plays": n, "installed": False, "version": None, "not_yet": why}
+                   for k, (n, why) in NOT_YET.items()]
+
+
+def updates(run=_run):
+    """{"keys": [catalog keys with a newer version on Flathub], "checked": True} or {"error": ...}.
+    Asks Flathub (needs internet); only installed emulators are looked at."""
     ids = installed_ids(run)
-    return [{"key": k, "name": n, "plays": p, "installed": fid in ids} for k, (fid, n, p) in CATALOG.items()]
+    mine = {fid: k for k, (fid, _n, _p) in CATALOG.items() if fid in ids}
+    if not mine:
+        return {"keys": [], "checked": True}
+    found, answered, last = set(), False, "sin detalle"
+    for scope in ("--user", "--system"):
+        try:
+            r = run([FLATPAK, "remote-ls", scope, "--updates", "--app", "--columns=application"], 120)
+        except (OSError, subprocess.SubprocessError) as e:
+            last = str(e)
+            continue
+        if r.returncode == 0:
+            answered = True
+            found.update(x.strip() for x in r.stdout.splitlines() if x.strip())
+        else:
+            last = ((r.stderr or r.stdout).strip().splitlines()[-1:] or [last])[0][:160]
+    if not answered:
+        return {"error": f"No se pudo consultar Flathub: {last}"}
+    return {"keys": sorted(k for fid, k in mine.items() if fid in found), "checked": True}
+
+
+def update(key, progress, run=_run):
+    """Update one installed emulator from Flathub. progress(state, text): updating|done|error.
+    Returns True when it is up to date afterwards."""
+    if key not in CATALOG:
+        progress("error", "Emulador desconocido")
+        return False
+    fid, name, _ = CATALOG[key]
+    before = installed_versions(run)
+    if fid not in before:
+        progress("error", f"{name} no está instalado")
+        return False
+    progress("updating", f"Actualizando {name} desde Flathub…")
+    try:
+        r = run([FLATPAK, "update", "--user", "-y", "--noninteractive", fid], 3600)
+        if r.returncode != 0:           # installed for the whole system (not by STONE): no scope given
+            r = run([FLATPAK, "update", "-y", "--noninteractive", fid], 3600)
+    except (OSError, subprocess.SubprocessError) as e:
+        progress("error", f"No se pudo actualizar {name}: {e}")
+        return False
+    if r.returncode != 0:
+        last = (r.stderr or r.stdout).strip().splitlines()[-1:] or ["sin detalle"]
+        progress("error", f"No se pudo actualizar {name}: {last[0][:160]}")
+        return False
+    after = installed_versions(run).get(fid) or ""
+    if after and after != (before.get(fid) or ""):
+        progress("done", f"{name} actualizado a la versión {after}")
+    else:
+        progress("done", f"{name} ya está al día" + (f" (versión {after})" if after else ""))
+    return True
 
 
 def _shortcut_fields(key):

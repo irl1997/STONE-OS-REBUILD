@@ -71,6 +71,101 @@ def test_folders_scan_and_launch_options():
         assert R._dq('a"b$c`d\\e') == '"a\\"b\\$c\\`d\\\\e"'
 
 
+def test_switch_games_open_with_eden_or_with_ryujinx_when_it_is_the_one_installed():
+    with Box():
+        base = R.folders()
+        leeme = open(os.path.join(base, "roms", "switch", "LEEME.txt")).read()
+        assert "Eden o Ryujinx (Ryubing)" in leeme and "prod.keys" in leeme and ".nsp" in leeme
+        with open(os.path.join(base, "roms", "switch", "Aventura.nsp"), "w") as f:
+            f.write("x")
+        game = os.path.join(base, "roms", "switch", "Aventura.nsp")
+        sw = next(x for x in R.scan(installed=set())["systems"] if x["key"] == "switch")
+        assert sw["installed"] is False and sw["emulator"] == "Eden" and [g["name"] for g in sw["games"]] == ["Aventura"]
+        e = R.entries(R.scan(installed={"eden", "ryujinx"}))
+        assert [x["options"] for x in e] == [f'run dev.eden_emu.eden -f -g "{game}"'] and e[0]["name"] == "Aventura (Nintendo Switch)"
+        s = R.scan(installed={"ryujinx"})
+        sw = next(x for x in s["systems"] if x["key"] == "switch")
+        assert sw["installed"] is True and sw["emulator"] == "Ryujinx (Ryubing)" and sw["emulator_key"] == "ryujinx"
+        assert [x["options"] for x in R.entries(s)] == [f'run io.github.ryubing.Ryujinx --fullscreen "{game}"']
+        assert R.launch_args("ps2", "pcsx2") == ["-batch", "-fullscreen", "--"] and R.launch_args("switch", "eden") == ["-f", "-g"]
+    assert all(k in EM.CATALOG for _f, _n, k, _e, _a in R.SYSTEMS.values())
+    assert all(alt in EM.CATALOG for alts in R.ALTERNATES.values() for alt, _a in alts)
+
+
+class Flatpak:
+    """`flatpak` as emulators.py calls it: list, remote-ls --updates, update."""
+
+    def __init__(self, user=None, system=None, newer=(), online=True):
+        self.user, self.system, self.newer, self.online, self.calls = dict(user or {}), dict(system or {}), set(newer), online, []
+
+    def __call__(self, args, timeout):
+        self.calls.append(args)
+
+        class Res:
+            stdout, stderr, returncode = "", "", 0
+        r = Res()
+        scope = self.user if "--user" in args else self.system
+        if args[1] == "list":
+            cols = [a for a in args if a.startswith("--columns=")][0]
+            r.stdout = "\n".join(f"{i}\t{v}" if "version" in cols else i for i, v in sorted(scope.items()))
+        elif args[1] == "remote-ls":
+            if not self.online:
+                r.returncode, r.stderr = 1, "error: Unable to load summary from remote flathub: Could not resolve host"
+            else:
+                r.stdout = "\n".join(sorted(i for i in scope if i in self.newer))
+        elif args[1] == "update":
+            fid = args[-1]
+            if not self.online:
+                r.returncode, r.stderr = 1, "error: While pulling: Could not resolve host: dl.flathub.org"
+            elif "--user" in args and fid not in self.user:
+                r.returncode, r.stderr = 1, f"error: {fid} not installed"
+            elif fid in self.newer:
+                target = self.user if fid in self.user else self.system
+                target[fid] = target[fid] + ".1"
+                self.newer.discard(fid)
+        return r
+
+
+def test_catalog_has_switch_says_switch_2_plainly_and_shows_versions():
+    fp = Flatpak(user={"dev.eden_emu.eden": "0.2.1"}, system={"net.pcsx2.PCSX2": "2.4.0"})
+    rows = {r["key"]: r for r in EM.catalog(run=fp)}
+    assert rows["eden"] == {"key": "eden", "name": "Eden", "plays": "Nintendo Switch", "installed": True, "version": "0.2.1"}
+    assert rows["ryujinx"]["installed"] is False and rows["ryujinx"]["plays"] == "Nintendo Switch"
+    assert rows["pcsx2"]["installed"] is True and rows["pcsx2"]["version"] == "2.4.0"
+    sw2 = rows["switch2"]
+    assert sw2["installed"] is False and sw2["name"] == "Nintendo Switch 2" and "experimentales" in sw2["not_yet"]
+    assert "switch2" not in EM.CATALOG                 # nothing to install: no Flathub id is invented for it
+    events = []
+    assert not EM.install("switch2", lambda st, t: events.append(st), run=fp) and events == ["error"]
+    assert not any(a[1] == "install" for a in fp.calls)
+
+
+def test_updates_are_asked_of_flathub_and_each_emulator_updates_by_itself():
+    fp = Flatpak(user={"dev.eden_emu.eden": "0.2.1", "org.DolphinEmu.dolphin-emu": "2509", "org.example.Other": "1"},
+                 system={"net.pcsx2.PCSX2": "2.4.0"}, newer={"dev.eden_emu.eden", "net.pcsx2.PCSX2", "org.example.Other"})
+    assert EM.updates(run=fp) == {"keys": ["eden", "pcsx2"], "checked": True}        # only catalog emulators, both scopes
+    assert ["/usr/bin/flatpak", "remote-ls", "--user", "--updates", "--app", "--columns=application"] in fp.calls
+    seen = []
+    assert EM.update("eden", lambda st, t: seen.append((st, t)), run=fp)
+    assert ["/usr/bin/flatpak", "update", "--user", "-y", "--noninteractive", "dev.eden_emu.eden"] in fp.calls
+    assert seen == [("updating", "Actualizando Eden desde Flathub…"), ("done", "Eden actualizado a la versión 0.2.1.1")]
+    del seen[:]
+    assert EM.update("dolphin", lambda st, t: seen.append((st, t)), run=fp) and seen[-1] == ("done", "Dolphin ya está al día (versión 2509)")
+    del seen[:]
+    assert EM.update("pcsx2", lambda st, t: seen.append((st, t)), run=fp)             # installed for the whole system
+    assert ["/usr/bin/flatpak", "update", "-y", "--noninteractive", "net.pcsx2.PCSX2"] in fp.calls and seen[-1][0] == "done"
+    assert EM.updates(run=fp) == {"keys": [], "checked": True}
+    del seen[:]
+    assert not EM.update("xemu", lambda st, t: seen.append((st, t)), run=fp) and seen == [("error", "xemu no está instalado")]
+    assert not EM.update("switch2", lambda st, t: seen.append(st), run=fp) and not EM.update("; rm -rf /", lambda st, t: None, run=fp)
+    off = Flatpak(user={"dev.eden_emu.eden": "0.2.1"}, online=False)
+    assert "No se pudo consultar Flathub" in EM.updates(run=off)["error"]
+    del seen[:]
+    assert not EM.update("eden", lambda st, t: seen.append((st, t)), run=off)
+    assert seen[-1][0] == "error" and "Could not resolve host" in seen[-1][1]
+    assert EM.updates(run=Flatpak()) == {"keys": [], "checked": True}                 # nothing installed: Flathub is not asked
+
+
 def test_add_to_library_live_queued_and_never_twice():
     with Box() as b:
         base = R.folders()

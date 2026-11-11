@@ -1112,6 +1112,10 @@ def E01_emulators_fixed_catalog_install_and_shortcut_now_or_at_next_start():
             assert "emulators_added" not in SC.register(root, proc=proc)          # queue emptied, nothing twice
         finally:
             del os.environ["STONE_HOME_STATE"]
+    h = host_mod.Host(lambda *a: None, stoned=FakeStoned(), sysapi=system.System(spawn=lambda u: None), steam_root="/nonexistent")
+    for bad in ([], ["switch2"], ["rm -rf /"], ["eden", "x"], [5]):
+        assert run_host(h, {"method": "emuUpdate", "args": bad})[1] == "InvalidValue", bad
+    assert run_host(h, {"method": "emuInstall", "args": ["switch2"]})[1] == "InvalidValue"     # nothing to install for Switch 2
     from stone_home import steamcef
     try:
         steamcef.add_shortcut_expression("x'); evil('", "/usr/bin/flatpak", "/", "run a")
