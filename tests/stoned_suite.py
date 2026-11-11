@@ -867,28 +867,6 @@ def S03_kernel_parameter_cannot_be_left_from_the_interface(env):
 
 
 @integration()
-def S04b_stonectl_commands_for_the_plugin(env):
-    code, out = ctl(env, "ui-ready")
-    assert code == 0 and json.loads(out)["ok"], out
-    code, out = ctl(env, "profile", "silent")
-    assert code == 0 and json.loads(out)["ok"], out
-    code, out = ctl(env, "--json", "status")
-    assert code == 0 and json.loads(out)["profile"] == "silent", out
-    code, out = ctl(env, "game-profile", "570", "performance")
-    assert code == 0, out
-    code, out = ctl(env, "--json", "status")
-    assert json.loads(out)["per_game"] == {"570": "performance"}, out
-    code, out = ctl(env, "game-profile", "570", "global")
-    assert code == 0, out
-    code, out = ctl(env, "--json", "metrics")
-    assert code == 0 and "gpu_temp_c" in json.loads(out), out
-    code, out = ctl(env, "--json", "calibration")
-    assert code == 0 and "range" in json.loads(out), out
-    code, out = ctl(env, "profile", "c1")
-    assert code == 2, out                                  # only factory profiles from here
-
-
-@integration()
 def S04_stonectl_status_and_safe_mode_over_dbus(env):
     code, out = ctl(env, "status")
     assert code == 0 and "Perfil: balanced" in out and "Safe Mode: no" in out and "1000–1850 MHz" in out, out

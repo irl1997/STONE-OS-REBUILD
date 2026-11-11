@@ -122,7 +122,7 @@ def C02_enable_needs_the_typed_confirmation(b):
 
 
 @box(mode=0, karg=False)
-def C02b_enable_yes_is_the_confirmation_given_in_the_plugin(b):
+def C02b_enable_yes_is_the_confirmation_given_in_stone_home(b):
     rc, out = b.run("enable", "--force", stdin="")
     assert rc == 1 and b.calls() == [], out                       # only --yes, nothing else
     rc, out = b.run("enable", "--yes", stdin="")

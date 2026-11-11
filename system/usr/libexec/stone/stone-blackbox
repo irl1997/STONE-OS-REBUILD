@@ -1,6 +1,6 @@
 #!/usr/bin/python3 -I
-# STONE Crash Black Box (see /usr/lib/stone/stoned/blackbox.py).
+# STONE Crash Black Box (see /usr/lib/stone/stone_home/blackbox.py).
 import sys
 sys.path.insert(0, "/usr/lib/stone")
-from stoned.blackbox import main
+from stone_home.blackbox import main
 sys.exit(main())

@@ -1,27 +1,3 @@
-# STONE OS 2.0.0-rc1
-
-**Cambio de rumbo:** STONE OS deja de tener una interfaz propia. Ahora es Bazzite en Game Mode con la estética de STONE y lo propio de la BC-250. Estado: CODE TESTED; nada comprobado todavía en la placa.
-
-## Qué trae
-
-- **Tema STONE** para la interfaz de Steam (colores, tipografías y foco ámbar), ya activado. Se apaga en CSS Loader.
-- **Plugin STONE** en el menú de acceso rápido (`···`): perfil de la consola y de cada juego, 40 CU, calibración, salud y Modo seguro.
-- **Película de arranque de STONE** y pantalla de arranque propia.
-- **Sin terminal:** Decky Loader, CSS Loader, el tema y el plugin se colocan solos en el primer arranque.
-- Se conservan el módulo de 40 CU, el regulador de GPU y `stoned`.
-
-## Qué se retira
-
-- STONE Home, su sesión y su configuración de 8 pasos: ahora se ven Inicio, Biblioteca, Ajustes y configuración inicial de Steam.
-- STONE DISPLAY y STONE OPTIMIZED (generación de fotogramas, HelixSR, aspectos de imagen, OptiScaler). La pantalla se ajusta en los ajustes de Steam.
-- La galería de capturas, los emuladores y la pantalla de carga propias.
-
-## Límites
-
-- Se ve la interfaz de Steam, con el tema.
-- Una actualización de Steam puede descolocar el tema. El sistema sigue funcionando y se puede apagar en CSS Loader.
-- Los plugins de la comunidad se instalan desde la tienda de Decky, con el mando.
-
 # STONE OS (rebuild) 1.0.0-rc5
 
 Corrige la instalación. Trae todo lo de rc4.

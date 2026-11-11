@@ -1,0 +1,430 @@
+"""Ask Steam's own interface to start a game, as Decky Loader does in Game Mode.
+
+On the board (RC3, 25-10-2026) Steam logged `ExecuteSteamURL: "steam://rungameid/<id>"` for
+every request with the right id and still never started the STONE shortcut: in Game Mode
+steam://rungameid does not start non-Steam shortcuts. Steam's interface does, through
+SteamClient.Apps.RunGame, reachable over Chromium's remote debugging protocol, which Steam
+exposes on 127.0.0.1:8080 when `<Steam>/.cef-enable-remote-debugging` exists at its start.
+
+Only the standard library is used: one HTTP GET for the list of pages and a minimal
+WebSocket client for a single Runtime.evaluate call.
+"""
+
+import base64
+import json
+import os
+import socket
+import struct
+import urllib.parse
+import urllib.request
+
+PORT = int(os.environ.get("STONE_STEAM_CEF_PORT", "8080"))
+FLAG = ".cef-enable-remote-debugging"
+# Pages of Steam's interface that carry the SteamClient object, most suitable first.
+PREFERRED_TITLES = ("SharedJSContext", "Steam Shared Context presented by Valve™", "Steam Big Picture Mode", "Steam")
+
+
+def enable(steam_root):
+    """Create the flag file Steam reads at start. Returns True if it is there."""
+    path = os.path.join(steam_root, FLAG)
+    if os.path.exists(path):
+        return True
+    try:
+        with open(path, "w"):
+            pass
+        return True
+    except OSError:
+        return False
+
+
+def targets(port=PORT, timeout=2.0):
+    with urllib.request.urlopen(f"http://127.0.0.1:{port}/json", timeout=timeout) as r:
+        data = json.loads(r.read().decode("utf-8", "replace"))
+    return data if isinstance(data, list) else []
+
+
+def candidates(pages):
+    """Every page that may carry SteamClient, most suitable first (Steam names its pages by
+    version, so a title alone cannot be relied on)."""
+    usable = [p for p in pages if isinstance(p, dict) and p.get("webSocketDebuggerUrl")]
+    out = []
+    for title in PREFERRED_TITLES:
+        out += [p for p in usable if p.get("title") == title and p not in out]
+    out += [p for p in usable if "steamloopback.host" in str(p.get("url", "")) and p not in out]
+    out += [p for p in usable if p not in out]
+    return out
+
+
+def pick(pages):
+    """The page to run SteamClient calls in, or None."""
+    usable = candidates(pages)
+    for p in usable:
+        if p.get("title") in PREFERRED_TITLES or "steamloopback.host" in str(p.get("url", "")):
+            return p
+    return None
+
+
+def _recv_exact(s, n):
+    buf = b""
+    while len(buf) < n:
+        chunk = s.recv(n - len(buf))
+        if not chunk:
+            raise ConnectionError("connection closed")
+        buf += chunk
+    return buf
+
+
+def _send_text(s, text):
+    payload = text.encode("utf-8")
+    mask = os.urandom(4)
+    head = bytearray([0x81])
+    n = len(payload)
+    if n < 126:
+        head.append(0x80 | n)
+    elif n < 65536:
+        head.append(0x80 | 126)
+        head += struct.pack(">H", n)
+    else:
+        head.append(0x80 | 127)
+        head += struct.pack(">Q", n)
+    s.sendall(bytes(head) + mask + bytes(b ^ mask[i % 4] for i, b in enumerate(payload)))
+
+
+def _recv_message(s):
+    """One complete text message (fragments joined); control frames skipped."""
+    parts = []
+    while True:
+        b0, b1 = _recv_exact(s, 2)
+        n = b1 & 0x7F
+        if n == 126:
+            n = struct.unpack(">H", _recv_exact(s, 2))[0]
+        elif n == 127:
+            n = struct.unpack(">Q", _recv_exact(s, 8))[0]
+        mask = _recv_exact(s, 4) if b1 & 0x80 else None
+        data = _recv_exact(s, n)
+        if mask:
+            data = bytes(b ^ mask[i % 4] for i, b in enumerate(data))
+        op = b0 & 0x0F
+        if op == 0x8:
+            raise ConnectionError("closed by Steam")
+        if op in (0x9, 0xA):          # ping / pong
+            continue
+        parts.append(data)
+        if b0 & 0x80:
+            return b"".join(parts).decode("utf-8", "replace")
+
+
+def evaluate(ws_url, expression, timeout=5.0):
+    """Runtime.evaluate in one page; returns the result value (or raises)."""
+    u = urllib.parse.urlparse(ws_url)
+    if u.scheme != "ws" or u.hostname not in ("127.0.0.1", "localhost"):
+        raise ValueError(f"refusing non-local debugger url {ws_url}")
+    s = socket.create_connection((u.hostname, u.port or 80), timeout=timeout)
+    try:
+        key = base64.b64encode(os.urandom(16)).decode()
+        s.sendall((f"GET {u.path} HTTP/1.1\r\nHost: {u.hostname}:{u.port}\r\nUpgrade: websocket\r\n"
+                   f"Connection: Upgrade\r\nSec-WebSocket-Key: {key}\r\nSec-WebSocket-Version: 13\r\n\r\n").encode())
+        head = b""
+        while b"\r\n\r\n" not in head:
+            chunk = s.recv(1024)
+            if not chunk:
+                raise ConnectionError("no handshake answer")
+            head += chunk
+        if b" 101 " not in head.split(b"\r\n", 1)[0]:
+            raise ConnectionError(head.split(b"\r\n", 1)[0].decode(errors="replace"))
+        _send_text(s, json.dumps({"id": 1, "method": "Runtime.evaluate",
+                                  "params": {"expression": expression, "awaitPromise": True, "returnByValue": True}}))
+        while True:
+            msg = json.loads(_recv_message(s))
+            if msg.get("id") == 1:
+                if "error" in msg:
+                    raise RuntimeError(msg["error"].get("message", "error"))
+                res = msg.get("result", {})
+                if res.get("exceptionDetails"):
+                    raise RuntimeError(res["exceptionDetails"].get("text", "exception"))
+                return res.get("result", {}).get("value")
+    finally:
+        s.close()
+
+
+def run_game_expression(game_id):
+    gid = str(int(game_id))           # digits only: nothing else reaches Steam's interface
+    return ("(async()=>{if(!window.SteamClient||!SteamClient.Apps||!SteamClient.Apps.RunGame)"
+            "return 'no SteamClient';"
+            f"SteamClient.Apps.RunGame('{gid}','',-1,100);return 'ok';}})()")
+
+
+def ui_eval(expression, port=PORT):
+    """Run one fixed expression in Steam's interface. Returns a short status, never raises."""
+    try:
+        pages = targets(port)
+        page = pick(pages) or (candidates(pages) or [None])[0]
+    except (OSError, ValueError) as e:
+        return f"cef unavailable ({e.__class__.__name__})"
+    if not page:
+        return "cef: no Steam page yet"
+    try:
+        return f"cef[{page.get('title', '?')}]: {evaluate(page['webSocketDebuggerUrl'], expression)}"
+    except (OSError, ValueError, RuntimeError) as e:
+        return f"cef error: {e}"
+
+
+def run_game(game_id, port=PORT):
+    """Ask Steam's interface to start game_id (a Steam app id or a shortcut's 64-bit game id)."""
+    return ui_eval(run_game_expression(game_id), port)
+
+
+# Sections of Steam's own settings (SettingsSection_t in decky-frontend-lib) STONE may open.
+SETTINGS_SECTIONS = ("Display", "Audio", "Controller", "Internet", "Bluetooth", "Storage", "System",
+                     "Power", "Accessibility", "Keyboard", "Downloads")
+PAGES = ("Downloads",)
+
+# Steam's interface: the focused window (or the Game Mode main window) and its navigator.
+# The main menu is opened first so Steam's interface comes over the running app (STONE is
+# itself the "game" Steam is showing), then menus are closed after navigating, as Decky does.
+_NAV = ("const S=window.SteamUIStore;if(!S)return 'no SteamUIStore';let w=null;"
+        "try{w=S.GetFocusedWindowInstance();}catch(e){}"
+        "const main=S.WindowStore&&S.WindowStore.GamepadUIMainWindowInstance;"
+        "if(!w||!(w.Navigator||w.m_Navigator))w=main||w;"
+        "const n=w&&(w.Navigator||w.m_Navigator);if(!n)return 'no Navigator';"
+        "const m=w.MenuStore;try{m&&m.OpenMainMenu&&m.OpenMainMenu();}catch(e){}")
+
+
+def open_settings_expression(section):
+    if section not in SETTINGS_SECTIONS:
+        raise ValueError("unknown settings section")
+    return ("(async()=>{" + _NAV + f"if(!n.Settings)return 'no Settings';n.Settings('{section}');"
+            "await new Promise(r=>setTimeout(r,150));try{m&&m.CloseSideMenus&&m.CloseSideMenus();}catch(e){}"
+            "return 'ok';})()")
+
+
+def open_page_expression(page):
+    if page not in PAGES:
+        raise ValueError("unknown page")
+    return ("(async()=>{" + _NAV + f"if(!n.{page})return 'no {page}';n.{page}();"
+            "await new Promise(r=>setTimeout(r,150));try{m&&m.CloseSideMenus&&m.CloseSideMenus();}catch(e){}"
+            "return 'ok';})()")
+
+
+def open_settings(section, port=PORT):
+    return ui_eval(open_settings_expression(section), port)
+
+
+def open_page(page, port=PORT):
+    return ui_eval(open_page_expression(page), port)
+
+
+def ui_value(expression, port=PORT):
+    """Like ui_eval, but returns the value itself; None if no Steam page answers. Pages are
+    tried in order of suitability, because the page that carries SteamClient is not always the
+    one Steam lists first."""
+    for _title, value, err in ui_values(expression, port):
+        if err is None and value is not None:
+            return value
+    return None
+
+
+def ui_values(expression, port=PORT, limit=8):
+    """[(page title, value or None, error or None)] running the expression in each candidate page,
+    stopping at the first page that returns a value. Never raises."""
+    try:
+        pages = candidates(targets(port))[:limit]
+    except (OSError, ValueError) as e:
+        return [("-", None, f"cef unavailable ({e.__class__.__name__})")]
+    if not pages:
+        return [("-", None, "no Steam page yet")]
+    out = []
+    for page in pages:
+        try:
+            v = evaluate(page["webSocketDebuggerUrl"], expression, timeout=10.0)
+            out.append((page.get("title", "?"), v, None))
+            if v is not None:
+                break
+        except (OSError, ValueError, RuntimeError) as e:
+            out.append((page.get("title", "?"), None, f"{e.__class__.__name__}: {e}"))
+    return out
+
+
+# Names (never values) of what this Steam build offers, for STONE's Steam settings layer.
+API_PROBE = (
+    "(()=>{const o={has:!!window.SteamClient,tree:{}};if(!o.has)return JSON.stringify(o);let n=0;"
+    "const names=x=>{const s=new Set();try{for(const k of Object.keys(x))s.add(k);let p=Object.getPrototypeOf(x);"
+    "while(p&&p!==Object.prototype){for(const k of Object.getOwnPropertyNames(p))if(k!=='constructor')s.add(k);p=Object.getPrototypeOf(p);}}catch(e){}"
+    "return [...s].sort();};"
+    "const walk=(x,d)=>{const r={};for(const k of names(x)){if(n++>4000)break;let v;try{v=x[k];}catch(e){continue;}"
+    "if(typeof v==='function')r[k]='f'+v.length;else if(v&&typeof v==='object'&&d>0)r[k]=walk(v,d-1);}return r;};"
+    "o.tree=walk(window.SteamClient,3);return JSON.stringify(o);})()")
+
+
+def probe(port=PORT):
+    """Run API_PROBE in every candidate page: [{title, url, has_steamclient, tree, error}]."""
+    try:
+        pages = candidates(targets(port))[:12]
+    except (OSError, ValueError) as e:
+        return [{"title": "-", "error": f"cef unavailable ({e.__class__.__name__})"}]
+    out = []
+    for page in pages:
+        row = {"title": page.get("title", "?"), "url": str(page.get("url", ""))[:120]}
+        try:
+            raw = evaluate(page["webSocketDebuggerUrl"], API_PROBE, timeout=10.0)
+            d = json.loads(raw) if isinstance(raw, str) else {}
+            row["has_steamclient"] = bool(d.get("has"))
+            row["tree"] = d.get("tree") or {}
+        except (OSError, ValueError, RuntimeError) as e:
+            row["error"] = f"{e.__class__.__name__}: {e}"
+        out.append(row)
+    return out
+
+
+# Every game in the Steam account, installed or not (the library on disk only has installed
+# ones). Fields: appid, name, installed, minutes played, last played (unix), size on disk.
+# Two sources: Big Picture's collectionStore, and appStore, which the client also loads when Steam
+# runs hidden (-silent, the STONE session) and collectionStore may not exist (rc1 on the board:
+# games of the account missing from the library). appStore also holds tools and DLC: games only.
+OWNED_EXPRESSION = (
+    "(async()=>{const cs=window.collectionStore;let src=null;"
+    "if(cs&&cs.allGamesCollection&&cs.allGamesCollection.allApps)src=cs.allGamesCollection.allApps;"
+    "else if(window.appStore){const A=window.appStore;src=A.allApps||(A.m_mapApps&&[...A.m_mapApps.values()])||null;"
+    "if(src)src=src.filter(a=>a&&(a.app_type===1||a.app_type===undefined));}"
+    "if(!src)return null;const o=[];"
+    "for(const a of src){if(!a||(a.BIsModOrShortcut&&a.BIsModOrShortcut()))continue;"
+    "const lp=a.local_per_client_data||{};"
+    "o.push([a.appid,String(a.display_name||''),!!(a.installed!==undefined?a.installed:lp.installed),"
+    "a.minutes_playtime_forever||0,a.rt_last_time_played||0,Number(a.size_on_disk||lp.bytes_downloaded||0)]);}"
+    "return JSON.stringify(o);})()")
+
+
+def owned_games(port=PORT):
+    """[(appid, name, installed, minutes, last_played, size)] or None if Steam does not answer."""
+    raw = ui_value(OWNED_EXPRESSION, port)
+    if not isinstance(raw, str):
+        return None
+    try:
+        rows = json.loads(raw)
+    except ValueError:
+        return None
+    out = []
+    for r in rows if isinstance(rows, list) else []:
+        if (isinstance(r, list) and len(r) == 6 and isinstance(r[0], int) and 0 < r[0] < 0x80000000
+                and isinstance(r[1], str)):
+            out.append((r[0], r[1][:200], bool(r[2]), int(r[3] or 0), int(r[4] or 0), int(r[5] or 0)))
+    return out
+
+
+def install_expression(appid):
+    """Install without showing Steam's dialog: in the STONE session Steam's interface is hidden behind
+    STONE Home (rc1 on the board: the dialog opened where nobody could see it). Steam's install wizard
+    is opened and continued on the first library folder; the download then shows in STONE
+    (Ajustes → Almacenamiento) like any Steam download. A game that needs a choice Steam cannot make
+    by itself (an EULA, a second drive) stays in Steam's queue, never half-installed."""
+    a = int(appid)
+    if not 0 < a < 0x80000000:
+        raise ValueError("not a Steam app id")
+    return ("(async()=>{const I=window.SteamClient&&SteamClient.Installs;"
+            "if(!I||!I.OpenInstallWizard)return 'no SteamClient.Installs';"
+            f"I.OpenInstallWizard([{a}]);await new Promise(r=>setTimeout(r,1500));"
+            "try{I.SetInstallFolder&&I.SetInstallFolder(0);}catch(e){}"
+            "await new Promise(r=>setTimeout(r,300));"
+            "try{if(I.ContinueInstall)I.ContinueInstall();else return 'wizard open';}catch(e){return 'continue: '+e;}"
+            "return 'ok';})()")
+
+
+def install(appid, port=PORT):
+    return ui_eval(install_expression(appid), port)
+
+
+def uninstall_expression(appid):
+    """Uninstall without Steam's dialog (STONE asked first); Steam keeps cloud saves as always."""
+    a = int(appid)
+    if not 0 < a < 0x80000000:
+        raise ValueError("not a Steam app id")
+    return ("(async()=>{const I=window.SteamClient&&SteamClient.Installs;"
+            "if(!I||!I.OpenUninstallWizard)return 'no SteamClient.Installs';"
+            f"I.OpenUninstallWizard([{a}],true);return 'ok';}})()")
+
+
+def uninstall(appid, port=PORT):
+    return ui_eval(uninstall_expression(appid), port)
+
+
+# ---- Steam asking the person something, answered from STONE Home -----------------------------
+# A cloud-save conflict, a choice of launch options, a licence or a first-launch question: Steam
+# shows it in its own interface, which the STONE session keeps hidden. STONE Home reads the topmost
+# dialog of Steam's interface as text and buttons, asks the same with its own screen and presses the
+# button the person chose. Only reading and one click; nothing is typed into Steam. [VERIFICAR EN PLACA]
+_DIALOG_FIND = (
+    "const vis=e=>{const r=e.getBoundingClientRect();return r.width>1&&r.height>1;};"
+    "const ms=[...document.querySelectorAll('[class*=\"ModalPosition\"],[role=\"dialog\"],[class*=\"DialogContent\"]')]"
+    ".filter(vis).filter((m,i,a)=>!a.some(o=>o!==m&&m.contains(o)));"
+    "const m=ms[ms.length-1];"
+    "const btns=m?[...m.querySelectorAll('button,[class*=\"DialogButton\"]')].filter(vis)"
+    ".filter((b,i,a)=>!a.some(o=>o!==b&&o.contains(b))).filter(b=>(b.innerText||'').trim()).slice(0,4):[];")
+DIALOG_EXPRESSION = (
+    "(()=>{" + _DIALOG_FIND + "if(!m||!btns.length)return null;"
+    "const t=e=>(e&&e.innerText||'').replace(/\\s+/g,' ').trim();"
+    "const head=m.querySelector('[class*=\"DialogHeader\"],[class*=\"Title\"],h1,h2');"
+    "const body=m.querySelector('[class*=\"DialogBodyText\"],[class*=\"DialogBody\"]')||m;"
+    "let text=t(body);for(const b of btns)text=text.split(t(b)).join(' ');if(head)text=text.split(t(head)).join(' ');"
+    "return JSON.stringify({title:t(head).slice(0,120),text:text.replace(/\\s+/g,' ').trim().slice(0,600),"
+    "buttons:btns.map(t).map(x=>x.slice(0,40))});})()")
+
+
+def answer_expression(index, label):
+    """Press button `index` of Steam's topmost dialog, only if it still reads `label`."""
+    if not isinstance(index, int) or not 0 <= index < 4 or not isinstance(label, str) or not 0 < len(label) <= 40:
+        raise ValueError("dialog button")
+    want = json.dumps(label)               # ASCII-only JSON string: a safe JavaScript literal
+    return ("(()=>{" + _DIALOG_FIND + f"const b=btns[{index}];"
+            "if(!b)return null;if((b.innerText||'').replace(/\\s+/g,' ').trim().slice(0,40)!==" + want + ")return 'changed';"
+            "b.click();return 'ok';})()")
+
+
+def parse_dialog(raw):
+    """The dialog as {"title", "text", "buttons"} or None (nothing asked, or not readable)."""
+    try:
+        d = json.loads(raw) if isinstance(raw, str) else None
+    except ValueError:
+        return None
+    if not isinstance(d, dict) or not isinstance(d.get("buttons"), list):
+        return None
+    buttons = [b for b in d["buttons"] if isinstance(b, str) and b.strip()][:4]
+    if not buttons:
+        return None
+    return {"title": str(d.get("title") or "")[:120], "text": str(d.get("text") or "")[:600], "buttons": buttons}
+
+
+def dialog(port=PORT):
+    return parse_dialog(ui_value(DIALOG_EXPRESSION, port))
+
+
+def answer_dialog(index, label, port=PORT):
+    """'ok' (pressed), 'changed' (another dialog is there now) or 'gone'."""
+    v = ui_value(answer_expression(index, label), port)
+    return v if v in ("ok", "changed") else "gone"
+
+
+def reachable(port=PORT):
+    """True when Steam's interface answers on the remote debugging port (STONE needs it for the
+    library of the account, installing, Steam's settings and adding shortcuts)."""
+    try:
+        return bool(candidates(targets(port, timeout=1.5)))
+    except (OSError, ValueError):
+        return False
+
+
+def add_shortcut_expression(name, exe, start_dir, launch_options):
+    for v in (name, exe, start_dir, launch_options):
+        if not isinstance(v, str) or any(c in v for c in "'\\\n\r\"`$"):
+            raise ValueError("unsafe shortcut field")
+    return ("(async()=>{if(!window.SteamClient||!SteamClient.Apps||!SteamClient.Apps.AddShortcut)return 'no SteamClient';"
+            f"const id=await SteamClient.Apps.AddShortcut('{name}','{exe}','{start_dir}','{launch_options}');"
+            f"try{{SteamClient.Apps.SetShortcutName(id,'{name}');}}catch(e){{}}"
+            "return 'ok '+id;})()")
+
+
+def add_shortcut(name, exe, start_dir, launch_options, port=PORT):
+    """Adds a non-Steam shortcut while Steam runs. Returns its app id, or None."""
+    v = ui_value(add_shortcut_expression(name, exe, start_dir, launch_options), port)
+    if isinstance(v, str) and v.startswith("ok ") and v[3:].isdigit():
+        return int(v[3:])
+    return None

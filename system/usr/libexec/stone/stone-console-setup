@@ -1,6 +1,0 @@
-#!/usr/bin/python3 -I
-# STONE console setup (see /usr/lib/stone/stone_console_setup.py).
-import sys
-sys.path.insert(0, "/usr/lib/stone")
-from stone_console_setup import main
-sys.exit(main())

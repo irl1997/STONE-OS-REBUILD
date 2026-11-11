@@ -27,9 +27,11 @@ for f in VERSION LICENSE README.md pyproject.toml \
          system/usr/lib/sysusers.d/stoned.conf system/usr/lib/tmpfiles.d/stoned.conf system/usr/lib/stone/stability.json \
          system/usr/share/dbus-1/system.d/org.stonemachine.Performance1.conf \
          system/usr/share/polkit-1/actions/org.stonemachine.performance.policy system/usr/share/polkit-1/rules.d/50-stone.rules \
-         system/usr/lib/stone/stone_console_setup.py system/usr/libexec/stone/stone-console-setup \
-         system/usr/lib/systemd/system/stone-console-setup.service system/usr/share/stone/console/stone-startup.webm \
-         themes/STONE/theme.json plugins/stone/plugin.json plugins/stone/package-lock.json plugins/stone/main.py plugins/stone/src/index.tsx \
+         apps/stone-home/stone_home/host.py apps/stone-home/stone_home/chromium.py apps/stone-home/ui/index.html \
+         modules/display/stone_display/model.py modules/games/stone_games/optimizer.py modules/games/game-profiles/index.json \
+         system/usr/bin/stone-home system/usr/bin/stone-home-session system/usr/bin/stone-game system/usr/libexec/stone-home \
+         dev/home/build_home.py dev/home/stone-os-prototipo.html system/usr/bin/stone-session \
+         system/usr/share/gamescope-session-plus/sessions.d/stone system/usr/share/wayland-sessions/gamescope-session-stone.desktop \
          system/usr/share/plymouth/themes/stone/stone.plymouth system/usr/share/plymouth/themes/stone/stone.script \
          system/usr/share/plymouth/themes/stone/line.png \
          hardware/bc250.yaml hardware/validation/matrix.yaml \
@@ -59,18 +61,19 @@ done
 if have shellcheck; then
     # docs/diagnostico/stone-diag-readonly.sh is left out on purpose: it is the owner-approved file,
     # checked by its SHA-256, and any edit (even a shellcheck directive) would change that hash.
-    if shellcheck -x image/build_files/*.sh image/build_files/cu40/*.sh scripts/*.sh dev/run-tests.sh; then
+    if shellcheck -x image/build_files/*.sh image/build_files/cu40/*.sh scripts/*.sh dev/run-tests.sh system/usr/bin/stone-home \
+            system/usr/share/gamescope-session-plus/sessions.d/stone; then
         ok "shellcheck"; else bad "shellcheck"; fi
 else skip "shellcheck"; fi
 
 # 5. python
 # compiled in memory: nothing is written next to the sources (the dev container mounts them read only)
 if $PY -c 'import sys; [compile(open(p, encoding="utf-8").read(), p, "exec") for p in sys.argv[1:]]' \
-        system/usr/lib/stone/*.py services/stoned/stoned/*.py plugins/stone/main.py \
-        image/build_files/*.py image/build_files/cu40/*.py tests/*.py; then
+        system/usr/lib/stone/*.py services/stoned/stoned/*.py apps/stone-home/stone_home/*.py modules/display/stone_display/*.py \
+        modules/games/stone_games/*.py dev/home/*.py image/build_files/*.py image/build_files/cu40/*.py tests/*.py; then
     ok "python compiles"; else bad "python compile"; fi
 if have ruff; then
-    if ruff check system/usr/lib/stone services plugins/stone/main.py image/build_files tests; then ok "ruff"; else bad "ruff"; fi
+    if ruff check system/usr/lib/stone services apps modules dev/home image/build_files tests; then ok "ruff"; else bad "ruff"; fi
 else skip "ruff"; fi
 
 # 6. TOML / YAML / JSON
@@ -121,18 +124,21 @@ pol=system/usr/share/polkit-1/actions/org.stonemachine.performance.policy
 n_act=$(grep -c '<action id=' "$pol"); n_own=$(grep -c 'org.freedesktop.policykit.owner">unix-user:stoned<' "$pol")
 if [[ "$n_act" -gt 0 && "$n_act" == "$n_own" ]]; then ok "polkit actions owned by stoned"; else bad "every polkit action needs org.freedesktop.policykit.owner = unix-user:stoned"; fi
 
-# 7c. STONE plugin: its lockfile matches package.json
+# 7c. STONE Home page: generated from the prototype and up to date; built-in game profiles valid
+if $PY dev/home/build_home.py --check; then ok "STONE Home page up to date"; else bad "STONE Home page out of date (python3 dev/home/build_home.py)"; fi
 if $PY - <<'PY'
-import json
-pkg = json.load(open("plugins/stone/package.json"))
-lock = json.load(open("plugins/stone/package-lock.json"))["packages"][""]
-assert lock.get("dependencies") == pkg["dependencies"] and lock.get("devDependencies") == pkg["devDependencies"]
-assert "root" in json.load(open("plugins/stone/plugin.json"))["flags"]
+import glob, json, sys
+sys.path.insert(0, "modules/games")
+from stone_games import schema
+idx = json.load(open("modules/games/game-profiles/index.json"))
+for p in glob.glob("modules/games/game-profiles/steam/*.json"):
+    prof = schema.clean_profile(json.load(open(p)), "builtin")
+    assert prof["appid"] in idx["profiles"]["steam"], p
 PY
-then ok "plugin lockfile"; else bad "plugin lockfile out of date (npm install in plugins/stone)"; fi
+then ok "built-in game profiles"; else bad "built-in game profiles"; fi
 
 # 8. nothing simulated or unfinished in what the image ships
-if grep -rnE "SimStoned|fake_governor|FAKE_GOV" system image services plugins/stone/main.py plugins/stone/src themes; then bad "simulation code in the image"; else ok "no simulated hardware in the image"; fi
+if grep -rnE "SimStoned|fake_governor|FAKE_GOV" system image services apps modules; then bad "simulation code in the image"; else ok "no simulated hardware in the image"; fi
 if grep -rnE "\b(TODO|FIXME|XXX)\b|CAMBIAR-POR|PLACEHOLDER" system image .github 2>/dev/null | grep -v '@IMAGE_REF@\|@UPDATE_REF@'; then
     bad "placeholders in shipped files"; else ok "no placeholders in shipped files"; fi
 

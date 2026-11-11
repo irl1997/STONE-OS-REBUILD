@@ -1,7 +1,7 @@
 """stoned: the STONE System Service.
 
 D-Bus name org.stonemachine.Performance1 on the system bus (STONE's own reverse-domain
-name; renaming it later means updating the bus policy, polkit actions and the STONE plugin
+name; renaming it later means updating the bus policy, polkit actions and stone_home/bridge.py
 together). Runs as the unprivileged `stoned`
 user. Every method has fixed argument types; none takes a path, a command or a file
 name. Write methods are authorized by polkit for the active local session.
@@ -447,8 +447,7 @@ class Service:
         self.bus.emit_signal(None, PATH, IFACE, "ThermalEvent", GLib.Variant.new_tuple(to_variant(ev)))
 
     def HomeReady(self):
-        """Steam's interface is on screen and the user can act (the STONE plugin says so through
-        `stonectl ui-ready`; the method keeps its name in the D-Bus API). Only now is the saved profile applied,
+        """Home is on screen and the user can act. Only now is the saved profile applied,
         and only if it is a factory profile or a validated slot (P0-3)."""
         if not self.home_ready:
             self.home_ready = True

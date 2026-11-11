@@ -1,0 +1,24 @@
+#! /bin/bash
+# STONE OS: the STONE session (M24, D-21) for gamescope-session-plus (gamescope-session-plus@stone).
+#
+# Same Gamescope features as Bazzite's Steam session (VRR, HDR, mangoapp, tearing, scaling...): its
+# file is read first, then only the client changes. The client is the STONE supervisor: STONE Home
+# in front, Steam as a hidden component, and Steam's own Game Mode interface as the recovery path
+# when STONE Home keeps failing (stone_home/supervisor.py).
+
+if [ -f /usr/share/gamescope-session-plus/sessions.d/steam ]; then
+    # shellcheck source=/dev/null
+    . /usr/share/gamescope-session-plus/sessions.d/steam
+fi
+
+# gamescope-session-plus calls this after the session failed to start several times in a row
+# (Gamescope or the client died at once). Same recovery as Steam's own session: leave a trace and
+# switch the console to the desktop session, which Bazzite always keeps.
+function short_session_recover {
+    mkdir -p "${XDG_STATE_HOME:-$HOME/.local/state}/stone"
+    echo "$(date '+%F %T') short session: gamescope or the STONE supervisor failed at start" \
+        >> "${XDG_STATE_HOME:-$HOME/.local/state}/stone/session.log"
+    steamos-session-select desktop
+}
+
+export CLIENTCMD="/usr/bin/stone-session run"
