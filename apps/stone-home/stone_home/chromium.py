@@ -15,6 +15,12 @@ How it runs:
     edges are sharp at 4K and nothing is scaled as a bitmap;
   * if Chromium cannot run (missing, or crashing at start three times), this returns
     UNUSABLE and /usr/libexec/stone-home starts the WebKit shell without GPU instead.
+
+Start order (BOOT TO VISUAL): the local transport and Chromium are started first; the Host (its
+imports: the display model, the game profiles, the bridge to stoned) is created while Chromium
+is starting, instead of before it. The page's first requests wait for the main loop, which only
+runs once the Host exists. The screen's size is read from the X server (python-xlib), without
+loading GTK; GTK is the fallback.
 """
 
 import json
@@ -27,8 +33,6 @@ import time
 
 from gi.repository import GLib
 
-from . import shortcuts
-from .host import Host
 from .server import HomeServer
 
 UI_DIR = os.environ.get("STONE_HOME_UI", "/usr/share/stone-home")
@@ -56,12 +60,30 @@ def state_dir():
     return os.path.join(os.environ.get("XDG_STATE_HOME") or os.path.join(os.path.expanduser("~"), ".local", "state"), "stone")
 
 
-def screen_size():
+def _x_screen_size():
+    """The X screen's size in pixels straight from the X server, or None (no python-xlib, no display)."""
+    try:
+        from Xlib import display as xdisplay
+        d = xdisplay.Display()
+        try:
+            s = d.screen()
+            w, h = int(s.width_in_pixels), int(s.height_in_pixels)
+        finally:
+            d.close()
+        return (w, h) if w >= 320 and h >= 240 else None
+    except Exception:  # noqa: BLE001  (GTK is asked instead)
+        return None
+
+
+def screen_size(x_size=_x_screen_size):
     """(width, height) of the X screen STONE's window fills (Gamescope's size for this app), or None."""
     forced = os.environ.get("STONE_HOME_SIZE", "")
     w, _, h = forced.partition("x")
     if w.isdigit() and h.isdigit():
         return int(w), int(h)
+    size = x_size() if os.environ.get("DISPLAY") else None
+    if size:
+        return size
     try:
         import gi
         gi.require_version("Gtk", "4.0")
@@ -145,6 +167,30 @@ def _pipe_log(stream):
             print(text[:600], file=sys.stderr, flush=True)
 
 
+class LateHost:
+    """What the transport talks to until the Host exists. Requests are answered on the main loop,
+    which starts after the Host is created, so handle() normally finds it; artwork is asked for
+    from the transport's own threads and waits for it."""
+
+    def __init__(self):
+        self.host = None
+        self.ready = threading.Event()
+
+    def set(self, host):
+        self.host = host
+        self.ready.set()
+
+    def handle(self, req, done):
+        if self.host is None:
+            return done(None, "ServiceUnavailable", "STONE Home is starting")
+        return self.host.handle(req, done)
+
+    def art_path(self, appid, kind):
+        if not self.ready.wait(15):
+            return None
+        return self.host.art_path(appid, kind)
+
+
 class Shell:
     def __init__(self, selftest=False):
         self.selftest = selftest
@@ -153,16 +199,22 @@ class Shell:
         self.proc = None
         self.crashes = []
         self.stopping = False
-        box = {}
-        self.host = Host(lambda name, data: box["srv"].clients.send(name, data))
-        self.host.restart = self._restart
-        if selftest:
-            self.host.selftest = self._selftest_done
-        self.server = box["srv"] = HomeServer(self.host, UI_DIR).start()
+        self.host = None
+        self.late = LateHost()
+        self.server = HomeServer(self.late, UI_DIR).start()
         self.binary = find_binary()
         self.profile = os.path.join(state_dir(), "chromium")
         self.size = screen_size()
         self.dsf = scale_factor(self.size)
+
+    def start_host(self):
+        """The Host, created while Chromium starts (its imports are the slow part of Python's start)."""
+        from .host import Host
+        self.host = Host(lambda name, data: self.server.clients.send(name, data))
+        self.host.restart = self._restart
+        if self.selftest:
+            self.host.selftest = self._selftest_done
+        self.late.set(self.host)
 
     def start_browser(self):
         os.makedirs(self.profile, mode=0o700, exist_ok=True)
@@ -233,6 +285,7 @@ class Shell:
     def run(self):
         if not self.binary:
             print("[stone] chromium: not installed; using the WebKit shell", file=sys.stderr, flush=True)
+            self.server.stop()
             return UNUSABLE
         size = f"{self.size[0]}x{self.size[1]}" if self.size else "unknown"
         print(f"[stone] start: engine=chromium binary={self.binary} screen={size} scale={self.dsf if self.dsf is None else format(self.dsf, 'g')}", file=sys.stderr, flush=True)
@@ -241,6 +294,13 @@ class Shell:
         if self.selftest:
             GLib.timeout_add_seconds(SELFTEST_TIMEOUT_S, self._selftest_timeout)
         self.start_browser()
+        if not self.selftest:
+            try:
+                from . import shortcuts
+                print(f"[stone] start: steam_ids={shortcuts.record_ids()}", file=sys.stderr, flush=True)
+            except Exception as e:  # noqa: BLE001  (diagnostics must never stop the interface)
+                print(f"stone-home: could not record Steam ids: {e}", file=sys.stderr, flush=True)
+        self.start_host()
         self.loop.run()
         self._stop_browser()
         self.server.stop()
@@ -248,11 +308,4 @@ class Shell:
 
 
 def main(argv):
-    selftest = "--selftest" in argv
-    if not selftest:
-        try:
-            ids = shortcuts.record_ids()
-            print(f"[stone] start: steam_ids={ids}", file=sys.stderr, flush=True)
-        except Exception as e:  # noqa: BLE001  (diagnostics must never stop the interface)
-            print(f"stone-home: could not record Steam ids: {e}", file=sys.stderr, flush=True)
-    return Shell(selftest).run()
+    return Shell("--selftest" in argv).run()

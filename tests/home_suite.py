@@ -1065,6 +1065,51 @@ def H16_store_pages_through_the_host_and_artwork_from_stones_own_cache():
 
 
 @test
+def H17_chromium_shell_starts_the_browser_before_the_host_and_reads_the_screen_without_gtk():
+    import threading
+    from stone_home import chromium as C
+    late = C.LateHost()
+    out = []
+    late.handle({"method": "library", "args": []}, lambda r=None, code=None, msg="": out.append(code))
+    assert out == ["ServiceUnavailable"]                   # never left unanswered while the host is being made
+    got = []
+    t = threading.Thread(target=lambda: got.append(late.art_path("1001", "capsule")))
+    t.start()
+    time.sleep(0.2)
+    assert got == [] and t.is_alive()                      # artwork waits for the host instead of failing
+
+    class H:
+        def handle(self, req, done):
+            done({"ok": req["method"]})
+
+        def art_path(self, appid, kind):
+            return f"/art/{appid}/{kind}"
+    late.set(H())
+    t.join(5)
+    assert got == ["/art/1001/capsule"]
+    late.handle({"method": "library"}, lambda r=None, code=None, msg="": out.append(r))
+    assert out[-1] == {"ok": "library"}
+    old = {k: os.environ.get(k) for k in ("STONE_HOME_SIZE", "DISPLAY")}
+    try:
+        os.environ["STONE_HOME_SIZE"] = "2560x1440"
+        assert C.screen_size(x_size=lambda: (1, 1)) == (2560, 1440)        # forced size first
+        del os.environ["STONE_HOME_SIZE"]
+        os.environ["DISPLAY"] = ":77"
+        assert C.screen_size(x_size=lambda: (3840, 2160)) == (3840, 2160)  # the X server's answer, no GTK
+        assert C.scale_factor(C.screen_size(x_size=lambda: (3840, 2160))) == 2
+    finally:
+        for k, v in old.items():
+            if v is None:
+                os.environ.pop(k, None)
+            else:
+                os.environ[k] = v
+    with open(C.__file__) as f:
+        src = f.read()
+    assert src.index("self.start_browser()\n        if not self.selftest") < src.index("self.start_host()\n        self.loop.run()")
+    assert "from .host import Host" not in src.split("class Shell")[0]      # the host's imports wait for Chromium's start
+
+
+@test
 def E01_emulators_fixed_catalog_install_and_shortcut_now_or_at_next_start():
     from stone_home import emulators
     with Tmp() as d:
