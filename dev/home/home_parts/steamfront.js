@@ -22,8 +22,11 @@ function sfVeil(what, title, text) {
   v.querySelector('p').textContent = text || SF_TEXT[what][1];
   v.classList.add('on');
 }
+/* Steam is not up yet (the first start of a new console downloads Steam's own update, which takes minutes) */
+const SF_WAIT = ['PREPARANDO STEAM', 'Steam todavía está arrancando. Si la consola acaba de instalarse, primero descarga su propia actualización: puede tardar unos minutos. Su ventana aparece aquí en cuanto esté lista.'];
 async function steamOpen(what, appid) {
   if (S.steamFront) return;
+  if (S.running !== null) { play('error'); return toast('Cierra antes el juego en curso: Steam ocuparía su lugar en la pantalla', false); }
   play('select');
   let r = null;
   try { r = await (what === 'app' ? Sys.steamShow('app', appid) : Sys.steamShow(what)); }
@@ -51,7 +54,12 @@ function sfEnd(why) {
   S.steamAcct = undefined;
   reloadLibrary();
 }
-Bridge.on('steam', d => { if (d && d.front === false) sfEnd(d.why); });
+Bridge.on('steam', d => {
+  if (!d) return;
+  if (d.front === false) return sfEnd(d.why);
+  if (S.steamFront && d.waiting) sfVeil(S.steamFront.what, SF_WAIT[0], SF_WAIT[1]);
+  else if (S.steamFront && d.shown && !S.steamFront.full) sfVeil(S.steamFront.what);
+});
 /* If the event was lost (the host restarted), the lock never stays on: the host is asked. */
 function sfCheck() {
   if (!S.steamFront) return clearInterval(sfT);
@@ -71,7 +79,8 @@ function steamNoWindow(what, appid) {
   play('notify');
   const buy = what === 'app' && appid;
   openDlg(`<span class="st-cap">STEAM</span><h2>STEAM NO MOSTRÓ SU VENTANA</h2>
-    <p>STONE pidió a Steam su ventana y no apareció. Hay otro camino: Steam ocupa toda la pantalla con su propia interfaz, hecha para el mando, y STONE vuelve después.</p>
+    <p>STONE pidió a Steam su ventana y no apareció. Si la consola acaba de encenderse, espera un minuto y vuelve a intentarlo.</p>
+    <p>Hay otro camino: Steam ocupa toda la pantalla con su propia interfaz, hecha para el mando, y STONE vuelve después.</p>
     <div class="btns"><span class="txt-f" data-f data-b="full">STEAM COMPLETO</span>${buy ? '<span class="txt-f" data-f data-b="qr">CON EL MÓVIL</span>' : ''}<span class="txt-f" data-f data-b="no">VOLVER</span></div>`, {
     onA: el => {
       const b = el.dataset.b; play(b === 'no' ? 'back' : 'select'); back();
@@ -82,6 +91,7 @@ function steamNoWindow(what, appid) {
 /* Plan B: Steam's own Game Mode interface takes the session (the session supervisor stops STONE Home
    and starts it again afterwards). */
 function steamFullAsk(why) {
+  if (S.running !== null) { play('error'); return toast('Cierra antes el juego en curso: al cambiar a Steam se cerraría sin guardar', false); }
   const back = dlgOver();
   openDlg(`<span class="st-cap">STEAM COMPLETO</span><h2>STEAM OCUPA LA PANTALLA</h2>
     <p>STONE se cierra un momento y Steam abre su propia interfaz, con su tienda y su inicio de sesión.</p>

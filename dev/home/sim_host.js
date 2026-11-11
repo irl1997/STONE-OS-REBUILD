@@ -233,7 +233,10 @@ const Bridge = (() => {
     'steam.show': async ([what, appid]) => {
       SIM.front = { what, appid };
       if (/nowindow/.test(location.search)) { setTimeout(() => { SIM.front = null; emit('steam', { front: false, why: 'nowindow', what }); }, 2500); return { managed: true }; }
-      setTimeout(() => { if (!SIM.front) return; steamWindow(true, what, appid); emit('steam', { front: true, shown: true, what }); }, 1800);
+      /* ?slowsteam: Steam is still starting (a new console): STONE waits for it */
+      const slow = /slowsteam/.test(location.search) ? 6000 : 0;
+      if (slow) setTimeout(() => { if (SIM.front) emit('steam', { front: true, waiting: true, what }); }, 300);
+      setTimeout(() => { if (!SIM.front) return; steamWindow(true, what, appid); emit('steam', { front: true, shown: true, what }); }, 1800 + slow);
       return { managed: true };
     },
     'steam.hide': () => { if (!SIM.front) return { managed: false }; endFront('closed'); return { managed: true }; },

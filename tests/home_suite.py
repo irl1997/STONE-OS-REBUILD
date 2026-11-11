@@ -960,8 +960,27 @@ def H15_steam_in_front_for_the_sign_in_and_the_store_and_plan_b():
             del seen[:]
             f = h.session_focus = FakeFront()
             h.request_session = asked.append
+            up = {"steam": False}
+            h.steam_ui = FakeSteamUI(ok=True)
+            h.steam_ui.reachable = lambda: up["steam"]
+            # Steam is not up yet (a new console: its first start updates itself): STONE waits and says so
+            assert run_host(h, {"method": "steam.show", "args": ["login"]})[0] == {"managed": True}
+            assert wait_for(lambda: events) and events == [("steam", {"front": True, "waiting": True, "what": "login"})]
+            spin(1.2)
+            assert f.value == 0 and seen == [] and len(events) == 1               # nothing asked of the session yet
+            assert run_host(h, {"method": "steam.hide", "args": []})[0] == {"managed": True}       # the person gave up waiting
+            assert wait_for(lambda: len(events) == 2) and events[1] == ("steam", {"front": False, "why": "closed", "what": "login"})
+            assert f.value == 0 and seen == [] and h.front is None
+            del events[:]
+            assert run_host(h, {"method": "steam.show", "args": ["login"]})[0] == {"managed": True}
+            assert wait_for(lambda: events)
+            up["steam"] = True                                                     # Steam's interface answers
+            assert wait_for(lambda: f.value == 1, timeout=8), "Steam's window was not asked for once Steam was up"
+            f.value = 0
+            assert wait_for(lambda: len(events) == 2)
+            del events[:], seen[:]
             assert run_host(h, {"method": "steam.show", "args": ["app", "620"]})[0] == {"managed": True}
-            assert f.value == 3 and seen == ["steam://open/bigpicture"]            # Big Picture first, the page after
+            assert wait_for(lambda: f.value == 3) and seen == ["steam://open/bigpicture"]     # Big Picture first, the page after
             spin(0.8)
             assert seen == ["steam://open/bigpicture"] and events == []
             f.window = 0x600020                                                    # the supervisor shows Steam's window
@@ -975,13 +994,14 @@ def H15_steam_in_front_for_the_sign_in_and_the_store_and_plan_b():
             del seen[:], events[:]
             f.window = 0
             assert run_host(h, {"method": "steam.show", "args": ["store"]})[0] == {"managed": True}
+            assert wait_for(lambda: f.value == 3)
             f.value = 2                                                            # the supervisor: Steam showed no window
             assert wait_for(lambda: events) and events == [("steam", {"front": False, "why": "nowindow", "what": "store"})]
             assert seen == ["steam://open/bigpicture", "steam://close/bigpicture"]   # the page was never sent blind
 
             del seen[:], events[:]
             assert run_host(h, {"method": "steam.show", "args": ["login"]})[0] == {"managed": True}
-            assert f.value == 1 and seen == []                                     # the sign-in window: no page, no Big Picture
+            assert wait_for(lambda: f.value == 1) and seen == []                   # the sign-in window: no page, no Big Picture
             assert run_host(h, {"method": "steam.hide", "args": []})[0] == {"managed": True} and f.value == 0
             assert wait_for(lambda: events) and events == [("steam", {"front": False, "why": "closed", "what": "login"})] and seen == []
 
@@ -993,6 +1013,8 @@ def H15_steam_in_front_for_the_sign_in_and_the_store_and_plan_b():
             os.makedirs(os.path.join(root2, "steamapps"))
             ev2 = []
             h2 = host_mod.Host(lambda n, data: ev2.append((n, data)), stoned=FakeStoned(), sysapi=system.System(spawn=seen.append), steam_root=root2)
+            h2.steam_ui = FakeSteamUI(ok=True)
+            h2.steam_ui.reachable = lambda: True
             f2 = h2.session_focus = FakeFront()
             assert run_host(h2, {"method": "steam.show", "args": ["login"]})[0] == {"managed": True}
             f2.window = 0x600010

@@ -44,6 +44,8 @@ LIB_FIRST_WAIT_S = 1.5       # the first read waits this long for Steam's interf
 FRONT_POLL_MS = 500          # Steam's own window in front: how often its state is looked at
 FRONT_URL_WAIT_S = 8         # the page is asked of Steam at the latest this long after Big Picture
 FRONT_URL_SETTLE_S = 1.5     # ... or this long after Big Picture is on screen
+FRONT_HOLD_S = 600           # Steam not up yet (its first start updates itself): waited for this long ...
+FRONT_HOLD_CHECK_S = 2       # ... asking its interface this often; then its window is asked for anyway
 STORE_FRESH_S = 600          # the shop window is read from Steam again after this long
 SHOW_WHAT = ("login", "store", "app")
 
@@ -67,6 +69,7 @@ class Host:
         self.lib_sig = None                                   # what STONE Home was last given
         self.lib_last = None                                  # (monotonic time, the last read)
         self.lib_busy = False
+        self.lib_live = False                                 # Steam has answered about the account in this run
         self.lib_next = 0.0
         self.lib_fast_until = time.monotonic() + LIB_FAST_FOR_S
         self.running_game = None                              # set lazily: gamescope_x11.running_game
@@ -282,6 +285,11 @@ class Host:
         if out is None:
             return
         res, sig = out
+        if not self.lib_live and res.get("owned_known") and res.get("logged") == "in":
+            # Steam has answered about the account: the boot's quick looks are over (they read
+            # Steam's files every few seconds); an install or a purchase starts them again
+            self.lib_live = True
+            self.lib_fast_until = min(self.lib_fast_until, now + 2 * LIB_FAST_S)
         self.lib_last = (now, res, sig)
         if sig != self.lib_sig:
             self.lib_sig = sig
@@ -768,24 +776,74 @@ class Host:
                 self._steam_url(url)
             return done({"managed": False, "sent": bool(url)})
         try:
-            from . import supervisor
-            self._focus().set_steam_value(supervisor.STEAM_ON if what == "login" else supervisor.STEAM_ON_BIG)
+            self._focus()
         except Exception as e:  # noqa: BLE001  (no Xlib or display)
             self.session_focus = None
             return done(None, "Unsupported", f"gamescope focus: {e}")
-        self.front = {"what": what, "url": url, "since": time.monotonic(), "sent": url is None, "shown": None,
-                      "big": what != "login", "had_account": library.account_id(self.root()) is not None, "signed": None}
-        if what != "login":
-            self._steam_url(system.FRONT_URLS["bigpicture"])     # the interface made for a controller
-        print(f"[stone] steam: its own window asked in front ({what})", flush=True)
+        now = time.monotonic()
+        self.front = {"what": what, "url": url, "since": now, "sent": url is None, "shown": None, "big": False,
+                      "had_account": library.account_id(self.root()) is not None, "signed": None,
+                      "hold": now, "checking": False, "checked": 0.0, "ready": False, "cancel": False}
+        print(f"[stone] steam: its own window wanted in front ({what})", flush=True)
         if self.front_timer is None:
             self.front_timer = GLib.timeout_add(FRONT_POLL_MS, self._front_tick)
+        self._front_tick()                      # Steam already up: its window is asked for at once
         done({"managed": True})
+
+    def _front_ready(self, fr):
+        """Steam's interface answers (or was waited for long enough): the session is asked for
+        Steam's window. Returns False if that could not be done."""
+        try:
+            from . import supervisor
+            self.session_focus.set_steam_value(supervisor.STEAM_ON if fr["what"] == "login" else supervisor.STEAM_ON_BIG)
+        except Exception as e:  # noqa: BLE001
+            print(f"[stone] steam: its window could not be asked for ({e!r})", flush=True)
+            return False
+        fr["hold"], fr["since"] = None, time.monotonic()
+        if fr["what"] != "login":
+            fr["big"] = True
+            self._steam_url(system.FRONT_URLS["bigpicture"])     # the interface made for a controller
+        print(f"[stone] steam: its own window asked in front ({fr['what']})", flush=True)
+        return True
+
+    def _front_hold(self, fr, now):
+        """Steam is not up yet. On a new console its first start downloads its own update, which
+        takes minutes: STONE Home says so and waits, instead of giving up after the session's 25 s."""
+        if fr["cancel"]:
+            return self._front_end("closed")
+        reach = getattr(self.steam_ui, "reachable", None)
+        if fr["ready"] or reach is None or now - fr["hold"] >= FRONT_HOLD_S:
+            return True if self._front_ready(fr) else self._front_end("nowindow")
+        if not fr["checking"] and now - fr["checked"] >= FRONT_HOLD_CHECK_S:
+            fr["checking"], first = True, fr["checked"] == 0.0
+
+            def work():
+                try:
+                    up = bool(reach())
+                except Exception:  # noqa: BLE001
+                    up = False
+
+                def back():
+                    fr["checking"], fr["checked"] = False, time.monotonic()
+                    if up:
+                        fr["ready"] = True
+                    elif first and self.front is fr:
+                        print("[stone] steam: its interface is not up yet; waiting for it", flush=True)
+                        self.emit("steam", {"front": True, "waiting": True, "what": fr["what"]})
+                    if self.front is fr and up:
+                        self._front_tick()
+                    return False
+                GLib.idle_add(back)
+            threading.Thread(target=work, daemon=True).start()
+        return True
 
     def m_steam_hide(self, args, done):
         """steam.hide(): STONE Home back in front (the guide button, seen by the page)."""
         if self.front is None:
             return done({"managed": False})
+        if self.front["hold"] is not None:           # still waiting for Steam: nothing was asked of the session
+            self.front["cancel"] = True
+            return done({"managed": True})
         try:
             self._focus().set_steam_value(0)
         except Exception as e:  # noqa: BLE001
@@ -797,6 +855,8 @@ class Host:
         if fr is None:
             self.front_timer = None
             return False
+        if fr["hold"] is not None:
+            return self._front_hold(fr, time.monotonic())
         try:
             value = self.session_focus.steam_value()
             window = self.session_focus.shown()[1]

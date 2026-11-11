@@ -181,6 +181,8 @@ function storePageInput(a) {
   if (k === 'wait') { play('error'); return toast('Leyendo la ficha de Steam…', false); }
   if (k === 'soon') { play('error'); return toast('Todavía no está a la venta en Steam', false); }
   if (k === 'lib' && mine) { play('select'); S.from = 'home'; return enterDetail(mine.i); }
+  /* buying and installing need the Steam account: the sign-in comes first */
+  if ((k === 'install' || k === 'buy') && S.libLogged === 'out') { toast('Primero inicia sesión en Steam', false); return steamOpen('login'); }
   if (k === 'install') {
     if (SPG.installing) { play('error'); return toast('Ya se está instalando: la descarga se ve en Ajustes → Almacenamiento', false); }
     play('select');
