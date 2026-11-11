@@ -1,4 +1,4 @@
-/* ---------- TIENDA (M13, D-30): Steam's store, read by the host and drawn by STONE ----------
+/* ---------- TIENDA (M13, D-34): Steam's store, read by the host and drawn by STONE ----------
    The lists and prices are Steam's own (its public store, in the place the console connects from).
    STONE shows them and takes the person to buy: in Steam's own interface (COMPRAR EN STEAM) or on the
    phone (a QR code of the game's page). A free game, and a game already in the account, install here. */

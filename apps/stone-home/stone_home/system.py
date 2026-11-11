@@ -28,7 +28,7 @@ STEAM_URLS = {
     "downloads": "steam://open/downloads",
     "screenshots": "steam://open/screenshots",
 }
-# Steam's own interface in front of STONE Home (D-30): Big Picture is the one made for a controller.
+# Steam's own interface in front of STONE Home (D-34): Big Picture is the one made for a controller.
 FRONT_URLS = {"bigpicture": "steam://open/bigpicture", "bigpicture_close": "steam://close/bigpicture"}
 RELEASE = os.environ.get("STONE_RELEASE_FILE", "/usr/lib/stone-release")
 

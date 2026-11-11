@@ -1,5 +1,5 @@
 function act(a) {
-  /* Steam's own window is in front (D-30): the controller is Steam's; only the guide button is STONE's */
+  /* Steam's own window is in front (D-34): the controller is Steam's; only the guide button is STONE's */
   if (S.steamFront) { if (a === 'home' && !S.steamFront.full) Sys.steamHide().catch(() => {}); return; }
   if (S.screen === 'transition') return;
   if (S.screen === 'store') { showHints(); return storeInput(a); }

@@ -1,6 +1,6 @@
 """The JavaScript STONE runs inside Steam's interface to read the account's games and who is signed
 in (steamcef.OWNED_EXPRESSION, LOGIN_EXPRESSION), run in node against stand-ins of Steam's objects.
-The real objects of a given Steam build are a board test (T-LIB-01); this checks the logic: every
+The real objects of a given Steam build are a board test (T-LIB-11); this checks the logic: every
 source is joined, tools and shortcuts are left out, and "not answering" differs from "empty".
 
     python3 tests/test_steam_expressions.py     (or: pytest tests/test_steam_expressions.py)

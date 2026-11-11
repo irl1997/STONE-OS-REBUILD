@@ -71,7 +71,7 @@ class Host:
         self.lib_fast_until = time.monotonic() + LIB_FAST_FOR_S
         self.running_game = None                              # set lazily: gamescope_x11.running_game
         self.art = artcache.Fetcher(self._art_news, lookup=store.header_url)
-        self.front = None                                     # Steam's own window asked in front (D-30)
+        self.front = None                                     # Steam's own window asked in front (D-34)
         self.front_timer = None
         self.request_session = None                           # tests: a fake of supervisor.write_request
         self.emu_busy = set()                                 # catalog keys being installed
@@ -736,7 +736,7 @@ class Host:
         # Steam's own cache first; else what STONE fetched for games Steam has not shown (artcache.py)
         return library.art_path(self.root(), appid, kind) or artcache.have(appid, kind)
 
-    # ---- Steam's own interface in front of STONE Home (D-30) ---------------------------------
+    # ---- Steam's own interface in front of STONE Home (D-34) ---------------------------------
     def _focus(self):
         if self.session_focus is None:
             from . import gamescope_x11
@@ -836,7 +836,7 @@ class Host:
         return False
 
     def m_steam_full(self, args, done):
-        """steam.full(why): plan B of D-30. Steam's own Game Mode interface takes the whole session
+        """steam.full(why): plan B of D-34. Steam's own Game Mode interface takes the whole session
         (the supervisor stops STONE Home and brings it back: after the sign-in, when the guide
         button is held, or when Steam ends). why: "login" | "store"."""
         if len(args) != 1 or args[0] not in ("login", "store"):
@@ -1024,7 +1024,7 @@ class Host:
     def m_roms_add(self, args, done):
         self._bg(done, lambda: roms.add_to_library(steam_ui=self.steam_ui), "roms")
 
-    # ---- Steam's store read by STONE (M13, D-30): search, the shop window, a game's page ---------
+    # ---- Steam's store read by STONE (M13, D-34): search, the shop window, a game's page ---------
     def _store_row(self, row):
         """One game of the store for the page: what STONE knows about it, its picture queued."""
         appid = row["appid"]

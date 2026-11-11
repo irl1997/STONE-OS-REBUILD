@@ -174,7 +174,7 @@
 /* a game's page in the store reuses the game page; its description */
 #detail .stats.about{font-size:calc(22px * var(--ts));line-height:1.45;max-width:900px;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}
 #detail .stats.about:empty{display:none}
-/* Steam's own window is coming in front (D-30) */
+/* Steam's own window is coming in front (D-34) */
 #sfront{position:absolute;inset:0;z-index:44;background:#0a0a0b;visibility:hidden;opacity:0;transition:opacity var(--d-enter) var(--e-light),visibility 0s linear var(--d-enter)}
 #sfront.on{visibility:visible;opacity:1;transition:opacity var(--d-enter) var(--e-light),visibility 0s}
 #sfront .sf-box{position:absolute;left:96px;top:300px;width:1100px;display:flex;flex-direction:column;gap:26px;border-top:3px solid var(--vein);padding-top:40px}

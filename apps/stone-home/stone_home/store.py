@@ -1,4 +1,4 @@
-"""Steam's store inside STONE Home (M13, D-30): search, the shop window and a game's page, read
+"""Steam's store inside STONE Home (M13, D-34): search, the shop window and a game's page, read
 from Steam's public store API (no account, no key).
 
     https://store.steampowered.com/api/storesearch/?term=<words>&l=spanish

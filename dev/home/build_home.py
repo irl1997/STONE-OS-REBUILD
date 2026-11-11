@@ -79,7 +79,7 @@ def build(src):
     t = replace_span(t, "/* ---------- Example library ---------- */", "/* ---------- Sound ----------", part("library.js") + "\n\n", "library")
     t = replace_span(t, "function bgGame(g, sharp, veil) {", "const neutralBg", part("bggame.js") + "\n", "bgGame")
     # HOME, then what 3.0 adds next to it: the store and a game's store page, the QR code for the
-    # phone, Steam's own window in front (D-30), and the library following Steam.
+    # phone, Steam's own window in front (D-34), and the library following Steam.
     t = replace_span(t, "/* ---------- HOME ---------- */", "/* ---------- LIBRARY ---------- */",
                      "\n".join(part(n) for n in ("home.js", "store.js", "qr.js", "steamfront.js", "libwatch.js")) + "\n\n", "home")
     t = replace_once(t, "<span>EXPLORAR</span><span>MEDIA</span></div>", "<span>EXPLORAR</span><span>MEDIA</span><span>TIENDA</span></div>", "store tab")

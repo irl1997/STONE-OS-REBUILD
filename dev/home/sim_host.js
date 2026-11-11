@@ -228,7 +228,7 @@ const Bridge = (() => {
         genres: it.genres || ['Acción', 'Aventura'], release: it.soon ? 'Próximamente' : '16 JUN 2025', by: [it.by || 'Estudio de ejemplo'], kind: 'game', url: 'https://store.steampowered.com/app/' + appid }); },
     'art.want': () => ({ queued: 0 }),
     'session.info': () => ({ session: 'stone' }),
-    /* Steam's own window in front (D-30), played with a stand-in window. ?nowindow: Steam shows nothing.
+    /* Steam's own window in front (D-34), played with a stand-in window. ?nowindow: Steam shows nothing.
        SimPanel.buy(appid): the purchase arrives in the account (as after paying in Steam or on the phone). */
     'steam.show': async ([what, appid]) => {
       SIM.front = { what, appid };

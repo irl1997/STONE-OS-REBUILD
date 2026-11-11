@@ -58,7 +58,7 @@ const Sys = {
   /* Steam asking something (steamcef.dialog), answered from STONE; STONE MEDIA */
   steamDialog: () => Bridge.call('steam.dialog'), steamAnswer: (i, label) => Bridge.call('steam.dialogAnswer', i, label),
   shots: appid => Bridge.call('media.screenshots', ...(appid ? [appid] : [])),
-  /* Steam's own interface in front (D-30), Steam's store read by the host, artwork, emulator updates */
+  /* Steam's own interface in front (D-34), Steam's store read by the host, artwork, emulator updates */
   steamShow: (what, appid) => Bridge.call('steam.show', ...(appid ? [what, appid] : [what])), steamHide: () => Bridge.call('steam.hide'),
   steamFull: why => Bridge.call('steam.full', why), steamStatus: () => Bridge.call('steam.status'),
   storeFeatured: () => Bridge.call('store.featured'), storeDetails: appid => Bridge.call('store.details', appid),

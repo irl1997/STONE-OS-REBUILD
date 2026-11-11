@@ -11,9 +11,9 @@ user, inside the session's Gamescope. It:
   4. keeps Gamescope's focus: Home marked as the main interface, the running game in front of it
      (gamescope_x11.py) [V-13]; the guide button during a game brings Home to the front, the game
      still running behind it, until Home's REANUDAR (guide.py, plan B of V-13).
-  5. shows Steam's own window when STONE Home asks for it (sign-in, store and checkout: D-30) and
+  5. shows Steam's own window when STONE Home asks for it (sign-in, store and checkout: D-34) and
      takes the screen back with the guide button, when a game starts or when Steam closes it.
-  6. plan B of D-30, when STONE Home asks for it (session.request): Steam's own Game Mode interface
+  6. plan B of D-34, when STONE Home asks for it (session.request): Steam's own Game Mode interface
      takes the whole session (the same command as the recovery path) and STONE Home comes back when
      the person has signed in, holds the guide button GUIDE_HOLD_S, or Steam ends.
 
@@ -108,7 +108,7 @@ def request_path():
 
 
 def write_request(why):
-    """STONE Home asks the supervisor for Steam's own Game Mode interface (plan B of D-30)."""
+    """STONE Home asks the supervisor for Steam's own Game Mode interface (plan B of D-34)."""
     if why not in REQUEST_WHYS:
         raise ValueError("why")
     os.makedirs(state_dir(), exist_ok=True)
@@ -149,7 +149,7 @@ def read_state():
 class FocusKeeper:
     """Home as Gamescope's main interface and the running game in front (gamescope_x11.py); the
     guide button brings Home in front of the game (guide.py). When STONE Home asks for Steam's own
-    window (sign-in, store: root property STONE_STEAM_FRONT, D-30) Steam's windows are marked and the
+    window (sign-in, store: root property STONE_STEAM_FRONT, D-34) Steam's windows are marked and the
     one to show is named; the guide button, a game starting or Steam closing its window gives the
     screen back to Home. Never fatal: without python-xlib, $DISPLAY or python-evdev the session
     runs and the fact is logged once."""
@@ -226,7 +226,7 @@ class FocusKeeper:
             self.focus.set_home_front(True)
             log(f"guide button: STONE Home in front, game {self.game} keeps running")
 
-    # ---- Steam's own window in front (D-30) --------------------------------------------
+    # ---- Steam's own window in front (D-34) --------------------------------------------
     def _steam_end(self, why, value):
         for win in list(self.steam_marked.values()):
             try:
@@ -376,7 +376,7 @@ def _steam_gone(timeout=20.0):
 
 
 def steam_takes_the_session(why, focus, stopping):
-    """Plan B of D-30: Steam's own Game Mode interface until the person signs in (asked for the
+    """Plan B of D-34: Steam's own Game Mode interface until the person signs in (asked for the
     sign-in on a console without an account), holds the guide button, or Steam ends. Returns why
     it ended."""
     from . import shortcuts

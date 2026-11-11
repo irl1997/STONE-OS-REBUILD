@@ -427,7 +427,7 @@ body.dormant *,body.dormant *::before,body.dormant *::after{animation-play-state
 /* a game's page in the store reuses the game page; its description */
 #detail .stats.about{font-size:calc(22px * var(--ts));line-height:1.45;max-width:900px;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}
 #detail .stats.about:empty{display:none}
-/* Steam's own window is coming in front (D-30) */
+/* Steam's own window is coming in front (D-34) */
 #sfront{position:absolute;inset:0;z-index:44;background:#0a0a0b;visibility:hidden;opacity:0;transition:opacity var(--d-enter) var(--e-light),visibility 0s linear var(--d-enter)}
 #sfront.on{visibility:visible;opacity:1;transition:opacity var(--d-enter) var(--e-light),visibility 0s}
 #sfront .sf-box{position:absolute;left:96px;top:300px;width:1100px;display:flex;flex-direction:column;gap:26px;border-top:3px solid var(--vein);padding-top:40px}
@@ -626,7 +626,7 @@ const Sys = {
   /* Steam asking something (steamcef.dialog), answered from STONE; STONE MEDIA */
   steamDialog: () => Bridge.call('steam.dialog'), steamAnswer: (i, label) => Bridge.call('steam.dialogAnswer', i, label),
   shots: appid => Bridge.call('media.screenshots', ...(appid ? [appid] : [])),
-  /* Steam's own interface in front (D-30), Steam's store read by the host, artwork, emulator updates */
+  /* Steam's own interface in front (D-34), Steam's store read by the host, artwork, emulator updates */
   steamShow: (what, appid) => Bridge.call('steam.show', ...(appid ? [what, appid] : [what])), steamHide: () => Bridge.call('steam.hide'),
   steamFull: why => Bridge.call('steam.full', why), steamStatus: () => Bridge.call('steam.status'),
   storeFeatured: () => Bridge.call('store.featured'), storeDetails: appid => Bridge.call('store.details', appid),
@@ -1188,7 +1188,7 @@ function shotViewer(k) {
     onB: back }, false, true);
   $('#dlg').classList.add('viewer');
 }
-/* ---------- TIENDA (M13, D-30): Steam's store, read by the host and drawn by STONE ----------
+/* ---------- TIENDA (M13, D-34): Steam's store, read by the host and drawn by STONE ----------
    The lists and prices are Steam's own (its public store, in the place the console connects from).
    STONE shows them and takes the person to buy: in Steam's own interface (COMPRAR EN STEAM) or on the
    phone (a QR code of the game's page). A free game, and a game already in the account, install here. */
@@ -1500,7 +1500,7 @@ function qrSvg(text, px) {
   Q.forEach((row, r) => row.forEach((v, c) => { if (v) d += `M${c + 4} ${r + 4}h1v1h-1z`; }));
   return `<svg class="qr" width="${px}" height="${px}" viewBox="0 0 ${s} ${s}" shape-rendering="crispEdges" role="img" aria-label="Código QR"><rect width="${s}" height="${s}" fill="#ede9e3"/><path d="${d}" fill="#0a0a0b"/></svg>`;
 }
-/* ---------- STEAM IN FRONT (D-30) ----------
+/* ---------- STEAM IN FRONT (D-34) ----------
    Signing in and paying are done in Steam's own interface: STONE never sees a password or a card.
    In the STONE session Steam runs hidden, so STONE asks the session for Steam's window (steam.show):
    the session puts it in front and gives the screen back with the guide button, when Steam closes
@@ -3517,7 +3517,7 @@ async function suFinish() {
 
 /* ---------- Input dispatch ---------- */
 function act(a) {
-  /* Steam's own window is in front (D-30): the controller is Steam's; only the guide button is STONE's */
+  /* Steam's own window is in front (D-34): the controller is Steam's; only the guide button is STONE's */
   if (S.steamFront) { if (a === 'home' && !S.steamFront.full) Sys.steamHide().catch(() => {}); return; }
   if (S.screen === 'transition') return;
   if (S.screen === 'store') { showHints(); return storeInput(a); }

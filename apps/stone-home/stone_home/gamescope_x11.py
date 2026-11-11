@@ -16,14 +16,14 @@ Home comes back. Behaviour on the board is [V-13]: until then this is CODE TESTE
 
   STONE_HOME_FRONT = 1           on the root, STONE's own: Home stays in front of the running game
                                  (guide button, guide.py); STONE Home's REANUDAR sets it back to 0
-  STONE_STEAM_FRONT = 1          on the root, STONE's own (D-30): Steam's own window is in front (its
+  STONE_STEAM_FRONT = 1          on the root, STONE's own (D-34): Steam's own window is in front (its
                                  sign-in, its store and checkout). The session supervisor then marks
                                  Steam's windows as the main interface and names the one to show in
                                  GAMESCOPECTRL_BASELAYER_WINDOW; back to 0, their mark is removed.
 
 Why Steam's windows need this: Gamescope (steamcompmgr.cpp, possible-focus list) only ever shows a
 window that has an app id, and `steam -silent` gives its own windows none. Without the mark, Steam's
-sign-in window exists and is never on screen. [VERIFICAR EN PLACA: T-STEAM-01, T-STEAM-02]
+sign-in window exists and is never on screen. [VERIFICAR EN PLACA: T-STEAM-11, T-STEAM-12]
 """
 
 import os
@@ -152,7 +152,7 @@ class Focus:
     def set_home_front(self, on):
         self._set(self.root, HOME_FRONT, [1 if on else 0])
 
-    # ---- Steam's own window in front (D-30) ------------------------------------------------
+    # ---- Steam's own window in front (D-34) ------------------------------------------------
     def steam_value(self):
         """STONE_STEAM_FRONT: 1 while Steam's own window was asked in front (any window: the
         sign-in), 3 the same for Big Picture (the store); 0 not asked; 2 the supervisor gave up

@@ -88,3 +88,15 @@ tests:
   - {id: "T-DL-03", title: "Pausar y reanudar una descarga desde STONE", phase: F7, kind: P, status: NOT TESTED, runs: [], observed: []}
   - {id: "T-STOR-01", title: "Tamanos de juegos coinciden con los de Steam", phase: F7, kind: P, status: NOT TESTED, runs: [], observed: []}
   - {id: "T-INST-01", title: "Instalar sobre un disco con datos pide confirmacion explicita", phase: F9, kind: S+V, status: NOT TESTED, runs: [], observed: []}
+  # 3.0.0-rc1 (D-34): Steam's own window in front, the library that follows Steam, the store, emulator updates
+  - {id: "T-STEAM-11", title: "Iniciar sesion: la ventana de Steam aparece delante de STONE Home; al terminar, STONE vuelve sola y muestra la biblioteca", phase: F9, kind: P, status: NOT TESTED, runs: [], observed: ["1.0.0-rc5: sin iniciar sesion no habia biblioteca; la ventana de Steam no se veia en la sesion STONE"]}
+  - {id: "T-STEAM-12", title: "Comprar en Steam: Big Picture con la ficha del juego delante de Home; el boton guia vuelve a STONE; lo comprado se instala solo", phase: F9, kind: P, status: NOT TESTED, runs: [], observed: []}
+  - {id: "T-STEAM-13", title: "Plan B: Steam completo toma la sesion; STONE vuelve al iniciar sesion, al mantener el boton guia 3 s y al cerrar Steam", phase: F9, kind: P, status: NOT TESTED, runs: [], observed: []}
+  - {id: "T-STEAM-14", title: "Con Steam al frente, STONE Home no reacciona al mando; solo el boton guia", phase: F9, kind: P, status: NOT TESTED, runs: [], observed: []}
+  - {id: "T-LIB-11", title: "Con la cuenta iniciada, la biblioteca muestra los juegos no instalados de la cuenta, con caratulas, sin reiniciar STONE", phase: F9, kind: P, status: NOT TESTED, runs: [], observed: ["1.0.0-rc5: la biblioteca no mostraba los juegos de la cuenta"]}
+  - {id: "T-LIB-12", title: "Un juego comprado con el movil (codigo QR) aparece en la biblioteca y se instala sin tocar la consola", phase: F9, kind: P, status: NOT TESTED, runs: [], observed: []}
+  - {id: "T-LIB-13", title: "Tras reiniciar, la biblioteca completa aparece desde el primer cuadro (lista guardada) antes de que Steam responda", phase: F9, kind: P, status: NOT TESTED, runs: [], observed: []}
+  - {id: "T-STORE-01", title: "La Tienda muestra las listas y los precios de Steam en la moneda del pais de la consola; un juego gratis se instala desde su ficha", phase: F9, kind: P, status: NOT TESTED, runs: [], observed: []}
+  - {id: "T-EMU-02", title: "Actualizar un emulador, y todos, desde Ajustes: la version mostrada cambia y el emulador sigue abriendo", phase: F8, kind: P, status: NOT TESTED, runs: [], observed: []}
+  - {id: "T-EMU-03", title: "Un juego de Switch en ~/Emulation/roms/switch se abre con Eden (o con Ryujinx) desde la biblioteca", phase: F8, kind: P, status: NOT TESTED, runs: [], observed: []}
+  - {id: "T-BOOT-10", title: "BOOT TO VISUAL y BOOT TO READY de 3.0.0-rc1 comparados con 1.0.0-rc5 (stone-session boot), cinco arranques", phase: F9, kind: P, status: NOT TESTED, runs: [], observed: []}

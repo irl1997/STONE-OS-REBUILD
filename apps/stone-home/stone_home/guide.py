@@ -10,7 +10,7 @@ later. One press can arrive on two devices (the controller and Steam's virtual o
 than DEBOUNCE_S count once. Never fatal: a device that goes away is dropped.
 
 held() says for how long the button has been down: holding it is the way back to STONE while
-Steam's own Game Mode interface has the session (supervisor.py, plan B of D-30).
+Steam's own Game Mode interface has the session (supervisor.py, plan B of D-34).
 """
 
 import select

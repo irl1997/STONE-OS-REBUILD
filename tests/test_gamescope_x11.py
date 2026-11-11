@@ -116,7 +116,7 @@ def test_properties_land_on_the_home_window_and_the_root():
         f.set_home_front(False)
         assert f.home_front() is False
 
-        # Steam's own window in front (D-30): only mapped, Steam-class windows count
+        # Steam's own window in front (D-34): only mapped, Steam-class windows count
         assert f.steam_windows() == [] and f.steam_value() == 0
         big = root.create_window(0, 0, 800, 600, 0, d.screen().root_depth, X.InputOutput, X.CopyFromParent)
         big.set_wm_class("steamwebhelper", "steam")

@@ -1,4 +1,4 @@
-/* ---------- STEAM IN FRONT (D-30) ----------
+/* ---------- STEAM IN FRONT (D-34) ----------
    Signing in and paying are done in Steam's own interface: STONE never sees a password or a card.
    In the STONE session Steam runs hidden, so STONE asks the session for Steam's window (steam.show):
    the session puts it in front and gives the screen back with the guide button, when Steam closes
