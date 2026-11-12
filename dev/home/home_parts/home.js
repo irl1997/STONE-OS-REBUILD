@@ -5,23 +5,23 @@ function homeHTML() {
   let cards = '';
   if (S.section === 0) {
     /* Nobody signed in to Steam on this console: the first thing Home offers */
-    if (S.libLogged === 'out') cards += `<div class="card wide vein" data-f data-act="login"><b>INICIA SESIÓN EN STEAM</b><span>Tus juegos vienen de tu cuenta de Steam</span></div>`;
+    if (S.libLogged === 'out') cards += `<div class="card wide vein" data-f data-act="login"><b>Inicia sesión en Steam</b><span>Tus juegos vienen de tu cuenta de Steam</span></div>`;
     if (G.length && recent.length) {
       const g0 = G[recent[0]], hu = heroUrl(g0);
       cards += `<div class="card hero${g0.inst || g0.src === 'shortcut' ? '' : ' dim'}" data-f data-g="${g0.i}" style="background-image:${hu ? `url(&quot;${hu}&quot;)` : 'none'};background-color:var(--shale)">${hu ? '' : nameTag(g0)}${runTag(g0.i)}</div>`;
       recent.slice(1).forEach(i => { const g = G[i]; cards += `<div class="card cap${g.inst || g.src === 'shortcut' ? '' : ' dim'}${capWide(g) ? ' hdr' : ''}" data-f data-g="${i}" style="background-image:${capUrl(g).replace(/"/g, '&quot;')}">${g.art.capsule ? '' : nameTag(g)}${runTag(i)}</div>`; });
     } else if (S.libLogged !== 'out') {
-      cards += `<div class="card wide" data-f data-act="${S.libReady ? 'store' : 'library'}"><b>${S.libReady ? 'SIN JUEGOS' : 'BIBLIOTECA'}</b><span>${S.libReady ? 'Abre la tienda para conseguir el primero' : 'Leyendo la biblioteca de Steam…'}</span></div>`;
+      cards += `<div class="card wide" data-f data-act="${S.libReady ? 'store' : 'library'}"><b>${S.libReady ? 'Sin juegos' : 'Biblioteca'}</b><span>${S.libReady ? 'Abre la tienda para conseguir el primero' : 'Leyendo la biblioteca de Steam…'}</span></div>`;
     }
-    cards += `<div class="card tile" data-f data-act="library">BIBLIOTECA</div><div class="card tile" data-f data-act="store">TIENDA</div>`;
+    cards += `<div class="card tile" data-f data-act="library">Biblioteca</div><div class="card tile" data-f data-act="store">Tienda</div>`;
   } else if (S.section === 2) {
-    [['TIENDA', 'Ofertas, novedades y lo más vendido en Steam', 'store'], ['BUSCAR JUEGOS', 'Tu biblioteca y la tienda de Steam', 'search'],
-      ['SORPRÉNDEME', 'STONE elige uno de tus juegos instalados', 'surprise'], ['DESCARGAS', 'Descargas y actualizaciones de juegos', 'downloads'], ['EMULADORES', 'Juegos de otras consolas', 'emu']]
+    [['Tienda', 'Ofertas, novedades y lo más vendido en Steam', 'store'], ['Buscar juegos', 'Tu biblioteca y la tienda de Steam', 'search'],
+      ['Sorpréndeme', 'STONE elige uno de tus juegos instalados', 'surprise'], ['Descargas', 'Descargas y actualizaciones de juegos', 'downloads'], ['Emuladores', 'Juegos de otras consolas', 'emu']]
       .forEach(([t, s, k]) => { cards += `<div class="card wide" data-f data-act="${k}"><b>${t}</b><span>${s}</span></div>`; });
   } else {
     if (!SHOTS) loadShots();
     if (SHOTS && SHOTS.length) SHOTS.slice(0, 12).forEach((sh, k) => { cards += `<div class="card cap shot" data-f data-act="shot" data-k="${k}" style="background-image:url(&quot;${Bridge.artUrl(sh.appid === '0' ? '0' : '0', sh.kind)}&quot;)"></div>`; });
-    else cards += `<div class="card wide" data-f data-act="noshots"><b>CAPTURAS</b><span>${SHOTS ? 'Aún no hay capturas. Durante el juego: botón STEAM + R1' : 'Leyendo las capturas…'}</span></div>`;
+    else cards += `<div class="card wide" data-f data-act="noshots"><b>Capturas</b><span>${SHOTS ? 'Aún no hay capturas. Durante el juego: botón STEAM + R1' : 'Leyendo las capturas…'}</span></div>`;
   }
   const ico = {
     lib: '<svg width="26" height="26" viewBox="0 0 26 26" fill="none" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="6" height="18"/><rect x="11" y="4" width="6" height="18"/><path d="M19 5l4 1-3 16-4-1"/></svg>',
@@ -31,13 +31,13 @@ function homeHTML() {
     sea: '<svg width="26" height="26" viewBox="0 0 26 26" fill="none" stroke-width="2" aria-hidden="true"><circle cx="11.5" cy="11.5" r="7"/><path d="M17 17l6 6"/></svg>',
     sto: '<svg width="26" height="26" viewBox="0 0 26 26" fill="none" stroke-width="2" aria-hidden="true"><path d="M5 9h16l-1.5 13h-13z"/><path d="M9 9V7a4 4 0 0 1 8 0v2"/></svg>'
   };
-  const label = S.section === 0 ? `ESTRATO 01 · <b>${S.libNone && G.length ? 'TU CUENTA' : 'RECIENTES'}</b>${G.length ? ` · ${G.length} JUEGO${G.length === 1 ? '' : 'S'}` : ''}`
-    : S.section === 2 ? 'ESTRATO 01 · <b>EXPLORAR</b>' : 'ESTRATO 01 · <b>MEDIA</b>';
+  const label = S.section === 0 ? `<b>${S.libNone && G.length ? 'Tu cuenta' : 'Recientes'}</b>${G.length ? ` · ${G.length} juego${G.length === 1 ? '' : 's'}` : ''}`
+    : S.section === 2 ? '<b>Explorar</b>' : '<b>Media</b>';
   return `<div class="st-head"></div><div class="st-deep"></div>
     <div class="st-label l1">${label}</div>
     <div class="clip"><div class="track" data-sx="0">${cards}</div></div>
     <div class="horizon"></div>
-    <div class="st-label l2">ESTRATO 02 · <b>LA MÁQUINA</b></div>
+    <div class="st-label l2"><b>La máquina</b></div>
     <div class="strata" id="strata">${strataHTML()}</div>
     <div class="ctx"><div class="kicker" id="hk"></div><div class="ctx-title" id="ht"></div><div class="meta" id="hm"></div></div>
     <div class="sys">
@@ -70,14 +70,14 @@ function homeContext(el) {
     hm.textContent = !playable ? `${g.upd ? 'Instalándose' : 'Pulsa A para instalarlo'} · ${playText(g)}`
       : `${S.running === g.i ? 'Abierto ahora' : g.last} · ${playText(g)}${g.o !== 'Steam' ? ' · ' + g.o : ''}`;
     metaT = setTimeout(() => hm.classList.add('on'), S.rm ? 150 : 600);
-    bgGame(g, false, '');
+    bgGame(g, true, 'home');           /* CRISTAL: the game's own art, sharp, fills the screen */
     [NAV && NAV.rows[0][NAV.c + 1], NAV && NAV.rows[0][NAV.c - 1]].forEach(nx => { if (nx && nx.dataset.g !== undefined) blurOf(G[+nx.dataset.g]); });
   } else {
     const a = el.dataset.act;
-    const label = { login: ['STEAM', 'Con el código QR de Steam y tu móvil, sin escribir contraseñas'], store: ['TIENDA', 'Ofertas, novedades y lo más vendido en Steam'],
-      surprise: ['SORPRÉNDEME', 'Para cuando no sabes a qué jugar'], search: ['BUSCAR', 'Tus juegos y la tienda de Steam (Y)'], library: ['BIBLIOTECA', S.libReady ? `${G.length} juego${G.length === 1 ? '' : 's'}` : 'Leyendo…'], explore: ['EXPLORAR', 'Tienda, descargas y emuladores'], settings: ['AJUSTES', 'Pantalla, audio, rendimiento y más'], power: ['APAGAR', 'Apagar o reiniciar'],
-      downloads: ['DESCARGAS', 'Lo que se descarga y el espacio libre'], emu: ['EMULADORES', 'Juegos de otras consolas'], noshots: ['CAPTURAS', 'Durante el juego: botón STEAM + R1'],
-      shot: (() => { const sh = SHOTS && SHOTS[+el.dataset.k], g = sh && G.find(x => x.appid === sh.appid); return ['CAPTURA', sh ? `${g ? g.n : 'Juego ' + sh.appid} · ${new Date(sh.time * 1000).toLocaleDateString('es-CL')}` : '']; })() }[a] || ['', ''];
+    const label = { login: ['Steam', 'Con el código QR de Steam y tu móvil, sin escribir contraseñas'], store: ['Tienda', 'Ofertas, novedades y lo más vendido en Steam'],
+      surprise: ['Sorpréndeme', 'Para cuando no sabes a qué jugar'], search: ['Buscar', 'Tus juegos y la tienda de Steam (Y)'], library: ['Biblioteca', S.libReady ? `${G.length} juego${G.length === 1 ? '' : 's'}` : 'Leyendo…'], explore: ['Explorar', 'Tienda, descargas y emuladores'], settings: ['Ajustes', 'Pantalla, audio, rendimiento y más'], power: ['Apagar', 'Apagar o reiniciar'],
+      downloads: ['Descargas', 'Lo que se descarga y el espacio libre'], emu: ['Emuladores', 'Juegos de otras consolas'], noshots: ['Capturas', 'Durante el juego: botón STEAM + R1'],
+      shot: (() => { const sh = SHOTS && SHOTS[+el.dataset.k], g = sh && G.find(x => x.appid === sh.appid); return ['Captura', sh ? `${g ? g.n : 'Juego ' + sh.appid} · ${new Date(sh.time * 1000).toLocaleDateString('es-CL')}` : '']; })() }[a] || ['', ''];
     hk.textContent = S.section === 2 ? 'EXPLORAR' : S.section === 3 ? 'MEDIA' : 'SISTEMA';
     if (a === 'search') hk.textContent = 'BUSCAR';
     if (a === 'login') hk.textContent = 'TU CUENTA';

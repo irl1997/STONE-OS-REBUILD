@@ -82,7 +82,8 @@ def build(src):
     # phone, Steam's own window in front (D-34), and the library following Steam.
     t = replace_span(t, "/* ---------- HOME ---------- */", "/* ---------- LIBRARY ---------- */",
                      "\n".join(part(n) for n in ("home.js", "store.js", "qr.js", "steamfront.js", "libwatch.js")) + "\n\n", "home")
-    t = replace_once(t, "<span>EXPLORAR</span><span>MEDIA</span></div>", "<span>EXPLORAR</span><span>MEDIA</span><span>TIENDA</span></div>", "store tab")
+    t = replace_once(t, "<span>INICIO</span><span>BIBLIOTECA</span><span>EXPLORAR</span><span>MEDIA</span></div>",
+                     "<span>Inicio</span><span>Biblioteca</span><span>Explorar</span><span>Media</span><span>Tienda</span></div>", "store tab")
     t = replace_span(t, "const FILTERS = [", "function enterLibrary(", part("libfilter.js") + "\n", "filters")
     t = replace_once(t, "<div class=\"count\">${list.length} juegos · Recientes</div>", "<div class=\"count\">${list.length} juegos · recientes primero</div>", "count")
     t = replace_once(t, "${list.length ? '' : '<div class=\"empty\">No hay juegos con este filtro.</div>'}", "${list.length ? '' : `<div class=\"empty\">${emptyText()}</div>`}", "empty")
@@ -104,7 +105,7 @@ def build(src):
     t = replace_once(t, "  if (master) master.gain.setTargetAtTime(S.sound ? S.vol : 0, AC.currentTime, .05);\n  $('#bSound').textContent = `Sonido: ${S.sound ? 'activado' : 'desactivado'}`;\n",
                      "  if (master) master.gain.setTargetAtTime(S.sound ? S.vol : 0, AC.currentTime, .05);\n", "applyPrefs bar")
     t = replace_once(t, "  else if (key === 'tech') { S.tech = !S.tech; }\n",
-                     "  else if (key === 'tech') { S.tech = !S.tech; }\n  else if (key === 'report') { S.report = !S.report; }\n  else if (key === 'sysvol') { return setSysVol(d, ri); }\n  else if (key === 'frame') { const n = FRAME + d; if (n < 0 || n > 6) return bump(d); FRAME = n; fit(); }\n  else if (key === 'render') { S.render = (S.render + d + RENDER.length) % RENDER.length; play('select'); return applyRender(); }\n  else if (key === 'gameres') { return setGamePolicy(); }\n  else if (key === 'dispgoal') { return setDisplayGoal(); }\n", "adjust render")
+                     "  else if (key === 'tech') { S.tech = !S.tech; }\n  else if (key === 'report') { S.report = !S.report; }\n  else if (key === 'glass') { if (S.render === 1) return toast('Sin GPU se usan siempre los efectos ligeros', false); S.glass = S.glass ? 0 : 1; }\n  else if (key === 'sysvol') { return setSysVol(d, ri); }\n  else if (key === 'frame') { const n = FRAME + d; if (n < 0 || n > 6) return bump(d); FRAME = n; fit(); }\n  else if (key === 'render') { S.render = (S.render + d + RENDER.length) % RENDER.length; play('select'); return applyRender(); }\n  else if (key === 'gameres') { return setGamePolicy(); }\n  else if (key === 'dispgoal') { return setDisplayGoal(); }\n", "adjust render")
     t = replace_once(t, "  applyPrefs(); play('nav'); enterSettings({ pane: true, ri });\n}", "  applyPrefs(); savePrefs(); armIdleOff(); play('nav'); enterSettings({ pane: true, ri });\n}", "adjust save")
     t = replace_span(t, "  if (r.act === 'steam') { play('select'); return toast('Se abre el panel de Steam con el tema de STONE (fuera del prototipo)', false); }\n  if (r.act === 'desk') { play('error'); return toast('El modo escritorio queda oculto en el producto final', false); }\n",
                      "  if (r.act === 'perf')", "  if (r.act === 'info') { play('select'); return toast(r.where, false); }\n  if (['audio-out', 'wifi', 'wifi-scan', 'wifi-off', 'bt', 'bt-scan'].includes(r.act)) return cxAct(r, NAV.c);\n  if (['storage-again', 'steam-dl', 'game-store'].includes(r.act)) return storeAct(r, NAV.c);\n  if (['roms-folders', 'roms-add'].includes(r.act)) return romAct(r, NAV.c);\n  if (r.act === 'cu40') { play('select'); return cu40Dlg(NAV.c); }\n  if (r.act === 'health') { play('select'); S.health = null; return enterSettings({ pane: true, ri: NAV.c }); }\n  if (r.act === 'reboot') { play('select'); return shutdown(true); }\n  if (r.act === 'steam') { play('select'); return openSteamSettings(r); }\n  if (r.act === 'emu') return emuA(r);\n  if (r.act === 'sset') return ssetA(r);\n  if (r.act === 'measure') { play('select'); return measureSmoothness(); }\n  if (r.act === 'desktop') { play('select'); return desktopDlg(NAV.c); }\n", "settingsA steam")
@@ -150,7 +151,12 @@ def build(src):
     t = replace_span(t, "/* Bar buttons */", "})();\n</script>", part("start.js") + "\n})();\n</script>", "start", inclusive_end=True)
     t = replace_once(t, "PerfAPI.on('metrics', m => {\n  S.metrics = m;\n", "PerfAPI.on('metrics', m => {\n  S.metrics = m; thermPush(m);\n", "thermal push")
     t = replace_once(t, "    + 'FPS y frametime: botón ··· → Rendimiento (Steam)';", "    + 'FPS y frametime: botón ··· → Rendimiento (Steam)'\n    + (() => { const f = thermalForecast(S.actual && S.actual.temp); return f === null ? '' : `\\nA este ritmo, la GPU llega a ${S.actual.temp} °C en ~${Math.round(f)} min`; })();", "thermal forecast")
-    t = replace_once(t, "\n</style>\n\n<div id=\"app\">", "\n" + part("estratos.css") + "\n</style>\n\n<div id=\"app\">", "estratos")
+    t = replace_once(t, "\n</style>\n\n<div id=\"app\">", "\n" + part("estratos.css") + "\n" + part("cristal.css") + "\n</style>\n\n<div id=\"app\">", "estratos+cristal")
+    # CRISTAL: colour behind every screen that has no game art of its own (cristal.css --aurora);
+    # without blur when the person chose «Ligeros» or STONE Home draws without GPU.
+    t = replace_once(t, "const neutralBg = 'linear-gradient(to bottom, #1c1d1f 0%, #141517 60%, #0a0a0b 100%)';", "const neutralBg = 'var(--aurora)';", "aurora")
+    t = replace_once(t, "$('#settings').innerHTML = `<div class=\"ttl\">AJUSTES</div>", "$('#settings').innerHTML = `<div class=\"ttl\">Ajustes</div>", "settings title")
+    t = replace_once(t, "  stage.classList.toggle('rm', S.rm);\n", "  stage.classList.toggle('rm', S.rm);\n  stage.classList.toggle('lite', !S.glass || S.render === 1);\n", "glass lite")
     for bad in ("SimStoned", "PerfAPI.sim", "Math.random() * 8", "simulad", "prototipo", "fonts.googleapis", "bCrash", "bFault"):
         if bad in t:
             line = t[:t.index(bad)].count("\n") + 1

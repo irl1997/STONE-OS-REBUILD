@@ -108,14 +108,14 @@ let saveT = 0;
 function savePrefs() {
   clearTimeout(saveT);
   saveT = setTimeout(() => Sys.prefsSet({ sound: S.sound, vol: S.vol, hc: S.hc, rm: S.rm, ts: S.ts, safe: S.safe, idle: S.idle,
-    tech: S.tech, adv_ack: S.advAck, engine: S.render, favorites: [...favs], frame: FRAME, wanted: [...WANT], report: S.report }).catch(() => {}), 400);
+    tech: S.tech, adv_ack: S.advAck, engine: S.render, favorites: [...favs], frame: FRAME, wanted: [...WANT], report: S.report, glass: S.glass }).catch(() => {}), 400);
 }
 function loadPrefs(p) {
   if (!p) return;
   S.sound = p.sound; S.vol = p.vol; S.hc = p.hc; S.rm = p.rm || reduceOS; S.ts = p.ts; S.safe = p.safe; S.idle = p.idle;
   S.tech = p.tech; S.advAck = p.adv_ack; S.render = p.engine === 1 ? 1 : 0; favs.clear(); (p.favorites || []).forEach(a => favs.add(a));
   FRAME = p.frame > 0 && p.frame <= 6 ? p.frame : 0; fit();
-  WANT.clear(); (p.wanted || []).forEach(a => WANT.add(a)); S.report = p.report !== false;
+  WANT.clear(); (p.wanted || []).forEach(a => WANT.add(a)); S.report = p.report !== false; S.glass = p.glass === 0 ? 0 : 1;
   applyPrefs();
 }
 
@@ -193,7 +193,7 @@ function suDraw(st) {
   const el = suEl(), i = SU_STEPS.findIndex(x => x[0] === st.key);
   SU.cur = st;
   el.querySelector('.su-count').textContent = `PASO ${String(i + 1).padStart(2, '0')} DE ${String(SU_STEPS.length).padStart(2, '0')}`;
-  el.querySelector('.su-kick').innerHTML = `ESTRATO ${String(i + 1).padStart(2, '0')} · <b>${SU_STEPS[i][1]}</b>`;
+  el.querySelector('.su-kick').innerHTML = `PASO ${i + 1} · <b>${SU_STEPS[i][1]}</b>`;
   el.querySelector('.su-title').textContent = st.title;
   el.querySelector('.su-lead').innerHTML = st.lead || '';
   el.querySelector('.su-rows').innerHTML = (st.rows || []).map((r, k) => `<div class="su-row${r.k ? ' txt-f' : ''}${r.lr ? ' lr' : ''}"${r.k ? ` data-f data-r="${k}"` : ''}><span>${esc(r.l)}</span><b>${r.lr ? '◀ ' : ''}${esc(r.v || '')}${r.lr ? ' ▶' : ''}</b></div>`).join('');

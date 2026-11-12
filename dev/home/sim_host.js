@@ -14,9 +14,9 @@ const Bridge = (() => {
   const bad = (code, msg) => { throw new PerfError(code, msg); };
 
   /* ---- preferences ---- */
-  /* ?ts=2: text at 1.5× · ?hc: high contrast (to look at the accessibility settings) */
+  /* ?ts=2: text at 1.5× · ?hc: high contrast (to look at the accessibility settings) · ?lite: glass without blur */
   let prefs = { sound: true, vol: 0.7, hc: /[?&]hc/.test(location.search), rm: false, ts: Math.max(0, Math.min(2, +(new URLSearchParams(location.search).get('ts') || 0))), safe: 5, idle: 2, tech: false, adv_ack: false, favorites: ['1091500'],
-    engine: 0, game_res: 0, display_goal: 'fluid', optimized: 1, wanted: [], report: true };
+    engine: 0, game_res: 0, display_goal: 'fluid', optimized: 1, wanted: [], report: true, glass: /[?&]lite/.test(location.search) ? 0 : 1 };
 
   /* ---- library (simulated; Steam's art is not available here, STONE paints its own covers) ---- */
   const DAY = 86400, now = Date.now() / 1000;
@@ -325,23 +325,46 @@ const Bridge = (() => {
     'game.restoreRecommended': async ([appid]) => { const s = st(appid); s.mode = 'recommended'; s.path = s.preset = null; return { ok: true }; }
   };
 
-  /* covers: generated here (Steam's own artwork is not available in the simulation) */
+  /* covers: generated here (Steam's own artwork is not available in the simulation): a landscape in
+     the game's own colours (sky, sun, three ridges, haze), like the key art Steam gives each game.
+     The capsule and the store picture carry the name; the hero (the wide background) does not. */
   const artCache = {};
   function artOf(appid, kind) {
     if (/^shot\d+$/.test(kind)) { const g = GAMES[+kind.slice(4) % GAMES.length]; return artOf(g.appid, 'hero'); }
     const k = appid + kind; if (artCache[k]) return artCache[k];
-    const g = GAMES.find(x => x.appid === appid) || storeItem(appid), w = kind === 'hero' ? 960 : kind === 'header' ? 460 : 300, h = kind === 'hero' ? 310 : kind === 'header' ? 215 : 450;
-    let hsh = 0; for (const c of appid) hsh = (hsh * 31 + c.charCodeAt(0)) % 360;
-    const c = document.createElement('canvas'); c.width = w; c.height = h; const x = c.getContext('2d');
-    const gr = x.createLinearGradient(0, 0, w, h); gr.addColorStop(0, `hsl(${hsh},38%,26%)`); gr.addColorStop(1, `hsl(${(hsh + 50) % 360},34%,9%)`);
-    x.fillStyle = gr; x.fillRect(0, 0, w, h);
-    x.fillStyle = 'rgba(255,255,255,.07)'; x.beginPath(); x.arc(w * .78, h * .3, h * .55, 0, 7); x.fill();
-    x.fillStyle = 'rgba(237,233,227,.9)'; x.font = `300 ${Math.round(h * (kind === 'hero' ? .13 : kind === 'header' ? .12 : .075))}px Jost, sans-serif`; x.textBaseline = 'bottom'; if (kind === 'hero') x.textAlign = 'center';
-    const words = (g ? g.name : appid).toUpperCase().split(' '); let line = '', y = h - h * .08; const lines = [];
-    for (const wd of words) { const tt = line ? line + ' ' + wd : wd; if (x.measureText(tt).width > w * .8 && line) { lines.push(line); line = wd; } else line = tt; }
-    lines.push(line); const lh = h * (kind === 'hero' ? .15 : kind === 'header' ? .14 : .085); y -= (lines.length - 1) * lh;
-    lines.forEach((l, i) => x.fillText(l, kind === 'hero' ? w * .5 : w * .07, y + i * lh));
-    return (artCache[k] = c.toDataURL('image/jpeg', .85));
+    const g = GAMES.find(x => x.appid === appid) || storeItem(appid);
+    const W = { hero: 1920, header: 460, capsule: 300 }[kind] || 300, H = { hero: 620, header: 215, capsule: 450 }[kind] || 450;
+    let seed = 7; for (const ch of appid) seed = (seed * 31 + ch.charCodeAt(0)) % 100003;
+    const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+    const hue = Math.floor(rnd() * 360), hue2 = (hue + 30 + Math.floor(rnd() * 80)) % 360;
+    const c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d');
+    const sky = x.createLinearGradient(0, 0, 0, H);
+    sky.addColorStop(0, `hsl(${hue2},70%,${28 + rnd() * 12}%)`); sky.addColorStop(.55, `hsl(${hue},78%,${52 + rnd() * 10}%)`); sky.addColorStop(1, `hsl(${(hue + 20) % 360},85%,${68 + rnd() * 8}%)`);
+    x.fillStyle = sky; x.fillRect(0, 0, W, H);
+    const sx = W * (.25 + rnd() * .5), sy = H * (.38 + rnd() * .14), sr = Math.min(W, H) * (.12 + rnd() * .08);
+    const glow = x.createRadialGradient(sx, sy, 0, sx, sy, sr * 4);
+    glow.addColorStop(0, `hsla(${(hue + 40) % 360},100%,85%,.9)`); glow.addColorStop(.25, `hsla(${(hue + 30) % 360},100%,70%,.45)`); glow.addColorStop(1, 'hsla(0,0%,100%,0)');
+    x.fillStyle = glow; x.fillRect(0, 0, W, H);
+    x.fillStyle = `hsla(${(hue + 45) % 360},100%,92%,.95)`; x.beginPath(); x.arc(sx, sy, sr, 0, 7); x.fill();
+    for (let layer = 0; layer < 3; layer++) {
+      const base = H * (.58 + layer * .13), amp = H * (.16 - layer * .035);
+      x.fillStyle = `hsl(${(hue2 + layer * 12) % 360},${55 - layer * 8}%,${30 - layer * 9}%)`;
+      x.beginPath(); x.moveTo(0, H);
+      for (let px = 0; px <= W; px += W / 24) x.lineTo(px, base - amp * (.5 + .5 * Math.sin(px / W * (3 + layer * 2) + rnd() * 2)) * (.6 + rnd() * .4));
+      x.lineTo(W, H); x.closePath(); x.fill();
+    }
+    const haze = x.createLinearGradient(0, H * .5, 0, H); haze.addColorStop(0, 'hsla(0,0%,100%,0)'); haze.addColorStop(1, `hsla(${hue},60%,12%,.55)`);
+    x.fillStyle = haze; x.fillRect(0, H * .5, W, H * .5);
+    if (kind !== 'hero') {
+      const words = (g ? g.name : appid).split(' '), lines = []; let line = '';
+      x.font = `800 ${Math.round(H * (kind === 'header' ? .15 : .085))}px Inter, Helvetica, sans-serif`;
+      for (const wd of words) { const tt = line ? line + ' ' + wd : wd; if (x.measureText(tt).width > W * .84 && line) { lines.push(line); line = wd; } else line = tt; }
+      lines.push(line);
+      const n = Math.min(lines.length, 4), lh = H * (kind === 'header' ? .16 : .095), y0 = kind === 'header' ? H * .5 - (n - 1) * lh / 2 : H * .11;
+      x.textAlign = 'center'; x.textBaseline = 'middle'; x.shadowColor = 'rgba(0,0,0,.45)'; x.shadowBlur = H * .03;
+      x.fillStyle = '#fff'; lines.slice(0, 4).forEach((l, i) => x.fillText(l.toUpperCase(), W / 2, y0 + i * lh));
+    }
+    return (artCache[k] = c.toDataURL('image/jpeg', .86));
   }
   async function call(method, ...args) {
     if (method.startsWith('perf.')) {
