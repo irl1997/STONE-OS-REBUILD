@@ -9,7 +9,7 @@ function homeHTML() {
     if (G.length && recent.length) {
       const g0 = G[recent[0]], hu = heroUrl(g0);
       cards += `<div class="card hero${g0.inst || g0.src === 'shortcut' ? '' : ' dim'}" data-f data-g="${g0.i}" style="background-image:${hu ? `url(&quot;${hu}&quot;)` : 'none'};background-color:var(--shale)">${hu ? '' : nameTag(g0)}${runTag(g0.i)}</div>`;
-      recent.slice(1).forEach(i => { const g = G[i]; cards += `<div class="card cap${g.inst || g.src === 'shortcut' ? '' : ' dim'}${capWide(g) ? ' hdr' : ''}" data-f data-g="${i}" style="background-image:${capUrl(g).replace(/"/g, '&quot;')}">${g.art.capsule ? '' : nameTag(g)}${runTag(i)}</div>`; });
+      recent.slice(1).forEach(i => { const g = G[i]; cards += `<div class="card cap${g.inst || g.src === 'shortcut' ? '' : ' dim'}${capWide(g) ? ' hdr' : ''}" data-f data-g="${i}" style="background-image:${capUrl(g).replace(/"/g, '&quot;')}">${g.art.capsule || g.art.header ? '' : nameTag(g)}${runTag(i)}</div>`; });
     } else if (S.libLogged !== 'out') {
       cards += `<div class="card wide" data-f data-act="${S.libReady ? 'store' : 'library'}"><b>${S.libReady ? 'Sin juegos' : 'Biblioteca'}</b><span>${S.libReady ? 'Abre la tienda para conseguir el primero' : 'Leyendo la biblioteca de Steam…'}</span></div>`;
     }
@@ -37,8 +37,6 @@ function homeHTML() {
     <div class="st-label l1">${label}</div>
     <div class="clip"><div class="track" data-sx="0">${cards}</div></div>
     <div class="horizon"></div>
-    <div class="st-label l2"><b>La máquina</b></div>
-    <div class="strata" id="strata">${strataHTML()}</div>
     <div class="ctx"><div class="kicker" id="hk"></div><div class="ctx-title" id="ht"></div><div class="meta" id="hm"></div></div>
     <div class="sys">
       <span class="txt-f" data-f data-act="search">${ico.sea}Buscar</span>
@@ -49,16 +47,6 @@ function homeHTML() {
       <span class="txt-f" data-f data-act="power">${ico.pow}Apagar</span>
     </div>`;
 }
-/* ESTRATOS: what the console is doing, read from stoned (nothing here is invented: unknown stays out). */
-function strataHTML() {
-  const cell = (k, v, warn) => `<div><span>${k}</span><b${warn ? ' class="warn"' : ''}>${esc(v)}</b></div>`;
-  const p = profOf(effective());
-  const lim = S.actual && !S.actual.error ? `hasta ${S.actual.max} MHz` : (S.actual && S.actual.error === 'ServiceUnavailable' ? 'sin servicio' : 'leyendo…');
-  const cu = S.caps ? (S.caps.board ? `${cu40Top() ? 40 : 24} CU` : 'no es BC-250') : 'leyendo…';
-  const state = S.safeMode ? 'SAFE MODE' : S.running !== null && G[S.running] ? 'jugando' : 'lista';
-  return cell('PERFIL', p.n + (S.game && S.game.profile ? ' · juego' : '')) + cell('GPU', lim) + cell('UNIDADES', cu) + cell('CONSOLA', state, S.safeMode);
-}
-function refreshStrata() { const s = document.getElementById('strata'); if (s && S.screen === 'home') s.innerHTML = strataHTML(); }
 function homeContext(el) {
   const hk = $('#hk'), ht = $('#ht'), hm = $('#hm');
   hm.classList.remove('on'); clearTimeout(metaT);

@@ -327,7 +327,7 @@ const Bridge = (() => {
 
   /* covers: generated here (Steam's own artwork is not available in the simulation): a landscape in
      the game's own colours (sky, sun, three ridges, haze), like the key art Steam gives each game.
-     The capsule and the store picture carry the name; the hero (the wide background) does not. */
+     Without a name on it: STONE never writes one on a cover. */
   const artCache = {};
   function artOf(appid, kind) {
     if (/^shot\d+$/.test(kind)) { const g = GAMES[+kind.slice(4) % GAMES.length]; return artOf(g.appid, 'hero'); }
@@ -355,15 +355,6 @@ const Bridge = (() => {
     }
     const haze = x.createLinearGradient(0, H * .5, 0, H); haze.addColorStop(0, 'hsla(0,0%,100%,0)'); haze.addColorStop(1, `hsla(${hue},60%,12%,.55)`);
     x.fillStyle = haze; x.fillRect(0, H * .5, W, H * .5);
-    if (kind !== 'hero') {
-      const words = (g ? g.name : appid).split(' '), lines = []; let line = '';
-      x.font = `800 ${Math.round(H * (kind === 'header' ? .15 : .085))}px Inter, Helvetica, sans-serif`;
-      for (const wd of words) { const tt = line ? line + ' ' + wd : wd; if (x.measureText(tt).width > W * .84 && line) { lines.push(line); line = wd; } else line = tt; }
-      lines.push(line);
-      const n = Math.min(lines.length, 4), lh = H * (kind === 'header' ? .16 : .095), y0 = kind === 'header' ? H * .5 - (n - 1) * lh / 2 : H * .11;
-      x.textAlign = 'center'; x.textBaseline = 'middle'; x.shadowColor = 'rgba(0,0,0,.45)'; x.shadowBlur = H * .03;
-      x.fillStyle = '#fff'; lines.slice(0, 4).forEach((l, i) => x.fillText(l.toUpperCase(), W / 2, y0 + i * lh));
-    }
     return (artCache[k] = c.toDataURL('image/jpeg', .86));
   }
   async function call(method, ...args) {

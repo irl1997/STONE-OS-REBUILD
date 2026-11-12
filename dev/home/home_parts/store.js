@@ -26,7 +26,7 @@ function storeCard(it, k) {
   const row = Math.floor(k / STORE_COLS), col = k % STORE_COLS;
   const img = it.art ? `url(&quot;${Bridge.artUrl(it.appid, 'header')}&quot;)` : 'none';
   return `<div class="card scard" data-f data-s="${k}" data-a="${it.appid}" style="left:${(col * (STORE_W + STORE_GAP)).toFixed(2)}px;top:${row * STORE_ROW}px;background-image:${img}">
-    ${it.art ? '' : `<span class="nm">${esc(it.name)}</span>`}${it.discount ? `<span class="off">−${it.discount} %</span>` : ''}
+    ${it.art ? '' : '<span class="ph"></span>'}${it.discount ? `<span class="off">−${it.discount} %</span>` : ''}
     <span class="cap2"><b>${esc(it.name)}</b><i>${it.was && !storeMine(it.appid) ? `<s>${esc(it.was)}</s>` : ''}${esc(storePrice(it))}</i></span></div>`;
 }
 function enterStore(opts = {}) {
@@ -114,7 +114,7 @@ function storeArt(got) {
   document.querySelectorAll('#store .scard').forEach(el => {
     const a = got[el.dataset.a]; if (!a || !a.header) return;
     el.style.backgroundImage = `url("${Bridge.artUrl(el.dataset.a, 'header')}")`;
-    const nm = el.querySelector('.nm'); if (nm) nm.remove();
+    const ph = el.querySelector('.ph'); if (ph) ph.remove();
   });
   if (S.screen === 'spage' && got[SPG.id]) { if (got[SPG.id].hero) SPG.hero = true; if (got[SPG.id].header) SPG.header = true; storePageBg(); }
 }

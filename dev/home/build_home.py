@@ -157,6 +157,8 @@ def build(src):
     t = replace_once(t, "const neutralBg = 'linear-gradient(to bottom, #1c1d1f 0%, #141517 60%, #0a0a0b 100%)';", "const neutralBg = 'var(--aurora)';", "aurora")
     t = replace_once(t, "$('#settings').innerHTML = `<div class=\"ttl\">AJUSTES</div>", "$('#settings').innerHTML = `<div class=\"ttl\">Ajustes</div>", "settings title")
     t = replace_once(t, "  stage.classList.toggle('rm', S.rm);\n", "  stage.classList.toggle('rm', S.rm);\n  stage.classList.toggle('lite', !S.glass || S.render === 1);\n", "glass lite")
+    # The light line marks the chosen game; everything else that is chosen turns into the white panel.
+    t = replace_once(t, "  el.classList.add('f');\n  spread(el, isCard, grow);\n", "  el.classList.add('f');\n  line.classList.toggle('pill', !isCard);\n  spread(el, isCard, grow);\n", "line on cards")
     for bad in ("SimStoned", "PerfAPI.sim", "Math.random() * 8", "simulad", "prototipo", "fonts.googleapis", "bCrash", "bFault"):
         if bad in t:
             line = t[:t.index(bad)].count("\n") + 1

@@ -10,7 +10,6 @@ function adopt(st) {
   if (st.profiles) Object.entries(st.profiles).forEach(([id, v]) => { if (FACT[id] && v && v.max) Object.assign(FACT[id], { max: v.max, min: v.min, temp: v.temp, resp: v.resp }); });
   if (st.range) S.range = st.range;
   const sb = document.getElementById('safeBadge'); if (sb) sb.hidden = !st.safe_mode;
-  refreshStrata();
   st.slots.forEach((s, k) => { slots[k] = s.state === 'empty' ? null : { max: s.max, min: s.min, temp: s.temp, resp: s.resp, state: s.state, test_level: s.test_level }; });
   G.forEach(g => { g.perf = st.per_game[g.appid] || null; });
   gameSync(st, before);
