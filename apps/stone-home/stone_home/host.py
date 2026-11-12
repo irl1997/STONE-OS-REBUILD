@@ -806,12 +806,24 @@ class Host:
         print(f"[stone] steam: its own window asked in front ({fr['what']})", flush=True)
         return True
 
+    def _steam_window_up(self):
+        """True when Steam has a window that could be shown (read on the main thread: the X
+        connection is not shared with other threads)."""
+        try:
+            from . import gamescope_x11
+            wins = self.session_focus.steam_windows()
+            return gamescope_x11.choose_steam([(w.id, wd, ht, t) for w, wd, ht, t in wins]) is not None
+        except Exception:  # noqa: BLE001  (no X, a window that vanished)
+            return False
+
     def _front_hold(self, fr, now):
         """Steam is not up yet. On a new console its first start downloads its own update, which
         takes minutes: STONE Home says so and waits, instead of giving up after the session's 25 s."""
         if fr["cancel"]:
             return self._front_end("closed")
         reach = getattr(self.steam_ui, "reachable", None)
+        if not fr["ready"] and fr["checked"] and now - fr["checked"] >= FRONT_HOLD_CHECK_S and self._steam_window_up():
+            fr["ready"] = True                   # its window is there, even if its interface does not answer
         if fr["ready"] or reach is None or now - fr["hold"] >= FRONT_HOLD_S:
             return True if self._front_ready(fr) else self._front_end("nowindow")
         if not fr["checking"] and now - fr["checked"] >= FRONT_HOLD_CHECK_S:

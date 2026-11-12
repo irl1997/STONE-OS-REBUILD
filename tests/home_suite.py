@@ -14,6 +14,7 @@ import sys
 import tempfile
 import time
 import traceback
+import types
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
@@ -929,7 +930,10 @@ class FakeFront:
     """gamescope_x11.Focus as the host uses it for Steam's own window."""
 
     def __init__(self):
-        self.value, self.window = 0, 0
+        self.value, self.window, self.windows = 0, 0, []
+
+    def steam_windows(self):
+        return list(self.windows)
 
     def steam_value(self):
         return self.value
@@ -978,6 +982,17 @@ def H15_steam_in_front_for_the_sign_in_and_the_store_and_plan_b():
             assert wait_for(lambda: f.value == 1, timeout=8), "Steam's window was not asked for once Steam was up"
             f.value = 0
             assert wait_for(lambda: len(events) == 2)
+            # its interface never answers, but its sign-in window is there: that is enough
+            del events[:]
+            up["steam"] = False
+            assert run_host(h, {"method": "steam.show", "args": ["login"]})[0] == {"managed": True}
+            assert wait_for(lambda: events)
+            f.windows = [(types.SimpleNamespace(id=0x600010), 705, 440, "Sign in to Steam")]
+            assert wait_for(lambda: f.value == 1, timeout=8), "Steam's window was not asked for although it existed"
+            f.windows = []
+            f.value = 0
+            assert wait_for(lambda: len(events) == 2)
+            up["steam"] = True
             del events[:], seen[:]
             assert run_host(h, {"method": "steam.show", "args": ["app", "620"]})[0] == {"managed": True}
             assert wait_for(lambda: f.value == 3) and seen == ["steam://open/bigpicture"]     # Big Picture first, the page after
