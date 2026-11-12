@@ -11,3 +11,6 @@ function act(a) {
     return;
   }
   showHints();
+  /* A pressed before a screen has its focus (the library still drawing, a slow first frame): nothing
+     happens, instead of an error in the screen's handler (seen in the simulation, 3.1.0-rc2). */
+  if (a === 'a' && S.screen !== 'dlg' && !focusEl()) return;

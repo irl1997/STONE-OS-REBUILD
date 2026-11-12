@@ -16,6 +16,10 @@ user, inside the session's Gamescope. It:
   6. plan B of D-34, when STONE Home asks for it (session.request): Steam's own Game Mode interface
      takes the whole session (the same command as the recovery path) and STONE Home comes back when
      the person has signed in, holds the guide button GUIDE_HOLD_S, or Steam ends.
+  7. never lets a Steam window STONE did not ask for on screen: its mark is removed and it is moved
+     off the screen (board, 12-11-2026, 3.0.0-rc1: Steam's sign-in drawn over the first-run setup).
+  8. on a new console Steam waits while the first-run setup runs: it starts when the setup reaches its
+     Steam step (STONE Home leaves steam.wanted), or when the setup ends.
 
 Commands:
   stone-session run                 the session client (never returns while the session lives)
@@ -118,6 +122,34 @@ def write_request(why):
     os.replace(tmp, request_path())
 
 
+def wanted_path():
+    return os.path.join(state_dir(), "steam.wanted")
+
+
+def want_steam():
+    """STONE Home needs Steam now (the setup's Steam step, its sign-in, an install): a held Steam starts."""
+    os.makedirs(state_dir(), exist_ok=True)
+    with open(wanted_path(), "w") as f:
+        f.write(str(time.time()))
+
+
+def _take_wanted():
+    try:
+        os.remove(wanted_path())
+        return True
+    except OSError:
+        return False
+
+
+def first_run_pending():
+    """True on a new console whose first-run setup has not ended (Steam then waits, run())."""
+    try:
+        from . import firstrun
+        return not firstrun.status()["done"]
+    except Exception:  # noqa: BLE001  (never keeps Steam from starting)
+        return False
+
+
 def take_request():
     """The request STONE Home left, once: "login", "store" or None. Old or damaged ones are dropped."""
     try:
@@ -173,6 +205,8 @@ class FocusKeeper:
         self.sweep = 0               # scans left in which Steam's windows are unmarked again
         self.restored = 0            # times the root properties had to be written again
         self.paused = False          # Steam's own interface has the session (plan B)
+        self.parked = {}             # X id -> (x, y): Steam windows moved off the screen, unasked
+        self.unasked = set()         # X ids of unasked Steam windows already logged
         if self.focus is None:
             try:
                 from . import gamescope_x11 as GX
@@ -239,6 +273,44 @@ class FocusKeeper:
         self.focus.set_steam_value(value)
         log(f"Steam's window leaves the front ({why}); STONE Home is back")
 
+    def _steam_unasked(self, wins):
+        """Steam's windows while STONE did not ask for them are never on screen: a mark (Steam's or
+        anyone's) is removed and the window is moved off the screen, whatever way Gamescope would draw
+        it (board, 12-11-2026: Steam's sign-in at its own size over the setup, STONE had not asked).
+        Small ones (menus, tooltips), Steam's in-game overlay and anything while a game runs are left."""
+        from . import gamescope_x11 as GX
+        if self.game is not None:
+            return
+        for win, w, h, title in wins:
+            if w < GX.STEAM_MIN_SIZE[0] or h < GX.STEAM_MIN_SIZE[1]:
+                continue
+            try:
+                info = self.focus.window_info(win)
+            except Exception:  # noqa: BLE001  (the window is gone)
+                continue
+            if info.get("overlay"):
+                continue
+            if win.id not in self.unasked:
+                self.unasked.add(win.id)
+                log(f"Steam window {win.id:#x} unasked ({title!r} {w}x{h} at {info['x']},{info['y']}"
+                    f"{', override-redirect' if info.get('override') else ''}{', marked' if info.get('steam_game') else ''}); kept off the screen")
+            if info.get("steam_game"):
+                self.focus.unmark_steam(win)
+            if (info["x"], info["y"]) != GX.STEAM_PARK:
+                self.parked.setdefault(win.id, (info["x"], info["y"]))
+                self.focus.move(win, *GX.STEAM_PARK)
+
+    def _unpark(self, wins):
+        """Asked in front: Steam's windows go back where they were (0, 0 if unknown)."""
+        live = {win.id: win for win, _w, _h, _t in wins}
+        for wid, (x, y) in list(self.parked.items()):
+            if wid in live:
+                try:
+                    self.focus.move(live[wid], max(0, x), max(0, y))
+                except Exception:  # noqa: BLE001
+                    pass
+        self.parked = {}
+
     def _steam_scan(self):
         from . import gamescope_x11 as GX
         value = self.focus.steam_value()
@@ -250,13 +322,14 @@ class FocusKeeper:
             log("STONE Home asked for Steam's own window" + (" (Big Picture)" if value == STEAM_ON_BIG else ""))
         elif not asked and self.steam:
             self._steam_end("STONE Home asked", STEAM_OFF)
+        wins = self.focus.steam_windows()
         if not self.steam:
             if self.sweep > 0:          # Steam may mark its window again while it closes
                 self.sweep -= 1
-                for win, _w, _h, _t in self.focus.steam_windows():
-                    self.focus.unmark_steam(win)
+            self._steam_unasked(wins)
             return
-        wins = self.focus.steam_windows()
+        if self.parked:
+            self._unpark(wins)
         for win, _w, _h, _t in wins:
             if win.id not in self.steam_marked:
                 self.focus.mark_steam(win)
@@ -433,8 +506,13 @@ def run():
     except Exception as e:  # noqa: BLE001  (never keeps the session from starting)
         log(f"prepare: {e}")
     take_request()                                # one left by a session that ended is not obeyed
+    _take_wanted()                                # nor a wish for Steam left by an earlier session
     home.start()                                  # the interface first: it is what the person waits for
-    steam.start()
+    held = first_run_pending()                    # a new console: no Steam window over the setup
+    if held:
+        log("first run: Steam starts when the setup reaches its Steam step, or when the setup ends")
+    else:
+        steam.start()
     focus = FocusKeeper()
     ticks = 0
     try:
@@ -442,6 +520,12 @@ def run():
             time.sleep(POLL_S)
             focus.tick()
             ticks += 1
+            if held and ticks % GAME_EVERY == 0:
+                wanted = _take_wanted()
+                if wanted or not first_run_pending():
+                    held = False
+                    log("first run: Steam starts now (" + ("STONE Home asked for it" if wanted else "the setup ended") + ")")
+                    steam.start()
             why = take_request() if ticks % GAME_EVERY == 0 else None
             if why:
                 log(f"plan B: Steam's own Game Mode interface takes the session ({why}), asked by STONE Home")
@@ -457,6 +541,7 @@ def run():
                 home.starts, steam.starts = [], []
                 home.start()
                 steam.start()
+                held = False
                 focus.resume()
                 continue
             rc = steam.poll()

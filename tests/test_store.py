@@ -109,6 +109,18 @@ def test_game_page_is_plain_text_with_its_price_and_refuses_bad_ids():
 def test_install_and_uninstall_need_no_dialog_and_library_has_two_sources():
     e = CEF.install_expression(570)
     assert "OpenInstallWizard([570])" in e and "ContinueInstall" in e and "SetInstallFolder(0)" in e
+    # 3.1.0-rc2: the wizard is followed (GetInstallManagerInfo), a wizard left open is closed first, and
+    # what only the person can answer (EULA 8, key 4, password 6, disc 11/12, signup 13) comes back
+    assert "GetInstallManagerInfo" in e and "CancelInstall" in e and "return null" in e
+    for state, answer in ((14, "started"), (15, "failed"), (16, "canceled"), (8, "eula")):
+        assert f"st==={state})return out('{answer}'" in e, state
+    assert "st===4||st===6||st===11||st===12||st===13" in e and "out('space'" in e
+    assert CEF.parse_install('{"s":"space","st":7,"need":5000000000,"free":1000}') == \
+        {"answer": "space", "state": "config", "need": 5000000000, "free": 1000}
+    assert CEF.parse_install('{"s":"started","st":14,"need":0,"free":0}')["state"] == "complete"
+    for bad in (None, "", "x", '{"s":"ok"}', "[1]", 7):
+        assert CEF.parse_install(bad) is None, bad
+    assert CEF.install(570, port=1) is None and CEF.uninstall(570, port=1) is None and CEF.cancel_install(port=1) is False
     assert "OpenUninstallWizard([570],true)" in CEF.uninstall_expression(570)
     for bad in (0, -1, 0x80000000):
         for fn in (CEF.install_expression, CEF.uninstall_expression):

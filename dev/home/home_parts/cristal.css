@@ -211,7 +211,7 @@
 #setup .su-title{font-family:var(--f-text);font-weight:400;letter-spacing:.01em;font-size:84px;line-height:92px}
 #setup .su-kick,#setup .su-count{font-family:var(--f-text);font-weight:400;letter-spacing:.12em}
 #setup .su-kick b{color:var(--accent)}
-#setup .su-btns{font-family:var(--f-text);font-weight:400;letter-spacing:.08em;gap:28px}
+#setup .su-btns{font-family:var(--f-text);font-weight:400;letter-spacing:.08em;gap:64px}
 #setup .su-btns [data-f]:not(.f){background:rgba(255,255,255,.12)}
 #setup .su-row{border-bottom-color:rgba(255,255,255,.12)}
 /* the grids start 26 px higher inside their clip, so the chosen card's lift and ring are never cut */

@@ -2,7 +2,7 @@
 
 Reconstrucción integral de STONE OS para **STONE MACHINE**: AMD BC-250 con 8 núcleos de CPU y 40 CU de GPU.
 
-**Estado:** 3.1.0-rc1. STONE Home es la interfaz de la consola, ahora con el diseño Cristal; Steam funciona oculto y se muestra solo para iniciar sesión y pagar. Probado en software (CODE TESTED); nada de 3.0 ni de Cristal está observado todavía en la placa.
+**Estado:** 3.1.0-rc2. STONE Home con el diseño Cristal; Steam funciona oculto y se muestra solo para iniciar sesión, pagar o cuando pregunta algo. Instalar comprueba lo que Steam hizo, y las actualizaciones se buscan cada día y a pedido. Probado en software (CODE TESTED); nada de 3.0 ni de 3.1 está observado todavía en la placa.
 
 | Documento | Contenido |
 | --- | --- |

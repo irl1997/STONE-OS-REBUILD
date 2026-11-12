@@ -167,6 +167,17 @@ printf '%s\n' "# STONE OS: the STONE session is the automatic session (D-29)." \
 test -x /usr/libexec/stone/stone-session-select && test -x /usr/libexec/stone/stone-session-guard \
     || { echo "ERROR: STONE session helpers missing"; exit 1; }
 systemctl enable stone-session-guard.service stone-blackbox.service
+
+## Updates (3.1.0-rc2). Bazzite's deck images leave uupd.timer off and update only when Steam's Game
+## Mode asks (steamos-update), which the STONE session never shows (board, 12-11-2026: "Comprobación
+## automática: desactivada"; 3.1.0-rc1 never arrived). The daily check is turned on (uupd.timer: 04:00,
+## or at the next start if the console was off then) and STONE Home's "Buscar actualizaciones" starts
+## uupd-manual.service, which uupd's own polkit rule lets the console user start.
+for unit in uupd.timer uupd.service uupd-manual.service; do
+    test -f "/usr/lib/systemd/system/${unit}" || { echo "ERROR: ${unit} missing: STONE OS could not update itself"; exit 1; }
+done
+test -f /usr/share/polkit-1/rules.d/uupd.rules || echo "WARNING: uupd.rules missing: Buscar actualizaciones will ask polkit"
+systemctl enable uupd.timer
 command -v pkexec >/dev/null || { echo "ERROR: pkexec missing; Escritorio / Volver a STONE cannot switch sessions"; exit 1; }
 ls /usr/share/wayland-sessions/plasma.desktop /usr/share/wayland-sessions/plasmawayland.desktop 2>/dev/null \
     || echo "WARNING: no Plasma session file; Escritorio will look for gnome.desktop"

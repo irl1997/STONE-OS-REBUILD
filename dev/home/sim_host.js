@@ -185,18 +185,38 @@ const Bridge = (() => {
           launch: g.installed ? 'steam://rungameid/' + g.appid : null })) };
     },
     launch: async ([appid]) => { gameOf(appid); if (/ask/.test(location.search)) SimPanel.ask = Date.now() + 3000; if (/slow/.test(location.search)) { SimPanel.running = appid; setTimeout(() => SimStoned.sim.steamLaunch(appid), 12000); return { ok: true }; } SimStoned.sim.steamLaunch(appid); SimPanel.running = appid; SimPanel.refresh && SimPanel.refresh(); return { ok: true }; },
-    /* installing: the game shows "instalándose", then installed; the host says "library" each time */
+    /* installing (3.1.0-rc2: what Steam really did): ?eula / ?nospace / ?noanswer make Steam ask, run out
+       of disk or not answer the first time; otherwise the download advances for 16 s, then installed */
     install: async ([appid]) => {
       let g = GAMES.find(x => x.appid === appid);
       if (!g) { const it = storeItem(appid); if (!it || !it.free) bad('InvalidValue', 'unknown game'); g = addOwned(appid); }
-      g.updating = true; emit('library', { reason: 'changed' });
-      setTimeout(() => { g.updating = false; g.installed = true; g.last = Date.now() / 1000; emit('library', { reason: 'changed' }); }, 9000);
-      return { ok: true, via: 'steam-ui' };
+      await wait(1500);
+      const q = location.search;
+      if (!SIM.asked && /eula|nospace|noanswer/.test(q)) {
+        SIM.asked = true;
+        if (/eula/.test(q)) return { ok: false, state: 'eula', step: 'eula' };
+        if (/nospace/.test(q)) return { ok: false, state: 'space', need: 74 * 2 ** 30, free: 12.5 * 2 ** 30 };
+        return { ok: false, state: 'noanswer', step: null };
+      }
+      g.updating = true; g.dl = { at: Date.now(), total: Math.max(2 ** 30, g.size || 20e9) }; emit('library', { reason: 'changed' });
+      setTimeout(() => { g.updating = false; g.installed = true; g.dl = null; g.last = Date.now() / 1000; emit('library', { reason: 'changed' }); }, 16000);
+      return { ok: true, state: 'queued', progress: 0 };
     },
+    'install.cancel': () => ({ ok: true }),
+    downloads: () => ({ downloads: GAMES.filter(g => g.dl).map(g => { const p = Math.min(0.99, (Date.now() - g.dl.at) / 16000);
+      return { appid: g.appid, name: g.name, downloaded: Math.round(g.dl.total * p), total: g.dl.total, progress: Math.round(p * 1000) / 1000, installed: false }; }) }),
+    'session.wantSteam': () => ({ ok: true }),
+    /* Buscar actualizaciones: uupd "runs" 10 s, then 3.1.0-rc2 is staged */
+    'update.now': () => { SIM.updUntil = Date.now() + 10000; return { ok: true, unit: 'uupd-manual.service', already: false }; },
     openSteam: async () => ({ ok: true }), openSteamSettings: async () => ({ ok: true }), restart: async () => ({ ok: true }),
     power: async ([a]) => { toast(`Simulación: «${a === 'off' ? 'Apagar' : 'Reiniciar'}» no hace nada aquí`, false); return { ok: true }; },
-    systemInfo: () => ({ session: 'stone', release: { STONE_VERSION: '3.1.0-rc1 (simulación)', STONE_BASE_IMAGE: 'bazzite-deck', STONE_KERNEL: 'simulado', STONE_MESA: 'simulado', STONE_GOVERNOR_VERSION: 'simulado' },
-      boot_time: Math.round(now - 3600), deployments: { booted: { image: 'simulación', version: '0.1.0-rc23', timestamp: now }, staged: null, rollback: null } }),
+    systemInfo: () => ({ session: 'stone', release: { STONE_VERSION: '3.1.0-rc2 (simulación)', STONE_BASE_IMAGE: 'bazzite-deck', STONE_KERNEL: 'simulado', STONE_MESA: 'simulado', STONE_GOVERNOR_VERSION: 'simulado' },
+      boot_time: Math.round(now - 3600),
+      deployments: { booted: { image: 'simulación', version: '3.1.0-rc2', timestamp: now },
+        staged: SIM.updUntil && Date.now() > SIM.updUntil ? { image: 'simulación', version: '3.1.0-rc3', timestamp: now } : null,
+        rollback: { image: 'simulación', version: '3.0.0-rc1', timestamp: now - 86400 } },
+      updates: { unit: 'uupd.timer', enabled: true, last: Math.round(now - 3600 * 15), next: Math.round(now + 3600 * 9) },
+      updating: { unit: 'uupd-manual.service', running: !!SIM.updUntil && Date.now() < SIM.updUntil, result: 'success' } }),
     'prefs.get': () => prefs,
     'health.status': async () => { await wait(300); return { snapshot: {}, checks: [
       ['ok', 'CPU', '16 hilos en línea · AMD BC-250 (simulado)'], ['ok', 'Memoria', '14.6 GB'],
@@ -244,7 +264,7 @@ const Bridge = (() => {
     'steam.status': () => ({ session: 'stone', interface: true, account: SIM.signed, logged: SIM.signed ? 'in' : 'out', owned_known: true, owned_cached: false, front: !!SIM.front, root_found: true }),
     'roms.scan': async () => { await wait(300); return { base: '/var/home/stone/Emulation', systems: [{ key: 'ps2', name: 'PlayStation 2', emulator: 'PCSX2', emulator_key: 'pcsx2', installed: true, games: [{ name: 'Juego de ejemplo', path: '/x.iso' }] }] }; },
     'roms.folders': () => ({ base: '/var/home/stone/Emulation' }), 'roms.add': async () => { await wait(500); return { found: 1, new: 1, added: 1, queued: 0 }; },
-    'storage.clearShaderCache': () => ({ ok: true, freed: 1.4 * 2 ** 30 }), 'storage.uninstall': () => ({ ok: true }),
+    'storage.clearShaderCache': () => ({ ok: true, freed: 1.4 * 2 ** 30 }), 'storage.uninstall': async () => { await wait(1200); return { ok: true, state: 'removed' }; },
     'game.experience': () => ({ confidence: { level: 'medium', text: 'Medido en esta consola', detail: '2 mediciones limpias' }, last: { avg_fps: 58.4, low1_fps: 41.2, stutters_per_min: 0.6, verdict: 'fluido', gpu_temp_max: 74, config: 'x' }, regression: [], autopilot: { quality: 'a', balanced: 'b', fluid: 'c' } }),
     'firstrun.status': () => ({ done: !/first/.test(location.search), steam_account: SIM.signed }),   /* ?first, ?first&nosteam */ 'firstrun.complete': () => ({ done: true }),
     'prefs.set': ([p]) => (prefs = Object.assign({}, prefs, p)),

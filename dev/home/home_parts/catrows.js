@@ -208,6 +208,36 @@ function applyRender() {
     .catch(() => toast('No se pudo guardar el modo de imagen', false));
   enterSettings({ pane: true, ri: NAV.c });
 }
+/* BUSCAR ACTUALIZACIONES (3.1.0-rc2): uupd checks, downloads and stages the new image now
+   (system.update_now); it is applied at the next restart. Bazzite's deck images leave the automatic
+   check off and wait for Steam's Game Mode to ask, which the STONE session never shows. */
+let updT = 0;
+function updRow() {
+  const u = S.info && S.info.updating;
+  if (!u) return { l: 'Buscar actualizaciones', s: 'Esta imagen no tiene servicio de actualización', v: '—' };
+  if (u.running || S.updAsked) return { l: 'Buscando y descargando…', s: 'Puedes seguir usando la consola. Al terminar, aquí aparece Reiniciar y actualizar', v: '' };
+  return { l: 'Buscar actualizaciones', s: u.result && u.result !== 'success' ? 'La última búsqueda no terminó bien: vuelve a intentarlo' : 'Busca una versión nueva de STONE OS y la descarga ahora', v: 'Buscar', act: 'updnow' };
+}
+function updateNow(ri) {
+  play('select');
+  Sys.updateNow().then(() => { S.updAsked = Date.now(); toast('Buscando una versión nueva de STONE OS…', false); enterSettings({ pane: true, ri }); updPoll(ri); },
+    e => { play('error'); toast(e && e.code === 'Unsupported' ? 'Esta imagen no tiene servicio de actualización' : 'No se pudo empezar a buscar', false); });
+}
+function updPoll(ri) {
+  clearTimeout(updT);
+  updT = setTimeout(async () => {
+    const i = await Sys.info().catch(() => null);
+    if (i) S.info = i;
+    const u = i && i.updating, dep = i && i.deployments;
+    const done = !u || (!u.running && Date.now() - S.updAsked > 6000);
+    if (done) S.updAsked = 0;
+    if (S.screen === 'settings' && CATS[cat] === 'Actualizaciones') enterSettings({ pane: !!(NAV && NAV.pane), ri: NAV && NAV.pane ? Math.min(NAV.c, ri) : 0 });
+    if (!done) return updPoll(ri);
+    if (dep && dep.staged) { play('notify'); longToast(`Actualización lista: ${dep.staged.version || 'versión nueva'}. Ajustes → Actualizaciones → Reiniciar y actualizar`, 9000); }
+    else if (u && u.result && u.result !== 'success') { play('error'); toast('No se pudo comprobar. Revisa la conexión y vuelve a intentarlo', false); }
+    else toast('Ya tienes la última versión de STONE OS', false);
+  }, 5000);
+}
 /* Bazzite checks for a new image by itself and leaves it ready for the next restart (M01). */
 function updTimerText(u) {
   if (!u) return 'No se pudo leer el servicio de actualización automática';
@@ -290,8 +320,8 @@ function catRows() {
     case 'Actualizaciones': return { d: 'Las actualizaciones llegan como una imagen completa y se aplican al reiniciar. Si una falla, la anterior sigue disponible.', rows: [
       { l: 'Estado', s: !dep ? 'No se pudo leer el estado del sistema' : dep.staged ? `Actualización lista: ${dep.staged.version || 'nueva versión'}. Se aplica al reiniciar` : `Instalada: ${(dep.booted && dep.booted.version) || rel.STONE_VERSION || '—'}`, v: '' },
       ...(dep && dep.staged ? [{ l: 'Reiniciar y actualizar', s: 'La consola se reinicia con la versión nueva', v: 'Reiniciar', act: 'reboot' }] : []),
+      ...(dep && dep.staged ? [] : [updRow()]),
       { l: 'Comprobación automática', s: updTimerText(S.info && S.info.updates), v: '' },
-      ...(S.info && S.info.session === 'stone' ? [] : [steam('Buscar actualizaciones', 'Sistema y Steam se actualizan desde Steam', 'Botón STEAM → Ajustes → Sistema → Buscar actualizaciones')]),
       { l: 'Volver a la versión anterior', s: dep && dep.rollback ? `Guardada: ${dep.rollback.version || 'versión anterior'}` : 'No hay una versión anterior guardada todavía', v: 'Cómo', act: 'info', where: 'Reinicia y, en el menú de arranque, elige la segunda entrada. STONE OS arranca con la versión anterior' }] };
     default: return { d: `${CATS[cat]}: lo gestiona Steam.`, rows: [steam(`Abrir ${CATS[cat].toLowerCase()}`, 'Panel nativo de Steam', `Botón STEAM → Ajustes → ${CATS[cat]}`)] };
   }

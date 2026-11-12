@@ -185,11 +185,10 @@ function storePageInput(a) {
   if ((k === 'install' || k === 'buy') && S.libLogged === 'out') { toast('Primero inicia sesión en Steam', false); return steamOpen('login'); }
   if (k === 'install') {
     if (SPG.installing) { play('error'); return toast('Ya se está instalando: la descarga se ve en Ajustes → Almacenamiento', false); }
-    play('select');
-    return sys('install', SPG.id).then(r => {
-      if (!r) return;
-      SPG.installing = true; steamWatch(20000);
-      toast('Instalando: la descarga se ve en Ajustes → Almacenamiento', false);
+    const id = SPG.id, nm = (SPG.d && SPG.d.name) || (SPG.row && SPG.row.name) || 'El juego';
+    return installGame(id, nm).then(ok => {
+      if (!ok || !SPG || SPG.id !== id) return;
+      SPG.installing = true;
       if (S.screen === 'spage') storePageDraw({ r: 0, c: 0 });
     });
   }

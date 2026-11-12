@@ -1,3 +1,42 @@
+# STONE OS (rebuild) 3.1.0-rc2
+
+Arregla lo que se vio en la consola con 3.0.0-rc1 (12-11-2026): **instalar juegos desde STONE no funcionaba bien**, **Steam ponía su inicio de sesión encima de la configuración inicial** y **las actualizaciones no llegaban**. Trae el diseño Cristal de 3.1.0-rc1. Decisión D-36.
+
+**Todo está probado en software (CODE TESTED): pruebas automáticas y simulación de la interfaz. Nada de esta versión se ha observado todavía en la BC-250.** Pruebas de placa nuevas: T-STEAM-15, T-STEAM-16, T-SETUP-02 y T-UPD-03 en `hardware/validation/matrix.yaml`.
+
+## Instalar juegos: STONE dice lo que Steam hizo de verdad
+
+En 3.0.0-rc1, STONE abría el instalador de Steam, esperaba 1,5 segundos, lo continuaba a ciegas y respondía "instalando" pasara lo que pasara. Si Steam pedía algo (aceptar un contrato de licencia, más espacio, una clave) o no respondía, la instalación nunca empezaba y STONE no se enteraba.
+
+- STONE sigue paso a paso el instalador de Steam y solo lo continúa donde Steam esperaría un clic en "Instalar": la carpeta y, en un juego gratis que pediste, su licencia gratuita.
+- **La prueba es el archivo de Steam.** STONE da la instalación por empezada solo cuando aparece el archivo del juego (`appmanifest`) en la biblioteca de Steam.
+- **Si Steam pregunta algo que solo tú puedes contestar** (un contrato de licencia, una clave, una contraseña), STONE lo explica y ofrece **Ver en Steam** (muestra la ventana de Steam con la pregunta) o **Ahora no**. STONE nunca acepta un contrato por ti.
+- **Si no cabe**, STONE dice cuánto necesita y cuánto queda libre, sin empezar nada.
+- **Si Steam no responde o falla**, STONE lo dice y ofrece **Reintentar** o **Ver en Steam**.
+- **El avance se ve en la ficha del juego**: "INSTALANDO · 23 %" y cuántos GB van de cuántos. Si Steam actualiza un juego antes de abrirlo, la pantalla de carga lo dice con su porcentaje, y STONE no lo da por atascado mientras avance.
+- Desinstalar espera a que Steam borre el juego de verdad antes de decir "se desinstaló".
+- Un juego comprado con el móvil se instala por el mismo camino, con los mismos avisos.
+
+## Primer encendido sin Steam encima
+
+- **Steam no arranca mientras dura la configuración.** Arranca al llegar al paso STEAM, o al terminar si eliges MÁS TARDE. Sin Steam en marcha, ninguna ventana suya puede aparecer sobre la configuración.
+- **Guardia permanente:** si una ventana de Steam aparece sin que STONE la pida, se le quita la marca que la pone en pantalla y se aparta fuera de la vista. El registro de la sesión anota qué ventana era (`~/.local/state/stone/session.log`). Vuelve cuando STONE la pide (iniciar sesión, la tienda, una pregunta de Steam).
+- Los botones del paso STEAM tienen más espacio entre sí.
+
+## Actualizaciones que llegan
+
+La imagen base (Bazzite, variante deck) trae apagada su comprobación automática: espera a que la interfaz de Steam la pida, y en la sesión STONE esa interfaz no se muestra. Por eso 3.1.0-rc1 nunca llegó a la consola.
+
+- **Comprobación diaria activada** (`uupd.timer`): a las 4:00, o al encender si la consola estaba apagada a esa hora.
+- **Ajustes → Actualizaciones → Buscar actualizaciones**: busca y descarga la versión nueva en el momento, sin contraseña. Mientras trabaja dice "Buscando y descargando…"; al terminar aparece **Reiniciar y actualizar**.
+
+**Si tu consola tiene 3.0.0-rc1 o 3.1.0-rc1, la primera vez hay que pedir la actualización a mano** (esas versiones no tienen el botón): Ajustes → Acerca de → Modo escritorio, abre Konsole y escribe `systemctl start uupd-manual.service`; cuando vuelva el cursor, abre "Volver a STONE" y reinicia. O instala desde la ISO nueva. Desde 3.1.0-rc2 ya no hace falta.
+
+## Límites
+
+- El instalador de Steam se lee por su interfaz interna (`SteamClient.Installs`), según las definiciones de la comunidad de Decky. Si una versión de Steam la cambia, STONE lo dice ("Steam no respondió") y ofrece la ventana de Steam.
+- La ventana de Steam con una pregunta es la de escritorio: se maneja mejor con teclado y ratón.
+
 # STONE OS (rebuild) 3.1.0-rc1
 
 Llega **Cristal**, el diseño nuevo de STONE Home, hecho con los materiales de la STONE MACHINE. Es una actualización en línea: una consola instalada desde una ISO candidata (rc) sigue el canal `rc` y la recibe sola. Se aplica al reiniciar.

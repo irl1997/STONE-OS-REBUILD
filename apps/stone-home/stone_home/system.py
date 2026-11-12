@@ -175,6 +175,30 @@ def update_timer(get_props, timers=UPDATE_TIMERS):
     return None
 
 
+# Looking for an update now (Ajustes → Actualizaciones → Buscar actualizaciones). Bazzite's deck images
+# leave uupd.timer off and update only when Steam's Game Mode asks (steamos-update), which the STONE
+# session never shows (board, 12-11-2026: "Comprobación automática: desactivada", 3.1.0-rc1 never
+# arrived). uupd ships these units and a polkit rule that lets anyone start them (uupd.rules), so
+# STONE Home starts one without a password. The manual one skips uupd's hardware checks.
+UPDATE_SERVICES = ("uupd-manual.service", "uupd.service")
+
+
+def update_service(get_props, units=UPDATE_SERVICES):
+    """{"unit", "running", "result"} of the first loaded update service, or None.
+    get_props(unit) -> {"LoadState", "ActiveState", "Result"} or None. "running" while it checks,
+    downloads and stages; "result" is systemd's ("success", "exit-code", ...) of its last run."""
+    for unit in units:
+        try:
+            p = get_props(unit)
+        except Exception:  # noqa: BLE001
+            p = None
+        if not p or p.get("LoadState") != "loaded":
+            continue
+        return {"unit": unit, "running": p.get("ActiveState") in ("activating", "active", "reloading", "deactivating"),
+                "result": p.get("Result") or None}
+    return None
+
+
 class System:
     def __init__(self, bus=None, spawn=None):
         self._bus = bus
@@ -231,9 +255,45 @@ class System:
                     out[k] = None
         return out
 
+    def _service_props(self, unit):
+        bus = self.bus()
+        path = bus.call_sync(SD[0], SD[1], "org.freedesktop.systemd1.Manager", "LoadUnit", GLib.Variant("(s)", (unit,)),
+                             GLib.VariantType("(o)"), Gio.DBusCallFlags.NONE, 5000, None).unpack()[0]
+        out = {}
+        for iface, keys in (("org.freedesktop.systemd1.Unit", ("LoadState", "ActiveState")),
+                            ("org.freedesktop.systemd1.Service", ("Result",))):
+            for k in keys:
+                try:
+                    out[k] = bus.call_sync(SD[0], path, "org.freedesktop.DBus.Properties", "Get", GLib.Variant("(ss)", (iface, k)),
+                                           GLib.VariantType("(v)"), Gio.DBusCallFlags.NONE, 5000, None).unpack()[0]
+                except GLib.Error:
+                    out[k] = None
+        return out
+
+    def update_now(self, done):
+        """Start the first loaded update service (uupd: check, download and stage the new image; it is
+        applied at the next restart). Answers at once; systemInfo then says "running" until it ends."""
+        def work():
+            try:
+                st = update_service(self._service_props)
+                if st is None:
+                    res = (None, "Unsupported", "no update service in this image")
+                elif st["running"]:
+                    res = ({"ok": True, "unit": st["unit"], "already": True}, None, "")
+                else:
+                    self.bus().call_sync(SD[0], SD[1], "org.freedesktop.systemd1.Manager", "StartUnit",
+                                         GLib.Variant("(ss)", (st["unit"], "replace")), GLib.VariantType("(o)"),
+                                         Gio.DBusCallFlags.NONE, 10000, None)
+                    res = ({"ok": True, "unit": st["unit"], "already": False}, None, "")
+            except GLib.Error as e:
+                res = (None, "PermissionDenied" if "Access" in (Gio.DBusError.get_remote_error(e) or "") else "Unsupported", e.message)
+            GLib.idle_add(lambda: (done(*res), False)[1])
+        threading.Thread(target=work, daemon=True).start()
+
     def info(self, done):
         def work():
             res = {"release": read_release(), "boot_time": boot_time(), "deployments": deployments(),
-                   "updates": update_timer(self._timer_props), "session": os.environ.get("STONE_SESSION") or "other"}
+                   "updates": update_timer(self._timer_props), "updating": update_service(self._service_props),
+                   "session": os.environ.get("STONE_SESSION") or "other"}
             GLib.idle_add(lambda: (done(res), False)[1])
         threading.Thread(target=work, daemon=True).start()

@@ -559,6 +559,13 @@ def P04_automatic_update_timer_first_loaded_one_is_reported():
     assert system.update_timer(get) == {"unit": "uupd.timer", "enabled": False, "last": None, "next": 1_800_000_000}
     assert system.update_timer(lambda u: {"LoadState": "not-found"}) is None
     assert system.update_timer(get, timers=("rpm-ostreed-automatic.timer",)) is None
+    # Buscar actualizaciones (3.1.0-rc2): the first loaded uupd service, running or with its last result
+    svc = {"uupd-manual.service": {"LoadState": "loaded", "ActiveState": "activating", "Result": "success"}}
+    assert system.update_service(svc.get) == {"unit": "uupd-manual.service", "running": True, "result": "success"}
+    svc["uupd-manual.service"] = {"LoadState": "not-found"}
+    svc["uupd.service"] = {"LoadState": "loaded", "ActiveState": "inactive", "Result": "exit-code"}
+    assert system.update_service(svc.get) == {"unit": "uupd.service", "running": False, "result": "exit-code"}
+    assert system.update_service(lambda u: None) is None
 
 
 # ---------------------------------------------------------------- host request table
@@ -713,7 +720,31 @@ def H12_install_without_steam_ui_falls_back_to_the_install_url_and_free_store_ga
     assert run_host(h, {"method": "install", "args": ["570"]})[1] == "InvalidValue"      # not owned, not a free store game
     h.store_free = {"570"}
     r = run_host(h, {"method": "install", "args": ["570"]}, timeout=15)
-    assert r[0] == {"ok": True, "via": "url"} and seen == ["steam://install/570"], (r, seen)
+    # Steam's interface did not answer: its own install dialog, which STONE then shows (steam.show "install")
+    assert r[0] == {"ok": True, "state": "steam-dialog"} and seen == ["steam://install/570"], (r, seen)
+
+
+@test
+def H13_uninstall_waits_for_steams_files_and_falls_back_to_steams_dialog():
+    with Tmp() as d:
+        root = FX.build(os.path.join(d, "Steam"))
+        seen = []
+        h = host_mod.Host(lambda *a: None, stoned=FakeStoned(), sysapi=system.System(spawn=seen.append), steam_root=root)
+
+        class UI:
+            took = True
+
+            @staticmethod
+            def uninstall(appid):
+                if UI.took:                                   # Steam removes the game's files
+                    os.remove(os.path.join(root, "steamapps", f"appmanifest_{appid}.acf"))
+                return UI.took or None
+        h.steam_ui = UI
+        assert run_host(h, {"method": "storage.uninstall", "args": ["1001"]}, timeout=15) == ({"ok": True, "state": "removed"}, None)
+        UI.took = False                                       # Steam's interface does not answer
+        assert run_host(h, {"method": "storage.uninstall", "args": ["1002"]}, timeout=15) == ({"ok": True, "state": "steam-dialog"}, None)
+        assert seen == ["steam://uninstall/1002"]
+        assert run_host(h, {"method": "storage.uninstall", "args": ["x"]})[1] == "InvalidValue"
 
 
 @test
@@ -839,16 +870,35 @@ def H05_library_lists_account_games_not_installed_and_installs_through_steam():
         ui = h.steam_ui = FakeSteamUI(ok=True)
         ui.owned_games = lambda: [(1001, "Ya instalado", True, 5, 10, 1), (35140, "Batman: Arkham Asylum GOTY Edition", False, 48, 99, 0),
                                   (77, "", False, 0, 0, 0)]
-        ui.install = lambda appid: ui._r(("install", appid))
+        answers = {}
+
+        def install(appid):
+            ui.calls.append(("install", appid))
+            a = answers.get(appid, {"answer": "started", "state": "complete"})
+            if a["answer"] == "started" and appid == 35140:          # Steam writes the game's appmanifest
+                with open(os.path.join(root, "steamapps", "appmanifest_35140.acf"), "w") as f:
+                    f.write('"AppState"\n{\n "appid" "35140"\n "name" "Batman"\n "StateFlags" "1026"\n'
+                            ' "BytesToDownload" "100"\n "BytesDownloaded" "25"\n}\n')
+            return a
+        ui.install = install
         lib, code = run_host(h, {"method": "library", "args": []})
         names = [g["name"] for g in lib["games"]]
         assert code is None and lib["owned_known"] and "Batman: Arkham Asylum GOTY Edition" in names and "Ya instalado" not in names
         batman = [g for g in lib["games"] if g["appid"] == "35140"][0]
         assert batman["installed"] is False and batman["launch"] is None and batman["playtime_min"] == 48
         assert run_host(h, {"method": "launch", "args": ["35140"]})[1] == "InvalidValue"      # not installed: no launch
-        assert run_host(h, {"method": "install", "args": ["35140"]}) == ({"ok": True, "via": "steam-ui"}, None)
+        # what Steam really did, proven by its appmanifest (3.0.0-rc1 said "ok" whatever Steam did)
+        assert run_host(h, {"method": "install", "args": ["35140"]}, timeout=15) == \
+            ({"ok": True, "state": "queued", "progress": 0.25}, None)
+        assert run_host(h, {"method": "install", "args": ["35140"]}) == ({"ok": True, "state": "queued"}, None)   # already queued
         assert run_host(h, {"method": "install", "args": ["1001"]})[1] == "InvalidValue"     # installed: nothing to install
         assert ("install", 35140) in ui.calls
+        os.remove(os.path.join(root, "steamapps", "appmanifest_35140.acf"))
+        for ans, want in (({"answer": "eula", "state": "eula"}, {"ok": False, "state": "eula", "step": "eula"}),
+                          ({"answer": "space", "state": "config", "need": 9, "free": 1}, {"ok": False, "state": "space", "need": 9, "free": 1}),
+                          ({"answer": "timeout", "state": "config"}, {"ok": False, "state": "noanswer", "step": "config", "detail": None})):
+            answers[35140] = ans
+            assert run_host(h, {"method": "install", "args": ["35140"]}, timeout=15) == (want, None), ans
     from stone_home import steamcef
     assert "OpenInstallWizard([35140])" in steamcef.install_expression(35140)
     for bad in (0, -1, 0x80000000):

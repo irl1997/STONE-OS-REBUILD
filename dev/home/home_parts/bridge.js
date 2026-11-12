@@ -63,7 +63,10 @@ const Sys = {
   steamFull: why => Bridge.call('steam.full', why), steamStatus: () => Bridge.call('steam.status'),
   storeFeatured: () => Bridge.call('store.featured'), storeDetails: appid => Bridge.call('store.details', appid),
   artWant: appid => Bridge.call('art.want', appid),
-  emuCheck: () => Bridge.call('emuCheck'), emuUpdate: k => Bridge.call('emuUpdate', k)
+  emuCheck: () => Bridge.call('emuCheck'), emuUpdate: k => Bridge.call('emuUpdate', k),
+  /* 3.1.0-rc2: what Steam really did with an install, the downloads, updates on demand, Steam held during the setup */
+  installCancel: () => Bridge.call('install.cancel'), downloads: () => Bridge.call('downloads'),
+  updateNow: () => Bridge.call('update.now'), wantSteam: () => Bridge.call('session.wantSteam')
 };
 async function sys(method, ...a) {
   try { return await Sys[method](...a); }

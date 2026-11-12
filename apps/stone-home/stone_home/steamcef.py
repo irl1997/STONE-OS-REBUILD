@@ -214,17 +214,17 @@ def open_page(page, port=PORT):
     return ui_eval(open_page_expression(page), port)
 
 
-def ui_value(expression, port=PORT):
+def ui_value(expression, port=PORT, timeout=10.0):
     """Like ui_eval, but returns the value itself; None if no Steam page answers. Pages are
     tried in order of suitability, because the page that carries SteamClient is not always the
     one Steam lists first."""
-    for _title, value, err in ui_values(expression, port):
+    for _title, value, err in ui_values(expression, port, timeout=timeout):
         if err is None and value is not None:
             return value
     return None
 
 
-def ui_values(expression, port=PORT, limit=8):
+def ui_values(expression, port=PORT, limit=8, timeout=10.0):
     """[(page title, value or None, error or None)] running the expression in each candidate page,
     stopping at the first page that returns a value. Never raises."""
     try:
@@ -236,7 +236,7 @@ def ui_values(expression, port=PORT, limit=8):
     out = []
     for page in pages:
         try:
-            v = evaluate(page["webSocketDebuggerUrl"], expression, timeout=10.0)
+            v = evaluate(page["webSocketDebuggerUrl"], expression, timeout=timeout)
             out.append((page.get("title", "?"), v, None))
             if v is not None:
                 break
@@ -328,26 +328,86 @@ def owned_games(port=PORT):
     return out
 
 
+# Steam's install wizard, step by step (EInstallMgrState, decky-frontend-lib
+# src/globals/steam-client/Installs.ts). STONE moves it on only where Steam would just wait for a
+# click on "Install": the free licence the person asked for (a free game) and the folder.
+INSTALL_STATES = {0: "none", 1: "setup", 2: "wait-license", 3: "free-license", 4: "cd-key", 5: "wait-appinfo",
+                  6: "password", 7: "config", 8: "eula", 9: "create-apps", 10: "read-media", 11: "change-media",
+                  12: "wait-legacy-keys", 13: "signup", 14: "complete", 15: "failed", 16: "canceled"}
+INSTALL_ANSWERS = ("started", "failed", "canceled", "eula", "asks", "space", "timeout", "nowizard", "error")
+
+
 def install_expression(appid):
     """Install without showing Steam's dialog: in the STONE session Steam's interface is hidden behind
     STONE Home (rc1 on the board: the dialog opened where nobody could see it). Steam's install wizard
-    is opened and continued on the first library folder; the download then shows in STONE
-    (Ajustes → Almacenamiento) like any Steam download. A game that needs a choice Steam cannot make
-    by itself (an EULA, a second drive) stays in Steam's queue, never half-installed."""
+    is opened and its state read (GetInstallManagerInfo) until Steam has started the install or asks
+    something only the person can answer: a licence agreement (EULA), a key, a password, a disc. Those
+    and a full disk come back to STONE as they are; nothing is accepted on the person's behalf except
+    the free licence of the free game they asked to install. 3.0.0-rc1 continued the wizard blindly
+    after 1.5 s and said "ok" whatever Steam did (board, 12-11-2026: games that never installed).
+    Returns null where this page has no SteamClient (the next page is tried), else a JSON answer."""
     a = int(appid)
     if not 0 < a < 0x80000000:
         raise ValueError("not a Steam app id")
     return ("(async()=>{const I=window.SteamClient&&SteamClient.Installs;"
-            "if(!I||!I.OpenInstallWizard)return 'no SteamClient.Installs';"
-            f"I.OpenInstallWizard([{a}]);await new Promise(r=>setTimeout(r,1500));"
-            "try{I.SetInstallFolder&&I.SetInstallFolder(0);}catch(e){}"
-            "await new Promise(r=>setTimeout(r,300));"
-            "try{if(I.ContinueInstall)I.ContinueInstall();else return 'wizard open';}catch(e){return 'continue: '+e;}"
-            "return 'ok';})()")
+            "if(!I||!I.OpenInstallWizard||!I.GetInstallManagerInfo)return null;"
+            "const z=ms=>new Promise(r=>setTimeout(r,ms));"
+            "const get=async()=>{try{return await I.GetInstallManagerInfo();}catch(e){return null;}};"
+            "const out=(s,d,x)=>JSON.stringify(Object.assign({s:s,st:d?d.eInstallState:null,"
+            "need:d?Number(d.nDiskSpaceRequired)||0:0,free:d?Number(d.nDiskSpaceAvailable)||0:0},x||{}));"
+            "let d=await get();"
+            # a wizard left open by an earlier request (or by Steam itself) would swallow this one
+            "if(d&&d.eInstallState>0&&d.eInstallState<14){try{I.CancelInstall();}catch(e){}await z(400);}"
+            f"const A={a};I.OpenInstallWizard([{a}]);"
+            "let pushed=0,folder=false,seen=false;"
+            "for(let i=0;i<80;i++){await z(250);d=await get();if(!d)continue;"
+            "const ids=(d.rgAppIDs||[]).map(x=>x&&x.nAppID);"
+            "if(!seen){if(ids.indexOf(A)<0&&d.currentAppID!==A)continue;seen=true;}"
+            "const st=d.eInstallState;"
+            "if(st===14)return out('started',d);"
+            "if(st===15)return out('failed',d,{err:Number(d.eAppError)||0,detail:String(d.errorDetail||'').slice(0,160)});"
+            "if(st===16)return out('canceled',d);"
+            "if(st===8)return out('eula',d);"
+            "if(st===4||st===6||st===11||st===12||st===13)return out('asks',d);"
+            "if(st===7){if(d.nDiskSpaceRequired>0&&d.nDiskSpaceAvailable>0&&d.nDiskSpaceRequired>d.nDiskSpaceAvailable)"
+            "{try{I.CancelInstall();}catch(e){}return out('space',d);}"
+            "if(!folder){folder=true;if(!(d.iInstallFolder>=0)){try{I.SetInstallFolder(0);}catch(e){}await z(250);}}"
+            "if(pushed<4){pushed++;try{I.ContinueInstall();}catch(e){return out('error',d,{detail:String(e).slice(0,160)});}await z(600);}}"
+            "else if(st===3&&pushed<4){pushed++;try{I.ContinueInstall();}catch(e){}await z(600);}}"
+            "return out(seen?'timeout':'nowizard',d);})()")
+
+
+def parse_install(raw):
+    """Steam's answer to install_expression as a dict, or None (no page with SteamClient answered)."""
+    try:
+        d = json.loads(raw) if isinstance(raw, str) else None
+    except ValueError:
+        return None
+    if not isinstance(d, dict) or d.get("s") not in INSTALL_ANSWERS:
+        return None
+    st = d.get("st")
+    out = {"answer": d["s"], "state": INSTALL_STATES.get(st) if isinstance(st, int) else None}
+    for k in ("need", "free", "err"):
+        if isinstance(d.get(k), (int, float)) and d[k] >= 0:
+            out[k] = int(d[k])
+    if isinstance(d.get("detail"), str) and d["detail"]:
+        out["detail"] = d["detail"][:160]
+    return out
 
 
 def install(appid, port=PORT):
-    return ui_eval(install_expression(appid), port)
+    """Steam's answer ({"answer": started|failed|canceled|eula|asks|space|timeout|nowizard|error, ...})
+    or None when Steam's interface does not answer (not up, or its remote debugging is off)."""
+    return parse_install(ui_value(install_expression(appid), port, timeout=40.0))
+
+
+CANCEL_INSTALL_EXPRESSION = ("(()=>{const I=window.SteamClient&&SteamClient.Installs;"
+                             "if(!I||!I.CancelInstall)return null;I.CancelInstall();return 'ok';})()")
+
+
+def cancel_install(port=PORT):
+    """Close Steam's install wizard (the person said no to what it asked). True if Steam answered."""
+    return ui_value(CANCEL_INSTALL_EXPRESSION, port) == "ok"
 
 
 def uninstall_expression(appid):
@@ -356,12 +416,14 @@ def uninstall_expression(appid):
     if not 0 < a < 0x80000000:
         raise ValueError("not a Steam app id")
     return ("(async()=>{const I=window.SteamClient&&SteamClient.Installs;"
-            "if(!I||!I.OpenUninstallWizard)return 'no SteamClient.Installs';"
+            "if(!I||!I.OpenUninstallWizard)return null;"
             f"I.OpenUninstallWizard([{a}],true);return 'ok';}})()")
 
 
 def uninstall(appid, port=PORT):
-    return ui_eval(uninstall_expression(appid), port)
+    """True when Steam took the request (the files are then removed by Steam), None if its
+    interface does not answer."""
+    return True if ui_value(uninstall_expression(appid), port) == "ok" else None
 
 
 # ---- Steam asking the person something, answered from STONE Home -----------------------------
