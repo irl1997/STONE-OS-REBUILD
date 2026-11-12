@@ -5,23 +5,23 @@ function homeHTML() {
   let cards = '';
   if (S.section === 0) {
     /* Nobody signed in to Steam on this console: the first thing Home offers */
-    if (S.libLogged === 'out') cards += `<div class="card wide vein" data-f data-act="login"><b>Inicia sesión en Steam</b><span>Tus juegos vienen de tu cuenta de Steam</span></div>`;
+    if (S.libLogged === 'out') cards += `<div class="card wide vein" data-f data-act="login">${cover('login')}<b>Inicia sesión en Steam</b><span>Tus juegos vienen de tu cuenta de Steam</span></div>`;
     if (G.length && recent.length) {
       const g0 = G[recent[0]], hu = heroUrl(g0);
       cards += `<div class="card hero${g0.inst || g0.src === 'shortcut' ? '' : ' dim'}" data-f data-g="${g0.i}" style="background-image:${hu ? `url(&quot;${hu}&quot;)` : 'none'};background-color:var(--shale)">${hu ? '' : nameTag(g0)}${runTag(g0.i)}</div>`;
       recent.slice(1).forEach(i => { const g = G[i]; cards += `<div class="card cap${g.inst || g.src === 'shortcut' ? '' : ' dim'}${capWide(g) ? ' hdr' : ''}" data-f data-g="${i}" style="background-image:${capUrl(g).replace(/"/g, '&quot;')}">${g.art.capsule || g.art.header ? '' : nameTag(g)}${runTag(i)}</div>`; });
     } else if (S.libLogged !== 'out') {
-      cards += `<div class="card wide" data-f data-act="${S.libReady ? 'store' : 'library'}"><b>${S.libReady ? 'Sin juegos' : 'Biblioteca'}</b><span>${S.libReady ? 'Abre la tienda para conseguir el primero' : 'Leyendo la biblioteca de Steam…'}</span></div>`;
+      cards += `<div class="card wide" data-f data-act="${S.libReady ? 'store' : 'library'}">${cover(S.libReady ? 'store' : 'library')}<b>${S.libReady ? 'Sin juegos' : 'Biblioteca'}</b><span>${S.libReady ? 'Abre la tienda para conseguir el primero' : 'Leyendo la biblioteca de Steam…'}</span></div>`;
     }
-    cards += `<div class="card tile" data-f data-act="library">Biblioteca</div><div class="card tile" data-f data-act="store">Tienda</div>`;
+    cards += `<div class="card tile" data-f data-act="library">${cover('library')}Biblioteca</div><div class="card tile" data-f data-act="store">${cover('store')}Tienda</div>`;
   } else if (S.section === 2) {
     [['Tienda', 'Ofertas, novedades y lo más vendido en Steam', 'store'], ['Buscar juegos', 'Tu biblioteca y la tienda de Steam', 'search'],
       ['Sorpréndeme', 'STONE elige uno de tus juegos instalados', 'surprise'], ['Descargas', 'Descargas y actualizaciones de juegos', 'downloads'], ['Emuladores', 'Juegos de otras consolas', 'emu']]
-      .forEach(([t, s, k]) => { cards += `<div class="card wide" data-f data-act="${k}"><b>${t}</b><span>${s}</span></div>`; });
+      .forEach(([t, s, k]) => { cards += `<div class="card wide" data-f data-act="${k}">${cover(k)}<b>${t}</b><span>${s}</span></div>`; });
   } else {
     if (!SHOTS) loadShots();
     if (SHOTS && SHOTS.length) SHOTS.slice(0, 12).forEach((sh, k) => { cards += `<div class="card cap shot" data-f data-act="shot" data-k="${k}" style="background-image:url(&quot;${Bridge.artUrl(sh.appid === '0' ? '0' : '0', sh.kind)}&quot;)"></div>`; });
-    else cards += `<div class="card wide" data-f data-act="noshots"><b>Capturas</b><span>${SHOTS ? 'Aún no hay capturas. Durante el juego: botón STEAM + R1' : 'Leyendo las capturas…'}</span></div>`;
+    else cards += `<div class="card wide" data-f data-act="noshots">${cover('noshots')}<b>Capturas</b><span>${SHOTS ? 'Aún no hay capturas. Durante el juego: botón STEAM + R1' : 'Leyendo las capturas…'}</span></div>`;
   }
   const ico = {
     lib: '<svg width="26" height="26" viewBox="0 0 26 26" fill="none" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="6" height="18"/><rect x="11" y="4" width="6" height="18"/><path d="M19 5l4 1-3 16-4-1"/></svg>',

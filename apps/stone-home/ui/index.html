@@ -845,6 +845,30 @@ body.dormant *,body.dormant *::before,body.dormant *::after{animation-play-state
   linear-gradient(0deg,rgba(5,6,10,.82) 0%,rgba(5,6,10,0) 36%)}
 #home .st-label,#home .ctx,#detail .col{text-shadow:0 1px 14px rgba(0,0,0,.6)}
 #detail .col .primary{text-shadow:none}
+
+/* ---- COVERS of the sections (covers.js): the console in the card. Its faceted stone band across the top,
+   lit from above with the colour of the last game; the sign in the white of its top panel; the light line
+   under the band; the label below on the black body. Wide cards keep the band above their two lines of text. ---- */
+#stage .card.tile,#stage .card.wide{isolation:isolate}
+.cov{position:absolute;inset:0;z-index:-1;border-radius:inherit;overflow:hidden;pointer-events:none;--bh:43%}
+.card.tile .cov{--bh:64%}
+.cov .band{position:absolute;left:0;right:0;top:0;height:var(--bh);
+  background:radial-gradient(ellipse 70% 120% at 50% -20%,color-mix(in srgb,var(--accent) 26%,rgba(255,255,255,.3)) 0%,rgba(255,255,255,0) 70%),
+    linear-gradient(180deg,rgba(255,255,255,.1) 0%,rgba(0,0,0,.28) 100%),var(--roca) center/100% 100%;
+  box-shadow:inset 0 -1px 0 rgba(0,0,0,.7),inset 0 -12px 18px -10px rgba(0,0,0,.6);transition:filter var(--d-settle) var(--e-settle)}
+.card.tile .cov .band{background-size:auto,auto,400% 100%}
+.cov .cg{position:absolute;left:50%;aspect-ratio:1;translate:-50% -50%;top:calc(var(--bh) / 2);height:calc(var(--bh) * .72);
+  filter:drop-shadow(0 6px 10px rgba(0,0,0,.55))}
+.card.tile .cov .cg{height:auto;width:54%}
+.cov .panel,.cov .cut{position:absolute;inset:0;width:100%;height:100%}
+.cov .panel{background:linear-gradient(180deg,#fff 0%,#f2f2f5 45%,#d6d6dc 100%);
+  -webkit-mask:var(--m) center/contain no-repeat;mask:var(--m) center/contain no-repeat}
+.cov .cut{fill:none;stroke:rgba(11,12,16,.62);stroke-width:2px;stroke-linecap:round}
+.cov .cut path{vector-effect:non-scaling-stroke}
+.cov .cut circle{fill:rgba(11,12,16,.7);stroke:none}
+.cov .ln{position:absolute;left:30%;right:30%;top:calc(var(--bh) - 1px);height:2px;border-radius:2px;background:#fff;
+  box-shadow:0 0 8px rgba(255,255,255,.9),0 0 22px var(--accent-glow)}
+.card.f .cov .band{filter:brightness(1.3)}
 </style>
 
 <!-- LIQUID GLASS (cristal.css): the lens of the section bar and the status. Chromium bends what is behind them
@@ -1416,23 +1440,23 @@ function homeHTML() {
   let cards = '';
   if (S.section === 0) {
     /* Nobody signed in to Steam on this console: the first thing Home offers */
-    if (S.libLogged === 'out') cards += `<div class="card wide vein" data-f data-act="login"><b>Inicia sesión en Steam</b><span>Tus juegos vienen de tu cuenta de Steam</span></div>`;
+    if (S.libLogged === 'out') cards += `<div class="card wide vein" data-f data-act="login">${cover('login')}<b>Inicia sesión en Steam</b><span>Tus juegos vienen de tu cuenta de Steam</span></div>`;
     if (G.length && recent.length) {
       const g0 = G[recent[0]], hu = heroUrl(g0);
       cards += `<div class="card hero${g0.inst || g0.src === 'shortcut' ? '' : ' dim'}" data-f data-g="${g0.i}" style="background-image:${hu ? `url(&quot;${hu}&quot;)` : 'none'};background-color:var(--shale)">${hu ? '' : nameTag(g0)}${runTag(g0.i)}</div>`;
       recent.slice(1).forEach(i => { const g = G[i]; cards += `<div class="card cap${g.inst || g.src === 'shortcut' ? '' : ' dim'}${capWide(g) ? ' hdr' : ''}" data-f data-g="${i}" style="background-image:${capUrl(g).replace(/"/g, '&quot;')}">${g.art.capsule || g.art.header ? '' : nameTag(g)}${runTag(i)}</div>`; });
     } else if (S.libLogged !== 'out') {
-      cards += `<div class="card wide" data-f data-act="${S.libReady ? 'store' : 'library'}"><b>${S.libReady ? 'Sin juegos' : 'Biblioteca'}</b><span>${S.libReady ? 'Abre la tienda para conseguir el primero' : 'Leyendo la biblioteca de Steam…'}</span></div>`;
+      cards += `<div class="card wide" data-f data-act="${S.libReady ? 'store' : 'library'}">${cover(S.libReady ? 'store' : 'library')}<b>${S.libReady ? 'Sin juegos' : 'Biblioteca'}</b><span>${S.libReady ? 'Abre la tienda para conseguir el primero' : 'Leyendo la biblioteca de Steam…'}</span></div>`;
     }
-    cards += `<div class="card tile" data-f data-act="library">Biblioteca</div><div class="card tile" data-f data-act="store">Tienda</div>`;
+    cards += `<div class="card tile" data-f data-act="library">${cover('library')}Biblioteca</div><div class="card tile" data-f data-act="store">${cover('store')}Tienda</div>`;
   } else if (S.section === 2) {
     [['Tienda', 'Ofertas, novedades y lo más vendido en Steam', 'store'], ['Buscar juegos', 'Tu biblioteca y la tienda de Steam', 'search'],
       ['Sorpréndeme', 'STONE elige uno de tus juegos instalados', 'surprise'], ['Descargas', 'Descargas y actualizaciones de juegos', 'downloads'], ['Emuladores', 'Juegos de otras consolas', 'emu']]
-      .forEach(([t, s, k]) => { cards += `<div class="card wide" data-f data-act="${k}"><b>${t}</b><span>${s}</span></div>`; });
+      .forEach(([t, s, k]) => { cards += `<div class="card wide" data-f data-act="${k}">${cover(k)}<b>${t}</b><span>${s}</span></div>`; });
   } else {
     if (!SHOTS) loadShots();
     if (SHOTS && SHOTS.length) SHOTS.slice(0, 12).forEach((sh, k) => { cards += `<div class="card cap shot" data-f data-act="shot" data-k="${k}" style="background-image:url(&quot;${Bridge.artUrl(sh.appid === '0' ? '0' : '0', sh.kind)}&quot;)"></div>`; });
-    else cards += `<div class="card wide" data-f data-act="noshots"><b>Capturas</b><span>${SHOTS ? 'Aún no hay capturas. Durante el juego: botón STEAM + R1' : 'Leyendo las capturas…'}</span></div>`;
+    else cards += `<div class="card wide" data-f data-act="noshots">${cover('noshots')}<b>Capturas</b><span>${SHOTS ? 'Aún no hay capturas. Durante el juego: botón STEAM + R1' : 'Leyendo las capturas…'}</span></div>`;
   }
   const ico = {
     lib: '<svg width="26" height="26" viewBox="0 0 26 26" fill="none" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="6" height="18"/><rect x="11" y="4" width="6" height="18"/><path d="M19 5l4 1-3 16-4-1"/></svg>',
@@ -2153,6 +2177,37 @@ function sessionReport(g) {
     const temp = m && m.gpu_temp_c != null ? ` · GPU ${Math.round(m.gpu_temp_c)} °C al terminar` : '';
     setTimeout(() => longToast(`PARTE DE SESIÓN · ${g.n} · ${dur}${temp} · ${profOf(g.perf || S.prof).n}`, 9000), 1400);
   });
+}
+/* ---------- COVERS of the sections (Biblioteca, Tienda, Explorar, Capturas…) ----------
+   Steam has no art for these, so they wear the STONE MACHINE itself: its faceted stone band across the top,
+   lit from above, the section's sign in the white of its top panel, and the white light line of its front
+   under the band; the label sits below, on the black body. Signs in a 100×100 box: f filled, s thick
+   strokes (both in white; w their width), l the lines cut into them, d the cut points (pips, buttons). */
+const COVERS = {
+  library: { f: 'M14 18h18v66H14zM36 18h18v66H36zM60.5 21.5l15.6-3.4 13.4 61.7-15.6 3.4z', l: 'M18 30h10M40 30h10' },
+  store: { f: 'M12 38h76l-7 48H19z', s: 'M35 46V32a15 15 0 0 1 30 0v14', w: 5.5, d: [[35, 47], [65, 47]] },
+  search: { s: 'M42 19a23 23 0 1 0 .01 0zM60 60l22 22' },
+  surprise: { f: 'M50 12l34 19v38L50 88 16 69V31z', l: 'M16 31l34 19 34-19M50 50v38',
+    d: [[50, 31], [26, 50], [40, 70], [59, 73], [67, 59.5], [75, 46]] },
+  downloads: { f: 'M40 12h20v34h17L50 72 23 46h17zM14 80h72v7H14z' },
+  emu: { f: 'M30 30h40c13 0 22 11 22 27 0 13-7 22-15 20-5-1-8-6-12-11H35c-4 5-7 10-12 11-8 2-15-7-15-20 0-16 9-27 22-27z',
+    l: 'M27 47v14M20 54h14', d: [[69, 47], [77, 54], [69, 61], [61, 54]] },
+  shots: { s: 'M14 32V14h18M68 14h18v18M86 68v18H68M32 86H14V68', f: 'M50 36a14 14 0 1 0 .01 0z' },
+  login: { f: 'M50 16a16 16 0 1 0 .01 0zM18 88c0-20 14-33 32-33s32 13 32 33z' }
+};
+const COVER_OF = { library: 'library', store: 'store', search: 'search', surprise: 'surprise', downloads: 'downloads', emu: 'emu', noshots: 'shots', login: 'login' };
+const coverMask = {};
+function cover(act) {
+  const k = COVER_OF[act], c = k && COVERS[k];
+  if (!c) return '';
+  if (!coverMask[k]) {
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">${c.f ? `<path d="${c.f}"/>` : ''}` +
+      `${c.s ? `<path d="${c.s}" fill="none" stroke="#000" stroke-width="${c.w || 10}" stroke-linecap="round" stroke-linejoin="round"/>` : ''}</svg>`;
+    coverMask[k] = `url('data:image/svg+xml,${encodeURIComponent(svg)}')`;
+  }
+  const cut = (c.l ? `<path d="${c.l}"/>` : '') + (c.d || []).map(([x, y]) => `<circle cx="${x}" cy="${y}" r="3.6"/>`).join('');
+  return `<i class="cov" aria-hidden="true"><i class="band"></i><i class="cg"><i class="panel" style="--m:${coverMask[k]}"></i>` +
+    `${cut ? `<svg class="cut" viewBox="0 0 100 100">${cut}</svg>` : ''}</i><i class="ln"></i></i>`;
 }
 
 /* ---------- LIBRARY ---------- */
