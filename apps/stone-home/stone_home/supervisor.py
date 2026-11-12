@@ -142,12 +142,19 @@ def _take_wanted():
 
 
 def first_run_pending():
-    """True on a new console whose first-run setup has not ended (Steam then waits, run())."""
+    """True on a new console whose first-run setup has not ended (Steam then waits, run()). The same
+    rule as firstrun.status, read from the files themselves: firstrun.status needs GTK's bindings,
+    and a session that cannot load them must still know (3.1.0-rc2 CI: Steam was held on Linux and
+    not on a machine without them)."""
+    base = os.path.join(os.environ.get("XDG_CONFIG_HOME") or os.path.join(os.path.expanduser("~"), ".config"), "stone")
     try:
-        from . import firstrun
-        return not firstrun.status()["done"]
-    except Exception:  # noqa: BLE001  (never keeps Steam from starting)
-        return False
+        with open(os.path.join(base, "firstrun.json")) as f:
+            d = json.load(f)
+        if isinstance(d, dict) and d.get("done") is True:
+            return False
+    except (OSError, ValueError):
+        pass
+    return not os.path.exists(os.path.join(base, "home.json"))    # an older STONE's settings: not a new console
 
 
 def take_request():
