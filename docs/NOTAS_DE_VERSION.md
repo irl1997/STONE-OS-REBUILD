@@ -1,4 +1,6 @@
-# STONE OS (rebuild) 3.1.0-rc2
+# STONE OS (rebuild) 3.1.0-rc3
+
+Es 3.1.0-rc2 con una prueba automática corregida: la compilación de 3.1.0-rc2 se detuvo en las pruebas de la sesión y nunca se publicó.
 
 Arregla lo que se vio en la consola con 3.0.0-rc1 (12-11-2026): **instalar juegos desde STONE no funcionaba bien**, **Steam ponía su inicio de sesión encima de la configuración inicial** y **las actualizaciones no llegaban**. Trae el diseño Cristal de 3.1.0-rc1. Decisión D-36.
 
@@ -30,7 +32,7 @@ La imagen base (Bazzite, variante deck) trae apagada su comprobación automátic
 - **Comprobación diaria activada** (`uupd.timer`): a las 4:00, o al encender si la consola estaba apagada a esa hora.
 - **Ajustes → Actualizaciones → Buscar actualizaciones**: busca y descarga la versión nueva en el momento, sin contraseña. Mientras trabaja dice "Buscando y descargando…"; al terminar aparece **Reiniciar y actualizar**.
 
-**Si tu consola tiene 3.0.0-rc1 o 3.1.0-rc1, la primera vez hay que pedir la actualización a mano** (esas versiones no tienen el botón): Ajustes → Acerca de → Modo escritorio, abre Konsole y escribe `systemctl start uupd-manual.service`; cuando vuelva el cursor, abre "Volver a STONE" y reinicia. O instala desde la ISO nueva. Desde 3.1.0-rc2 ya no hace falta.
+**Si tu consola tiene 3.0.0-rc1 o 3.1.0-rc1, la primera vez hay que pedir la actualización a mano** (esas versiones no tienen el botón): Ajustes → Acerca de → Modo escritorio, abre Konsole y escribe `systemctl start uupd-manual.service`; cuando vuelva el cursor, abre "Volver a STONE" y reinicia. O instala desde la ISO nueva. Desde 3.1.0-rc3 ya no hace falta.
 
 ## Límites
 

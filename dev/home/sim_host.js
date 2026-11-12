@@ -206,14 +206,14 @@ const Bridge = (() => {
     downloads: () => ({ downloads: GAMES.filter(g => g.dl).map(g => { const p = Math.min(0.99, (Date.now() - g.dl.at) / 16000);
       return { appid: g.appid, name: g.name, downloaded: Math.round(g.dl.total * p), total: g.dl.total, progress: Math.round(p * 1000) / 1000, installed: false }; }) }),
     'session.wantSteam': () => ({ ok: true }),
-    /* Buscar actualizaciones: uupd "runs" 10 s, then 3.1.0-rc2 is staged */
+    /* Buscar actualizaciones: uupd "runs" 10 s, then a newer version is staged */
     'update.now': () => { SIM.updUntil = Date.now() + 10000; return { ok: true, unit: 'uupd-manual.service', already: false }; },
     openSteam: async () => ({ ok: true }), openSteamSettings: async () => ({ ok: true }), restart: async () => ({ ok: true }),
     power: async ([a]) => { toast(`Simulación: «${a === 'off' ? 'Apagar' : 'Reiniciar'}» no hace nada aquí`, false); return { ok: true }; },
-    systemInfo: () => ({ session: 'stone', release: { STONE_VERSION: '3.1.0-rc2 (simulación)', STONE_BASE_IMAGE: 'bazzite-deck', STONE_KERNEL: 'simulado', STONE_MESA: 'simulado', STONE_GOVERNOR_VERSION: 'simulado' },
+    systemInfo: () => ({ session: 'stone', release: { STONE_VERSION: '3.1.0-rc3 (simulación)', STONE_BASE_IMAGE: 'bazzite-deck', STONE_KERNEL: 'simulado', STONE_MESA: 'simulado', STONE_GOVERNOR_VERSION: 'simulado' },
       boot_time: Math.round(now - 3600),
-      deployments: { booted: { image: 'simulación', version: '3.1.0-rc2', timestamp: now },
-        staged: SIM.updUntil && Date.now() > SIM.updUntil ? { image: 'simulación', version: '3.1.0-rc3', timestamp: now } : null,
+      deployments: { booted: { image: 'simulación', version: '3.1.0-rc3', timestamp: now },
+        staged: SIM.updUntil && Date.now() > SIM.updUntil ? { image: 'simulación', version: '3.1.0-rc4', timestamp: now } : null,
         rollback: { image: 'simulación', version: '3.0.0-rc1', timestamp: now - 86400 } },
       updates: { unit: 'uupd.timer', enabled: true, last: Math.round(now - 3600 * 15), next: Math.round(now + 3600 * 9) },
       updating: { unit: 'uupd-manual.service', running: !!SIM.updUntil && Date.now() < SIM.updUntil, result: 'success' } }),

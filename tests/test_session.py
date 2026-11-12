@@ -24,10 +24,15 @@ DESKTOP = os.path.join(REPO, "system", "usr", "share", "wayland-sessions", "game
 
 
 class Box:
-    def __init__(self, steam, home, fallback="true"):
+    def __init__(self, steam, home, fallback="true", first_run=False):
         self.tmp = tempfile.mkdtemp(prefix="stone-session-")
         self.state = os.path.join(self.tmp, "state")
-        self.env = dict(os.environ, XDG_STATE_HOME=self.state, STONE_SESSION_STEAM=steam,
+        config = os.path.join(self.tmp, "config")
+        if not first_run:                   # a console whose first-run setup ended: Steam starts at once
+            os.makedirs(os.path.join(config, "stone"))
+            with open(os.path.join(config, "stone", "firstrun.json"), "w") as f:
+                json.dump({"done": True}, f)
+        self.env = dict(os.environ, XDG_STATE_HOME=self.state, XDG_CONFIG_HOME=config, STONE_SESSION_STEAM=steam,
                         STONE_SESSION_HOME=home, STONE_SESSION_FALLBACK=fallback,
                         STONE_SESSION_SDDM_DIR=os.path.join(self.tmp, "sddm.conf.d"), PYTHONPATH=HOME_LIB,
                         STONE_SESSION_GUARD_DIR=os.path.join(self.tmp, "guard"), STONE_STEAM_ROOT=os.path.join(self.tmp, "Steam"))
@@ -119,6 +124,31 @@ def _request(b, why, age=0):
     os.makedirs(os.path.join(b.state, "stone"), exist_ok=True)
     with open(os.path.join(b.state, "stone", "session.request"), "w") as f:
         json.dump({"want": "steam", "why": why, "time": time.time() - age}, f)
+
+
+def test_first_run_holds_steam_until_home_asks_for_it():
+    """3.1.0-rc2: on a new console Steam waits while the setup runs (board, 12-11-2026: Steam's sign-in
+    drawn over the setup); it starts when STONE Home leaves steam.wanted (the setup's Steam step)."""
+    b = Box(steam="", home="", first_run=True)
+    homes, steams = b.path("homes"), b.path("steams")
+    b.env["STONE_SESSION_HOME"] = f"sh -c 'echo x >> {homes}; exec sleep 600'"
+    b.env["STONE_SESSION_STEAM"] = f"sh -c 'echo x >> {steams}; exec sleep 600'"
+    p = b.start("run")
+    try:
+        assert _wait(lambda: len(_lines(homes)) == 1)
+        time.sleep(2.5)
+        assert _lines(steams) == [], "Steam started during the first-run setup"
+        os.makedirs(os.path.join(b.state, "stone"), exist_ok=True)
+        with open(os.path.join(b.state, "stone", "steam.wanted"), "w") as f:
+            f.write("1")
+        assert _wait(lambda: len(_lines(steams)) == 1), "Steam did not start when STONE Home asked"
+        with open(os.path.join(b.state, "stone", "session.log")) as f:
+            log = f.read()
+        assert "first run: Steam starts when the setup reaches its Steam step" in log and "STONE Home asked for it" in log
+    finally:
+        p.send_signal(signal.SIGTERM)
+        p.wait(timeout=30)
+        b.close()
 
 
 def test_plan_b_steam_takes_the_session_and_home_comes_back_when_it_ends():
