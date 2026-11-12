@@ -1,26 +1,62 @@
-# STONE OS 2.0.0-rc1
+# STONE OS (rebuild) 3.0.0-rc1
 
-**Cambio de rumbo:** STONE OS deja de tener una interfaz propia. Ahora es Bazzite en Game Mode con la estética de STONE y lo propio de la BC-250. Estado: CODE TESTED; nada comprobado todavía en la placa.
+Vuelve STONE Home, la interfaz propia de la consola (la de 1.0.0-rc5), con lo que le faltaba: la biblioteca de tu cuenta, una tienda para comprar y un arranque más corto. Auditoría completa en `docs/AUDITORIA_3_0.md`.
 
-## Qué trae
+**Todo está probado en software (CODE TESTED): pruebas automáticas y simulación de la interfaz. Nada de esta versión se ha observado todavía en la BC-250.** Las pruebas de placa nuevas están en `hardware/validation/matrix.yaml` (T-STEAM-11 a 14, T-LIB-11 a 13, T-STORE-01, T-EMU-02 y 03, T-BOOT-10). La versión 2.0.0-rc1 (tema sobre el Modo Juego de Steam) queda abandonada.
 
-- **Tema STONE** para la interfaz de Steam (colores, tipografías y foco ámbar), ya activado. Se apaga en CSS Loader.
-- **Plugin STONE** en el menú de acceso rápido (`···`): perfil de la consola y de cada juego, 40 CU, calibración, salud y Modo seguro.
-- **Película de arranque de STONE** y pantalla de arranque propia.
-- **Sin terminal:** Decky Loader, CSS Loader, el tema y el plugin se colocan solos en el primer arranque.
-- Se conservan el módulo de 40 CU, el regulador de GPU y `stoned`.
+## Por qué no se veía la biblioteca en rc5
 
-## Qué se retira
+En la sesión STONE, Steam funciona oculto. Su ventana de inicio de sesión existía, pero el compositor de la consola (Gamescope) solo muestra ventanas que tienen un identificador de aplicación, y las ventanas propias de Steam no lo tienen. Sin poder iniciar sesión, Steam no tenía cuenta ni juegos que dar. Además, STONE leía la biblioteca una sola vez al arrancar, antes de que Steam estuviera listo.
 
-- STONE Home, su sesión y su configuración de 8 pasos: ahora se ven Inicio, Biblioteca, Ajustes y configuración inicial de Steam.
-- STONE DISPLAY y STONE OPTIMIZED (generación de fotogramas, HelixSR, aspectos de imagen, OptiScaler). La pantalla se ajusta en los ajustes de Steam.
-- La galería de capturas, los emuladores y la pantalla de carga propias.
+## Biblioteca
+
+- **Iniciar sesión funciona.** Inicio, Ajustes → Steam y la configuración del primer encendido muestran la ventana propia de Steam, con su código QR para la app de Steam del móvil. STONE nunca ve la contraseña. Al terminar, STONE vuelve sola y lee la biblioteca.
+- **La biblioteca se actualiza sola.** STONE vigila a Steam: cuando Steam responde, cuando termina una instalación o cuando llega un juego comprado, la pantalla se redibuja en su sitio, con el mismo foco.
+- **Completa desde el primer cuadro.** STONE guarda la lista de juegos de tu cuenta que Steam dio la última vez y la muestra al arrancar, sin esperar a Steam.
+- **Carátulas de los juegos no instalados.** Steam solo guarda en disco las de los juegos que ha mostrado. STONE descarga las que faltan de los servidores de imágenes de Steam.
+- **Consola nueva:** si hay cuenta pero ningún juego instalado, Inicio muestra los juegos de la cuenta listos para instalar. Antes ese caso dejaba Inicio en blanco.
+- Filtro nuevo «Por instalar». Ajustes → Steam → Estado de Steam dice qué sabe STONE de Steam en ese momento.
+
+## Tienda y compras
+
+- **Pestaña TIENDA** (RB desde Inicio): ofertas, lo más vendido, novedades y próximos lanzamientos, con los precios de Steam en la moneda de tu país. Buscar con Y.
+- **Ficha de cada juego** con descripción, precio y descuento.
+- **COMPRAR EN STEAM:** abre la ficha del juego en la interfaz propia de Steam (Big Picture), delante de STONE. El pago se hace en Steam, con tu cuenta. El botón guía vuelve a STONE.
+- **COMPRAR CON EL MÓVIL:** STONE dibuja un código QR de la página del juego. Lo compras desde el móvil.
+- **Instalación automática:** un juego comprado por cualquiera de los dos caminos se instala solo en cuanto Steam lo añade a tu cuenta.
+- Los juegos gratis se instalan desde su ficha.
+- **Plan B, «Steam completo»** (Ajustes → Steam, y ofrecido si la ventana de Steam no aparece): Steam ocupa toda la pantalla con su propia interfaz. STONE vuelve al iniciar sesión, al mantener el botón guía 3 segundos o al reiniciar.
+
+## Arranque
+
+- STONE Home arranca antes que Steam, no después.
+- Chromium se lanza antes de preparar el resto de STONE Home, que se carga mientras Chromium abre.
+- El tamaño de pantalla se lee sin cargar GTK.
+- Inicio ya no espera a `rpm-ostree` ni a Steam para aparecer.
+- La espera fija de la animación de arranque baja de 2,0 s a 1,25 s.
+
+El tiempo total de arranque no está medido en la placa: la consola lo registra en cada arranque y la prueba T-BOOT-10 lo compara con rc5.
+
+## Emuladores
+
+- **Nintendo Switch:** Eden y Ryujinx (Ryubing), desde Flathub. Los juegos van en `~/Emulation/roms/switch`. Las claves y el firmware de tu consola los pones tú, dentro del emulador.
+- **Actualizar:** Ajustes → Emuladores busca versiones nuevas en Flathub al abrirse. Pulsa A sobre un emulador instalado para actualizarlo, o usa «Actualizar todos». Cada fila muestra la versión instalada.
+- **Nintendo Switch 2:** aparece en la lista como no disponible. Hoy no hay ningún emulador de Switch 2 publicado en Flathub; los proyectos que existen son experimentales. STONE no instala nada para Switch 2 ni promete compatibilidad.
+
+## Otras novedades
+
+- **Sorpréndeme** (Explorar y Biblioteca): STONE elige uno de tus juegos instalados, entre los que llevan más tiempo sin abrirse.
+- **Parte de sesión:** al terminar un juego, cuánto jugaste y la temperatura de la GPU en ese momento. Se apaga en Ajustes → Rendimiento.
+- Los avisos tienen un carril propio arriba a la derecha. Antes tapaban la fila inferior de Inicio y de la Biblioteca.
+- Con el texto a 1,5×, la línea del juego en Inicio ya no pisa la etiqueta «ESTRATO 02».
+- Al volver de Ajustes o de Energía, el foco cae en el elemento correcto de la fila inferior.
 
 ## Límites
 
-- Se ve la interfaz de Steam, con el tema.
-- Una actualización de Steam puede descolocar el tema. El sistema sigue funcionando y se puede apagar en CSS Loader.
-- Los plugins de la comunidad se instalan desde la tienda de Decky, con el mando.
+- **El pago y el inicio de sesión son pantallas de Steam.** Es intencionado: STONE no maneja contraseñas ni tarjetas.
+- **Steam al frente depende de Gamescope y de Steam.** Está escrito según el código de Gamescope y no se ha visto en la placa. Si falla, queda el plan B, y la compra con el móvil no depende de ninguno de los dos.
+- **La lista de juegos de la cuenta** se lee de la interfaz de Steam por su estructura interna. Si una versión de Steam la cambia, STONE muestra los juegos instalados y la última lista guardada.
+- La tienda y las carátulas necesitan internet.
 
 # STONE OS (rebuild) 1.0.0-rc5
 

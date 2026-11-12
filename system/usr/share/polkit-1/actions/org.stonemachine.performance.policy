@@ -5,7 +5,7 @@
   <vendor>STONE MACHINE</vendor>
   <!-- Game Mode has no password dialog, so the person at the console (active local
        session) is allowed directly. Remote or inactive sessions are refused. In Game Mode
-       Steam Game Mode runs outside the logind session; rules.d/50-stone.rules allows the console
+       STONE Home runs outside the logind session; rules.d/50-stone.rules allows the console
        administrator (wheel).
        stoned (user "stoned", not root) asks polkit about another user's request: polkit only
        allows that to root or to an owner of the action, so stoned is declared owner. Without

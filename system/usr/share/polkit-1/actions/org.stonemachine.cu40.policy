@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE policyconfig PUBLIC "-//freedesktop//DTD PolicyKit Policy Configuration 1.0//EN"
+ "http://www.freedesktop.org/standards/PolicyKit/1/policyconfig.dtd">
+<policyconfig>
+  <vendor>STONE MACHINE</vendor>
+  <!-- STONE Home's Rendimiento → GPU: activate, test or turn off the 40 CU option after its own
+       confirmation dialog. Only the exact command lines in rules.d/50-stone.rules are allowed, and
+       only to the console administrator (wheel); anything else asks for the password. -->
+  <action id="org.stonemachine.cu40">
+    <description>Cambiar las unidades de cálculo de la GPU de STONE MACHINE</description>
+    <message>Cambiar las unidades de cálculo requiere estar frente a la consola</message>
+    <defaults>
+      <allow_any>no</allow_any>
+      <allow_inactive>no</allow_inactive>
+      <allow_active>auth_admin</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/bin/stone-cu40</annotate>
+  </action>
+</policyconfig>

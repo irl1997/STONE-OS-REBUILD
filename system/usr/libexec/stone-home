@@ -1,0 +1,47 @@
+#!/usr/bin/python3 -I
+# STONE Home process (see /usr/bin/stone-home, which starts it with a clean environment).
+#
+# Two ways to draw, chosen in Ajustes -> Pantalla -> Modo de imagen (prefs "engine"):
+#   0 GPU      Chromium on the GPU at the screen's resolution (stone_home/chromium.py). Default.
+#   1 Sin GPU  the WebKit shell drawing in software (stone_home/app.py): the fallback, slow at 4K.
+# If Chromium cannot run (not installed, or it crashes at start three times) the WebKit shell
+# starts instead, so the console always has its interface. STONE_HOME_ENGINE=webkit|chromium
+# (~/.config/stone/home.env) overrides the choice.
+import json
+import os
+import sys
+
+# STONE Home is the console's menu: games come first. A lower CPU priority, inherited by
+# Chromium's and WebKit's processes, keeps it from taking time from a running game.
+try:
+    os.nice(5)
+except OSError:
+    pass
+
+sys.path.insert(0, "/usr/lib/stone")
+
+
+def chosen_engine():
+    forced = os.environ.get("STONE_HOME_ENGINE")
+    if forced in ("chromium", "webkit"):
+        return forced
+    try:
+        cfg = os.environ.get("XDG_CONFIG_HOME") or os.path.join(os.path.expanduser("~"), ".config")
+        with open(os.path.join(cfg, "stone", "home.json")) as f:
+            return "webkit" if json.load(f).get("engine") == 1 else "chromium"
+    except (OSError, ValueError, AttributeError):
+        return "chromium"
+
+
+engine = chosen_engine()
+if engine == "chromium" and "--selftest" not in sys.argv:
+    from stone_home import chromium
+    code = chromium.main(sys.argv)
+    if code != chromium.UNUSABLE:
+        sys.exit(code)
+    print("[stone] chromium could not run; starting the WebKit shell without GPU", file=sys.stderr, flush=True)
+    engine = "webkit-fallback"
+
+os.environ["STONE_HOME_RENDER"] = engine
+from stone_home.app import main  # noqa: E402
+sys.exit(main(sys.argv))

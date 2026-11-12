@@ -13,9 +13,9 @@ import tempfile
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from _support import REPO, run_module  # noqa: E402
 
-sys.path.insert(0, os.path.join(REPO, "services", "stoned"))
-from stoned import blackbox as BB  # noqa: E402
-from stoned import health as H  # noqa: E402
+sys.path.insert(0, os.path.join(REPO, "apps", "stone-home"))
+from stone_home import blackbox as BB  # noqa: E402
+from stone_home import health as H  # noqa: E402
 
 
 def _tree(files):
@@ -59,7 +59,7 @@ def test_doctor_marks_missing_required_services_as_failures():
             "services": H.services(run), "gpu_errors": H.gpu_errors(run), "blackbox": [{"clean": False}, {"clean": True}]}
     checks = {(c[1]): c for c in H.doctor(snap)}
     assert checks["Regulador de GPU"][0] == "fail" and checks["Servicio de rendimiento (stoned)"][0] == "ok"
-    assert checks["Decky Loader (tema y plugin STONE)"][0] == "ok"       # optional: waiting is fine
+    assert checks["Guardia de arranque"][0] == "ok"                      # oneshot: inactive after boot is fine
     assert checks["Disco /"][0] == "warn" and "poco espacio" in checks["Disco /"][2]
     assert checks["GPU"][0] == "warn" and "1 errores" in checks["GPU"][2]
     assert checks["Caja negra"][0] == "warn"

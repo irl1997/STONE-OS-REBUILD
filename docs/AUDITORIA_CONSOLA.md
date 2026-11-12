@@ -1,6 +1,6 @@
 # Auditoría de experiencia de consola (1.0.0-rc4)
 
-> **Histórico.** Describe la interfaz STONE Home, retirada en 2.0.0 por decisión del propietario (D-34).
+> Continúa en `docs/AUDITORIA_3_0.md` (3.0.0-rc1), que corrige dos conclusiones de este documento: los avisos sí tapaban texto en Inicio y en la Biblioteca, y con el texto a 1,5× sí había un solapamiento en Inicio.
 
 Fecha: 2026-11-08. Pedida por el propietario tras instalar 1.0.0-rc1/rc2 en la BC-250: «la experiencia debe ser como una consola de Sony o Xbox, sin terminal y sin ver la interfaz de Steam».
 

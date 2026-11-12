@@ -22,7 +22,8 @@ import pytest
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from _support import REPO, need  # noqa: E402
 
-SUITES = {"stoned_suite.py": True}       # value: needs dbus-daemon
+SUITES = {"stoned_suite.py": True, "home_suite.py": True, "display_suite.py": False,
+          "games_suite.py": False, "server_suite.py": False}       # value: needs dbus-daemon
 
 
 def _has_gi():

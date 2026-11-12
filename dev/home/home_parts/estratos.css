@@ -1,0 +1,198 @@
+/* ---------- ESTRATOS (D-30) ----------
+   The screen as rock seen in section: a header stratum, the game stratum (its art shows through),
+   an amber vein for the horizon and a deep stratum with the machine's state. Labels read like core
+   samples: mono, numbered strata. Loaded after every other rule: it restyles, it never removes. */
+#stage{--vein:#c88a3a;--vein-deep:#7a4f20;--st-head:rgba(18,19,21,.93);--st-deep:rgba(13,14,15,.96);--st-rule:#26272a}
+.st-head{position:absolute;left:0;top:0;width:1920px;height:196px;background:var(--st-head);border-bottom:1px solid var(--st-rule);pointer-events:none}
+.st-deep{position:absolute;left:0;top:672px;width:1920px;height:408px;background:var(--st-deep);pointer-events:none}
+.st-label{position:absolute;left:96px;font-family:var(--f-mono);font-size:15px;letter-spacing:.16em;color:var(--text-2);text-transform:uppercase;font-variant-numeric:tabular-nums}
+.st-label b{font-weight:400;color:var(--warm)}
+#home .horizon{top:668px;height:3px;background:linear-gradient(90deg,transparent 0%,var(--vein) 12%,var(--vein-deep) 62%,transparent 100%);opacity:1;box-shadow:0 0 18px rgba(200,138,58,.35)}
+#home .ctx{top:700px}
+#home .strata{position:absolute;left:96px;top:872px;width:1728px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:40px}
+#home .strata div{display:flex;flex-direction:column;gap:8px;min-width:0}
+#home .strata span{font-family:var(--f-mono);font-size:14px;letter-spacing:.16em;color:var(--text-2)}
+#home .strata b{font-family:var(--f-display);font-weight:300;font-size:28px;letter-spacing:.1em;color:var(--warm);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#home .strata b.warn{color:var(--ember)}
+#home .sys{top:984px;gap:56px;font-family:var(--f-display);font-weight:300;letter-spacing:.14em;font-size:20px}
+#home .st-label.l2{top:836px}
+#home .st-label.l1{top:226px}
+#hdr .brand{letter-spacing:.55em}
+#tabs{gap:64px;font-size:20px;letter-spacing:.28em}
+#stage.hc{--st-rule:var(--ash)}
+/* Library: the same header stratum; the count reads like a sample label */
+#library::before{content:"";position:absolute;left:0;top:0;width:1920px;height:196px;background:var(--st-head);border-bottom:1px solid var(--st-rule)}
+#library .count{font-family:var(--f-mono);font-size:15px;letter-spacing:.16em;text-transform:uppercase;top:214px}
+#library .count::before{content:"ESTRATO 01 · ";color:var(--text-2)}
+#library .filters span.cur::after{background:var(--vein)}
+/* Settings: the header stratum over the title; the categories are the core's labels (mono, numbered
+   by order), the vein marks the open one. */
+#settings::before{content:"";position:absolute;left:0;top:0;width:1920px;height:208px;background:#121315;border-bottom:1px solid var(--st-rule)}
+#settings{background:linear-gradient(180deg,#141517 0%,#101113 100%)}
+#settings .cats{counter-reset:cat;gap:18px;font-family:var(--f-mono);font-size:19px;letter-spacing:.08em}
+#settings .cats span{counter-increment:cat}
+#settings .cats span::before{content:counter(cat,decimal-leading-zero) "  ";color:var(--slate)}
+#settings .cats span.cur::before{color:var(--vein)}
+#settings .vr{background:linear-gradient(180deg,var(--vein) 0%,var(--vein-deep) 40%,var(--st-rule) 100%);width:2px;opacity:.7}
+/* Quick menu and power: deep-stratum panels with the vein on their edge */
+#quick .panel{background:var(--st-deep);border-left:2px solid var(--vein)}
+#quick .steam .cap{font-family:var(--f-mono);font-size:14px;letter-spacing:.16em}
+#power .box{background:#121315;border-top:2px solid var(--vein);border-radius:2px}
+#power .h{font-family:var(--f-mono);font-size:16px;letter-spacing:.2em}
+#dlg .box{border-top:2px solid var(--vein)}
+#dlg.solid .box{border-top:0}
+/* Game page: the info strip is the deep stratum, its labels are samples; the vein under the actions */
+#detail::after{content:"";position:absolute;left:0;top:842px;width:1920px;height:238px;background:var(--st-deep);pointer-events:none}
+#detail .info{z-index:1;border-top:3px solid transparent;border-image:linear-gradient(90deg,var(--vein) 0%,var(--vein-deep) 50%,transparent 100%) 1;font-family:var(--f-mono);font-size:15px;letter-spacing:.14em;text-transform:uppercase}
+#detail .info b{font-family:var(--f-text);font-size:22px;letter-spacing:0;text-transform:none}
+#detail .origin{font-family:var(--f-mono);font-size:16px;letter-spacing:.2em;text-transform:uppercase;color:var(--vein)}
+/* Performance and tuning: strata background, profile tiles with a top vein of their own colour */
+#perf,#tuning{background:linear-gradient(180deg,#141517 0%,#141517 196px,#101113 196px,#0e0f10 100%)}
+#perf::before,#tuning::before{content:"";position:absolute;left:0;top:195px;width:1920px;height:1px;background:var(--st-rule)}
+.card.ptile{background:#0e0f10;border-top:3px solid var(--slate);border-radius:2px}
+.card.ptile.cur{border-top-color:var(--vein)}
+#perf .note{font-family:var(--f-text)}
+/* Game screen (a game is open): its label reads like a sample */
+#game .tag{font-family:var(--f-mono);font-size:17px;letter-spacing:.12em}
+/* FIRST RUN and full-screen dialogs: a stratum card on black */
+#dlg.solid .box{background:#121315;border-top:3px solid var(--vein);border-radius:2px;top:220px}
+#dlg.solid .brand{letter-spacing:.55em}
+/* On-screen keyboard (connect.js osk) */
+#dlg .krow{display:flex;gap:10px;justify-content:center}
+#dlg .key{min-width:56px;padding:10px 0;text-align:center;font-family:var(--f-mono);font-size:24px;background:#0e0f10;border-radius:2px}
+#dlg .key.wide{min-width:120px;font-size:16px;letter-spacing:.14em}
+#dlg .okbox{font-family:var(--f-mono);font-size:28px;color:var(--warm);border-bottom:2px solid var(--vein);padding-bottom:8px;min-height:40px;word-break:break-all}
+/* Search results (home.js searchResults) */
+#dlg .slist{display:flex;flex-direction:column;gap:6px;max-height:520px;overflow:hidden}
+#dlg .sres{display:flex;justify-content:space-between;gap:24px;font-size:22px;padding:6px 0}
+#dlg .sres small{font-family:var(--f-mono);font-size:15px;letter-spacing:.08em;color:var(--text-2)}
+#dlg .st-cap{font-family:var(--f-mono);font-size:14px;letter-spacing:.16em;color:var(--vein);margin-top:10px}
+/* GAME LOADING (detail_game.js loadingOn): the game's art slowly settles, its name on the deep stratum
+   and the vein running under it until the game is in front. Flex column: lines never overlap. */
+#game .tag{bottom:auto;top:72px}
+#game.loading .art{opacity:.62;animation:ld-settle 20s var(--e-light) both}
+@keyframes ld-settle{from{transform:scale(1.07)}to{transform:scale(1)}}
+#game .ld{position:absolute;inset:0;opacity:0;visibility:hidden;transition:opacity .9s var(--e-light),visibility 0s linear .9s;
+  background:linear-gradient(90deg,rgba(10,10,11,.94) 0%,rgba(10,10,11,.72) 42%,rgba(10,10,11,.12) 100%),linear-gradient(0deg,rgba(10,10,11,.92) 0%,rgba(10,10,11,0) 50%)}
+#game.loading .ld{opacity:1;visibility:visible;transition:opacity .6s var(--e-light)}
+#game .ld .col{position:absolute;left:96px;bottom:150px;width:1240px;display:flex;flex-direction:column;gap:20px}
+#game .ld-kick{font-family:var(--f-mono);font-size:16px;letter-spacing:.2em;color:var(--vein);text-transform:uppercase}
+#game .ld-title{font-family:var(--f-display);font-weight:300;font-size:72px;line-height:84px;letter-spacing:.24em;color:var(--warm);text-wrap:balance;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+#game .ld-title.long{font-size:52px;line-height:62px;letter-spacing:.18em}
+#game .ld-sub{font-size:22px;line-height:30px;color:var(--text-2)}
+#game .ld-sub:empty,#game .ld-note:empty{display:none}
+#game .ld-bar{position:relative;width:640px;height:4px;margin-top:18px;background:rgba(237,233,227,.18);border-radius:2px;overflow:hidden}
+#game .ld-bar i{position:absolute;left:0;top:0;width:40%;height:100%;background:linear-gradient(90deg,transparent,var(--vein) 50%,transparent);animation:ld-sweep 1.8s ease-in-out infinite;box-shadow:0 0 14px rgba(200,138,58,.5)}
+@keyframes ld-sweep{from{transform:translateX(-100%)}to{transform:translateX(260%)}}
+#game .ld-step{font-family:var(--f-mono);font-size:18px;letter-spacing:.24em;color:var(--warm)}
+#game .ld-note{font-size:20px;line-height:28px;color:var(--text-2);max-width:900px}
+#game .ld-foot{position:absolute;right:96px;bottom:64px;display:flex;align-items:center;gap:12px;font-family:var(--f-display);font-weight:300;font-size:18px;letter-spacing:.22em;color:var(--text-2)}
+#stage.rm #game.loading .art,#stage.rm #game .ld-bar i{animation:none}
+/* Lists inside dialogs (GRÁFICOS, PROPIEDADES, STEAM PREGUNTA): label left, value right, one per line */
+#dlg .sres small{white-space:nowrap}
+#dlg .box > .st-cap{margin:0 0 -14px}
+/* SETUP (power_boot.js): the first start, full screen. Left: the step; right: the core sample of the
+   whole setup, one stratum per step, the vein on the current one. Columns and rows are flex/grid:
+   text wraps inside its column and never reaches the core. */
+#setup{position:absolute;inset:0;z-index:26;background:linear-gradient(180deg,#121315 0%,#121315 196px,#0e0f10 196px,#0b0b0c 100%);opacity:0;visibility:hidden;transition:opacity .8s var(--e-light),visibility 0s linear .8s}
+#setup.on{opacity:1;visibility:visible;transition:opacity .8s var(--e-light)}
+#setup.out{opacity:0}
+#setup .su-head{position:absolute;left:96px;right:96px;top:54px;height:48px;display:flex;justify-content:space-between;align-items:center}
+#setup .su-head .brand{font-size:32px;letter-spacing:.55em}
+#setup .su-count{font-family:var(--f-mono);font-size:16px;letter-spacing:.2em;color:var(--text-2)}
+#setup::before{content:"";position:absolute;left:0;top:195px;width:1920px;height:1px;background:var(--st-rule)}
+#setup .su-body{position:absolute;left:96px;top:250px;width:1000px;max-height:790px;display:flex;flex-direction:column;gap:22px}
+#setup .su-body.in{animation:su-in .7s var(--e-settle) both}
+@keyframes su-in{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+#setup .su-kick{font-family:var(--f-mono);font-size:16px;letter-spacing:.2em;color:var(--text-2)}
+#setup .su-kick b{font-weight:400;color:var(--vein)}
+#setup .su-title{margin:0;font-family:var(--f-display);font-weight:200;font-size:88px;line-height:96px;letter-spacing:.2em;color:var(--warm)}
+#setup .su-lead{margin:0;font-size:26px;line-height:38px;color:var(--text-2);max-width:940px}
+#setup .su-lead b{font-weight:400;color:var(--warm)}
+#setup .su-rows{display:flex;flex-direction:column;margin-top:14px;border-top:1px solid var(--st-rule)}
+#setup .su-row{display:flex;justify-content:space-between;align-items:baseline;gap:32px;padding:16px 0;border-bottom:1px solid var(--st-rule);font-size:24px;color:var(--warm)}
+#setup .su-row span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#setup .su-row b{flex:none;font-family:var(--f-mono);font-weight:400;font-size:18px;letter-spacing:.12em;color:var(--text-2);text-transform:uppercase}
+#setup .su-row.txt-f b{color:var(--vein)}
+#setup .su-row.lr b{color:var(--warm)}
+#setup .su-btns{margin-top:36px;display:flex;gap:72px;font-family:var(--f-display);font-weight:300;font-size:28px;letter-spacing:.24em;color:var(--warm)}
+#setup .su-core{position:absolute;left:1340px;top:250px;width:484px;display:grid;grid-template-rows:repeat(8,1fr);height:740px;border-left:2px solid var(--st-rule)}
+#setup .su-core div{display:flex;align-items:center;gap:24px;padding-left:36px;font-family:var(--f-mono);font-size:17px;letter-spacing:.2em;color:var(--slate);border-bottom:1px solid #1b1c1e;
+  background:linear-gradient(90deg,rgba(43,44,47,.25),transparent 70%);transition:color .6s var(--e-light),background .6s var(--e-light)}
+#setup .su-core div:nth-child(odd){background:linear-gradient(90deg,rgba(43,44,47,.4),transparent 70%)}
+#setup .su-core span{color:inherit;opacity:.7}
+#setup .su-core .done{color:var(--text-2)}
+#setup .su-core .cur{color:var(--warm);margin-left:-2px;border-left:3px solid var(--vein);background:linear-gradient(90deg,rgba(200,138,58,.22),transparent 80%);box-shadow:-6px 0 18px rgba(200,138,58,.35)}
+/* Framing: amber corners at the stage edges, so the person sees where the picture ends on the TV */
+#setup .su-frame{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .4s}
+#setup.framing .su-frame{opacity:1}
+#setup .su-frame i{position:absolute;width:120px;height:120px;border:0 solid var(--vein)}
+#setup .su-frame i:nth-child(1){left:0;top:0;border-left-width:6px;border-top-width:6px}
+#setup .su-frame i:nth-child(2){right:0;top:0;border-right-width:6px;border-top-width:6px}
+#setup .su-frame i:nth-child(3){left:0;bottom:0;border-left-width:6px;border-bottom-width:6px}
+#setup .su-frame i:nth-child(4){right:0;bottom:0;border-right-width:6px;border-bottom-width:6px}
+#stage.rm #setup .su-body.in{animation:none}
+/* Screenshot viewer (home.js shotViewer): the picture fills the stage, caption and buttons on the deep stratum */
+#dlg.viewer .box{left:0;top:0;width:1920px;height:1080px;padding:0;border:0;background:#000;gap:0}
+#dlg.viewer .shot-img{position:absolute;inset:0 0 170px 0;background:center/contain no-repeat}
+#dlg.viewer .shot-cap{position:absolute;left:96px;bottom:64px;display:flex;flex-direction:column;gap:6px;font-size:22px;color:var(--text-2)}
+#dlg.viewer .shot-cap b{font-family:var(--f-display);font-weight:300;font-size:32px;letter-spacing:.2em;color:var(--warm)}
+#dlg.viewer .btns{position:absolute;right:96px;bottom:118px;margin:0}   /* above the button hints */
+.card.cap.shot{width:400px;height:225px;background-size:cover;background-position:center}   /* screenshots are 16:9 */
+/* Settings: the pane ends above the button hints whatever the description's length; the rows take
+   what is left and scroll inside it (the focus keeps the current row in view). */
+#settings .pane{bottom:120px}
+#settings .rows{flex:1 1 auto;min-height:0;max-height:none}
+/* Home context: one line for the name (long names end in «…»), so the line under it never reaches stratum 02 */
+#home .ctx-title{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:1728px}
+#home .ctx .meta{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:1728px}
+
+/* ---- 3.0 ---- names on cards without artwork; a card with only the store's wide picture */
+.card .nm{position:absolute;left:20px;right:20px;bottom:24px;font-family:var(--f-display);font-weight:300;letter-spacing:.2em;font-size:18px;line-height:1.3;color:var(--warm);overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:4;overflow-wrap:anywhere}
+.card.hdr{background-size:100% auto;background-position:center 18%;background-repeat:no-repeat;background-color:#0e0f10}
+.card.wide.vein{border-top:3px solid var(--vein)}
+.card.wide.vein b{color:var(--vein)}
+.card.hero.dim,.card.cap.dim{opacity:.6}
+/* TIENDA: the same strata as the library; wide cards (Steam's store pictures), the name and the price under each */
+#store::before{content:"";position:absolute;left:0;top:0;width:1920px;height:196px;background:var(--st-head);border-bottom:1px solid var(--st-rule)}
+#store .filters{position:absolute;left:96px;top:206px;display:flex;gap:40px;font-size:22px}
+#store .filters span{max-width:420px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#store .filters span.cur{color:var(--warm)}
+#store .filters span.cur::after{content:"";display:block;height:2px;background:var(--vein);margin-top:8px}
+#store .count{position:absolute;right:96px;top:214px;font-family:var(--f-mono);font-size:15px;letter-spacing:.16em;text-transform:uppercase;color:var(--text-2)}
+#store .count::before{content:"ESTRATO 01 · "}
+#store .gclip{position:absolute;left:0;top:276px;width:1920px;height:680px;overflow:hidden}
+#store .grid{position:absolute;left:96px;top:4px;width:1728px;transition:transform var(--d-step) var(--e-step)}
+#store .scard{position:absolute;width:400px;height:187px;background-color:#0e0f10}
+#store .scard .off{position:absolute;left:0;top:0;padding:6px 12px;background:var(--vein);color:#0a0a0b;font-family:var(--f-mono);font-size:16px;letter-spacing:.06em;border-radius:4px 0 4px 0}
+#store .scard .cap2{position:absolute;left:0;right:0;top:calc(100% + 26px);display:flex;flex-direction:column;gap:4px}
+#store .scard .cap2 b{font-weight:400;font-size:20px;line-height:26px;color:var(--warm);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#store .scard .cap2 i{font-style:normal;font-family:var(--f-mono);font-size:15px;line-height:20px;letter-spacing:.08em;color:var(--text-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#store .scard .cap2 s{margin-right:12px;opacity:.7}
+#store .empty{position:absolute;left:96px;top:300px;font-size:24px;color:var(--text-2);max-width:1400px}
+#store .sel{position:absolute;left:96px;top:994px;font-size:20px;color:var(--text-2);max-width:900px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* a game's page in the store reuses the game page; its description */
+#detail .stats.about{font-size:calc(22px * var(--ts));line-height:1.45;max-width:900px;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}
+#detail .stats.about:empty{display:none}
+/* Steam's own window is coming in front (D-34) */
+#sfront{position:absolute;inset:0;z-index:44;background:#0a0a0b;visibility:hidden;opacity:0;transition:opacity var(--d-enter) var(--e-light),visibility 0s linear var(--d-enter)}
+#sfront.on{visibility:visible;opacity:1;transition:opacity var(--d-enter) var(--e-light),visibility 0s}
+#sfront .sf-box{position:absolute;left:96px;top:300px;width:1100px;display:flex;flex-direction:column;gap:26px;border-top:3px solid var(--vein);padding-top:40px}
+#sfront .st-cap{font-family:var(--f-mono);font-size:16px;letter-spacing:.2em;color:var(--vein)}
+#sfront h2{margin:0;font-family:var(--f-display);font-weight:200;font-size:64px;line-height:76px;letter-spacing:.2em;color:var(--warm)}
+#sfront p{margin:0;font-size:26px;line-height:38px;color:var(--text-2);max-width:940px}
+#sfront .sf-foot{display:flex;gap:14px;align-items:center;font-size:22px;color:var(--warm);margin-top:14px}
+#sfront .sf-foot .g{border-color:var(--vein);color:var(--vein);padding:0 12px}
+/* the QR code for the phone */
+#dlg .qrrow{display:flex;gap:40px;align-items:flex-start}
+#dlg .qrrow .qr{flex:none;border-radius:4px}
+#dlg .qrrow div{display:flex;flex-direction:column;gap:18px;min-width:0}
+#dlg .qrrow .url{font-family:var(--f-mono);font-size:17px;line-height:24px;letter-spacing:.04em;color:var(--warm);word-break:break-all}
+/* Messages have their own lane, top right under the clock: they never cover the bottom row
+   (Home's system row, the library's and the store's selection line were under them before) */
+#toast{left:auto;right:96px;top:136px;max-width:760px;text-align:right;line-height:28px;transform:translateY(-8px)}
+/* Home with large text (Ajustes → Accesibilidad, up to 1.5×): the game's name and its line grow up to
+   1.3× and the block starts higher, so its last line never reaches the label of stratum 02 */
+#home .ctx{top:calc(700px - (var(--ts) - 1) * 36px);gap:6px}
+#home .ctx-title{font-size:calc(40px * min(var(--ts), 1.3))}
+#home .ctx .meta{font-size:calc(20px * min(var(--ts), 1.3))}

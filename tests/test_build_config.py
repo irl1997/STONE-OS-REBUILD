@@ -61,34 +61,34 @@ def test_40_cu_module_is_required():
     assert '[[ "${CU40_STATUS}" == ok ]] || { echo "ERROR: 40 CU module not built' in build
     assert 'echo "ERROR: stone-cu-verify not built"; exit 1' in build
     assert "systemctl enable stone-cu40-guard.service" in build
+    # D-29: the STONE session is the automatic one, with its boot guard
+    assert "Session=gamescope-session-stone.desktop\" > /etc/sddm.conf.d/zz-stone-session.conf" in build
+    assert "systemctl enable stone-session-guard.service stone-blackbox.service" in build
+    assert 'STONE_SESSION_DEFAULT=\\"on (sudo stone-session default off)\\"' in build
 
 
-def test_steam_game_mode_is_the_interface():
-    # D-34: Bazzite's automatic session stays; STONE writes no session of its own.
-    build = _read("image", "build_files", "build.sh")
-    assert "sddm.conf.d" not in build and "User=" not in build
+def test_image_ships_f2_without_the_rc23_game_mode_autostart():
+    # F2 (D-21): STONE Home runs in its own session; rc23's autostart through a Steam shortcut in
+    # Game Mode (drop-in on gamescope-session-plus@ and its user units) must not come back.
     tree = []
     for root, _, files in os.walk(os.path.join(REPO, "system")):
         tree += [os.path.relpath(os.path.join(root, f), REPO) for f in files]
-    for gone in ("stone-home", "stone-session", "gamescope-session-stone", "sessions.d/stone"):
-        assert not [p for p in tree if gone in p], (gone, tree)
+    for rc23 in ("gamescope-session-plus@.service.d", "stone-home-autostart", "stone-home-register"):
+        assert not [p for p in tree if rc23 in p], (rc23, tree)
+    build = _read("image", "build_files", "build.sh")
+    assert 'STONE_PHASE=\\"1.0\\"' in build
+    for step in ("cp -a /ctx/apps/stone-home/stone_home /usr/lib/stone/stone_home",
+                 "cp -a /ctx/modules/display/stone_display /usr/lib/stone/stone_display",
+                 "cp -a /ctx/modules/games/stone_games /usr/lib/stone/stone_games",
+                 "dnf5 -y install webkitgtk6.0 gtk4 gobject-introspection chromium",
+                 "test -s /usr/share/gamescope-session-plus/sessions.d/stone"):
+        assert step in build, step
+    # D-29: the build writes one SDDM file, its own, with the session only (the user stays Bazzite's)
+    import re
+    assert re.findall(r"/etc/sddm\.conf\.d/[\w.-]+", build) == ["/etc/sddm.conf.d/zz-stone-session.conf"]
+    assert "User=" not in build
     assert "cp -a /ctx/services/stoned/stoned /usr/lib/stone/stoned" in build
     assert "systemctl enable stoned-recover.service stoned.service" in build
-    assert "systemctl enable stone-console-setup.service stone-blackbox.service" in build
-
-
-def test_console_pieces_are_pinned_and_checked():
-    env = _read("image", "config", "build.env")
-    assert re.search(r"^DECKY_VERSION=v\d+\.\d+\.\d+$", env, re.M)
-    assert re.search(r"^DECKY_SHA256=[0-9a-f]{64}$", env, re.M)
-    sha = re.search(r"^CSS_LOADER_SHA256=([0-9a-f]{64})$", env, re.M).group(1)
-    assert re.search(rf"^CSS_LOADER_URL=https://\S+/{sha}\.zip$", env, re.M)
-    build = _read("image", "build_files", "build.sh")
-    assert 'echo "${DECKY_SHA256}  ${CONSOLE}/PluginLoader" | sha256sum -c -' in build
-    assert 'echo "${CSS_LOADER_SHA256}  /tmp/css-loader.zip" | sha256sum -c -' in build
-    container = _read("image", "Containerfile")
-    assert "npm ci" in container and "npm run typecheck" in container and "from=plugin" in container
-    assert '"root"' in _read("plugins", "stone", "plugin.json")
 
 
 def test_no_sleep_and_no_hhd():
@@ -108,7 +108,7 @@ def test_version_is_valid():
 def test_executable_bits():
     for rel in ("image/build_files/build.sh", "image/build_files/check-kernel.sh", "image/build_files/governor-config.py",
                 "image/build_files/governor-contract.sh", "image/build_files/cu40/build-amdgpu.sh",
-                "image/build_files/cu40/patch-gfx10.py", "system/usr/bin/stone-cu40", "system/usr/libexec/stone/stone-console-setup", "scripts/validate.sh",
+                "image/build_files/cu40/patch-gfx10.py", "system/usr/bin/stone-cu40", "scripts/validate.sh",
                 "scripts/test-all.sh", "scripts/release-info.sh", "scripts/build-local.sh", "scripts/build-iso-local.sh"):
         need(os.path.exists(os.path.join(REPO, rel)), f"{rel} not written yet")
         assert os.access(os.path.join(REPO, rel), os.X_OK), rel

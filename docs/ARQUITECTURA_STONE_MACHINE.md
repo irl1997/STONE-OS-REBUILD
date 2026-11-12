@@ -3,8 +3,6 @@
 Versión: 1.2 · Fecha: 2026-11-07 · Resuelve P-14 e integra el prompt maestro (D-25).
 Plataforma única: AMD BC-250 (D-01). Este documento describe el **producto final**. Las fases F0–F9 son etapas de construcción, no recortes del alcance.
 
-> **Actualización (D-34, 2026-11-08):** STONE Home, la sesión STONE, STONE DISPLAY y STONE OPTIMIZED se retiraron en 2.0.0. La interfaz es la de Steam en Game Mode, con el tema y el plugin STONE sobre Decky Loader. Siguen vigentes la imagen, `stoned`, 40 CU y el regulador.
-
 ## Cómo leer este documento
 
 Cada afirmación lleva su grado de certeza:
@@ -620,11 +618,13 @@ Reglas:
 | V-17 | Cuánto se puede personalizar visualmente el instalador Anaconda | Marca STONE en lo que Anaconda permita; si no basta, evaluar un instalador propio en F9 | Investigación en F9 |
 | V-18 | Actualizaciones dentro de la sesión STONE: qué temporizador usa Bazzite 44 (`uupd.timer`), si sigue la imagen de STONE en GHCR y cómo buscar una actualización a mano sin la interfaz de Steam | Home lee el temporizador por D-Bus (sólo lectura) y ofrece reiniciar cuando hay una versión preparada; la búsqueda manual queda para cuando se sepa si hace falta un método privilegiado en `stoned` | Prueba en placa (T-UPD-01) |
 | V-19 | Las filas «Abrir en Steam» de Ajustes dentro de la sesión STONE, donde la interfaz de Steam no está al frente | Abrir el panel de Steam y ponerlo delante con el mismo control de foco que los juegos; si no es posible, sustituir cada fila por una pantalla propia | Prueba en placa (T-SESS-08) |
+| V-20 | Ventanas propias de Steam en la sesión STONE (inicio de sesión, tienda y pago). En 1.0.0-rc5 no se veían: Gamescope solo muestra ventanas con identificador de aplicación y, con `steam -silent`, las de Steam no lo tienen. Cierra en la práctica V-15 (inicio de sesión) y V-19 | **Steam al frente (D-34, M24 y M08):** Home pide la ventana (`STONE_STEAM_FRONT` en la raíz de X); el supervisor marca las ventanas de Steam, nombra la que se muestra y devuelve la pantalla a Home. Big Picture para la tienda. Plan B: la interfaz de Modo Juego de Steam toma la sesión y el supervisor la recupera. La biblioteca se vigila y se guarda entre arranques (M13); la tienda se lee de la API pública de Steam | Prueba en placa (T-STEAM-11 a 14, T-LIB-11 a 13, T-STORE-01) |
 
 ## Registro de cambios
 
 | Versión | Fecha | Cambio |
 | --- | --- | --- |
+| 1.3 | 2026-11-11 | 3.0.0-rc1 (D-34): V-20, Steam al frente y plan B en M24; biblioteca vigilada, tienda y carátulas en M13 y M08; Switch y actualizador en M14; arranque reordenado en M02 y M07. Detalle en `docs/AUDITORIA_3_0.md` |
 | 1.0 | 2026-11-06 | Primera especificación integral (P-14), pendiente de aprobación |
 | 1.2 | 2026-11-07 | Prompt maestro integrado (D-20 a D-25): A6 sustituido por la sesión propia (M24); A11 con vocabulario único; A13 nuevo; módulos M17–M24 (IMAGE, NEURAL RENDER, HEALTH, STORAGE, INSTALLER, FIRST RUN, EXPERIENCE ENGINE, SESSION); LIBRARY en M13 y AUDIO en M16; M02, M07, M08 y M10 actualizados (métricas de arranque, Visual Engine, ciclo de vida, Steam en segundo plano, generación de fotogramas con condiciones); fases F2–F9 reordenadas hacia 1.0 RC; bloqueos P0; V-12 a V-17 |
 | 1.1 | 2026-11-06 | Configuración de referencia 8 núcleos / 40 CU (D-16, D-17); principio A12 sin cifras inventadas (D-18); M04, M10 y M11 rediseñados para esa configuración; F0 incluye el módulo de 40 CU; V-02 cerrado |
