@@ -730,9 +730,54 @@ body.dormant *,body.dormant *::before,body.dormant *::after{animation-play-state
 #detail .primary{background:var(--glass-fill);border-color:var(--glass-edge)}
 #game .ld-bar{height:3px;border-radius:2px;background:rgba(255,255,255,.14)}
 #game .ld-bar i{background:linear-gradient(90deg,rgba(255,255,255,0),#fff 50%,rgba(255,255,255,0));box-shadow:0 0 14px rgba(255,255,255,.7)}
+
+/* ---- LIQUID GLASS: the section bar and the status are a lens. What is behind them bends at their edges
+   (#lens, lens.html: an SVG displacement map Chromium applies to the backdrop), a bright rim catches the
+   light, and the band's faceted stone shows faintly inside the glass. ---- */
+#stage #tabs#tabs,#stage #status#status{isolation:isolate;border:0;
+  background:linear-gradient(180deg,rgba(255,255,255,.2) 0%,rgba(255,255,255,.05) 52%,rgba(255,255,255,.1) 100%),rgba(12,12,16,.16);
+  -webkit-backdrop-filter:blur(3px) saturate(190%) brightness(1.08);
+  backdrop-filter:blur(3px) saturate(190%) brightness(1.08);
+  backdrop-filter:url(#lens) blur(3px) saturate(190%) brightness(1.08);
+  box-shadow:inset 1.5px 1.5px 1px rgba(255,255,255,.62),inset -1px -1px 1px rgba(255,255,255,.26),inset 0 0 20px rgba(255,255,255,.12),0 12px 34px rgba(0,0,0,.32)}
+#stage #tabs#tabs::before,#stage #status#status::before{content:"";position:absolute;inset:0;border-radius:inherit;z-index:-1;pointer-events:none;
+  background:var(--roca) center/cover;opacity:.2;mix-blend-mode:soft-light}
+#stage #tabs#tabs::after,#stage #status#status::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  background:radial-gradient(120% 150% at 16% -34%,rgba(255,255,255,.36) 0%,rgba(255,255,255,0) 46%)}
+#tabs span,#status>*{position:relative;z-index:1}
+#tabs span,#status{text-shadow:0 1px 8px rgba(0,0,0,.45)}
+#tabs span.cur{background:rgba(255,255,255,.94);text-shadow:none;box-shadow:inset 0 1px 0 #fff,inset 0 -2px 6px rgba(0,0,0,.08),0 4px 16px rgba(0,0,0,.28)}
+#stage.lite #tabs#tabs,#stage.lite #status#status{-webkit-backdrop-filter:none;backdrop-filter:none;background:linear-gradient(180deg,rgba(64,66,76,.92),rgba(28,30,38,.92))}
+
+/* ---- room to breathe: normal tracking on bold titles, taller lines, more space between blocks ---- */
+#detail .col{bottom:556px;gap:20px}
+#detail h1{letter-spacing:-.005em;line-height:90px}
+#detail h1.long{letter-spacing:-.003em;line-height:68px}
+#detail .stats{line-height:1.55}
+#detail .stats.exp{margin-top:.5em!important}
+#detail .primary{top:574px}
+#detail .second{top:706px}
+#detail .info{top:852px}
+.ctx-title{letter-spacing:-.005em;line-height:1.25}
+#home .ctx{gap:12px}
+#game .ld-title{letter-spacing:-.005em;line-height:98px}
+#game .ld-title.long{letter-spacing:-.003em;line-height:72px}
+#setup .su-title{letter-spacing:-.005em;line-height:100px}
+#settings .ttl,.pttl{letter-spacing:-.005em}
+#stage .card.wide b{letter-spacing:0}
+#dlg p{line-height:34px}
+#dlg .slist{gap:16px}
+
+/* ---- lists that clip what overflows give the chosen row's white panel its room on each side ---- */
+#dlg .slist{padding:8px 18px;margin:-8px -18px}
+#tuning .tclip{left:74px;width:1044px}
+#tuning .trows{left:22px}
 </style>
 
-<div id="app">
+<!-- LIQUID GLASS (cristal.css): the lens of the section bar and the status. Chromium bends what is behind them
+     through this displacement map: a horizontal ramp in red and a vertical one in green, neutral in the middle,
+     so only the edges refract. Drawing modes without it (WebKit, «Ligeros») keep the plain blur. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><filter id="lens" x="0" y="0" width="1" height="1" primitiveUnits="objectBoundingBox" color-interpolation-filters="sRGB"><feImage href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22 preserveAspectRatio=%22none%22%3E%3ClinearGradient id=%22g%22 x1=%220%22 y1=%220%22 x2=%221%22 y2=%220%22%3E%3Cstop offset=%220%22 stop-color=%22%23ff0000%22/%3E%3Cstop offset=%22.16%22 stop-color=%22%23800000%22/%3E%3Cstop offset=%22.84%22 stop-color=%22%23800000%22/%3E%3Cstop offset=%221%22 stop-color=%22%23000000%22/%3E%3C/linearGradient%3E%3Crect width=%22100%22 height=%22100%22 fill=%22url%28%23g%29%22/%3E%3C/svg%3E" x="0" y="0" width="1" height="1" preserveAspectRatio="none" result="mx"/><feImage href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22 preserveAspectRatio=%22none%22%3E%3ClinearGradient id=%22g%22 x1=%220%22 y1=%220%22 x2=%220%22 y2=%221%22%3E%3Cstop offset=%220%22 stop-color=%22%2300ff00%22/%3E%3Cstop offset=%22.3%22 stop-color=%22%23008000%22/%3E%3Cstop offset=%22.7%22 stop-color=%22%23008000%22/%3E%3Cstop offset=%221%22 stop-color=%22%23000000%22/%3E%3C/linearGradient%3E%3Crect width=%22100%22 height=%22100%22 fill=%22url%28%23g%29%22/%3E%3C/svg%3E" x="0" y="0" width="1" height="1" preserveAspectRatio="none" result="my"/><feComposite in="mx" in2="my" operator="arithmetic" k1="0" k2="1" k3="1" k4="0" result="map"/><feDisplacementMap in="SourceGraphic" in2="map" scale="0.08" xChannelSelector="R" yChannelSelector="G"/></filter></svg><div id="app">
   <div id="viewport">
     <div id="stage" tabindex="0" aria-label="Pantalla de STONE MACHINE. Usa las flechas, Enter y Escape, o un mando.">
       <div id="bgA" class="bg"></div><div id="bgB" class="bg"></div><div id="veil" class="none"></div>
