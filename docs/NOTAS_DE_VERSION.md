@@ -1,3 +1,37 @@
+# STONE OS (rebuild) 3.1.0-rc1
+
+Llega **Cristal**, el diseño nuevo de STONE Home, hecho con los materiales de la STONE MACHINE. Es una actualización en línea: una consola instalada desde una ISO candidata (rc) sigue el canal `rc` y la recibe sola. Se aplica al reiniciar.
+
+**Todo está probado en software (CODE TESTED): pruebas automáticas y simulación de la interfaz. Nada de Cristal se ha visto todavía en la BC-250 ni en un televisor.** Las pruebas de placa nuevas están en `hardware/validation/matrix.yaml` (T-HOME-03 a 05 y T-UPD-02). Decisión D-35.
+
+## Cómo llega a la consola
+
+- La consola busca versiones nuevas por su cuenta. Ajustes → Actualizaciones → Comprobación automática dice cuándo fue la última vez y cuándo será la próxima.
+- Cuando la versión nueva está descargada, Ajustes → Actualizaciones muestra «Actualización lista: 3.1.0-rc1» y la opción **Reiniciar y actualizar**.
+- Solo cambia STONE Home. Como la imagen se trocea por paquetes (D-32), la descarga debería ser mucho menor que la imagen completa. El tamaño real no está medido: lo registra T-UPD-02.
+- Si algo sale mal, la versión anterior queda guardada: en el menú de arranque, la segunda entrada.
+
+## Diseño Cristal
+
+- **Los materiales de la consola.** Los paneles son de cristal negro brillante, como el cuerpo de la STONE MACHINE, con su reflejo cortado en diagonal. La barra de secciones y el estado llevan la banda de piedra facetada. Lo que eliges se vuelve blanco, como el panel superior. La línea de luz blanca va bajo el juego elegido y bajo el logotipo.
+- **Liquid Glass.** La barra de secciones y el estado curvan lo que tienen detrás, como una lente.
+- **La tipografía del logotipo.** Jost en sus pesos finos: títulos, pestañas y botones en mayúsculas finas y espaciadas, y el texto que se lee en Jost normal. Las cifras que se comparan (temperatura, MHz) siguen en letra monoespaciada.
+- **El color sale del juego.** El acento de la interfaz se toma del arte del juego elegido. Las pantallas sin arte usan la luz de estudio del retrato de la consola, teñida con ese color.
+- **Carátulas de los apartados.** Biblioteca, Tienda, Buscar juegos, Sorpréndeme, Descargas, Emuladores, Capturas e Iniciar sesión llevan la banda de piedra, su símbolo en blanco y la línea de luz. Las dibuja la propia interfaz, sin imágenes.
+- **Las carátulas de los juegos van sin nombre encima.** Un juego sin arte muestra la consola en miniatura.
+- **Más aire.** La ficha del juego, Ajustes y los menús tienen más espacio entre textos. El menú de Ajustes es simétrico y sin números, y las listas ya no cortan el resaltado del elemento elegido.
+- **Contraste sobre arte claro.** La sombra detrás del texto de Inicio y de la ficha del juego es más profunda arriba y a la izquierda, y el texto lleva una sombra suave propia. El arte conserva su color.
+- La fila «La máquina» de Inicio desaparece.
+
+## Efectos de cristal: normales o ligeros
+
+Ajustes → Pantalla → Efectos de cristal. «Ligeros» dibuja los mismos paneles sin desenfoque ni lente, y gasta menos GPU. Sin aceleración por GPU, STONE usa siempre los ligeros. Cuánto cuesta el cristal en la BC-250 no está medido: lo dice T-HOME-03.
+
+## Límites
+
+- La lente depende de Chromium (`backdrop-filter` con un filtro SVG). Si la versión de Chromium de la consola no la dibuja, queda el desenfoque normal.
+- La legibilidad a distancia de los pesos finos de Jost no está comprobada en un televisor: es T-HOME-04.
+
 # STONE OS (rebuild) 3.0.0-rc1
 
 Vuelve STONE Home, la interfaz propia de la consola (la de 1.0.0-rc5), con lo que le faltaba: la biblioteca de tu cuenta, una tienda para comprar y un arranque más corto. Auditoría completa en `docs/AUDITORIA_3_0.md`.

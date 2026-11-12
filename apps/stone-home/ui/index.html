@@ -10,6 +10,7 @@
 @font-face{font-family:Jost;font-style:normal;font-weight:300;font-display:block;src:url(fonts/jost-latin-300-normal.woff2) format("woff2")}
 @font-face{font-family:Inter;font-style:normal;font-weight:400;font-display:block;src:url(fonts/inter-latin-400-normal.woff2) format("woff2")}
 @font-face{font-family:Inter;font-style:normal;font-weight:500;font-display:block;src:url(fonts/inter-latin-500-normal.woff2) format("woff2")}
+@font-face{font-family:Jost;font-style:normal;font-weight:400;font-display:block;src:url(fonts/jost-latin-400-normal.woff2) format("woff2")}
 @font-face{font-family:"IBM Plex Mono";font-style:normal;font-weight:400;font-display:block;src:url(fonts/ibm-plex-mono-latin-400-normal.woff2) format("woff2")}
 html,body{margin:0;padding:0}
 [hidden]{display:none!important}
@@ -449,9 +450,431 @@ body.dormant *,body.dormant *::before,body.dormant *::after{animation-play-state
 #home .ctx{top:calc(700px - (var(--ts) - 1) * 36px);gap:6px}
 #home .ctx-title{font-size:calc(40px * min(var(--ts), 1.3))}
 #home .ctx .meta{font-size:calc(20px * min(var(--ts), 1.3))}
+/* ---------- CRISTAL ----------
+   The interface made of the STONE MACHINE's own materials: its glossy black body (panels of dark,
+   blurred glass with the body's sharp reflection), the faceted stone band that wraps it (the section
+   bar and the status), its white panel (what is chosen turns white) and the white light line on its
+   front (under the chosen game, under the wordmark, in the boot and the loading bar).
+   Type: the wordmark's own Jost and its light weights: titles and labels in thin, widely spaced capitals
+   like the wordmark, text in regular. Behind them,
+   the game's own art fills the screen; screens without art get the studio light of the console's
+   portrait, tinted with the colour of the last game. Titles in sentence case; the STONE wordmark keeps its thin, wide Jost. Loaded after ESTRATOS: it restyles, it never removes. #stage.lite
+   (Ajustes → Pantalla → Efectos de cristal: Ligeros, and always without GPU) draws it without blur. */
+#stage{
+  --accent:#f0a23b;
+  --accent-glow:color-mix(in srgb,var(--accent) 55%,transparent);
+  --accent-deep:color-mix(in srgb,var(--accent) 22%,#05060a);
+  --plate:#f5f5f7; --ink:#0b0c10;
+  --warm:#f5f5f7; --text-2:rgba(235,235,245,.72); --slate:rgba(235,235,245,.42); --shale:rgba(255,255,255,.14);
+  --horizon:rgba(255,255,255,.14); --st-rule:rgba(255,255,255,.12); --vein:var(--accent); --ember:var(--accent);
+  --glass-fill:linear-gradient(155deg,rgba(255,255,255,.17) 0%,rgba(255,255,255,.06) 55%,rgba(255,255,255,.09) 100%);
+  --glass-edge:rgba(255,255,255,.22);
+  --glass-shine:inset 0 1px 0 rgba(255,255,255,.42),inset 0 -1px 0 rgba(255,255,255,.07),inset 0 0 0 1px rgba(255,255,255,.04);
+  --glass-drop:0 22px 56px rgba(2,3,8,.42);
+  --blur:blur(30px) saturate(185%);
+  --r-card:20px; --r-panel:30px;
+  --f-display:Jost,Futura,"Century Gothic",sans-serif;
+  --aurora:radial-gradient(ellipse 70% 62% at 10% 6%,rgba(124,58,237,.58) 0%,rgba(124,58,237,0) 62%),
+    radial-gradient(ellipse 62% 56% at 90% 16%,rgba(14,165,233,.46) 0%,rgba(14,165,233,0) 62%),
+    radial-gradient(ellipse 78% 64% at 72% 104%,rgba(240,162,59,.34) 0%,rgba(240,162,59,0) 60%),
+    radial-gradient(ellipse 56% 60% at 16% 98%,rgba(236,72,153,.30) 0%,rgba(236,72,153,0) 62%),
+    linear-gradient(160deg,#100c26 0%,#0a1028 46%,#06070d 100%);
+  background:#06070d;
+}
+#stage.hc{--text-2:#ffffff;--glass-edge:rgba(255,255,255,.6)}
+/* the wordmark keeps its stone voice */
+#stage .brand,#bootword{font-family:Jost,Futura,"Century Gothic",sans-serif}
+
+/* ---- glass ---- */
+#stage :is(#tabs,#status,.card.tile,.card.wide,.card.ptile,#home .strata>div,#quick .panel,#power .box,#dlg .box,
+  #settings .cats,#settings .pane,.pbox,#toast,#sfront .sf-box,#detail .info){
+  background:var(--glass-fill);-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);
+  border:1px solid var(--glass-edge);border-image:none;box-shadow:var(--glass-shine),var(--glass-drop)}
+#stage.lite :is(#tabs,#status,.card.tile,.card.wide,.card.ptile,#home .strata>div,#quick .panel,#power .box,#dlg .box,
+  #settings .cats,#settings .pane,.pbox,#toast,#sfront .sf-box,#detail .info){
+  -webkit-backdrop-filter:none;backdrop-filter:none;background:linear-gradient(155deg,rgba(44,46,62,.94),rgba(22,24,34,.94))}
+
+/* ---- backgrounds: the art shows, a soft shade only where text sits ---- */
+#veil{background:linear-gradient(180deg,rgba(5,6,10,.5) 0%,rgba(5,6,10,0) 24%),linear-gradient(0deg,rgba(5,6,10,.88) 0%,rgba(5,6,10,.4) 38%,rgba(5,6,10,0) 62%)}
+#veil.home{background:linear-gradient(180deg,rgba(5,6,10,.55) 0%,rgba(5,6,10,0) 22%),
+  linear-gradient(90deg,rgba(5,6,10,.42) 0%,rgba(5,6,10,0) 40%),
+  linear-gradient(0deg,var(--accent-deep) 0%,rgba(5,6,10,.78) 16%,rgba(5,6,10,.34) 42%,rgba(5,6,10,0) 64%)}
+#veil.side{background:linear-gradient(90deg,rgba(5,6,10,.86) 0%,rgba(5,6,10,.55) 38%,rgba(5,6,10,0) 70%),
+  linear-gradient(0deg,rgba(5,6,10,.82) 0%,rgba(5,6,10,0) 36%)}
+.st-head{background:none;border-bottom:0}
+.st-deep{background:none}
+#home .horizon,#settings .vr{display:none}
+#library::before,#store::before,#settings::before,#perf::before,#tuning::before,#setup::before,#detail::after{display:none}
+#settings,#perf,#tuning,#setup{background:var(--aurora)}
+
+/* ---- header: wordmark, the sections as a glass pill, the status capsule ---- */
+#hdr{top:42px;height:60px}
+#hdr .brand{font-size:30px;letter-spacing:.5em;text-shadow:0 2px 18px rgba(0,0,0,.35)}
+#status{padding:12px 22px;border-radius:999px;gap:22px;color:var(--warm)}
+#status svg{stroke:var(--warm)}
+#tabs{left:50%;top:42px;transform:translateX(-50%);display:flex;gap:4px;padding:6px;border-radius:999px;
+  font-family:var(--f-text);font-weight:400;font-size:19px;letter-spacing:.01em}
+#tabs span{padding:12px 26px;border-radius:999px;color:var(--text-2);transition:background var(--d-step) var(--e-step),color var(--d-step) var(--e-step)}
+#tabs span.cur{background:var(--plate);color:var(--ink);box-shadow:0 6px 18px rgba(0,0,0,.25)}
+
+/* ---- focus: the line is the boot's; everything else lifts or turns into a white pill ---- */
+#line{opacity:0}
+#line.boot{opacity:1;box-shadow:0 0 22px rgba(255,255,255,.55)}
+#stage [data-f]:not(.card):not(.srow):not(.key):not(.primary){padding:8px 18px;margin:-8px -18px;border-radius:14px;
+  transition:background var(--d-step) var(--e-step),color var(--d-step) var(--e-step),box-shadow var(--d-step) var(--e-step)}
+#stage [data-f].f:not(.card):not(.srow):not(.key):not(.primary){background:var(--plate);color:var(--ink);
+  box-shadow:0 10px 28px rgba(0,0,0,.32),0 0 26px var(--accent-glow)}
+#stage [data-f].f:not(.card):not(.srow) :is(small,b,i,span,svg){color:inherit}
+#stage [data-f].f:not(.card):not(.srow) svg{stroke:currentColor}
+#home .sys [data-f],#library .filters [data-f],#store .filters [data-f],#detail .second [data-f],#dlg .btns [data-f]{border-radius:999px}
+#library .filters span.cur::after,#store .filters span.cur::after{display:none}
+#library .filters span.cur:not(.f),#store .filters span.cur:not(.f){color:var(--warm);background:rgba(255,255,255,.14)}
+
+/* cards: rounded, a glass sheen, and a white ring with the game's glow when chosen */
+#stage .card{border-radius:var(--r-card);background-color:rgba(255,255,255,.08);
+  transition:transform var(--d-settle) var(--e-settle),translate var(--d-settle) var(--e-settle),box-shadow var(--d-settle) var(--e-settle)}
+#stage .card::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  background:linear-gradient(150deg,rgba(255,255,255,.2) 0%,rgba(255,255,255,0) 34%);box-shadow:inset 0 0 0 1px rgba(255,255,255,.14)}
+#stage .card.f{box-shadow:0 0 0 4px rgba(255,255,255,.96),0 0 44px 8px var(--accent-glow),0 28px 64px rgba(0,0,0,.55);z-index:2}
+#stage .card.f::after{box-shadow:inset 0 0 0 1px rgba(255,255,255,.4)}
+#stage .card.dim{opacity:.62}
+#stage .card.hero.dim,#stage .card.cap.dim{opacity:.72}
+.card .nm{font-family:var(--f-text);font-weight:400;letter-spacing:.01em;font-size:22px;line-height:1.2;
+  text-shadow:0 2px 12px rgba(0,0,0,.55);-webkit-line-clamp:3}
+.card .run{font-family:var(--f-text);font-weight:400;font-size:14px;letter-spacing:.1em;color:var(--ink);background:var(--plate);
+  padding:6px 12px;border-radius:999px}
+#stage .card.tile{font-family:var(--f-text);font-weight:400;font-size:20px;letter-spacing:.01em;color:var(--warm);padding:22px}
+#stage .card.wide{padding:26px}
+#stage .card.wide b{font-family:var(--f-text);font-weight:400;font-size:24px;letter-spacing:.01em}
+#stage .card.wide span{color:var(--text-2)}
+#stage .card.wide.vein{border-top:1px solid var(--glass-edge);background:linear-gradient(155deg,color-mix(in srgb,var(--accent) 34%,transparent),rgba(255,255,255,.06))}
+#stage .card.wide.vein b{color:var(--warm)}
+
+/* ---- section labels and text ---- */
+.st-label{font-family:var(--f-text);font-weight:400;font-size:19px;letter-spacing:.01em;text-transform:none;color:var(--text-2)}
+.st-label b{font-weight:400;font-size:26px;color:var(--warm);margin-right:6px}
+#home .st-label.l1{top:212px}
+.kicker{font-family:var(--f-text);font-weight:400;font-size:16px;letter-spacing:.12em;color:var(--text-2)}
+.kicker .now{color:var(--accent)}
+.ctx-title{font-family:var(--f-text);font-weight:400;letter-spacing:.01em;text-transform:none;font-size:calc(46px * min(var(--ts),1.3))}
+#home .ctx{gap:8px}
+
+/* the machine: four glass widgets */
+#home .st-label.l2{top:840px}
+#home .strata{top:878px;gap:20px}
+#home .strata>div{padding:16px 22px;border-radius:22px;gap:6px}
+#home .strata span{font-family:var(--f-text);font-weight:400;font-size:13px;letter-spacing:.12em;color:var(--text-2)}
+#home .strata b{font-family:var(--f-text);font-weight:400;font-size:26px;letter-spacing:.01em}
+#home .strata b.warn{color:#ffd60a}
+#home .sys{top:990px;gap:48px;font-family:var(--f-text);font-weight:400;letter-spacing:.01em;font-size:19px}
+
+/* ---- library and store ---- */
+#library .count,#store .count{font-family:var(--f-text);font-weight:400;font-size:17px;letter-spacing:.02em;text-transform:none}
+#library .count::before,#store .count::before{content:none}
+#library .filters,#store .filters{font-weight:400}
+#store .scard .off{background:#30d158;color:#03200d;font-family:var(--f-text);font-weight:400;border-radius:var(--r-card) 0 14px 0}
+#store .scard .cap2 b{font-weight:400}
+#store .scard .cap2 i{font-family:var(--f-text);font-weight:400;letter-spacing:.01em}
+#store .scard .cap2 s{opacity:.55}
+
+/* ---- a game's page (also the store's): bold title, white primary pill, glass facts ---- */
+#detail .origin{font-family:var(--f-text);font-weight:400;font-size:15px;letter-spacing:.14em;color:var(--accent);text-shadow:0 1px 10px rgba(0,0,0,.4)}
+#detail h1{font-family:var(--f-text);font-weight:400;font-size:76px;line-height:84px;letter-spacing:.01em;text-shadow:0 4px 30px rgba(0,0,0,.4)}
+#detail h1.long{font-size:56px;line-height:64px;letter-spacing:.01em}
+#detail .stats{color:rgba(245,245,247,.82)}
+#detail .primary{top:552px;padding:16px 46px;border-radius:999px;font-family:var(--f-text);font-weight:400;font-size:28px;line-height:36px;
+  letter-spacing:.06em;color:var(--warm);background:rgba(255,255,255,.16);border:1px solid var(--glass-edge);
+  -webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);box-shadow:var(--glass-shine);
+  transition:background var(--d-step) var(--e-step),color var(--d-step) var(--e-step),transform var(--d-settle) var(--e-settle),box-shadow var(--d-step) var(--e-step)}
+#detail .primary.f{background:var(--plate);color:var(--ink);transform:scale(1.04);box-shadow:0 14px 36px rgba(0,0,0,.4),0 0 40px var(--accent-glow)}
+#stage.lite #detail .primary{-webkit-backdrop-filter:none;backdrop-filter:none;background:rgba(44,46,62,.9)}
+#detail .second{top:688px;gap:44px;font-weight:400}
+#detail .second [data-f]:not(.f){background:rgba(255,255,255,.1)}
+#detail .info{top:846px;left:96px;right:96px;padding:22px 32px;border-radius:24px;gap:56px;font-family:var(--f-text);font-weight:400;
+  font-size:13px;letter-spacing:.12em}
+#detail .info b{font-weight:400;font-size:22px;letter-spacing:.01em;color:var(--warm)}
+
+/* ---- settings, performance ---- */
+#settings .ttl,.pttl{font-family:var(--f-text);font-weight:400;font-size:46px;letter-spacing:.01em;top:132px}
+#settings .cats{left:72px;top:216px;width:512px;box-sizing:border-box;padding:26px 26px;border-radius:var(--r-panel);gap:6px;
+  font-family:var(--f-text);font-weight:400;font-size:19px;letter-spacing:.005em}
+#settings .cats span::before{font-family:var(--f-mono);font-weight:400;font-size:15px}
+#settings .cats span.cur:not(.f){color:var(--warm);background:rgba(255,255,255,.14)}
+#settings .cats span.cur::before{color:var(--accent)}
+#settings .cats span.f::before{color:rgba(11,12,16,.5)}
+#settings .pane{left:612px;top:216px;width:auto;right:72px;bottom:112px;box-sizing:border-box;padding:30px 40px;border-radius:var(--r-panel)}
+#settings .desc{color:rgba(245,245,247,.8)}
+.srow{border-bottom:1px solid rgba(255,255,255,.1);padding:20px 22px;margin:0 -22px;border-radius:16px;
+  transition:background var(--d-step) var(--e-step)}
+.srow .l b{font-weight:400}
+.srow.f{background:var(--plate);border-bottom-color:transparent;box-shadow:0 10px 28px rgba(0,0,0,.28),0 0 24px var(--accent-glow)}
+.srow.f .l b,.srow.f .v{color:var(--ink)}
+.srow.f .l small{color:rgba(11,12,16,.66)}
+.srow.f .v .ar{color:rgba(11,12,16,.45)}
+.card.ptile{border-radius:var(--r-card);border-top:1px solid var(--glass-edge)}
+.card.ptile.cur{background:linear-gradient(155deg,color-mix(in srgb,var(--accent) 36%,transparent),rgba(255,255,255,.06))}
+.ptile .pn{font-family:var(--f-text);font-weight:400;letter-spacing:.04em}
+.ptile .pa{font-family:var(--f-text);font-weight:400;letter-spacing:.12em}
+.pbox{border-radius:24px}
+.pbox h3{font-family:var(--f-text);font-weight:400;letter-spacing:.12em}
+
+/* ---- quick menu, power, dialogs, messages ---- */
+#quick .panel{right:24px;top:24px;height:1032px;border-radius:34px;transform:translateX(calc(100% + 32px));border-left:1px solid var(--glass-edge)}
+#quick.on .panel{transform:none}
+#quick.on .dim{opacity:.3}
+#quick .main{font-family:var(--f-text);font-weight:400;letter-spacing:.02em}
+#quick .opts span{border-radius:999px}
+#quick .opts span.cur{background:var(--plate);color:var(--ink);border-color:transparent}
+#power.on .dim,#dlg .dim{opacity:.5}
+#power .box{border-radius:var(--r-panel);border-top:1px solid var(--glass-edge)}
+#power .main{font-family:var(--f-text);font-weight:400;letter-spacing:.06em}
+#power .h{font-family:var(--f-text);font-weight:400;letter-spacing:.14em}
+#dlg .box{border-radius:var(--r-panel);border-top:1px solid var(--glass-edge)}
+#dlg.solid .dim{opacity:1;background:var(--aurora)}
+#dlg.solid .box{border-top:1px solid var(--glass-edge);border-radius:var(--r-panel)}
+#dlg h2{font-family:var(--f-text);font-weight:400;letter-spacing:.04em}
+#dlg .btns{font-family:var(--f-text);font-weight:400;font-size:22px;letter-spacing:.08em;gap:20px}
+#dlg .btns [data-f]:not(.f){background:rgba(255,255,255,.1)}
+#dlg .st-cap{font-family:var(--f-text);font-weight:400;letter-spacing:.14em;color:var(--accent)}
+#dlg .sres small{font-family:var(--f-text);font-weight:400;letter-spacing:.01em}
+#dlg .key{background:rgba(255,255,255,.12);border-radius:12px;transition:background var(--d-step) var(--e-step),color var(--d-step) var(--e-step)}
+#dlg .key.f{background:var(--plate);color:var(--ink);box-shadow:0 0 22px var(--accent-glow)}
+#dlg .okbox{border-bottom-color:var(--accent)}
+#stage #dlg.viewer .box{background:#000;-webkit-backdrop-filter:none;backdrop-filter:none;border:0;border-radius:0;box-shadow:none}
+#toast{padding:12px 22px;border-radius:22px;font-weight:400}
+.g{border-width:1.5px;border-color:rgba(255,255,255,.7);color:var(--warm);background:rgba(255,255,255,.12);font-weight:400}
+#hints{color:var(--warm);font-weight:400}
+#safe i{border-color:var(--accent)}
+
+/* ---- loading a game, Steam in front, first start ---- */
+#game.loading .art{opacity:.92}
+#game .ld{background:linear-gradient(90deg,rgba(5,6,10,.82) 0%,rgba(5,6,10,.48) 40%,rgba(5,6,10,0) 75%),linear-gradient(0deg,rgba(5,6,10,.85) 0%,rgba(5,6,10,0) 48%)}
+#game .ld-kick{font-family:var(--f-text);font-weight:400;letter-spacing:.14em;color:var(--accent)}
+#game .ld-title{font-family:var(--f-text);font-weight:400;letter-spacing:.01em;font-size:84px;line-height:92px}
+#game .ld-title.long{font-size:60px;line-height:68px;letter-spacing:.01em}
+#game .ld-step{font-family:var(--f-text);font-weight:400;letter-spacing:.16em}
+#game .ld-bar{height:6px;border-radius:3px;background:rgba(255,255,255,.2)}
+#game .ld-bar i{background:linear-gradient(90deg,transparent,var(--plate) 40%,var(--accent) 60%,transparent)}
+#game .tag{font-family:var(--f-text);font-weight:400;letter-spacing:.02em}
+#sfront{background:var(--aurora)}
+#sfront .sf-box{padding:44px 52px;border-radius:var(--r-panel);border-top:1px solid var(--glass-edge)}
+#sfront h2{font-family:var(--f-text);font-weight:400;letter-spacing:.02em}
+#sfront .st-cap{font-family:var(--f-text);font-weight:400;color:var(--accent)}
+#setup .su-title{font-family:var(--f-text);font-weight:400;letter-spacing:.01em;font-size:84px;line-height:92px}
+#setup .su-kick,#setup .su-count{font-family:var(--f-text);font-weight:400;letter-spacing:.12em}
+#setup .su-kick b{color:var(--accent)}
+#setup .su-btns{font-family:var(--f-text);font-weight:400;letter-spacing:.08em;gap:28px}
+#setup .su-btns [data-f]:not(.f){background:rgba(255,255,255,.12)}
+#setup .su-row{border-bottom-color:rgba(255,255,255,.12)}
+/* the grids start 26 px higher inside their clip, so the chosen card's lift and ring are never cut */
+#library .gclip,#store .gclip{top:250px;height:706px}
+#library .grid,#store .grid{top:30px}
+/* the rows' list clips its overflow: it gets the room the chosen row's plate needs on each side */
+#settings .rows{padding:0 22px;margin:0 -22px}
+#settings .cats{font-size:20px}
+/* FIRST RUN: the steps on a glass card; the current one a white pill; titles in sentence case */
+#setup .su-core{border-left:0;padding:14px;gap:6px;border-radius:var(--r-panel);background:var(--glass-fill);
+  -webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);border:1px solid var(--glass-edge);box-shadow:var(--glass-shine),var(--glass-drop);box-sizing:border-box}
+#stage.lite #setup .su-core{-webkit-backdrop-filter:none;backdrop-filter:none;background:linear-gradient(155deg,rgba(44,46,62,.94),rgba(22,24,34,.94))}
+#setup .su-core div{border-bottom:0;border-radius:18px;padding-left:24px;font-family:var(--f-text);font-weight:400;font-size:19px;letter-spacing:.02em;color:var(--text-2)}
+#setup .su-core div:nth-child(odd){background:none}
+#setup .su-core span{font-family:var(--f-mono);font-weight:400;font-size:15px}
+#setup .su-core .done{color:var(--warm)}
+#setup .su-core .done span{color:var(--accent);opacity:1}
+#setup .su-core div.cur{margin-left:0;border-left:0;background:var(--plate);color:var(--ink);box-shadow:0 10px 28px rgba(0,0,0,.3),0 0 26px var(--accent-glow)}
+#setup .su-title{text-transform:lowercase}
+#setup .su-title::first-letter{text-transform:uppercase}
+#game .art{opacity:.55}
+
+/* ---- SELLO STONE MACHINE: the console's materials (they override the values above) ---- */
+#stage{
+  --r-card:14px; --r-panel:22px;
+  --roca:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 640 160%22 preserveAspectRatio=%22none%22 shape-rendering=%22crispEdges%22%3E%3Cpath d=%22M0.0 0.0L42.8 0.0L0.0 27.8Z%22 fill=%22%23313235%22/%3E%3Cpath d=%22M42.8 0.0L29.1 21.2L0.0 27.8Z%22 fill=%22%232b2c2f%22/%3E%3Cpath d=%22M42.8 0.0L64.0 0.0L74.0 21.0Z%22 fill=%22%23323336%22/%3E%3Cpath d=%22M42.8 0.0L74.0 21.0L29.1 21.2Z%22 fill=%22%23313235%22/%3E%3Cpath d=%22M64.0 0.0L99.1 0.0L74.0 21.0Z%22 fill=%22%2336373a%22/%3E%3Cpath d=%22M99.1 0.0L112.3 24.6L74.0 21.0Z%22 fill=%22%23252629%22/%3E%3Cpath d=%22M99.1 0.0L146.8 0.0L112.3 24.6Z%22 fill=%22%2328292c%22/%3E%3Cpath d=%22M146.8 0.0L150.5 24.9L112.3 24.6Z%22 fill=%22%2327282b%22/%3E%3Cpath d=%22M146.8 0.0L174.8 0.0L170.6 35.9Z%22 fill=%22%232e2f32%22/%3E%3Cpath d=%22M146.8 0.0L170.6 35.9L150.5 24.9Z%22 fill=%22%23323336%22/%3E%3Cpath d=%22M174.8 0.0L208.7 0.0L202.9 26.9Z%22 fill=%22%2326272a%22/%3E%3Cpath d=%22M174.8 0.0L202.9 26.9L170.6 35.9Z%22 fill=%22%23323336%22/%3E%3Cpath d=%22M208.7 0.0L252.8 0.0L238.3 34.2Z%22 fill=%22%23292a2d%22/%3E%3Cpath d=%22M208.7 0.0L238.3 34.2L202.9 26.9Z%22 fill=%22%23323336%22/%3E%3Cpath d=%22M252.8 0.0L277.1 0.0L288.2 41.2Z%22 fill=%22%2328292c%22/%3E%3Cpath d=%22M252.8 0.0L288.2 41.2L238.3 34.2Z%22 fill=%22%2327282b%22/%3E%3Cpath d=%22M277.1 0.0L308.0 0.0L331.1 24.6Z%22 fill=%22%23343538%22/%3E%3Cpath d=%22M277.1 0.0L331.1 24.6L288.2 41.2Z%22 fill=%22%2328292c%22/%3E%3Cpath d=%22M308.0 0.0L365.6 0.0L363.5 20.0Z%22 fill=%22%23252629%22/%3E%3Cpath d=%22M308.0 0.0L363.5 20.0L331.1 24.6Z%22 fill=%22%23323336%22/%3E%3Cpath d=%22M365.6 0.0L397.6 0.0L363.5 20.0Z%22 fill=%22%232a2b2e%22/%3E%3Cpath d=%22M397.6 0.0L400.5 26.1L363.5 20.0Z%22 fill=%22%232d2e31%22/%3E%3Cpath d=%22M397.6 0.0L417.8 0.0L400.5 26.1Z%22 fill=%22%232a2b2e%22/%3E%3Cpath d=%22M417.8 0.0L413.4 36.4L400.5 26.1Z%22 fill=%22%232a2b2e%22/%3E%3Cpath d=%22M417.8 0.0L449.6 0.0L413.4 36.4Z%22 fill=%22%23313235%22/%3E%3Cpath d=%22M449.6 0.0L468.9 26.0L413.4 36.4Z%22 fill=%22%23313235%22/%3E%3Cpath d=%22M449.6 0.0L495.1 0.0L468.9 26.0Z%22 fill=%22%232a2b2e%22/%3E%3Cpath d=%22M495.1 0.0L494.5 20.2L468.9 26.0Z%22 fill=%22%23303134%22/%3E%3Cpath d=%22M495.1 0.0L522.6 0.0L530.0 41.9Z%22 fill=%22%232b2c2f%22/%3E%3Cpath d=%22M495.1 0.0L530.0 41.9L494.5 20.2Z%22 fill=%22%232a2b2e%22/%3E%3Cpath d=%22M522.6 0.0L578.9 0.0L530.0 41.9Z%22 fill=%22%23292a2d%22/%3E%3Cpath d=%22M578.9 0.0L561.6 28.2L530.0 41.9Z%22 fill=%22%23222326%22/%3E%3Cpath d=%22M578.9 0.0L597.2 0.0L561.6 28.2Z%22 fill=%22%23252629%22/%3E%3Cpath d=%22M597.2 0.0L597.8 20.3L561.6 28.2Z%22 fill=%22%23333437%22/%3E%3Cpath d=%22M597.2 0.0L640.0 0.0L640.0 31.4Z%22 fill=%22%232b2c2f%22/%3E%3Cpath d=%22M597.2 0.0L640.0 31.4L597.8 20.3Z%22 fill=%22%23323336%22/%3E%3Cpath d=%22M0.0 27.8L29.1 21.2L0.0 75.4Z%22 fill=%22%23242528%22/%3E%3Cpath d=%22M29.1 21.2L26.0 60.8L0.0 75.4Z%22 fill=%22%2327282b%22/%3E%3Cpath d=%22M29.1 21.2L74.0 21.0L26.0 60.8Z%22 fill=%22%23353639%22/%3E%3Cpath d=%22M74.0 21.0L68.0 72.9L26.0 60.8Z%22 fill=%22%23242528%22/%3E%3Cpath d=%22M74.0 21.0L112.3 24.6L68.0 72.9Z%22 fill=%22%232d2e31%22/%3E%3Cpath d=%22M112.3 24.6L118.8 59.7L68.0 72.9Z%22 fill=%22%232f3033%22/%3E%3Cpath d=%22M112.3 24.6L150.5 24.9L131.8 63.1Z%22 fill=%22%23232427%22/%3E%3Cpath d=%22M112.3 24.6L131.8 63.1L118.8 59.7Z%22 fill=%22%23242528%22/%3E%3Cpath d=%22M150.5 24.9L170.6 35.9L186.2 73.7Z%22 fill=%22%23292a2d%22/%3E%3Cpath d=%22M150.5 24.9L186.2 73.7L131.8 63.1Z%22 fill=%22%23313235%22/%3E%3Cpath d=%22M170.6 35.9L202.9 26.9L186.2 73.7Z%22 fill=%22%23303134%22/%3E%3Cpath d=%22M202.9 26.9L226.4 58.8L186.2 73.7Z%22 fill=%22%23303134%22/%3E%3Cpath d=%22M202.9 26.9L238.3 34.2L226.4 58.8Z%22 fill=%22%2326272a%22/%3E%3Cpath d=%22M238.3 34.2L249.5 66.7L226.4 58.8Z%22 fill=%22%2327282b%22/%3E%3Cpath d=%22M238.3 34.2L288.2 41.2L296.1 70.1Z%22 fill=%22%2327282b%22/%3E%3Cpath d=%22M238.3 34.2L296.1 70.1L249.5 66.7Z%22 fill=%22%23323336%22/%3E%3Cpath d=%22M288.2 41.2L331.1 24.6L321.0 72.5Z%22 fill=%22%232f3033%22/%3E%3Cpath d=%22M288.2 41.2L321.0 72.5L296.1 70.1Z%22 fill=%22%232c2d30%22/%3E%3Cpath d=%22M331.1 24.6L363.5 20.0L321.0 72.5Z%22 fill=%22%23303134%22/%3E%3Cpath d=%22M363.5 20.0L345.7 66.8L321.0 72.5Z%22 fill=%22%2328292c%22/%3E%3Cpath d=%22M363.5 20.0L400.5 26.1L345.7 66.8Z%22 fill=%22%2326272a%22/%3E%3Cpath d=%22M400.5 26.1L397.1 73.4L345.7 66.8Z%22 fill=%22%2328292c%22/%3E%3Cpath d=%22M400.5 26.1L413.4 36.4L416.1 65.5Z%22 fill=%22%2327282b%22/%3E%3Cpath d=%22M400.5 26.1L416.1 65.5L397.1 73.4Z%22 fill=%22%23212225%22/%3E%3Cpath d=%22M413.4 36.4L468.9 26.0L475.6 69.9Z%22 fill=%22%23292a2d%22/%3E%3Cpath d=%22M413.4 36.4L475.6 69.9L416.1 65.5Z%22 fill=%22%23292a2d%22/%3E%3Cpath d=%22M468.9 26.0L494.5 20.2L475.6 69.9Z%22 fill=%22%232d2e31%22/%3E%3Cpath d=%22M494.5 20.2L490.4 60.9L475.6 69.9Z%22 fill=%22%23303134%22/%3E%3Cpath d=%22M494.5 20.2L530.0 41.9L490.4 60.9Z%22 fill=%22%232d2e31%22/%3E%3Cpath d=%22M530.0 41.9L521.8 67.8L490.4 60.9Z%22 fill=%22%23212225%22/%3E%3Cpath d=%22M530.0 41.9L561.6 28.2L566.2 55.5Z%22 fill=%22%232d2e31%22/%3E%3Cpath d=%22M530.0 41.9L566.2 55.5L521.8 67.8Z%22 fill=%22%23292a2d%22/%3E%3Cpath d=%22M561.6 28.2L597.8 20.3L566.2 55.5Z%22 fill=%22%23242528%22/%3E%3Cpath d=%22M597.8 20.3L591.5 75.5L566.2 55.5Z%22 fill=%22%23202124%22/%3E%3Cpath d=%22M597.8 20.3L640.0 31.4L640.0 67.4Z%22 fill=%22%232c2d30%22/%3E%3Cpath d=%22M597.8 20.3L640.0 67.4L591.5 75.5Z%22 fill=%22%232c2d30%22/%3E%3Cpath d=%22M0.0 75.4L26.0 60.8L0.0 93.5Z%22 fill=%22%2328292c%22/%3E%3Cpath d=%22M26.0 60.8L32.6 106.3L0.0 93.5Z%22 fill=%22%23292a2d%22/%3E%3Cpath d=%22M26.0 60.8L68.0 72.9L76.7 106.7Z%22 fill=%22%23292a2d%22/%3E%3Cpath d=%22M26.0 60.8L76.7 106.7L32.6 106.3Z%22 fill=%22%23232427%22/%3E%3Cpath d=%22M68.0 72.9L118.8 59.7L117.0 103.3Z%22 fill=%22%2327282b%22/%3E%3Cpath d=%22M68.0 72.9L117.0 103.3L76.7 106.7Z%22 fill=%22%232f3033%22/%3E%3Cpath d=%22M118.8 59.7L131.8 63.1L153.1 105.2Z%22 fill=%22%23212225%22/%3E%3Cpath d=%22M118.8 59.7L153.1 105.2L117.0 103.3Z%22 fill=%22%232a2b2e%22/%3E%3Cpath d=%22M131.8 63.1L186.2 73.7L153.1 105.2Z%22 fill=%22%23323336%22/%3E%3Cpath d=%22M186.2 73.7L168.6 88.1L153.1 105.2Z%22 fill=%22%232c2d30%22/%3E%3Cpath d=%22M186.2 73.7L226.4 58.8L168.6 88.1Z%22 fill=%22%2328292c%22/%3E%3Cpath d=%22M226.4 58.8L216.9 101.8L168.6 88.1Z%22 fill=%22%232b2c2f%22/%3E%3Cpath d=%22M226.4 58.8L249.5 66.7L216.9 101.8Z%22 fill=%22%23292a2d%22/%3E%3Cpath d=%22M249.5 66.7L235.7 87.2L216.9 101.8Z%22 fill=%22%23242528%22/%3E%3Cpath d=%22M249.5 66.7L296.1 70.1L235.7 87.2Z%22 fill=%22%23292a2d%22/%3E%3Cpath d=%22M296.1 70.1L271.8 99.9L235.7 87.2Z%22 fill=%22%232c2d30%22/%3E%3Cpath d=%22M296.1 70.1L321.0 72.5L271.8 99.9Z%22 fill=%22%23222326%22/%3E%3Cpath d=%22M321.0 72.5L314.7 84.4L271.8 99.9Z%22 fill=%22%23202124%22/%3E%3Cpath d=%22M321.0 72.5L345.7 66.8L358.8 97.8Z%22 fill=%22%23252629%22/%3E%3Cpath d=%22M321.0 72.5L358.8 97.8L314.7 84.4Z%22 fill=%22%232a2b2e%22/%3E%3Cpath d=%22M345.7 66.8L397.1 73.4L358.8 97.8Z%22 fill=%22%232d2e31%22/%3E%3Cpath d=%22M397.1 73.4L383.4 92.2L358.8 97.8Z%22 fill=%22%232a2b2e%22/%3E%3Cpath d=%22M397.1 73.4L416.1 65.5L428.0 92.0Z%22 fill=%22%2326272a%22/%3E%3Cpath d=%22M397.1 73.4L428.0 92.0L383.4 92.2Z%22 fill=%22%2327282b%22/%3E%3Cpath d=%22M416.1 65.5L475.6 69.9L428.0 92.0Z%22 fill=%22%2327282b%22/%3E%3Cpath d=%22M475.6 69.9L464.8 94.7L428.0 92.0Z%22 fill=%22%23252629%22/%3E%3Cpath d=%22M475.6 69.9L490.4 60.9L491.1 89.3Z%22 fill=%22%2328292c%22/%3E%3Cpath d=%22M475.6 69.9L491.1 89.3L464.8 94.7Z%22 fill=%22%232f3033%22/%3E%3Cpath d=%22M490.4 60.9L521.8 67.8L535.3 107.9Z%22 fill=%22%2328292c%22/%3E%3Cpath d=%22M490.4 60.9L535.3 107.9L491.1 89.3Z%22 fill=%22%232d2e31%22/%3E%3Cpath d=%22M521.8 67.8L566.2 55.5L535.3 107.9Z%22 fill=%22%231f2023%22/%3E%3Cpath d=%22M566.2 55.5L578.8 84.3L535.3 107.9Z%22 fill=%22%2326272a%22/%3E%3Cpath d=%22M566.2 55.5L591.5 75.5L607.8 107.5Z%22 fill=%22%2327282b%22/%3E%3Cpath d=%22M566.2 55.5L607.8 107.5L578.8 84.3Z%22 fill=%22%232c2d30%22/%3E%3Cpath d=%22M591.5 75.5L640.0 67.4L640.0 85.2Z%22 fill=%22%23212225%22/%3E%3Cpath d=%22M591.5 75.5L640.0 85.2L607.8 107.5Z%22 fill=%22%231f2023%22/%3E%3Cpath d=%22M0.0 93.5L32.6 106.3L46.7 131.5Z%22 fill=%22%23303134%22/%3E%3Cpath d=%22M0.0 93.5L46.7 131.5L0.0 137.3Z%22 fill=%22%232b2c2f%22/%3E%3Cpath d=%22M32.6 106.3L76.7 106.7L46.7 131.5Z%22 fill=%22%232a2b2e%22/%3E%3Cpath d=%22M76.7 106.7L73.2 129.9L46.7 131.5Z%22 fill=%22%231f2023%22/%3E%3Cpath d=%22M76.7 106.7L117.0 103.3L73.2 129.9Z%22 fill=%22%23212225%22/%3E%3Cpath d=%22M117.0 103.3L94.6 116.4L73.2 129.9Z%22 fill=%22%23212225%22/%3E%3Cpath d=%22M117.0 103.3L153.1 105.2L94.6 116.4Z%22 fill=%22%232e2f32%22/%3E%3Cpath d=%22M153.1 105.2L133.5 120.8L94.6 116.4Z%22 fill=%22%23212225%22/%3E%3Cpath d=%22M153.1 105.2L168.6 88.1L183.6 119.3Z%22 fill=%22%232e2f32%22/%3E%3Cpath d=%22M153.1 105.2L183.6 119.3L133.5 120.8Z%22 fill=%22%232f3033%22/%3E%3Cpath d=%22M168.6 88.1L216.9 101.8L216.8 138.4Z%22 fill=%22%232d2e31%22/%3E%3Cpath d=%22M168.6 88.1L216.8 138.4L183.6 119.3Z%22 fill=%22%23232427%22/%3E%3Cpath d=%22M216.9 101.8L235.7 87.2L244.4 130.7Z%22 fill=%22%23292a2d%22/%3E%3Cpath d=%22M216.9 101.8L244.4 130.7L216.8 138.4Z%22 fill=%22%232a2b2e%22/%3E%3Cpath d=%22M235.7 87.2L271.8 99.9L287.0 140.1Z%22 fill=%22%2326272a%22/%3E%3Cpath d=%22M235.7 87.2L287.0 140.1L244.4 130.7Z%22 fill=%22%232a2b2e%22/%3E%3Cpath d=%22M271.8 99.9L314.7 84.4L287.0 140.1Z%22 fill=%22%23242528%22/%3E%3Cpath d=%22M314.7 84.4L310.9 123.9L287.0 140.1Z%22 fill=%22%23222326%22/%3E%3Cpath d=%22M314.7 84.4L358.8 97.8L365.3 118.8Z%22 fill=%22%23212225%22/%3E%3Cpath d=%22M314.7 84.4L365.3 118.8L310.9 123.9Z%22 fill=%22%23202124%22/%3E%3Cpath d=%22M358.8 97.8L383.4 92.2L365.3 118.8Z%22 fill=%22%231f2023%22/%3E%3Cpath d=%22M383.4 92.2L397.8 118.6L365.3 118.8Z%22 fill=%22%232f3033%22/%3E%3Cpath d=%22M383.4 92.2L428.0 92.0L418.3 131.2Z%22 fill=%22%232a2b2e%22/%3E%3Cpath d=%22M383.4 92.2L418.3 131.2L397.8 118.6Z%22 fill=%22%23242528%22/%3E%3Cpath d=%22M428.0 92.0L464.8 94.7L462.4 137.6Z%22 fill=%22%23222326%22/%3E%3Cpath d=%22M428.0 92.0L462.4 137.6L418.3 131.2Z%22 fill=%22%232e2f32%22/%3E%3Cpath d=%22M464.8 94.7L491.1 89.3L498.5 127.6Z%22 fill=%22%23292a2d%22/%3E%3Cpath d=%22M464.8 94.7L498.5 127.6L462.4 137.6Z%22 fill=%22%23292a2d%22/%3E%3Cpath d=%22M491.1 89.3L535.3 107.9L498.5 127.6Z%22 fill=%22%23242528%22/%3E%3Cpath d=%22M535.3 107.9L522.8 122.9L498.5 127.6Z%22 fill=%22%231d1e21%22/%3E%3Cpath d=%22M535.3 107.9L578.8 84.3L522.8 122.9Z%22 fill=%22%231e1f22%22/%3E%3Cpath d=%22M578.8 84.3L564.8 131.4L522.8 122.9Z%22 fill=%22%231e1f22%22/%3E%3Cpath d=%22M578.8 84.3L607.8 107.5L614.6 119.4Z%22 fill=%22%23252629%22/%3E%3Cpath d=%22M578.8 84.3L614.6 119.4L564.8 131.4Z%22 fill=%22%23292a2d%22/%3E%3Cpath d=%22M607.8 107.5L640.0 85.2L614.6 119.4Z%22 fill=%22%2327282b%22/%3E%3Cpath d=%22M640.0 85.2L640.0 120.1L614.6 119.4Z%22 fill=%22%23292a2d%22/%3E%3Cpath d=%22M0.0 137.3L46.7 131.5L0.0 160.0Z%22 fill=%22%23232427%22/%3E%3Cpath d=%22M46.7 131.5L29.8 160.0L0.0 160.0Z%22 fill=%22%232e2f32%22/%3E%3Cpath d=%22M46.7 131.5L73.2 129.9L29.8 160.0Z%22 fill=%22%23252629%22/%3E%3Cpath d=%22M73.2 129.9L79.5 160.0L29.8 160.0Z%22 fill=%22%232a2b2e%22/%3E%3Cpath d=%22M73.2 129.9L94.6 116.4L79.5 160.0Z%22 fill=%22%23292a2d%22/%3E%3Cpath d=%22M94.6 116.4L114.8 160.0L79.5 160.0Z%22 fill=%22%232c2d30%22/%3E%3Cpath d=%22M94.6 116.4L133.5 120.8L139.6 160.0Z%22 fill=%22%231e1f22%22/%3E%3Cpath d=%22M94.6 116.4L139.6 160.0L114.8 160.0Z%22 fill=%22%231e1f22%22/%3E%3Cpath d=%22M133.5 120.8L183.6 119.3L184.2 160.0Z%22 fill=%22%232a2b2e%22/%3E%3Cpath d=%22M133.5 120.8L184.2 160.0L139.6 160.0Z%22 fill=%22%232a2b2e%22/%3E%3Cpath d=%22M183.6 119.3L216.8 138.4L184.2 160.0Z%22 fill=%22%23212225%22/%3E%3Cpath d=%22M216.8 138.4L220.1 160.0L184.2 160.0Z%22 fill=%22%231d1e21%22/%3E%3Cpath d=%22M216.8 138.4L244.4 130.7L220.1 160.0Z%22 fill=%22%231d1e21%22/%3E%3Cpath d=%22M244.4 130.7L247.7 160.0L220.1 160.0Z%22 fill=%22%231c1d20%22/%3E%3Cpath d=%22M244.4 130.7L287.0 140.1L247.7 160.0Z%22 fill=%22%23212225%22/%3E%3Cpath d=%22M287.0 140.1L287.0 160.0L247.7 160.0Z%22 fill=%22%23222326%22/%3E%3Cpath d=%22M287.0 140.1L310.9 123.9L320.0 160.0Z%22 fill=%22%23232427%22/%3E%3Cpath d=%22M287.0 140.1L320.0 160.0L287.0 160.0Z%22 fill=%22%2326272a%22/%3E%3Cpath d=%22M310.9 123.9L365.3 118.8L347.4 160.0Z%22 fill=%22%2328292c%22/%3E%3Cpath d=%22M310.9 123.9L347.4 160.0L320.0 160.0Z%22 fill=%22%23212225%22/%3E%3Cpath d=%22M365.3 118.8L397.8 118.6L402.7 160.0Z%22 fill=%22%232c2d30%22/%3E%3Cpath d=%22M365.3 118.8L402.7 160.0L347.4 160.0Z%22 fill=%22%232c2d30%22/%3E%3Cpath d=%22M397.8 118.6L418.3 131.2L438.2 160.0Z%22 fill=%22%23212225%22/%3E%3Cpath d=%22M397.8 118.6L438.2 160.0L402.7 160.0Z%22 fill=%22%2328292c%22/%3E%3Cpath d=%22M418.3 131.2L462.4 137.6L438.2 160.0Z%22 fill=%22%23242528%22/%3E%3Cpath d=%22M462.4 137.6L459.1 160.0L438.2 160.0Z%22 fill=%22%23242528%22/%3E%3Cpath d=%22M462.4 137.6L498.5 127.6L459.1 160.0Z%22 fill=%22%231e1f22%22/%3E%3Cpath d=%22M498.5 127.6L510.1 160.0L459.1 160.0Z%22 fill=%22%231e1f22%22/%3E%3Cpath d=%22M498.5 127.6L522.8 122.9L510.1 160.0Z%22 fill=%22%23212225%22/%3E%3Cpath d=%22M522.8 122.9L546.2 160.0L510.1 160.0Z%22 fill=%22%23232427%22/%3E%3Cpath d=%22M522.8 122.9L564.8 131.4L581.9 160.0Z%22 fill=%22%232b2c2f%22/%3E%3Cpath d=%22M522.8 122.9L581.9 160.0L546.2 160.0Z%22 fill=%22%232b2c2f%22/%3E%3Cpath d=%22M564.8 131.4L614.6 119.4L581.9 160.0Z%22 fill=%22%2327282b%22/%3E%3Cpath d=%22M614.6 119.4L605.4 160.0L581.9 160.0Z%22 fill=%22%231c1d20%22/%3E%3Cpath d=%22M614.6 119.4L640.0 120.1L605.4 160.0Z%22 fill=%22%232b2c2f%22/%3E%3Cpath d=%22M640.0 120.1L640.0 160.0L605.4 160.0Z%22 fill=%22%23252629%22/%3E%3C/svg%3E");
+  /* obsidian: the body's black gloss, its reflection cut sharp across the upper left */
+  --glass-fill:linear-gradient(162deg,rgba(255,255,255,.13) 0%,rgba(255,255,255,.035) 31%,rgba(255,255,255,0) 31.4%),
+    linear-gradient(180deg,rgba(18,18,21,.6) 0%,rgba(8,8,10,.72) 100%);
+  --glass-edge:rgba(255,255,255,.14);
+  --glass-shine:inset 0 1px 0 rgba(255,255,255,.3),inset 0 0 0 1px rgba(255,255,255,.03);
+  --blur:blur(26px) saturate(150%);
+  /* the studio of the console's portrait: a light from above, tinted with the game's colour */
+  --aurora:radial-gradient(ellipse 64% 68% at 50% -8%,color-mix(in srgb,var(--accent) 50%,#55565c) 0%,rgba(48,49,54,0) 72%),
+    radial-gradient(ellipse 95% 58% at 50% 110%,rgba(128,130,138,.24) 0%,rgba(0,0,0,0) 70%),
+    linear-gradient(180deg,#18191c 0%,#0d0d0f 56%,#050506 100%);
+}
+/* the band: faceted stone around the sections and the status (#id#id: above the shared glass rule) */
+#stage #tabs#tabs,#stage #status#status{background:linear-gradient(180deg,rgba(255,255,255,.12) 0%,rgba(255,255,255,0) 46%),var(--roca) center/cover;
+  -webkit-backdrop-filter:none;backdrop-filter:none;border:1px solid rgba(255,255,255,.12);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.22),inset 0 -1px 0 rgba(0,0,0,.4),0 16px 40px rgba(0,0,0,.5)}
+#tabs span{color:rgba(245,245,247,.8)}
+/* the light line: under the wordmark, and under the chosen game (a white light with a glow of its colour) */
+#hdr .brand,#quick .top .brand,#setup .su-head .brand{position:relative}
+#hdr .brand::after,#quick .top .brand::after,#setup .su-head .brand::after{content:"";position:absolute;left:2px;bottom:-10px;width:44%;height:2px;border-radius:2px;
+  background:#fff;box-shadow:0 0 8px rgba(255,255,255,.9),0 0 22px rgba(255,255,255,.45)}
+#line{opacity:1;height:3px;background:transparent;box-shadow:none}
+#line::before{content:"";position:absolute;left:16%;right:16%;top:0;bottom:0;border-radius:2px;background:#fff;
+  box-shadow:0 0 8px rgba(255,255,255,.95),0 0 24px rgba(255,255,255,.55),0 0 44px var(--accent-glow)}
+#line.boot::before{left:0;right:0}
+#line.pill,#line.off{opacity:0}
+/* cards: the body's chamfered edge and its sharp reflection; chosen: the white panel's edge and the line */
+#stage .card::after{background:linear-gradient(158deg,rgba(255,255,255,.16) 0%,rgba(255,255,255,.04) 30%,rgba(255,255,255,0) 30.5%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.3),inset 0 0 0 1px rgba(255,255,255,.1)}
+#stage .card.f{box-shadow:0 0 0 3px #fff,0 0 40px 6px var(--accent-glow),0 28px 64px rgba(0,0,0,.6)}
+/* a cover without art: the machine in miniature, black gloss, its stone band and its light line */
+.card .ph{position:absolute;inset:0;border-radius:inherit;overflow:hidden;
+  background:linear-gradient(158deg,rgba(255,255,255,.15) 0%,rgba(255,255,255,.03) 30%,rgba(255,255,255,0) 30.5%),
+    linear-gradient(180deg,rgba(0,0,0,0) 35.5%,rgba(0,0,0,.45) 35.5% 36.5%,rgba(0,0,0,0) 36.5% 63.5%,rgba(0,0,0,.45) 63.5% 64.5%,rgba(0,0,0,0) 64.5%),
+    var(--roca) 0 36% / 100% 28% no-repeat,linear-gradient(180deg,#202125 0%,#0b0b0d 100%)}
+.card .ph::after{content:"";position:absolute;left:12%;bottom:13%;width:42%;height:3px;border-radius:2px;background:#fff;
+  box-shadow:0 0 8px rgba(255,255,255,.9),0 0 22px rgba(255,255,255,.4)}
+/* the primary button: obsidian at rest, the white panel when chosen */
+#detail .primary{background:var(--glass-fill);border-color:var(--glass-edge)}
+#game .ld-bar{height:3px;border-radius:2px;background:rgba(255,255,255,.14)}
+#game .ld-bar i{background:linear-gradient(90deg,rgba(255,255,255,0),#fff 50%,rgba(255,255,255,0));box-shadow:0 0 14px rgba(255,255,255,.7)}
+
+/* ---- LIQUID GLASS: the section bar and the status are a lens. What is behind them bends at their edges
+   (#lens, lens.html: an SVG displacement map Chromium applies to the backdrop), a bright rim catches the
+   light, and the band's faceted stone shows faintly inside the glass. ---- */
+#stage #tabs#tabs,#stage #status#status{isolation:isolate;border:0;
+  background:linear-gradient(180deg,rgba(255,255,255,.2) 0%,rgba(255,255,255,.05) 52%,rgba(255,255,255,.1) 100%),rgba(12,12,16,.16);
+  -webkit-backdrop-filter:blur(3px) saturate(190%) brightness(1.08);
+  backdrop-filter:blur(3px) saturate(190%) brightness(1.08);
+  backdrop-filter:url(#lens) blur(3px) saturate(190%) brightness(1.08);
+  box-shadow:inset 1.5px 1.5px 1px rgba(255,255,255,.62),inset -1px -1px 1px rgba(255,255,255,.26),inset 0 0 20px rgba(255,255,255,.12),0 12px 34px rgba(0,0,0,.32)}
+#stage #tabs#tabs::before,#stage #status#status::before{content:"";position:absolute;inset:0;border-radius:inherit;z-index:-1;pointer-events:none;
+  background:var(--roca) center/cover;opacity:.2;mix-blend-mode:soft-light}
+#stage #tabs#tabs::after,#stage #status#status::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  background:radial-gradient(120% 150% at 16% -34%,rgba(255,255,255,.36) 0%,rgba(255,255,255,0) 46%)}
+#tabs span,#status>*{position:relative;z-index:1}
+#tabs span,#status{text-shadow:0 1px 8px rgba(0,0,0,.45)}
+#tabs span.cur{background:rgba(255,255,255,.94);text-shadow:none;box-shadow:inset 0 1px 0 #fff,inset 0 -2px 6px rgba(0,0,0,.08),0 4px 16px rgba(0,0,0,.28)}
+#stage.lite #tabs#tabs,#stage.lite #status#status{-webkit-backdrop-filter:none;backdrop-filter:none;background:linear-gradient(180deg,rgba(64,66,76,.92),rgba(28,30,38,.92))}
+
+/* ---- room to breathe: normal tracking on bold titles, taller lines, more space between blocks ---- */
+#detail .col{bottom:556px;gap:20px}
+#detail h1{letter-spacing:.01em;line-height:90px}
+#detail h1.long{letter-spacing:.01em;line-height:68px}
+#detail .stats{line-height:1.55}
+#detail .stats.exp{margin-top:.5em!important}
+#detail .primary{top:574px}
+#detail .second{top:706px}
+#detail .info{top:852px}
+.ctx-title{letter-spacing:.01em;line-height:1.25}
+#home .ctx{gap:12px}
+#game .ld-title{letter-spacing:.01em;line-height:98px}
+#game .ld-title.long{letter-spacing:.01em;line-height:72px}
+#setup .su-title{letter-spacing:.01em;line-height:100px}
+#settings .ttl,.pttl{letter-spacing:.01em}
+#stage .card.wide b{letter-spacing:0}
+#dlg p{line-height:34px}
+#dlg .slist{gap:16px}
+
+/* ---- lists that clip what overflows give the chosen row's white panel its room on each side ---- */
+#dlg .slist{padding:8px 18px;margin:-8px -18px}
+#tuning .tclip{left:74px;width:1044px}
+#tuning .trows{left:22px}
+
+#home .st-label.l1{top:198px}
+
+/* ---- TYPE OF THE BRAND: the wordmark's Jost and its light weights. Titles, labels and buttons in thin,
+   widely spaced capitals, as the wordmark is drawn; text that is read (descriptions, rows, values) in the
+   regular weight, large enough for a television. Live numbers stay monospaced so they do not jump. ---- */
+#stage{--f-text:Jost,Futura,"Century Gothic","Helvetica Neue",Arial,sans-serif;--f-display:var(--f-text);--f-mono:var(--f-text);
+  font-family:var(--f-text);font-weight:400}
+#metrics,#dlg .live b,.pread,#quick .seg .lbl{font-family:"IBM Plex Mono","JetBrains Mono",monospace}
+/* titles: thin capitals */
+#detail h1,.ctx-title,#game .ld-title,#setup .su-title,#settings .ttl,.pttl,#sfront h2{font-weight:300;text-transform:uppercase;letter-spacing:.14em}
+#detail h1{font-size:62px;line-height:76px}
+#detail h1.long{font-size:44px;line-height:56px;letter-spacing:.12em}
+.ctx-title{font-weight:200;font-size:calc(42px * min(var(--ts),1.3));letter-spacing:.16em;line-height:1.3}
+#game .ld-title{font-weight:200;font-size:72px;line-height:86px}
+#game .ld-title.long{font-size:52px;line-height:64px}
+#setup .su-title{font-weight:200;font-size:80px;line-height:96px;letter-spacing:.16em}
+#setup .su-title::first-letter{text-transform:uppercase}
+#settings .ttl,.pttl{font-weight:200;font-size:44px;letter-spacing:.3em}
+#sfront h2{font-weight:200;letter-spacing:.18em}
+#dlg h2{font-weight:300;font-size:30px;letter-spacing:.22em}
+/* labels: small spaced capitals */
+.kicker,#detail .origin,#game .ld-kick,#dlg .st-cap,#sfront .st-cap,#setup .su-kick,#setup .su-count,.pbox h3,#detail .info,#game .ld-step{
+  font-weight:400;font-size:15px;letter-spacing:.28em;text-transform:uppercase}
+.st-label{font-weight:300;font-size:18px;letter-spacing:.06em}
+.st-label b{font-weight:300;font-size:21px;letter-spacing:.28em;text-transform:uppercase}
+#detail .info b{font-weight:400;font-size:22px;letter-spacing:.04em;text-transform:none}
+/* buttons and sections: spaced capitals */
+#tabs{font-weight:400;font-size:15px;letter-spacing:.22em;text-transform:uppercase}
+#tabs span{padding:13px 26px}
+#detail .primary{font-weight:400;font-size:24px;letter-spacing:.3em;padding:18px 50px 18px 56px}
+#dlg .btns,#setup .su-btns,#power .main,#quick .main{font-weight:400;letter-spacing:.24em;text-transform:uppercase}
+#dlg .btns{font-size:20px}
+#stage .card.tile{font-weight:300;font-size:16px;letter-spacing:.24em;text-transform:uppercase}
+#stage .card.wide b{font-weight:300;font-size:20px;letter-spacing:.2em;text-transform:uppercase}
+.card .run{font-weight:400;letter-spacing:.24em}
+#setup .su-core div{font-weight:400;font-size:15px;letter-spacing:.24em;text-transform:uppercase}
+/* text that is read: regular, comfortable */
+#home .sys{font-weight:400;font-size:20px;letter-spacing:.06em}
+#detail .second{font-weight:400;font-size:21px;letter-spacing:.04em}
+#detail .stats{font-weight:400;font-size:calc(24px * var(--ts));letter-spacing:.02em}
+#home .ctx .meta{font-weight:400;font-size:calc(21px * min(var(--ts),1.3));letter-spacing:.02em}
+#dlg p,#settings .desc{font-weight:400;font-size:23px;line-height:35px;letter-spacing:.01em}
+.srow .l b{font-weight:400;font-size:calc(24px * var(--ts));letter-spacing:.02em}
+.srow .l small{font-weight:400;font-size:calc(20px * var(--ts));letter-spacing:.01em}
+.srow .v{font-weight:400;font-size:20px;letter-spacing:.06em}
+#dlg .sres{font-weight:400;letter-spacing:.02em}
+#store .scard .cap2 b{font-weight:400;letter-spacing:.02em}
+#store .scard .cap2 i{font-weight:400;letter-spacing:.08em}
+#library .filters,#store .filters{font-weight:400;letter-spacing:.06em}
+#library .count,#store .count{font-weight:300;letter-spacing:.06em}
+#toast,#hints{font-weight:400;font-size:20px;letter-spacing:.02em}
+#quick .it{font-weight:300}
+
+/* ---- the system menu (Ajustes): symmetric. As tall as the panel beside it, the categories spread evenly
+   from top to bottom, the same margin on every side of the chosen one; no numbers ---- */
+#settings .cats{top:204px;bottom:112px;height:auto;padding:16px;gap:0;display:flex;flex-direction:column;justify-content:space-between;
+  font-weight:300;font-size:22px;letter-spacing:.04em}
+#settings .pane{top:204px;bottom:112px}
+#stage #settings .cats [data-f]{display:block;flex:none;padding:8px 22px;margin:0;line-height:28px;border-radius:14px}
+#stage #settings .cats [data-f].f,#settings .cats span.cur{font-weight:400}
+#settings .cats span::before{content:none}
+
+/* ---- real key art is often bright (a yellow city, a white sky): the shade where text sits holds the contrast
+   whatever the art, and the text carries a soft shadow of its own ---- */
+#veil.home{background:linear-gradient(180deg,rgba(5,6,10,.62) 0%,rgba(5,6,10,.22) 14%,rgba(5,6,10,0) 30%),
+  linear-gradient(90deg,rgba(5,6,10,.6) 0%,rgba(5,6,10,.3) 30%,rgba(5,6,10,0) 56%),
+  linear-gradient(0deg,var(--accent-deep) 0%,rgba(5,6,10,.84) 18%,rgba(5,6,10,.48) 42%,rgba(5,6,10,0) 66%)}
+#veil.side{background:linear-gradient(180deg,rgba(5,6,10,.5) 0%,rgba(5,6,10,0) 22%),
+  linear-gradient(90deg,rgba(5,6,10,.9) 0%,rgba(5,6,10,.66) 38%,rgba(5,6,10,0) 72%),
+  linear-gradient(0deg,rgba(5,6,10,.82) 0%,rgba(5,6,10,0) 36%)}
+#home .st-label,#home .ctx,#detail .col{text-shadow:0 1px 14px rgba(0,0,0,.6)}
+#detail .col .primary{text-shadow:none}
+
+/* ---- COVERS of the sections (covers.js): the console in the card. Its faceted stone band across the top,
+   lit from above with the colour of the last game; the sign in the white of its top panel; the light line
+   under the band; the label below on the black body. Wide cards keep the band above their two lines of text. ---- */
+#stage .card.tile,#stage .card.wide{isolation:isolate}
+.cov{position:absolute;inset:0;z-index:-1;border-radius:inherit;overflow:hidden;pointer-events:none;--bh:43%}
+.card.tile .cov{--bh:64%}
+.cov .band{position:absolute;left:0;right:0;top:0;height:var(--bh);
+  background:radial-gradient(ellipse 70% 120% at 50% -20%,color-mix(in srgb,var(--accent) 26%,rgba(255,255,255,.3)) 0%,rgba(255,255,255,0) 70%),
+    linear-gradient(180deg,rgba(255,255,255,.1) 0%,rgba(0,0,0,.28) 100%),var(--roca) center/100% 100%;
+  box-shadow:inset 0 -1px 0 rgba(0,0,0,.7),inset 0 -12px 18px -10px rgba(0,0,0,.6);transition:filter var(--d-settle) var(--e-settle)}
+.card.tile .cov .band{background-size:auto,auto,400% 100%}
+.cov .cg{position:absolute;left:50%;aspect-ratio:1;translate:-50% -50%;top:calc(var(--bh) / 2);height:calc(var(--bh) * .72);
+  filter:drop-shadow(0 6px 10px rgba(0,0,0,.55))}
+.card.tile .cov .cg{height:auto;width:54%}
+.cov .panel,.cov .cut{position:absolute;inset:0;width:100%;height:100%}
+.cov .panel{background:linear-gradient(180deg,#fff 0%,#f2f2f5 45%,#d6d6dc 100%);
+  -webkit-mask:var(--m) center/contain no-repeat;mask:var(--m) center/contain no-repeat}
+.cov .cut{fill:none;stroke:rgba(11,12,16,.62);stroke-width:2px;stroke-linecap:round}
+.cov .cut path{vector-effect:non-scaling-stroke}
+.cov .cut circle{fill:rgba(11,12,16,.7);stroke:none}
+.cov .ln{position:absolute;left:30%;right:30%;top:calc(var(--bh) - 1px);height:2px;border-radius:2px;background:#fff;
+  box-shadow:0 0 8px rgba(255,255,255,.9),0 0 22px var(--accent-glow)}
+.card.f .cov .band{filter:brightness(1.3)}
 </style>
 
-<div id="app">
+<!-- LIQUID GLASS (cristal.css): the lens of the section bar and the status. Chromium bends what is behind them
+     through this displacement map: a horizontal ramp in red and a vertical one in green, neutral in the middle,
+     so only the edges refract. Drawing modes without it (WebKit, «Ligeros») keep the plain blur. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><filter id="lens" x="0" y="0" width="1" height="1" primitiveUnits="objectBoundingBox" color-interpolation-filters="sRGB"><feImage href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22 preserveAspectRatio=%22none%22%3E%3ClinearGradient id=%22g%22 x1=%220%22 y1=%220%22 x2=%221%22 y2=%220%22%3E%3Cstop offset=%220%22 stop-color=%22%23ff0000%22/%3E%3Cstop offset=%22.16%22 stop-color=%22%23800000%22/%3E%3Cstop offset=%22.84%22 stop-color=%22%23800000%22/%3E%3Cstop offset=%221%22 stop-color=%22%23000000%22/%3E%3C/linearGradient%3E%3Crect width=%22100%22 height=%22100%22 fill=%22url%28%23g%29%22/%3E%3C/svg%3E" x="0" y="0" width="1" height="1" preserveAspectRatio="none" result="mx"/><feImage href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22 preserveAspectRatio=%22none%22%3E%3ClinearGradient id=%22g%22 x1=%220%22 y1=%220%22 x2=%220%22 y2=%221%22%3E%3Cstop offset=%220%22 stop-color=%22%2300ff00%22/%3E%3Cstop offset=%22.3%22 stop-color=%22%23008000%22/%3E%3Cstop offset=%22.7%22 stop-color=%22%23008000%22/%3E%3Cstop offset=%221%22 stop-color=%22%23000000%22/%3E%3C/linearGradient%3E%3Crect width=%22100%22 height=%22100%22 fill=%22url%28%23g%29%22/%3E%3C/svg%3E" x="0" y="0" width="1" height="1" preserveAspectRatio="none" result="my"/><feComposite in="mx" in2="my" operator="arithmetic" k1="0" k2="1" k3="1" k4="0" result="map"/><feDisplacementMap in="SourceGraphic" in2="map" scale="0.08" xChannelSelector="R" yChannelSelector="G"/></filter></svg><div id="app">
   <div id="viewport">
     <div id="stage" tabindex="0" aria-label="Pantalla de STONE MACHINE. Usa las flechas, Enter y Escape, o un mando.">
       <div id="bgA" class="bg"></div><div id="bgB" class="bg"></div><div id="veil" class="none"></div>
@@ -473,7 +896,7 @@ body.dormant *,body.dormant *::before,body.dormant *::after{animation-play-state
           <span id="clock">--:--</span>
         </div>
       </div>
-      <div id="tabs" class="hide"><span>INICIO</span><span>BIBLIOTECA</span><span>EXPLORAR</span><span>MEDIA</span><span>TIENDA</span></div>
+      <div id="tabs" class="hide"><span>Inicio</span><span>Biblioteca</span><span>Explorar</span><span>Media</span><span>Tienda</span></div>
 
       <div id="quick"><div class="dim"></div><div class="panel"></div></div>
       <div id="power"><div class="dim"></div><div class="box"></div></div>
@@ -517,7 +940,9 @@ const S = {
   caps: null, actual: null, safeMode: false, game: null, provisional: false, pending: null,
   render: 0, info: null, libReady: false, libFound: true, launching: null, st: null,
   /* 3.0: who is signed in to Steam ("in", "out", null: not known yet), Steam's own window in front, the session report */
-  libLogged: null, libCached: false, libNone: false, steamFront: null, report: true
+  libLogged: null, libCached: false, libNone: false, steamFront: null, report: true,
+  /* CRISTAL: glass with blur (1) or without (0, «Ligeros»; always without GPU) */
+  glass: 1
 };
 /* Performance profiles: all values stay inside the range documented as stable on every BC-250 (≤ 2000 MHz at 1000 mV, ≤ 85 °C).
    stoned holds the same table (profiles.py) and is the one that applies it; these are for display. */
@@ -653,7 +1078,6 @@ function adopt(st) {
   if (st.profiles) Object.entries(st.profiles).forEach(([id, v]) => { if (FACT[id] && v && v.max) Object.assign(FACT[id], { max: v.max, min: v.min, temp: v.temp, resp: v.resp }); });
   if (st.range) S.range = st.range;
   const sb = document.getElementById('safeBadge'); if (sb) sb.hidden = !st.safe_mode;
-  refreshStrata();
   st.slots.forEach((s, k) => { slots[k] = s.state === 'empty' ? null : { max: s.max, min: s.min, temp: s.temp, resp: s.resp, state: s.state, test_level: s.test_level }; });
   G.forEach(g => { g.perf = st.per_game[g.appid] || null; });
   gameSync(st, before);
@@ -763,7 +1187,9 @@ async function loadLibrary() {
 const capUrl = g => g.art.capsule ? `url("${Bridge.artUrl(g.appid, 'capsule')}")` : g.art.header ? `url("${Bridge.artUrl(g.appid, 'header')}")` : 'none';
 const capWide = g => !g.art.capsule && !!g.art.header;
 const heroUrl = g => g.art.hero || g.art.capsule || g.art.header ? Bridge.artUrl(g.appid, g.art.hero ? 'hero' : g.art.capsule ? 'capsule' : 'header') : null;
-const nameTag = g => `<span class="nm">${esc(g.n.toUpperCase())}</span>`;
+/* A cover without art: the machine itself in miniature (black gloss, the stone band, the light line); the
+   name is never written on a cover, it shows under the row (Home) or at the foot of the grid (Library). */
+const nameTag = () => '<span class="ph"></span>';
 /* Background blur from a 64×36 copy of the hero: one tiny image scaled up, no live blur filter.
    A small LRU keeps the last ones; game mode empties it. */
 const BLUR = new Map(), BLUR_MAX = 24;
@@ -897,6 +1323,7 @@ function setBg(css, veil, keepFor) {
 }
 function bgGame(g, sharp, veil) {
   S.bgFor = { i: g.i, sharp, veil };
+  accentFor(g);
   const u = heroUrl(g);
   if (!u) return setBg(neutralBg, veil, true);
   if (sharp) return setBg(`url("${u}")`, veil, true);
@@ -904,7 +1331,48 @@ function bgGame(g, sharp, veil) {
   if (b) return setBg(`url(${b})`, veil, true);
   $('#veil').className = veil;
 }
-const neutralBg = 'linear-gradient(to bottom, #1c1d1f 0%, #141517 60%, #0a0a0b 100%)';
+
+/* CRISTAL: the colour of the game in focus, read from its own art (a 24 × 14 copy, colourful and
+   bright pixels counting most) and made vivid enough to glow. It tints the focus, the page's shade
+   and the accents. Unknown (no art, unreadable): STONE's amber. */
+const ACCENT = new Map(), ACCENT_MAX = 64, ACCENT_DEFAULT = '#f0a23b';
+function setAccent(c) { stage.style.setProperty('--accent', c || ACCENT_DEFAULT); }
+function vivid(r, g, b) {
+  r /= 255; g /= 255; b /= 255;
+  const mx = Math.max(r, g, b), mn = Math.min(r, g, b), d = mx - mn;
+  let h = 0;
+  if (d) h = mx === r ? ((g - b) / d) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4;
+  h = Math.round((h * 60 + 360) % 360);
+  const l = (mx + mn) / 2, s = d ? d / (1 - Math.abs(2 * l - 1)) : 0;
+  if (s < .12) return null;                      /* grey art: no colour to take, keep STONE's own */
+  return `hsl(${h}, ${Math.round(Math.max(.62, Math.min(.92, s)) * 100)}%, ${Math.round(Math.max(.56, Math.min(.66, l + .18)) * 100)}%)`;
+}
+function accentFor(g) {
+  if (ACCENT.has(g.appid)) return setAccent(ACCENT.get(g.appid));
+  const u = heroUrl(g);
+  if (!u) return setAccent(null);
+  const img = new Image(); img.decoding = 'async';
+  img.onload = () => {
+    let c = null;
+    try {
+      const cv = document.createElement('canvas'); cv.width = 24; cv.height = 14;
+      const x = cv.getContext('2d'); x.drawImage(img, 0, 0, 24, 14);
+      const d = x.getImageData(0, 0, 24, 14).data;
+      let r = 0, gg = 0, b = 0, w = 0;
+      for (let i = 0; i < d.length; i += 4) {
+        const mx = Math.max(d[i], d[i + 1], d[i + 2]), mn = Math.min(d[i], d[i + 1], d[i + 2]);
+        const wt = (mx ? (mx - mn) / mx : 0) ** 2 * (mx / 255) + .01;
+        r += d[i] * wt; gg += d[i + 1] * wt; b += d[i + 2] * wt; w += wt;
+      }
+      c = vivid(r / w, gg / w, b / w);
+    } catch (e) { c = null; }           /* artwork that cannot be read keeps the default */
+    ACCENT.set(g.appid, c);
+    while (ACCENT.size > ACCENT_MAX) ACCENT.delete(ACCENT.keys().next().value);
+    if (S.bgFor && S.bgFor.i === g.i) setAccent(c);
+  };
+  img.src = u;
+}
+const neutralBg = 'var(--aurora)';
 function chrome(on, tabsOn) {
   $('#hdr').classList.toggle('hide', !on);
   $('#tabs').classList.toggle('hide', !tabsOn);
@@ -936,6 +1404,7 @@ function applyFocus(opts = {}) {
   document.querySelectorAll('.f').forEach(e => e.classList.remove('f'));
   setLine(p.x, p.y, p.w, { slow: opts.slow });
   el.classList.add('f');
+  line.classList.toggle('pill', !isCard);
   spread(el, isCard, grow);
   NAV.mem[NAV.r] = NAV.c;
   if (NAV.onFocus) NAV.onFocus(el, NAV.r, NAV.c);
@@ -971,23 +1440,23 @@ function homeHTML() {
   let cards = '';
   if (S.section === 0) {
     /* Nobody signed in to Steam on this console: the first thing Home offers */
-    if (S.libLogged === 'out') cards += `<div class="card wide vein" data-f data-act="login"><b>INICIA SESIÓN EN STEAM</b><span>Tus juegos vienen de tu cuenta de Steam</span></div>`;
+    if (S.libLogged === 'out') cards += `<div class="card wide vein" data-f data-act="login">${cover('login')}<b>Inicia sesión en Steam</b><span>Tus juegos vienen de tu cuenta de Steam</span></div>`;
     if (G.length && recent.length) {
       const g0 = G[recent[0]], hu = heroUrl(g0);
       cards += `<div class="card hero${g0.inst || g0.src === 'shortcut' ? '' : ' dim'}" data-f data-g="${g0.i}" style="background-image:${hu ? `url(&quot;${hu}&quot;)` : 'none'};background-color:var(--shale)">${hu ? '' : nameTag(g0)}${runTag(g0.i)}</div>`;
-      recent.slice(1).forEach(i => { const g = G[i]; cards += `<div class="card cap${g.inst || g.src === 'shortcut' ? '' : ' dim'}${capWide(g) ? ' hdr' : ''}" data-f data-g="${i}" style="background-image:${capUrl(g).replace(/"/g, '&quot;')}">${g.art.capsule ? '' : nameTag(g)}${runTag(i)}</div>`; });
+      recent.slice(1).forEach(i => { const g = G[i]; cards += `<div class="card cap${g.inst || g.src === 'shortcut' ? '' : ' dim'}${capWide(g) ? ' hdr' : ''}" data-f data-g="${i}" style="background-image:${capUrl(g).replace(/"/g, '&quot;')}">${g.art.capsule || g.art.header ? '' : nameTag(g)}${runTag(i)}</div>`; });
     } else if (S.libLogged !== 'out') {
-      cards += `<div class="card wide" data-f data-act="${S.libReady ? 'store' : 'library'}"><b>${S.libReady ? 'SIN JUEGOS' : 'BIBLIOTECA'}</b><span>${S.libReady ? 'Abre la tienda para conseguir el primero' : 'Leyendo la biblioteca de Steam…'}</span></div>`;
+      cards += `<div class="card wide" data-f data-act="${S.libReady ? 'store' : 'library'}">${cover(S.libReady ? 'store' : 'library')}<b>${S.libReady ? 'Sin juegos' : 'Biblioteca'}</b><span>${S.libReady ? 'Abre la tienda para conseguir el primero' : 'Leyendo la biblioteca de Steam…'}</span></div>`;
     }
-    cards += `<div class="card tile" data-f data-act="library">BIBLIOTECA</div><div class="card tile" data-f data-act="store">TIENDA</div>`;
+    cards += `<div class="card tile" data-f data-act="library">${cover('library')}Biblioteca</div><div class="card tile" data-f data-act="store">${cover('store')}Tienda</div>`;
   } else if (S.section === 2) {
-    [['TIENDA', 'Ofertas, novedades y lo más vendido en Steam', 'store'], ['BUSCAR JUEGOS', 'Tu biblioteca y la tienda de Steam', 'search'],
-      ['SORPRÉNDEME', 'STONE elige uno de tus juegos instalados', 'surprise'], ['DESCARGAS', 'Descargas y actualizaciones de juegos', 'downloads'], ['EMULADORES', 'Juegos de otras consolas', 'emu']]
-      .forEach(([t, s, k]) => { cards += `<div class="card wide" data-f data-act="${k}"><b>${t}</b><span>${s}</span></div>`; });
+    [['Tienda', 'Ofertas, novedades y lo más vendido en Steam', 'store'], ['Buscar juegos', 'Tu biblioteca y la tienda de Steam', 'search'],
+      ['Sorpréndeme', 'STONE elige uno de tus juegos instalados', 'surprise'], ['Descargas', 'Descargas y actualizaciones de juegos', 'downloads'], ['Emuladores', 'Juegos de otras consolas', 'emu']]
+      .forEach(([t, s, k]) => { cards += `<div class="card wide" data-f data-act="${k}">${cover(k)}<b>${t}</b><span>${s}</span></div>`; });
   } else {
     if (!SHOTS) loadShots();
     if (SHOTS && SHOTS.length) SHOTS.slice(0, 12).forEach((sh, k) => { cards += `<div class="card cap shot" data-f data-act="shot" data-k="${k}" style="background-image:url(&quot;${Bridge.artUrl(sh.appid === '0' ? '0' : '0', sh.kind)}&quot;)"></div>`; });
-    else cards += `<div class="card wide" data-f data-act="noshots"><b>CAPTURAS</b><span>${SHOTS ? 'Aún no hay capturas. Durante el juego: botón STEAM + R1' : 'Leyendo las capturas…'}</span></div>`;
+    else cards += `<div class="card wide" data-f data-act="noshots">${cover('noshots')}<b>Capturas</b><span>${SHOTS ? 'Aún no hay capturas. Durante el juego: botón STEAM + R1' : 'Leyendo las capturas…'}</span></div>`;
   }
   const ico = {
     lib: '<svg width="26" height="26" viewBox="0 0 26 26" fill="none" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="6" height="18"/><rect x="11" y="4" width="6" height="18"/><path d="M19 5l4 1-3 16-4-1"/></svg>',
@@ -997,14 +1466,12 @@ function homeHTML() {
     sea: '<svg width="26" height="26" viewBox="0 0 26 26" fill="none" stroke-width="2" aria-hidden="true"><circle cx="11.5" cy="11.5" r="7"/><path d="M17 17l6 6"/></svg>',
     sto: '<svg width="26" height="26" viewBox="0 0 26 26" fill="none" stroke-width="2" aria-hidden="true"><path d="M5 9h16l-1.5 13h-13z"/><path d="M9 9V7a4 4 0 0 1 8 0v2"/></svg>'
   };
-  const label = S.section === 0 ? `ESTRATO 01 · <b>${S.libNone && G.length ? 'TU CUENTA' : 'RECIENTES'}</b>${G.length ? ` · ${G.length} JUEGO${G.length === 1 ? '' : 'S'}` : ''}`
-    : S.section === 2 ? 'ESTRATO 01 · <b>EXPLORAR</b>' : 'ESTRATO 01 · <b>MEDIA</b>';
+  const label = S.section === 0 ? `<b>${S.libNone && G.length ? 'Tu cuenta' : 'Recientes'}</b>${G.length ? ` · ${G.length} juego${G.length === 1 ? '' : 's'}` : ''}`
+    : S.section === 2 ? '<b>Explorar</b>' : '<b>Media</b>';
   return `<div class="st-head"></div><div class="st-deep"></div>
     <div class="st-label l1">${label}</div>
     <div class="clip"><div class="track" data-sx="0">${cards}</div></div>
     <div class="horizon"></div>
-    <div class="st-label l2">ESTRATO 02 · <b>LA MÁQUINA</b></div>
-    <div class="strata" id="strata">${strataHTML()}</div>
     <div class="ctx"><div class="kicker" id="hk"></div><div class="ctx-title" id="ht"></div><div class="meta" id="hm"></div></div>
     <div class="sys">
       <span class="txt-f" data-f data-act="search">${ico.sea}Buscar</span>
@@ -1015,16 +1482,6 @@ function homeHTML() {
       <span class="txt-f" data-f data-act="power">${ico.pow}Apagar</span>
     </div>`;
 }
-/* ESTRATOS: what the console is doing, read from stoned (nothing here is invented: unknown stays out). */
-function strataHTML() {
-  const cell = (k, v, warn) => `<div><span>${k}</span><b${warn ? ' class="warn"' : ''}>${esc(v)}</b></div>`;
-  const p = profOf(effective());
-  const lim = S.actual && !S.actual.error ? `hasta ${S.actual.max} MHz` : (S.actual && S.actual.error === 'ServiceUnavailable' ? 'sin servicio' : 'leyendo…');
-  const cu = S.caps ? (S.caps.board ? `${cu40Top() ? 40 : 24} CU` : 'no es BC-250') : 'leyendo…';
-  const state = S.safeMode ? 'SAFE MODE' : S.running !== null && G[S.running] ? 'jugando' : 'lista';
-  return cell('PERFIL', p.n + (S.game && S.game.profile ? ' · juego' : '')) + cell('GPU', lim) + cell('UNIDADES', cu) + cell('CONSOLA', state, S.safeMode);
-}
-function refreshStrata() { const s = document.getElementById('strata'); if (s && S.screen === 'home') s.innerHTML = strataHTML(); }
 function homeContext(el) {
   const hk = $('#hk'), ht = $('#ht'), hm = $('#hm');
   hm.classList.remove('on'); clearTimeout(metaT);
@@ -1036,14 +1493,14 @@ function homeContext(el) {
     hm.textContent = !playable ? `${g.upd ? 'Instalándose' : 'Pulsa A para instalarlo'} · ${playText(g)}`
       : `${S.running === g.i ? 'Abierto ahora' : g.last} · ${playText(g)}${g.o !== 'Steam' ? ' · ' + g.o : ''}`;
     metaT = setTimeout(() => hm.classList.add('on'), S.rm ? 150 : 600);
-    bgGame(g, false, '');
+    bgGame(g, true, 'home');           /* CRISTAL: the game's own art, sharp, fills the screen */
     [NAV && NAV.rows[0][NAV.c + 1], NAV && NAV.rows[0][NAV.c - 1]].forEach(nx => { if (nx && nx.dataset.g !== undefined) blurOf(G[+nx.dataset.g]); });
   } else {
     const a = el.dataset.act;
-    const label = { login: ['STEAM', 'Con el código QR de Steam y tu móvil, sin escribir contraseñas'], store: ['TIENDA', 'Ofertas, novedades y lo más vendido en Steam'],
-      surprise: ['SORPRÉNDEME', 'Para cuando no sabes a qué jugar'], search: ['BUSCAR', 'Tus juegos y la tienda de Steam (Y)'], library: ['BIBLIOTECA', S.libReady ? `${G.length} juego${G.length === 1 ? '' : 's'}` : 'Leyendo…'], explore: ['EXPLORAR', 'Tienda, descargas y emuladores'], settings: ['AJUSTES', 'Pantalla, audio, rendimiento y más'], power: ['APAGAR', 'Apagar o reiniciar'],
-      downloads: ['DESCARGAS', 'Lo que se descarga y el espacio libre'], emu: ['EMULADORES', 'Juegos de otras consolas'], noshots: ['CAPTURAS', 'Durante el juego: botón STEAM + R1'],
-      shot: (() => { const sh = SHOTS && SHOTS[+el.dataset.k], g = sh && G.find(x => x.appid === sh.appid); return ['CAPTURA', sh ? `${g ? g.n : 'Juego ' + sh.appid} · ${new Date(sh.time * 1000).toLocaleDateString('es-CL')}` : '']; })() }[a] || ['', ''];
+    const label = { login: ['Steam', 'Con el código QR de Steam y tu móvil, sin escribir contraseñas'], store: ['Tienda', 'Ofertas, novedades y lo más vendido en Steam'],
+      surprise: ['Sorpréndeme', 'Para cuando no sabes a qué jugar'], search: ['Buscar', 'Tus juegos y la tienda de Steam (Y)'], library: ['Biblioteca', S.libReady ? `${G.length} juego${G.length === 1 ? '' : 's'}` : 'Leyendo…'], explore: ['Explorar', 'Tienda, descargas y emuladores'], settings: ['Ajustes', 'Pantalla, audio, rendimiento y más'], power: ['Apagar', 'Apagar o reiniciar'],
+      downloads: ['Descargas', 'Lo que se descarga y el espacio libre'], emu: ['Emuladores', 'Juegos de otras consolas'], noshots: ['Capturas', 'Durante el juego: botón STEAM + R1'],
+      shot: (() => { const sh = SHOTS && SHOTS[+el.dataset.k], g = sh && G.find(x => x.appid === sh.appid); return ['Captura', sh ? `${g ? g.n : 'Juego ' + sh.appid} · ${new Date(sh.time * 1000).toLocaleDateString('es-CL')}` : '']; })() }[a] || ['', ''];
     hk.textContent = S.section === 2 ? 'EXPLORAR' : S.section === 3 ? 'MEDIA' : 'SISTEMA';
     if (a === 'search') hk.textContent = 'BUSCAR';
     if (a === 'login') hk.textContent = 'TU CUENTA';
@@ -1216,7 +1673,7 @@ function storeCard(it, k) {
   const row = Math.floor(k / STORE_COLS), col = k % STORE_COLS;
   const img = it.art ? `url(&quot;${Bridge.artUrl(it.appid, 'header')}&quot;)` : 'none';
   return `<div class="card scard" data-f data-s="${k}" data-a="${it.appid}" style="left:${(col * (STORE_W + STORE_GAP)).toFixed(2)}px;top:${row * STORE_ROW}px;background-image:${img}">
-    ${it.art ? '' : `<span class="nm">${esc(it.name.toUpperCase())}</span>`}${it.discount ? `<span class="off">−${it.discount} %</span>` : ''}
+    ${it.art ? '' : '<span class="ph"></span>'}${it.discount ? `<span class="off">−${it.discount} %</span>` : ''}
     <span class="cap2"><b>${esc(it.name)}</b><i>${it.was && !storeMine(it.appid) ? `<s>${esc(it.was)}</s>` : ''}${esc(storePrice(it))}</i></span></div>`;
 }
 function enterStore(opts = {}) {
@@ -1304,7 +1761,7 @@ function storeArt(got) {
   document.querySelectorAll('#store .scard').forEach(el => {
     const a = got[el.dataset.a]; if (!a || !a.header) return;
     el.style.backgroundImage = `url("${Bridge.artUrl(el.dataset.a, 'header')}")`;
-    const nm = el.querySelector('.nm'); if (nm) nm.remove();
+    const ph = el.querySelector('.ph'); if (ph) ph.remove();
   });
   if (S.screen === 'spage' && got[SPG.id]) { if (got[SPG.id].hero) SPG.hero = true; if (got[SPG.id].header) SPG.header = true; storePageBg(); }
 }
@@ -1339,7 +1796,7 @@ function storePageDraw(opts = {}) {
   const tags = d && d.genres && d.genres.length ? ' · ' + d.genres.slice(0, 3).join(' · ') : '';
   const by = d ? [d.by && d.by.join(', '), d.release].filter(Boolean).join(' · ') : '';
   $('#detail').innerHTML = `
-    <div class="col"><div class="origin">TIENDA DE STEAM${esc(tags)}</div><h1${name.length > 22 ? ' class="long"' : ''}>${esc(name.toUpperCase())}</h1>
+    <div class="col"><div class="origin">TIENDA DE STEAM${esc(tags)}</div><h1${name.length > 22 ? ' class="long"' : ''}>${esc(name)}</h1>
       <div class="stats">${esc(by || (SPG.err ? SPG.err : d ? '' : 'Leyendo la ficha de Steam…'))}</div>
       <div class="stats about">${esc(d && d.about ? d.about : '')}</div></div>
     <div class="primary txt-f" data-f data-act="${act}" id="dprim">${prim}</div>
@@ -1674,10 +2131,10 @@ Bridge.on('art', d => {
   });
   document.querySelectorAll('#home .card[data-g], #library .card[data-g]').forEach(el => {
     const g = G[+el.dataset.g]; if (!g || !ids.has(g.appid)) return;
-    const nm = el.querySelector('.nm');
-    if (el.classList.contains('hero')) { const u = heroUrl(g); if (u) { el.style.backgroundImage = `url("${u}")`; if (nm) nm.remove(); } return; }
+    const ph = el.querySelector('.ph');
+    if (el.classList.contains('hero')) { const u = heroUrl(g); if (u) { el.style.backgroundImage = `url("${u}")`; if (ph) ph.remove(); } return; }
     el.style.backgroundImage = capUrl(g); el.classList.toggle('hdr', capWide(g));
-    if (nm && g.art.capsule) nm.remove();
+    if (ph && (g.art.capsule || g.art.header)) ph.remove();
   });
   /* the big picture behind the game being looked at */
   if (S.bgFor && G[S.bgFor.i] && ids.has(G[S.bgFor.i].appid) && ['home', 'detail'].includes(S.screen)) { bgCur = ''; bgGame(G[S.bgFor.i], S.bgFor.sharp, S.bgFor.veil); }
@@ -1720,6 +2177,37 @@ function sessionReport(g) {
     const temp = m && m.gpu_temp_c != null ? ` · GPU ${Math.round(m.gpu_temp_c)} °C al terminar` : '';
     setTimeout(() => longToast(`PARTE DE SESIÓN · ${g.n} · ${dur}${temp} · ${profOf(g.perf || S.prof).n}`, 9000), 1400);
   });
+}
+/* ---------- COVERS of the sections (Biblioteca, Tienda, Explorar, Capturas…) ----------
+   Steam has no art for these, so they wear the STONE MACHINE itself: its faceted stone band across the top,
+   lit from above, the section's sign in the white of its top panel, and the white light line of its front
+   under the band; the label sits below, on the black body. Signs in a 100×100 box: f filled, s thick
+   strokes (both in white; w their width), l the lines cut into them, d the cut points (pips, buttons). */
+const COVERS = {
+  library: { f: 'M14 18h18v66H14zM36 18h18v66H36zM60.5 21.5l15.6-3.4 13.4 61.7-15.6 3.4z', l: 'M18 30h10M40 30h10' },
+  store: { f: 'M12 38h76l-7 48H19z', s: 'M35 46V32a15 15 0 0 1 30 0v14', w: 5.5, d: [[35, 47], [65, 47]] },
+  search: { s: 'M42 19a23 23 0 1 0 .01 0zM60 60l22 22' },
+  surprise: { f: 'M50 12l34 19v38L50 88 16 69V31z', l: 'M16 31l34 19 34-19M50 50v38',
+    d: [[50, 31], [26, 50], [40, 70], [59, 73], [67, 59.5], [75, 46]] },
+  downloads: { f: 'M40 12h20v34h17L50 72 23 46h17zM14 80h72v7H14z' },
+  emu: { f: 'M30 30h40c13 0 22 11 22 27 0 13-7 22-15 20-5-1-8-6-12-11H35c-4 5-7 10-12 11-8 2-15-7-15-20 0-16 9-27 22-27z',
+    l: 'M27 47v14M20 54h14', d: [[69, 47], [77, 54], [69, 61], [61, 54]] },
+  shots: { s: 'M14 32V14h18M68 14h18v18M86 68v18H68M32 86H14V68', f: 'M50 36a14 14 0 1 0 .01 0z' },
+  login: { f: 'M50 16a16 16 0 1 0 .01 0zM18 88c0-20 14-33 32-33s32 13 32 33z' }
+};
+const COVER_OF = { library: 'library', store: 'store', search: 'search', surprise: 'surprise', downloads: 'downloads', emu: 'emu', noshots: 'shots', login: 'login' };
+const coverMask = {};
+function cover(act) {
+  const k = COVER_OF[act], c = k && COVERS[k];
+  if (!c) return '';
+  if (!coverMask[k]) {
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">${c.f ? `<path d="${c.f}"/>` : ''}` +
+      `${c.s ? `<path d="${c.s}" fill="none" stroke="#000" stroke-width="${c.w || 10}" stroke-linecap="round" stroke-linejoin="round"/>` : ''}</svg>`;
+    coverMask[k] = `url('data:image/svg+xml,${encodeURIComponent(svg)}')`;
+  }
+  const cut = (c.l ? `<path d="${c.l}"/>` : '') + (c.d || []).map(([x, y]) => `<circle cx="${x}" cy="${y}" r="3.6"/>`).join('');
+  return `<i class="cov" aria-hidden="true"><i class="band"></i><i class="cg"><i class="panel" style="--m:${coverMask[k]}"></i>` +
+    `${cut ? `<svg class="cut" viewBox="0 0 100 100">${cut}</svg>` : ''}</i><i class="ln"></i></i>`;
 }
 
 /* ---------- LIBRARY ---------- */
@@ -1784,7 +2272,7 @@ function enterLibrary(opts = {}) {
 }
 const LIB_ROW_H = 437, LIB_COL_W = (1728 - 5 * 40) / 6;
 function libCard(g, row, col) {
-  const name = g.art.capsule ? '' : nameTag(g);
+  const name = g.art.capsule || g.art.header ? '' : nameTag(g);
   return `<div class="card${g.inst || g.src === 'shortcut' ? '' : ' dim'}${capWide(g) ? ' hdr' : ''}" data-f data-g="${g.i}" data-row="${row}" style="left:${(col * (LIB_COL_W + 40)).toFixed(2)}px;top:${row * LIB_ROW_H}px;background-image:${capUrl(g).replace(/"/g, '&quot;')}">${name}${runTag(g.i)}</div>`;
 }
 function libraryA(el) {
@@ -1804,7 +2292,7 @@ function enterDetail(i, opts = {}) {
   const sec = [[g.fav ? 'Quitar de favoritos' : 'Favorito', 'fav'], [`Rendimiento: ${g.perf ? profOf(g.perf).n : 'Global'}`, 'perf'], ['Propiedades', 'opt']];
   if (g.src === 'steam' && g.inst) sec.splice(2, 0, ['Gráficos', 'gfx'], ['Experiencia', 'xp']);
   $('#detail').innerHTML = `
-    <div class="col"><div class="origin">${esc(g.o)}</div><h1${g.n.length > 22 ? ' class="long"' : ''}>${esc(g.n.toUpperCase())}</h1>
+    <div class="col"><div class="origin">${esc(g.o)}</div><h1${g.n.length > 22 ? ' class="long"' : ''}>${esc(g.n)}</h1>
       <div class="stats">${playText(g)} · Última sesión: ${running ? 'ahora' : g.last}</div>
       <div class="stats exp" id="dexp" style="margin-top:.35em;opacity:.85"></div></div>
     <div class="primary txt-f" data-f data-act="primary" id="dprim">${prim}</div>
@@ -2008,7 +2496,7 @@ function loadingOn(g) {
   if (!gm.querySelector('.ld')) gm.insertAdjacentHTML('beforeend', '<div class="ld"><div class="col"><div class="ld-kick"></div><div class="ld-title"></div><div class="ld-sub"></div><div class="ld-bar"><i></i></div><div class="ld-step"></div><div class="ld-note"></div></div><div class="ld-foot"><span class="g">B</span>INICIO</div></div>');
   const set = (k, v) => { gm.querySelector('.ld-' + k).textContent = v; };
   set('kick', `${g.o} · ${profOf(g.perf || effective()).n}`);
-  set('title', g.n.toUpperCase());
+  set('title', g.n);
   gm.querySelector('.ld-title').classList.toggle('long', g.n.length > 22);
   set('sub', g.exp && g.exp.settings && g.exp.status !== 'UNKNOWN' ? g.exp.settings : '');
   ldT.forEach(clearTimeout);
@@ -2529,6 +3017,8 @@ function catRows() {
       steam('HDR', 'Según el televisor y el juego', 'Botón STEAM → Ajustes → Pantalla'),
       { l: 'Tamaño del texto', s: 'Se aplica a STONE Home', v: SIZES[S.ts], key: 'ts' },
       { l: 'Modo de imagen', s: RENDER_TXT[S.render], v: RENDER[S.render], key: 'render' },
+      { l: 'Efectos de cristal', s: S.render === 1 ? 'Sin GPU se usan siempre los ligeros' : 'Paneles translúcidos con desenfoque. «Ligeros» los dibuja sin desenfoque y gasta menos GPU',
+        v: S.glass && S.render !== 1 ? 'Completos' : 'Ligeros', key: 'glass' },
       { l: 'Resolución de STONE', s: devicePixelRatio > 1.5 || innerWidth * devicePixelRatio >= 3800 ? 'Dibujada a la resolución del televisor'
         : 'Si tu televisor es 4K y aquí no dice 3840 × 2160, mira «Cómo»', v: drawRes(), act: 'info',
         where: 'Steam decide el tamaño de cada app. Botón STEAM → Biblioteca → STONE → ⚙ → Propiedades → General → Resolución del juego: Nativa. Luego reinicia STONE' },
@@ -2779,7 +3269,7 @@ function romAct(r, ri) {
 function enterSettings(opts = {}) {
   S.screen = 'settings';
   const c = catRows();
-  $('#settings').innerHTML = `<div class="ttl">AJUSTES</div>
+  $('#settings').innerHTML = `<div class="ttl">Ajustes</div>
     <div class="cats">${CATS.map((n, k) => `<span class="txt-f${k === cat ? ' cur' : ''}" data-f data-cat="${k}">${n}</span>`).join('')}</div>
     <div class="vr"></div>
     <div class="pane"><div class="desc">${c.d}</div><div class="rows">${c.rows.map((r, k) => `<div class="srow" data-f data-row="${k}"><div class="l"><b>${r.l}</b><small>${r.s}</small></div><div class="v">${r.key && !['sound', 'hc', 'rm', 'tech'].includes(r.key) ? `<span class="ar">‹</span>${r.v}<span class="ar">›</span>` : r.v}</div></div>`).join('')}</div></div>`;
@@ -2823,6 +3313,7 @@ function settingsMove(dir) {
 function applyPrefs() {
   stage.classList.toggle('hc', S.hc);
   stage.classList.toggle('rm', S.rm);
+  stage.classList.toggle('lite', !S.glass || S.render === 1);
   const k = S.rm ? .3 : 1, r = document.documentElement.style;
   [['--d-step', 220], ['--d-settle', 360], ['--d-exit', 450], ['--d-enter', 600], ['--d-light', 900], ['--d-cer', 1200]].forEach(([n, v]) => r.setProperty(n, Math.round(v * k) + 'ms'));
   r.setProperty('--fscale', S.rm ? 1 : 1.06);
@@ -2840,6 +3331,7 @@ function adjust(key, d, ri) {
   else if (key === 'rm') { S.rm = !S.rm; }
   else if (key === 'tech') { S.tech = !S.tech; }
   else if (key === 'report') { S.report = !S.report; }
+  else if (key === 'glass') { if (S.render === 1) return toast('Sin GPU se usan siempre los efectos ligeros', false); S.glass = S.glass ? 0 : 1; }
   else if (key === 'sysvol') { return setSysVol(d, ri); }
   else if (key === 'frame') { const n = FRAME + d; if (n < 0 || n > 6) return bump(d); FRAME = n; fit(); }
   else if (key === 'render') { S.render = (S.render + d + RENDER.length) % RENDER.length; play('select'); return applyRender(); }
@@ -3278,14 +3770,14 @@ let saveT = 0;
 function savePrefs() {
   clearTimeout(saveT);
   saveT = setTimeout(() => Sys.prefsSet({ sound: S.sound, vol: S.vol, hc: S.hc, rm: S.rm, ts: S.ts, safe: S.safe, idle: S.idle,
-    tech: S.tech, adv_ack: S.advAck, engine: S.render, favorites: [...favs], frame: FRAME, wanted: [...WANT], report: S.report }).catch(() => {}), 400);
+    tech: S.tech, adv_ack: S.advAck, engine: S.render, favorites: [...favs], frame: FRAME, wanted: [...WANT], report: S.report, glass: S.glass }).catch(() => {}), 400);
 }
 function loadPrefs(p) {
   if (!p) return;
   S.sound = p.sound; S.vol = p.vol; S.hc = p.hc; S.rm = p.rm || reduceOS; S.ts = p.ts; S.safe = p.safe; S.idle = p.idle;
   S.tech = p.tech; S.advAck = p.adv_ack; S.render = p.engine === 1 ? 1 : 0; favs.clear(); (p.favorites || []).forEach(a => favs.add(a));
   FRAME = p.frame > 0 && p.frame <= 6 ? p.frame : 0; fit();
-  WANT.clear(); (p.wanted || []).forEach(a => WANT.add(a)); S.report = p.report !== false;
+  WANT.clear(); (p.wanted || []).forEach(a => WANT.add(a)); S.report = p.report !== false; S.glass = p.glass === 0 ? 0 : 1;
   applyPrefs();
 }
 
@@ -3363,7 +3855,7 @@ function suDraw(st) {
   const el = suEl(), i = SU_STEPS.findIndex(x => x[0] === st.key);
   SU.cur = st;
   el.querySelector('.su-count').textContent = `PASO ${String(i + 1).padStart(2, '0')} DE ${String(SU_STEPS.length).padStart(2, '0')}`;
-  el.querySelector('.su-kick').innerHTML = `ESTRATO ${String(i + 1).padStart(2, '0')} · <b>${SU_STEPS[i][1]}</b>`;
+  el.querySelector('.su-kick').innerHTML = `PASO ${i + 1} · <b>${SU_STEPS[i][1]}</b>`;
   el.querySelector('.su-title').textContent = st.title;
   el.querySelector('.su-lead').innerHTML = st.lead || '';
   el.querySelector('.su-rows').innerHTML = (st.rows || []).map((r, k) => `<div class="su-row${r.k ? ' txt-f' : ''}${r.lr ? ' lr' : ''}"${r.k ? ` data-f data-r="${k}"` : ''}><span>${esc(r.l)}</span><b>${r.lr ? '◀ ' : ''}${esc(r.v || '')}${r.lr ? ' ▶' : ''}</b></div>`).join('');

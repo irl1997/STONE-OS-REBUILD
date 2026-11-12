@@ -9,7 +9,7 @@ function enterDetail(i, opts = {}) {
   const sec = [[g.fav ? 'Quitar de favoritos' : 'Favorito', 'fav'], [`Rendimiento: ${g.perf ? profOf(g.perf).n : 'Global'}`, 'perf'], ['Propiedades', 'opt']];
   if (g.src === 'steam' && g.inst) sec.splice(2, 0, ['Gráficos', 'gfx'], ['Experiencia', 'xp']);
   $('#detail').innerHTML = `
-    <div class="col"><div class="origin">${esc(g.o)}</div><h1${g.n.length > 22 ? ' class="long"' : ''}>${esc(g.n.toUpperCase())}</h1>
+    <div class="col"><div class="origin">${esc(g.o)}</div><h1${g.n.length > 22 ? ' class="long"' : ''}>${esc(g.n)}</h1>
       <div class="stats">${playText(g)} · Última sesión: ${running ? 'ahora' : g.last}</div>
       <div class="stats exp" id="dexp" style="margin-top:.35em;opacity:.85"></div></div>
     <div class="primary txt-f" data-f data-act="primary" id="dprim">${prim}</div>
@@ -213,7 +213,7 @@ function loadingOn(g) {
   if (!gm.querySelector('.ld')) gm.insertAdjacentHTML('beforeend', '<div class="ld"><div class="col"><div class="ld-kick"></div><div class="ld-title"></div><div class="ld-sub"></div><div class="ld-bar"><i></i></div><div class="ld-step"></div><div class="ld-note"></div></div><div class="ld-foot"><span class="g">B</span>INICIO</div></div>');
   const set = (k, v) => { gm.querySelector('.ld-' + k).textContent = v; };
   set('kick', `${g.o} · ${profOf(g.perf || effective()).n}`);
-  set('title', g.n.toUpperCase());
+  set('title', g.n);
   gm.querySelector('.ld-title').classList.toggle('long', g.n.length > 22);
   set('sub', g.exp && g.exp.settings && g.exp.status !== 'UNKNOWN' ? g.exp.settings : '');
   ldT.forEach(clearTimeout);

@@ -248,6 +248,8 @@ function catRows() {
       steam('HDR', 'Según el televisor y el juego', 'Botón STEAM → Ajustes → Pantalla'),
       { l: 'Tamaño del texto', s: 'Se aplica a STONE Home', v: SIZES[S.ts], key: 'ts' },
       { l: 'Modo de imagen', s: RENDER_TXT[S.render], v: RENDER[S.render], key: 'render' },
+      { l: 'Efectos de cristal', s: S.render === 1 ? 'Sin GPU se usan siempre los ligeros' : 'Paneles translúcidos con desenfoque. «Ligeros» los dibuja sin desenfoque y gasta menos GPU',
+        v: S.glass && S.render !== 1 ? 'Completos' : 'Ligeros', key: 'glass' },
       { l: 'Resolución de STONE', s: devicePixelRatio > 1.5 || innerWidth * devicePixelRatio >= 3800 ? 'Dibujada a la resolución del televisor'
         : 'Si tu televisor es 4K y aquí no dice 3840 × 2160, mira «Cómo»', v: drawRes(), act: 'info',
         where: 'Steam decide el tamaño de cada app. Botón STEAM → Biblioteca → STONE → ⚙ → Propiedades → General → Resolución del juego: Nativa. Luego reinicia STONE' },

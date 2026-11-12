@@ -75,6 +75,7 @@ PREFS = {
     # Games bought away from the console (the phone): installed by STONE as soon as Steam lists them.
     "wanted": (_favs, []),
     "report": (_bool, True),              # PARTE DE SESIÓN: the summary shown when a game ends
+    "glass": (_intr(0, 1), 1),            # CRISTAL: glass with blur (1) or without (0, «Ligeros»)
 }
 
 

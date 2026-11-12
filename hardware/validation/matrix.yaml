@@ -100,3 +100,8 @@ tests:
   - {id: "T-EMU-02", title: "Actualizar un emulador, y todos, desde Ajustes: la version mostrada cambia y el emulador sigue abriendo", phase: F8, kind: P, status: NOT TESTED, runs: [], observed: []}
   - {id: "T-EMU-03", title: "Un juego de Switch en ~/Emulation/roms/switch se abre con Eden (o con Ryujinx) desde la biblioteca", phase: F8, kind: P, status: NOT TESTED, runs: [], observed: []}
   - {id: "T-BOOT-10", title: "BOOT TO VISUAL y BOOT TO READY de 3.0.0-rc1 comparados con 1.0.0-rc5 (stone-session boot), cinco arranques", phase: F9, kind: P, status: NOT TESTED, runs: [], observed: []}
+  # 3.1.0-rc1 (D-35): the Cristal design, delivered as an online update on the rc channel
+  - {id: "T-HOME-03", title: "Cristal en la BC-250: recorrer Inicio, Biblioteca, Tienda y Ajustes a 4K sin tirones, con efectos normales y con ligeros; registrar el tiempo por cuadro de Home en ambos", phase: F9, kind: P, status: NOT TESTED, runs: [], observed: []}
+  - {id: "T-HOME-04", title: "Legibilidad en el televisor a 3 m: titulos finos de Jost, textos de la ficha y de Ajustes, y texto sobre arte claro (Cyberpunk 2077)", phase: F9, kind: P, status: NOT TESTED, runs: [], observed: []}
+  - {id: "T-HOME-05", title: "El color de la interfaz sigue al arte del juego elegido; la lente de la barra se ve (o queda el desenfoque); las caratulas de los apartados aparecen en Inicio y Explorar", phase: F9, kind: P, status: NOT TESTED, runs: [], observed: []}
+  - {id: "T-UPD-02", title: "De 3.0.0-rc1 a 3.1.0-rc1 por el canal rc sin tocar la consola: tamano de la descarga, Reiniciar y actualizar, Home en Cristal y la version anterior en el menu de arranque", phase: F9, kind: P, status: NOT TESTED, runs: [], observed: []}

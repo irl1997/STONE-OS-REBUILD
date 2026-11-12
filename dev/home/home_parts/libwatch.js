@@ -44,10 +44,10 @@ Bridge.on('art', d => {
   });
   document.querySelectorAll('#home .card[data-g], #library .card[data-g]').forEach(el => {
     const g = G[+el.dataset.g]; if (!g || !ids.has(g.appid)) return;
-    const nm = el.querySelector('.nm');
-    if (el.classList.contains('hero')) { const u = heroUrl(g); if (u) { el.style.backgroundImage = `url("${u}")`; if (nm) nm.remove(); } return; }
+    const ph = el.querySelector('.ph');
+    if (el.classList.contains('hero')) { const u = heroUrl(g); if (u) { el.style.backgroundImage = `url("${u}")`; if (ph) ph.remove(); } return; }
     el.style.backgroundImage = capUrl(g); el.classList.toggle('hdr', capWide(g));
-    if (nm && g.art.capsule) nm.remove();
+    if (ph && (g.art.capsule || g.art.header)) ph.remove();
   });
   /* the big picture behind the game being looked at */
   if (S.bgFor && G[S.bgFor.i] && ids.has(G[S.bgFor.i].appid) && ['home', 'detail'].includes(S.screen)) { bgCur = ''; bgGame(G[S.bgFor.i], S.bgFor.sharp, S.bgFor.veil); }

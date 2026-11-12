@@ -7,7 +7,9 @@ const S = {
   caps: null, actual: null, safeMode: false, game: null, provisional: false, pending: null,
   render: 0, info: null, libReady: false, libFound: true, launching: null, st: null,
   /* 3.0: who is signed in to Steam ("in", "out", null: not known yet), Steam's own window in front, the session report */
-  libLogged: null, libCached: false, libNone: false, steamFront: null, report: true
+  libLogged: null, libCached: false, libNone: false, steamFront: null, report: true,
+  /* CRISTAL: glass with blur (1) or without (0, «Ligeros»; always without GPU) */
+  glass: 1
 };
 /* Performance profiles: all values stay inside the range documented as stable on every BC-250 (≤ 2000 MHz at 1000 mV, ≤ 85 °C).
    stoned holds the same table (profiles.py) and is the one that applies it; these are for display. */

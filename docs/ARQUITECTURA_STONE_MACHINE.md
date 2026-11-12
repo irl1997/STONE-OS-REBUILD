@@ -624,6 +624,7 @@ Reglas:
 
 | Versión | Fecha | Cambio |
 | --- | --- | --- |
+| 1.4 | 2026-11-12 | 3.1.0-rc1 (D-35): capa visual Cristal en M07 (STONE Home); la preferencia «Efectos de cristal» en M16. Llega por el canal `rc` de M01 |
 | 1.3 | 2026-11-11 | 3.0.0-rc1 (D-34): V-20, Steam al frente y plan B en M24; biblioteca vigilada, tienda y carátulas en M13 y M08; Switch y actualizador en M14; arranque reordenado en M02 y M07. Detalle en `docs/AUDITORIA_3_0.md` |
 | 1.0 | 2026-11-06 | Primera especificación integral (P-14), pendiente de aprobación |
 | 1.2 | 2026-11-07 | Prompt maestro integrado (D-20 a D-25): A6 sustituido por la sesión propia (M24); A11 con vocabulario único; A13 nuevo; módulos M17–M24 (IMAGE, NEURAL RENDER, HEALTH, STORAGE, INSTALLER, FIRST RUN, EXPERIENCE ENGINE, SESSION); LIBRARY en M13 y AUDIO en M16; M02, M07, M08 y M10 actualizados (métricas de arranque, Visual Engine, ciclo de vida, Steam en segundo plano, generación de fotogramas con condiciones); fases F2–F9 reordenadas hacia 1.0 RC; bloqueos P0; V-12 a V-17 |

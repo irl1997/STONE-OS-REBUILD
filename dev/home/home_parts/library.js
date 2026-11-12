@@ -46,7 +46,9 @@ async function loadLibrary() {
 const capUrl = g => g.art.capsule ? `url("${Bridge.artUrl(g.appid, 'capsule')}")` : g.art.header ? `url("${Bridge.artUrl(g.appid, 'header')}")` : 'none';
 const capWide = g => !g.art.capsule && !!g.art.header;
 const heroUrl = g => g.art.hero || g.art.capsule || g.art.header ? Bridge.artUrl(g.appid, g.art.hero ? 'hero' : g.art.capsule ? 'capsule' : 'header') : null;
-const nameTag = g => `<span class="nm">${esc(g.n.toUpperCase())}</span>`;
+/* A cover without art: the machine itself in miniature (black gloss, the stone band, the light line); the
+   name is never written on a cover, it shows under the row (Home) or at the foot of the grid (Library). */
+const nameTag = () => '<span class="ph"></span>';
 /* Background blur from a 64×36 copy of the hero: one tiny image scaled up, no live blur filter.
    A small LRU keeps the last ones; game mode empties it. */
 const BLUR = new Map(), BLUR_MAX = 24;
