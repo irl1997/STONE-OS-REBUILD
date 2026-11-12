@@ -100,6 +100,31 @@ def downloads(root):
     return out
 
 
+def manifest_state(root, appid):
+    """What Steam's own files say about one game, the proof that an install (or an uninstall) really
+    happened: None when no library has its appmanifest (not queued, or uninstalled), else
+    {"installed", "downloading", "downloaded", "total", "progress"}. Steam writes the appmanifest the
+    moment it accepts an install, before the first byte arrives."""
+    appid = str(appid)
+    if not library.valid_appid(appid):
+        return None
+    for lib in library.library_paths(root):
+        acf = os.path.join(lib, "steamapps", f"appmanifest_{appid}.acf")
+        if not os.path.isfile(acf):
+            continue
+        try:
+            st = vdf.get_ci(vdf.load_file(acf, limit=2**20), "AppState")
+        except (OSError, vdf.VDFError):
+            st = None
+        if not isinstance(st, dict):
+            return {"installed": False, "downloading": True, "downloaded": 0, "total": 0, "progress": None}
+        flags = _int(vdf.get_ci(st, "StateFlags"))
+        done, todo = _int(vdf.get_ci(st, "BytesDownloaded")), _int(vdf.get_ci(st, "BytesToDownload"))
+        return {"installed": bool(flags & 4) and not flags & (2 | 1024), "downloading": bool(flags & (2 | 1024)) or not flags & 4,
+                "downloaded": done, "total": todo, "progress": round(done / todo, 3) if todo else None}
+    return None
+
+
 def status(root):
     libs = libraries(root)
     return {"libraries": libs, "games": games(root), "downloads": downloads(root),

@@ -124,7 +124,7 @@ function storeAct(r, ri) {
       if (el.dataset.b === 'no') return back();
       closeDlg(); play('select');
       const m = el.dataset.b === 'cache' ? Bridge.call('storage.clearShaderCache', g.appid).then(x => toast(`Caché limpiada: ${GB(x.freed)} libres`, false))
-        : Bridge.call('storage.uninstall', g.appid).then(() => { steamWatch(15000); toast(`${g.name}: desinstalando`, false); });
+        : uninstallGame(g.appid, g.name);
       m.catch(e => { play('error'); toast((e && e.message) || 'No se pudo', false); }).then(() => cxReset('storage', 'Almacenamiento', ri));
     }, onB: back });
 }

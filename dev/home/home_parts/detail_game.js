@@ -14,9 +14,10 @@ function enterDetail(i, opts = {}) {
       <div class="stats exp" id="dexp" style="margin-top:.35em;opacity:.85"></div></div>
     <div class="primary txt-f" data-f data-act="primary" id="dprim">${prim}</div>
     <div class="second">${sec.map(([s, a]) => `<span class="txt-f" data-f data-act="${a}">${s}</span>`).join('')}</div>
-    <div class="info"><div><span>Tamaño</span><b>${g.sz}</b></div><div><span>Origen</span><b>${esc(g.o)}</b></div><div><span>Estado</span><b>${g.upd ? (g.inst ? 'Actualizando en Steam' : 'Instalándose') : g.inst ? 'Instalado' : 'En tu cuenta · sin instalar'}</b></div><div><span>Al iniciarse</span><b>${g.perf ? profOf(g.perf).n : 'Perfil global'}${S.safeMode && g.perf ? ' (en pausa: Safe Mode)' : ''}</b></div></div>`;
+    <div class="info"><div><span>Tamaño</span><b>${g.sz}</b></div><div><span>Origen</span><b>${esc(g.o)}</b></div><div><span>Estado</span><b id="dstate">${g.upd ? (g.inst ? 'Actualizando en Steam' : 'Instalándose') : g.inst ? 'Instalado' : 'En tu cuenta · sin instalar'}</b></div><div><span>Al iniciarse</span><b>${g.perf ? profOf(g.perf).n : 'Perfil global'}${S.safeMode && g.perf ? ' (en pausa: Safe Mode)' : ''}</b></div></div>`;
   showScreen('detail'); chrome(true, false);
   bgGame(g, true, 'side');
+  if (!canPlay || g.upd || DL.at[g.appid]) { dlShow(); dlKick(); }
   const d = $('#detail');
   NAV = mkNav([[d.querySelector('#dprim')], [...d.querySelectorAll('.second [data-f]')]], {
     r: opts.r || 0, c: opts.c || 0,
@@ -122,8 +123,9 @@ function detailA(el) {
     play('select');
     if (S.running === g.i) return resumeGame();
     if (!g.inst && g.src !== 'shortcut') {
-      if (g.upd) { play('error'); return toast(`${g.n} ya se está instalando: la descarga se ve en Ajustes → Almacenamiento`, false); }
-      return sys('install', g.appid).then(r => { if (!r) return; steamWatch(20000); toast(`${g.n}: instalando. La descarga se ve en Ajustes → Almacenamiento; al terminar, JUGAR`, false); });
+      if (g.upd) { play('error'); return toast(`${g.n} ya se está instalando: el avance se ve aquí y en Ajustes → Almacenamiento`, false); }
+      const pe = $('#dprim'); if (pe) pe.textContent = 'PIDIENDO A STEAM…';
+      return installGame(g.appid, g.n).then(ok => { const e2 = $('#dprim'); if (e2 && G[curG] === g && /^PIDIENDO/.test(e2.textContent)) e2.textContent = ok ? 'INSTALANDO…' : 'INSTALAR'; if (S.screen === 'detail') dlShow(); });
     }
     return launch(g);
   }
@@ -199,7 +201,7 @@ async function launch(g, starter) {
   setLine(b.x + b.w / 2, b.y + b.h + 16, 0, { slow: true });
   await wait(700);
   showGame(g, true);
-  steamWatch(95000);
+  steamWatch(95000); DL.lastLaunch = ''; dlKick(95000);
   /* stoned may have seen the game before STONE started waiting for it */
   if (S.game && S.game.appid === g.appid) launchFound(g.i);
   /* Steam updating the game first, a long first start or a game that never opens: after 90 s STONE asks. */
@@ -229,7 +231,8 @@ function launchStalled(g) {
   if (S.launching !== g.i) return;
   if (S.screen === 'dlg') { launchT = setTimeout(() => launchStalled(g), 15000); return; }
   play('notify');
-  openDlg(`<h2>${esc(g.n.toUpperCase())}</h2><p>El juego todavía no se ha abierto. Si Steam lo está actualizando, la descarga aparece en Ajustes → Almacenamiento.</p>
+  const dl = DL.at[g.appid];
+  openDlg(`<h2>${esc(g.n.toUpperCase())}</h2><p>${dl ? `Steam sigue actualizando el juego (${dlPct(dl) || 'en cola'}). Se abre solo al terminar.` : 'El juego todavía no se ha abierto. Si Steam lo está actualizando, la descarga aparece en Ajustes → Almacenamiento.'}</p>
     <div class="btns"><span class="txt-f" data-f data-b="wait">ESPERAR</span><span class="txt-f" data-f data-b="home">VOLVER AL INICIO</span></div>`, {
     onA: el => {
       closeDlg(); play('select');
@@ -370,8 +373,7 @@ function propsDlg(g) {
           if (e2.dataset.b !== 'yes') { closeDlg(); play('back'); return propsDlg(g); }
           closeDlg(); play('select');
           S.section = 0; if (NAV) NAV.id = ''; enterHome({ r: 0, c: 0 });
-          Bridge.call('storage.uninstall', g.appid).then(() => { steamWatch(15000); toast(`${g.n}: desinstalando`, false); }, e => { play('error'); toast((e && e.message) || 'No se pudo desinstalar', false); })
-            .then(() => loadLibrary()).then(() => { if (S.screen === 'home') enterHome({ r: 0, c: 0 }); });
+          uninstallGame(g.appid, g.n).then(() => loadLibrary()).then(() => { if (S.screen === 'home') enterHome({ r: 0, c: 0 }); });
         }, onB: () => { closeDlg(); play('back'); propsDlg(g); } });
     }, onB: back });
 }

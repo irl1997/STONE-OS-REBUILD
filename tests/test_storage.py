@@ -22,6 +22,27 @@ def _cache(root, lib, appid, n):
         f.write(b"x" * n)
 
 
+def test_manifest_state_is_the_proof_that_steam_took_an_install():
+    t = tempfile.mkdtemp(prefix="stone-storage-")
+    try:
+        root = FX.build(os.path.join(t, "Steam"))
+        assert ST.manifest_state(root, 35140) is None                    # nothing asked of Steam yet
+        m = ST.manifest_state(root, 1001)
+        assert m["installed"] is True and m["downloading"] is False
+        with open(os.path.join(root, "steamapps", "appmanifest_35140.acf"), "w") as f:
+            f.write('"AppState"\n{\n "appid" "35140"\n "name" "Batman"\n "StateFlags" "1026"\n'
+                    ' "BytesToDownload" "2000"\n "BytesDownloaded" "500"\n}\n')
+        m = ST.manifest_state(root, "35140")
+        assert m == {"installed": False, "downloading": True, "downloaded": 500, "total": 2000, "progress": 0.25}, m
+        with open(os.path.join(root, "steamapps", "appmanifest_35141.acf"), "w") as f:
+            f.write("not vdf {")                                         # Steam still writing it
+        assert ST.manifest_state(root, 35141)["downloading"] is True
+        for bad in ("0", "abc", "-1", "1/../2"):
+            assert ST.manifest_state(root, bad) is None, bad
+    finally:
+        shutil.rmtree(t, ignore_errors=True)
+
+
 def test_libraries_games_downloads_and_cache_cleaning():
     t = tempfile.mkdtemp(prefix="stone-storage-")
     try:

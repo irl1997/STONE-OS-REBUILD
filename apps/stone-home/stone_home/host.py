@@ -47,7 +47,18 @@ FRONT_URL_SETTLE_S = 1.5     # ... or this long after Big Picture is on screen
 FRONT_HOLD_S = 600           # Steam not up yet (its first start updates itself): waited for this long ...
 FRONT_HOLD_CHECK_S = 2       # ... asking its interface this often; then its window is asked for anyway
 STORE_FRESH_S = 600          # the shop window is read from Steam again after this long
-SHOW_WHAT = ("login", "store", "app")
+SHOW_WHAT = ("login", "store", "app", "install")
+INSTALL_CONFIRM_S = 20       # Steam said it started an install: its appmanifest must appear within this
+UNINSTALL_CONFIRM_S = 45     # Steam took an uninstall: the appmanifest must be gone within this
+
+
+def _want_steam():
+    """A new console holds Steam during the first-run setup (supervisor.run): STONE needs it now."""
+    try:
+        from . import supervisor
+        supervisor.want_steam()
+    except Exception as e:  # noqa: BLE001  (outside the STONE session nothing waits for it)
+        print(f"[stone] steam: could not ask the session for Steam ({e!r})", flush=True)
 
 
 class Host:
@@ -338,13 +349,95 @@ class Host:
 
     def m_install(self, args, done):
         """Installs a game of the account (or a free game found in the store) without Steam's dialog
-        (steamcef.install); if Steam's interface does not answer, Steam's install URL."""
+        and says what really happened, proven by Steam's own files (storage.manifest_state):
+          queued        Steam accepted it: its appmanifest is there, the download shows in STONE
+          unconfirmed   Steam said it started, but its appmanifest did not appear in INSTALL_CONFIRM_S
+          steam-dialog  Steam's interface did not answer: its own install dialog was opened (STONE then
+                        shows Steam's window so the person can confirm it)
+          eula | asks   Steam asks something only the person can answer (a licence, a key, a disc): its
+                        wizard stays open for steam.show("install")
+          space         the disk is too small ("need", "free" in bytes); nothing was started
+          failed | canceled | noanswer
+        3.0.0-rc1 answered "ok" whatever Steam did (board, 12-11-2026: games that never installed)."""
         if len(args) != 1 or not isinstance(args[0], str) or not args[0].isdigit() \
                 or (args[0] not in self.owned and args[0] not in self.store_free):
             return done(None, "InvalidValue", "unknown game")
-        appid = int(args[0])
+        appid, root = int(args[0]), self.root()
         self._lib_kick()
-        self._in_steam_ui(lambda: self.steam_ui.install(appid), lambda: self.sys.open_url(f"steam://install/{appid}"), done)
+        _want_steam()
+
+        def work():
+            try:
+                res = self._install(appid, root)
+            except Exception as e:  # noqa: BLE001  (never leaves STONE Home waiting)
+                res = {"ok": False, "state": "noanswer", "detail": repr(e)[:160]}
+            print(f"[stone] install {appid}: {res}", flush=True)
+            GLib.idle_add(lambda: (done(res), False)[1])
+        threading.Thread(target=work, daemon=True).start()
+
+    def _install(self, appid, root):
+        if storage.manifest_state(root, appid) is not None:
+            return {"ok": True, "state": "queued"}            # already in Steam's queue
+        try:
+            ans = self.steam_ui.install(appid)
+        except Exception as e:  # noqa: BLE001  (Steam's interface changed)
+            print(f"[stone] install {appid}: steam ui error {e!r}", flush=True)
+            ans = None
+        if not isinstance(ans, dict):
+            try:
+                self.sys.open_url(f"steam://install/{appid}")
+            except (OSError, ValueError) as e:
+                return {"ok": False, "state": "noanswer", "detail": str(e)[:160]}
+            return {"ok": True, "state": "steam-dialog"}
+        a = ans.get("answer")
+        if a == "started":
+            end = time.monotonic() + INSTALL_CONFIRM_S
+            while True:
+                m = storage.manifest_state(root, appid)
+                if m is not None:
+                    return {"ok": True, "state": "queued", "progress": m.get("progress")}
+                if time.monotonic() >= end:
+                    return {"ok": True, "state": "unconfirmed"}
+                time.sleep(1.0)
+        if a in ("eula", "asks"):
+            return {"ok": False, "state": a, "step": ans.get("state")}
+        if a == "space":
+            return {"ok": False, "state": "space", "need": ans.get("need", 0), "free": ans.get("free", 0)}
+        if a in ("failed", "canceled"):
+            return {"ok": False, "state": a, "error": ans.get("err"), "detail": ans.get("detail")}
+        return {"ok": False, "state": "noanswer", "step": ans.get("state"), "detail": ans.get("detail")}
+
+    def m_install_cancel(self, args, done):
+        """install.cancel(): close Steam's install wizard (the person said no to what it asked)."""
+        def work():
+            try:
+                ok = bool(self.steam_ui.cancel_install())
+            except Exception:  # noqa: BLE001
+                ok = False
+            GLib.idle_add(lambda: (done({"ok": ok}), False)[1])
+        threading.Thread(target=work, daemon=True).start()
+
+    def m_downloads(self, args, done):
+        """downloads(): what Steam is downloading or updating now (no disk sizes: cheap enough to ask
+        every few seconds while a game page or the loading screen is open)."""
+        root = self.root()
+
+        def work():
+            try:
+                res = ({"downloads": storage.downloads(root)}, None, "")
+            except Exception as e:  # noqa: BLE001
+                res = (None, "HardwareError", f"downloads: {e!r}")
+            GLib.idle_add(lambda: (done(*res), False)[1])
+        threading.Thread(target=work, daemon=True).start()
+
+    def m_update_now(self, args, done):
+        """update.now(): look for a STONE OS update now and download it (applied at the next restart)."""
+        self.sys.update_now(done)
+
+    def m_session_wantSteam(self, args, done):
+        """session.wantSteam(): the setup reached its Steam step; a held Steam starts (supervisor)."""
+        _want_steam()
+        done({"ok": True})
 
     def m_emulators(self, args, done):
         def work():
@@ -769,7 +862,8 @@ class Host:
         if what not in SHOW_WHAT or len(args) != (2 if what == "app" else 1) or \
                 (what == "app" and not library.valid_appid(args[1])):
             return done(None, "InvalidValue", "what to show")
-        url = None if what == "login" else system.STEAM_URLS["store"] if what == "store" else f"steam://store/{args[1]}"
+        url = None if what in ("login", "install") else system.STEAM_URLS["store"] if what == "store" else f"steam://store/{args[1]}"
+        _want_steam()
         if os.environ.get("STONE_SESSION") != "stone":
             # Inside Steam's own Game Mode (or in development) Steam shows its pages by itself.
             if url:
@@ -795,12 +889,12 @@ class Host:
         Steam's window. Returns False if that could not be done."""
         try:
             from . import supervisor
-            self.session_focus.set_steam_value(supervisor.STEAM_ON if fr["what"] == "login" else supervisor.STEAM_ON_BIG)
+            self.session_focus.set_steam_value(supervisor.STEAM_ON if fr["what"] in ("login", "install") else supervisor.STEAM_ON_BIG)
         except Exception as e:  # noqa: BLE001
             print(f"[stone] steam: its window could not be asked for ({e!r})", flush=True)
             return False
         fr["hold"], fr["since"] = None, time.monotonic()
-        if fr["what"] != "login":
+        if fr["what"] in ("store", "app"):
             fr["big"] = True
             self._steam_url(system.FRONT_URLS["bigpicture"])     # the interface made for a controller
         print(f"[stone] steam: its own window asked in front ({fr['what']})", flush=True)
@@ -1187,12 +1281,36 @@ class Host:
         done(r) if "error" not in r else done(None, "InvalidValue", r["error"])
 
     def m_storage_uninstall(self, args, done):
-        """Uninstall an installed game (STONE Home asked first): through Steam's interface without its
-        dialog, else Steam's uninstall URL (Steam then asks in its own dialog)."""
+        """Uninstall an installed game (STONE Home asked first) through Steam's interface without its
+        dialog, and wait until Steam's files say it is gone: {"ok", "state": removed | removing}.
+        Without Steam's interface, Steam's uninstall URL ({"state": "steam-dialog"}: Steam asks in its
+        own dialog, which STONE then shows)."""
         if len(args) != 1 or not isinstance(args[0], str) or not args[0].isdigit() or not 0 < len(args[0]) <= 10:
             return done(None, "InvalidValue", "appid")
-        appid = int(args[0])
-        self._in_steam_ui(lambda: self.steam_ui.uninstall(appid), lambda: self.sys.open_url(f"steam://uninstall/{appid}"), done)
+        appid, root = int(args[0]), self.root()
+
+        def work():
+            try:
+                took = self.steam_ui.uninstall(appid)
+            except Exception as e:  # noqa: BLE001
+                print(f"[stone] uninstall {appid}: steam ui error {e!r}", flush=True)
+                took = None
+            if not took:
+                try:
+                    self.sys.open_url(f"steam://uninstall/{appid}")
+                    res = ({"ok": True, "state": "steam-dialog"}, None, "")
+                except (OSError, ValueError) as e:
+                    res = (None, "Unsupported", str(e))
+            else:
+                end = time.monotonic() + UNINSTALL_CONFIRM_S
+                while storage.manifest_state(root, appid) is not None and time.monotonic() < end:
+                    time.sleep(1.0)
+                gone = storage.manifest_state(root, appid) is None
+                res = ({"ok": True, "state": "removed" if gone else "removing"}, None, "")
+            print(f"[stone] uninstall {appid}: {res[0] or res[2]}", flush=True)
+            self._lib_kick()
+            GLib.idle_add(lambda: (done(*res), False)[1])
+        threading.Thread(target=work, daemon=True).start()
 
     # ---- STONE HEALTH (M19) ---------------------------------------------------------------
     def m_health_status(self, args, done):
@@ -1226,6 +1344,7 @@ class Host:
         done(firstrun.status(self.root()))
 
     def m_firstrun_complete(self, args, done):
+        _want_steam()
         try:
             done(firstrun.complete(system.read_release().get("STONE_VERSION")))
         except OSError as e:

@@ -7,7 +7,8 @@
 const SF_TEXT = {
   login: ['INICIA SESIÓN EN STEAM', 'Steam muestra ahora su propia ventana. Escanea su código QR con la app de Steam del móvil, o escribe tu usuario con un teclado. STONE nunca ve tu contraseña.'],
   store: ['ABRIENDO LA TIENDA DE STEAM', 'La tienda y el pago son de Steam: se usan tu cuenta y tu forma de pago de Steam. Lo que compres aparece después en tu biblioteca de STONE.'],
-  app: ['ABRIENDO EL JUEGO EN STEAM', 'La compra se hace en Steam, con tu cuenta y tu forma de pago. Al volver, STONE instala el juego en cuanto Steam lo añada a tu cuenta.']
+  app: ['ABRIENDO EL JUEGO EN STEAM', 'La compra se hace en Steam, con tu cuenta y tu forma de pago. Al volver, STONE instala el juego en cuanto Steam lo añada a tu cuenta.'],
+  install: ['STEAM PREGUNTA EN SU VENTANA', 'Responde en la ventana de Steam. Cuando termines, o para dejarlo para después, el botón guía del mando vuelve a STONE.']
 };
 let sfT = 0;
 function sfVeil(what, title, text) {

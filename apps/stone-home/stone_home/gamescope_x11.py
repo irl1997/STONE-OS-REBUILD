@@ -38,8 +38,12 @@ STEAM_FRONT = "STONE_STEAM_FRONT"
 # Proton are "steam_app_<id>": never matched.
 STEAM_WM_CLASSES = ("steam", "steamwebhelper")
 STEAM_MIN_SIZE = (400, 300)               # smaller ones are menus and tooltips, never the one to show
-# Steam's full-screen interface, then its sign-in (English and Spanish titles); otherwise the largest.
-STEAM_TITLE_ORDER = (("big picture",), ("sign in", "iniciar sesi", "steam guard"))
+# Steam's full-screen interface, then its sign-in, then its install wizard (English and Spanish
+# titles); otherwise the largest.
+STEAM_TITLE_ORDER = (("big picture",), ("sign in", "iniciar sesi", "steam guard"),
+                     ("install", "instalar", "license", "licencia"))
+# Where a Steam window STONE did not ask for waits: outside every screen (supervisor.FocusKeeper).
+STEAM_PARK = (-32000, -32000)
 REAPER = re.compile(rb"(?:^|/)reaper\x00SteamLaunch\x00AppId=(\d+)\x00")
 
 
@@ -190,6 +194,18 @@ class Focus:
             return str(window.get_wm_name() or "")[:200]
         except Exception:  # noqa: BLE001
             return ""
+
+    def window_info(self, window):
+        """Position, override-redirect and the marks that can put a window on screen in Gamescope."""
+        g = window.get_geometry()
+        a = window.get_attributes()
+        return {"x": g.x, "y": g.y, "override": bool(a.override_redirect),
+                "steam_game": (self.get(window, "STEAM_GAME") or [0])[0],
+                "overlay": (self.get(window, "STEAM_OVERLAY") or [0])[0] == 1}
+
+    def move(self, window, x, y):
+        window.configure(x=int(x), y=int(y))
+        self.d.flush()
 
     def mark_steam(self, window):
         self._set(window, "STEAM_GAME", [STEAM_APPID])

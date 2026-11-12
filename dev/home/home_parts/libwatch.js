@@ -62,8 +62,8 @@ function wantedArrived() {
     if (!WANT.has(g.appid) || g.src !== 'steam') return;
     WANT.delete(g.appid); changed = true;
     if (g.inst || g.upd) return;
-    Sys.install(g.appid).then(() => { steamWatch(20000); play('notify'); longToast(`${g.n} ya está en tu cuenta: STONE lo está instalando`, 8000); },
-      () => longToast(`${g.n} ya está en tu cuenta. Instálalo desde tu biblioteca`, 8000));
+    longToast(`${g.n} ya está en tu cuenta: STONE lo instala`, 6000);
+    installGame(g.appid, g.n, { quiet: true });
   });
   if (changed) savePrefs();
 }

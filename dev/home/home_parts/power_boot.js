@@ -322,9 +322,12 @@ const SU_FN = {
   },
   steam() {
     const has = SU.fr.steam_account;
+    /* Steam waits while the setup runs (no Steam window over it, 3.1.0-rc2): it starts here, so its
+       first start (it updates itself, minutes on a new console) overlaps this step. */
+    Sys.wantSteam().catch(() => {});
     suDraw({ key: 'steam', title: 'STEAM',
       lead: has ? 'Tu cuenta de Steam ya está en esta consola: tu biblioteca aparece en STONE.'
-        : 'Tus juegos vienen de tu cuenta de Steam. Steam muestra su propia ventana de inicio de sesión: escanea su código QR con la app de Steam del móvil, o escribe con un teclado. STONE nunca ve tu contraseña y vuelve sola cuando termines.',
+        : 'Tus juegos vienen de tu cuenta de Steam. Al pulsar INICIAR SESIÓN, Steam muestra su propia ventana: escanea su código QR con la app de Steam del móvil, o escribe con un teclado. STONE nunca ve tu contraseña y vuelve sola cuando termines. Si eliges MÁS TARDE, Inicio te lo ofrece después.',
       rows: [{ l: 'Cuenta', v: has ? 'conectada' : 'sin iniciar sesión' }],
       buttons: has ? [['next', 'CONTINUAR']] : [['login', 'INICIAR SESIÓN'], ['next', 'MÁS TARDE']],
       /* the sign-in is Steam's own window (steamOpen); when it is done this step is drawn again (sfEnd) */

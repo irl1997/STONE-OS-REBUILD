@@ -91,6 +91,17 @@ def test_image_ships_f2_without_the_rc23_game_mode_autostart():
     assert "systemctl enable stoned-recover.service stoned.service" in build
 
 
+def test_updates_are_checked_every_day_and_on_demand():
+    """3.1.0-rc2: Bazzite's deck images leave uupd.timer off (board, 12-11-2026: 'Comprobación
+    automática: desactivada'); the image turns it on and requires the units Home starts on demand."""
+    build = _read("image", "build_files", "build.sh")
+    assert "systemctl enable uupd.timer" in build
+    for unit in ("uupd.timer", "uupd.service", "uupd-manual.service"):
+        assert unit in build, unit
+    system = _read("apps", "stone-home", "stone_home", "system.py")
+    assert 'UPDATE_SERVICES = ("uupd-manual.service", "uupd.service")' in system
+
+
 def test_no_sleep_and_no_hhd():
     build = _read("image", "build_files", "build.sh")
     assert "systemctl mask sleep.target suspend.target hibernate.target hybrid-sleep.target suspend-then-hibernate.target" in build

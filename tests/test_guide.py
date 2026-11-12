@@ -130,6 +130,7 @@ class FakeFocus:
         self.hold, self.fronts, self.marked = False, [], []
         self.steam, self.wins, self.steam_marks = 0, [], {}
         self.root = None
+        self.pos, self.overlay = {}, set()          # window id -> (x, y); ids with STEAM_OVERLAY
 
     def find_home(self):
         return [types.SimpleNamespace(id=0x400001)]
@@ -168,6 +169,14 @@ class FakeFocus:
 
     def unmark_steam(self, win):
         self.steam_marks[win.id] = 0
+
+    def window_info(self, win):
+        x, y = self.pos.get(win.id, (0, 0))
+        return {"x": x, "y": y, "override": False, "steam_game": self.steam_marks.get(win.id, 0),
+                "overlay": win.id in self.overlay}
+
+    def move(self, win, x, y):
+        self.pos[win.id] = (x, y)
 
 
 class NoGuide:
@@ -279,6 +288,51 @@ def test_steam_window_comes_in_front_when_home_asks_and_the_guide_button_gives_h
         assert f.steam_marks[BIG_PICTURE[0]] == 0
     log = _quiet(scenario)
     assert "STONE Home asked for Steam's own window" in log and "guide button" in log
+
+
+def test_a_steam_window_nobody_asked_for_is_moved_off_the_screen_and_comes_back_when_asked():
+    """Board, 12-11-2026 (3.0.0-rc1): Steam's sign-in drawn over the first-run setup at its own size,
+    STONE had not asked. Unasked, it loses any mark and waits off the screen; asked, it comes back."""
+    def scenario():
+        f, k, _clock, state = _keeper()
+        f.wins = [SIGN_IN, MENU]
+        f.steam_marks[SIGN_IN[0]] = 769                # marked by someone else (Steam itself)
+        _ticks(k, SV.GAME_EVERY)
+        assert f.fronts == [None]                      # Home stays in front
+        assert f.steam_marks[SIGN_IN[0]] == 0 and f.pos[SIGN_IN[0]] == GX.STEAM_PARK
+        assert MENU[0] not in f.pos                    # menus and tooltips are left alone
+        f.steam = SV.STEAM_ON                          # now Home asks for it (INICIAR SESIÓN)
+        _ticks(k, SV.GAME_EVERY)
+        assert f.pos[SIGN_IN[0]] == (0, 0) and f.fronts[-1] == ("window", SIGN_IN[0])
+        f.steam = SV.STEAM_OFF
+        _ticks(k, SV.GAME_EVERY * 2)
+        assert f.pos[SIGN_IN[0]] == GX.STEAM_PARK and f.fronts[-1] is None
+        state["id"] = 1091500                          # a game runs: Steam's windows are not touched
+        f.pos[SIGN_IN[0]] = (10, 10)
+        _ticks(k, SV.GAME_EVERY * 2)
+        assert f.pos[SIGN_IN[0]] == (10, 10)
+        f.overlay.add(SIGN_IN[0])
+        state["id"] = None
+        _ticks(k, SV.GAME_EVERY * 2)
+        assert f.pos[SIGN_IN[0]] == (10, 10)           # Steam's in-game overlay window is never moved
+    log = _quiet(scenario)
+    assert "unasked ('Sign in to Steam' 705x440 at 0,0, marked); kept off the screen" in log
+
+
+def test_steam_waits_during_the_first_run_until_home_asks_for_it():
+    tmp = tempfile.mkdtemp(prefix="stone-want-")
+    old = os.environ.get("XDG_STATE_HOME")
+    os.environ["XDG_STATE_HOME"] = tmp
+    try:
+        assert SV._take_wanted() is False
+        SV.want_steam()
+        assert os.path.exists(SV.wanted_path()) and SV._take_wanted() is True and SV._take_wanted() is False
+    finally:
+        if old is None:
+            del os.environ["XDG_STATE_HOME"]
+        else:
+            os.environ["XDG_STATE_HOME"] = old
+        shutil.rmtree(tmp, ignore_errors=True)
 
 
 def test_steam_that_shows_no_window_gives_up_and_says_so():
