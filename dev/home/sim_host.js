@@ -18,7 +18,7 @@ const Bridge = (() => {
   let prefs = { sound: true, vol: 0.7, hc: /[?&]hc/.test(location.search), rm: false, ts: Math.max(0, Math.min(2, +(new URLSearchParams(location.search).get('ts') || 0))), safe: 5, idle: 2, tech: false, adv_ack: false, favorites: ['1091500'],
     engine: 0, game_res: 0, display_goal: 'fluid', optimized: 1, wanted: [], report: true, glass: /[?&]lite/.test(location.search) ? 0 : 1 };
 
-  /* ---- library (simulated; Steam's art is not available here, STONE paints its own covers) ---- */
+  /* ---- library (simulated; covers are painted here unless the page brings Steam's real art, see artOf) ---- */
   const DAY = 86400, now = Date.now() / 1000;
   const GAMES = [
     { appid: '1091500', name: 'Cyberpunk 2077', source: 'steam', installed: true, last: now - 3600 * 5, min: 5400, size: 71e9, kind: 'upscaler' },
@@ -325,12 +325,15 @@ const Bridge = (() => {
     'game.restoreRecommended': async ([appid]) => { const s = st(appid); s.mode = 'recommended'; s.path = s.preset = null; return { ok: true }; }
   };
 
-  /* covers: generated here (Steam's own artwork is not available in the simulation): a landscape in
-     the game's own colours (sky, sun, three ridges, haze), like the key art Steam gives each game.
-     Without a name on it: STONE never writes one on a cover. */
+  /* covers: a local preview may bring Steam's real art, as window.STONE_SIM_ART = { appid: { capsule, header,
+     hero } } (data: URLs) defined before the page starts; the repository ships none, it is the publishers' art.
+     Otherwise it is generated here: a landscape in the game's own colours (sky, sun, three ridges, haze),
+     like the key art Steam gives each game. Without a name on it: STONE never writes one on a cover. */
   const artCache = {};
   function artOf(appid, kind) {
     if (/^shot\d+$/.test(kind)) { const g = GAMES[+kind.slice(4) % GAMES.length]; return artOf(g.appid, 'hero'); }
+    const real = window.STONE_SIM_ART && window.STONE_SIM_ART[appid];
+    if (real && real[kind]) return real[kind];
     const k = appid + kind; if (artCache[k]) return artCache[k];
     const g = GAMES.find(x => x.appid === appid) || storeItem(appid);
     const W = { hero: 1920, header: 460, capsule: 300 }[kind] || 300, H = { hero: 620, header: 215, capsule: 450 }[kind] || 450;

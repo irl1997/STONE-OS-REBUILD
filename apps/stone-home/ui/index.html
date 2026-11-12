@@ -834,6 +834,17 @@ body.dormant *,body.dormant *::before,body.dormant *::after{animation-play-state
 #stage #settings .cats [data-f]{display:block;flex:none;padding:8px 22px;margin:0;line-height:28px;border-radius:14px}
 #stage #settings .cats [data-f].f,#settings .cats span.cur{font-weight:400}
 #settings .cats span::before{content:none}
+
+/* ---- real key art is often bright (a yellow city, a white sky): the shade where text sits holds the contrast
+   whatever the art, and the text carries a soft shadow of its own ---- */
+#veil.home{background:linear-gradient(180deg,rgba(5,6,10,.62) 0%,rgba(5,6,10,.22) 14%,rgba(5,6,10,0) 30%),
+  linear-gradient(90deg,rgba(5,6,10,.6) 0%,rgba(5,6,10,.3) 30%,rgba(5,6,10,0) 56%),
+  linear-gradient(0deg,var(--accent-deep) 0%,rgba(5,6,10,.84) 18%,rgba(5,6,10,.48) 42%,rgba(5,6,10,0) 66%)}
+#veil.side{background:linear-gradient(180deg,rgba(5,6,10,.5) 0%,rgba(5,6,10,0) 22%),
+  linear-gradient(90deg,rgba(5,6,10,.9) 0%,rgba(5,6,10,.66) 38%,rgba(5,6,10,0) 72%),
+  linear-gradient(0deg,rgba(5,6,10,.82) 0%,rgba(5,6,10,0) 36%)}
+#home .st-label,#home .ctx,#detail .col{text-shadow:0 1px 14px rgba(0,0,0,.6)}
+#detail .col .primary{text-shadow:none}
 </style>
 
 <!-- LIQUID GLASS (cristal.css): the lens of the section bar and the status. Chromium bends what is behind them
