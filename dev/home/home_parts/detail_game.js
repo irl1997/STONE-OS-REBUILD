@@ -4,7 +4,7 @@ function enterDetail(i, opts = {}) {
   curG = i; const g = G[i], running = S.running === i;
   S.screen = 'detail';
   const canPlay = g.inst || g.src === 'shortcut';
-  const prim = running ? 'REANUDAR' : canPlay ? 'JUGAR' : g.upd ? 'INSTALANDO…' : 'INSTALAR';
+  const prim = running ? 'REANUDAR' : canPlay ? 'JUGAR' : g.upd ? 'INSTALANDO' : 'INSTALAR';
   /* Five actions at most on one line (they always fit the 1920 stage); the image options live in GRÁFICOS. */
   const sec = [[g.fav ? 'Quitar de favoritos' : 'Favorito', 'fav'], [`Rendimiento: ${g.perf ? profOf(g.perf).n : 'Global'}`, 'perf'], ['Propiedades', 'opt']];
   if (g.src === 'steam' && g.inst) sec.splice(2, 0, ['Gráficos', 'gfx'], ['Experiencia', 'xp']);
@@ -14,10 +14,11 @@ function enterDetail(i, opts = {}) {
       <div class="stats exp" id="dexp" style="margin-top:.35em;opacity:.85"></div></div>
     <div class="primary txt-f" data-f data-act="primary" id="dprim">${prim}</div>
     <div class="second">${sec.map(([s, a]) => `<span class="txt-f" data-f data-act="${a}">${s}</span>`).join('')}</div>
+    ${dlBarHTML()}
     <div class="info"><div><span>Tamaño</span><b>${g.sz}</b></div><div><span>Origen</span><b>${esc(g.o)}</b></div><div><span>Estado</span><b id="dstate">${g.upd ? (g.inst ? 'Actualizando en Steam' : 'Instalándose') : g.inst ? 'Instalado' : 'En tu cuenta · sin instalar'}</b></div><div><span>Al iniciarse</span><b>${g.perf ? profOf(g.perf).n : 'Perfil global'}${S.safeMode && g.perf ? ' (en pausa: Safe Mode)' : ''}</b></div></div>`;
   showScreen('detail'); chrome(true, false);
   bgGame(g, true, 'side');
-  if (!canPlay || g.upd || DL.at[g.appid]) { dlShow(); dlKick(); }
+  dlShow(); if (!canPlay || g.upd) dlKick();
   const d = $('#detail');
   NAV = mkNav([[d.querySelector('#dprim')], [...d.querySelectorAll('.second [data-f]')]], {
     r: opts.r || 0, c: opts.c || 0,
@@ -123,9 +124,9 @@ function detailA(el) {
     play('select');
     if (S.running === g.i) return resumeGame();
     if (!g.inst && g.src !== 'shortcut') {
-      if (g.upd) { play('error'); return toast(`${g.n} ya se está instalando: el avance se ve aquí y en Ajustes → Almacenamiento`, false); }
-      const pe = $('#dprim'); if (pe) pe.textContent = 'PIDIENDO A STEAM…';
-      return installGame(g.appid, g.n).then(ok => { const e2 = $('#dprim'); if (e2 && G[curG] === g && /^PIDIENDO/.test(e2.textContent)) e2.textContent = ok ? 'INSTALANDO…' : 'INSTALAR'; if (S.screen === 'detail') dlShow(); });
+      if (g.upd || DL.at[g.appid]) { play('error'); return toast(`${g.n} ya se está instalando: el avance se ve en esta pantalla`, false); }
+      const pe = $('#dprim'); if (pe) pe.textContent = 'PIDIENDO A STEAM';
+      return installGame(g.appid, g.n).then(ok => { const e2 = $('#dprim'); if (e2 && G[curG] === g && /^PIDIENDO/.test(e2.textContent)) e2.textContent = ok ? 'INSTALANDO' : 'INSTALAR'; if (S.screen === 'detail') dlShow(); });
     }
     return launch(g);
   }

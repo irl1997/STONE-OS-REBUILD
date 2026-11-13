@@ -417,3 +417,40 @@
 .cov .ln{position:absolute;left:30%;right:30%;top:calc(var(--bh) - 1px);height:2px;border-radius:2px;background:#fff;
   box-shadow:0 0 8px rgba(255,255,255,.9),0 0 22px var(--accent-glow)}
 .card.f .cov .band{filter:brightness(1.3)}
+
+/* ---- 3.1.0-rc4, after the board of 12-11-2026 ---- */
+/* A game not installed: its cover stays whole. The card used to be drawn at 72 % opacity and the
+   background showed through the cover ("errores de transparencia"). Now: a light shade over the art
+   and a mark in the corner (an arrow: to download); the chosen one has almost no shade. */
+#stage .card.dim,#stage .card.hero.dim,#stage .card.cap.dim{opacity:1}
+#stage .card.dim::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 36 36'%3E%3Ccircle cx='18' cy='18' r='17' fill='rgb%288 9 12/.8%29' stroke='rgb%28255 255 255/.55%29'/%3E%3Cpath d='M18 9v13M12.5 17l5.5 5.5 5.5-5.5M11 26.5h14' fill='none' stroke='%23fff' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") right 12px top 12px/36px 36px no-repeat,rgb(6 7 11/.34)}
+#stage .card.dim.f::before{background-color:rgb(6 7 11/.08)}
+/* The download on a cover: how far, and a bar */
+.card .cdl{position:absolute;left:12px;right:12px;bottom:12px;display:flex;flex-direction:column;gap:7px;pointer-events:none}
+.card .cdl em{align-self:flex-start;font-style:normal;font-family:var(--f-text);font-size:15px;line-height:1;letter-spacing:.04em;
+  padding:6px 11px;border-radius:999px;background:rgb(8 9 12/.84);color:#fff;font-variant-numeric:tabular-nums}
+.card .cdl span{height:5px;border-radius:3px;background:rgb(8 9 12/.72);overflow:hidden;box-shadow:0 0 0 1px rgb(255 255 255/.2)}
+.card .cdl i{display:block;height:100%;border-radius:3px;background:#fff;transition:width .8s linear}
+.cdl .wait i,#detail .dl-bar.wait i{width:34%!important;animation:dlwait 1.5s ease-in-out infinite alternate}
+@keyframes dlwait{from{transform:translateX(-12%)}to{transform:translateX(206%)}}
+#stage.rm .cdl .wait i,#stage.rm #detail .dl-bar.wait i{animation:none}
+/* The download on the game's page: stage and percentage, the bar, bytes, speed and time left */
+#detail .dl{position:absolute;left:96px;top:770px;width:880px;display:none;font-family:var(--f-text);text-shadow:0 1px 14px rgb(0 0 0/.6)}
+#detail .dl.on{display:block}
+#detail .dl-top{display:flex;justify-content:space-between;align-items:baseline;gap:24px;font-size:21px;line-height:26px;color:var(--warm);font-variant-numeric:tabular-nums}
+#detail .dl-top b{font-weight:400;letter-spacing:.04em}
+#detail .dl-bar{height:6px;margin-top:9px;border-radius:3px;background:rgb(255 255 255/.2);overflow:hidden}
+#detail .dl-bar i{display:block;height:100%;width:0;border-radius:3px;background:#fff;box-shadow:0 0 14px var(--accent-glow);transition:width .8s linear}
+#detail .dl-sub{margin-top:8px;font-size:17px;line-height:22px;color:var(--text-2);font-variant-numeric:tabular-nums}
+#dlst{font-variant-numeric:tabular-nums;white-space:nowrap}
+/* Backgrounds: what must be enlarged a lot is softened (bgTune sets --bg-blur), and bright art gets a
+   deeper shade under the text (--bg-dim). Without GPU nothing is filtered. */
+#stage .bg{inset:-16px;filter:blur(var(--bg-blur,0px))}
+#stage.lite .bg{inset:0;filter:none}
+#veil.home::after,#veil.side::after{content:"";position:absolute;inset:0;pointer-events:none;background:rgb(5 6 10/var(--bg-dim,0))}
+/* Dialogs: room between the buttons (the chosen one's white plate touched its neighbours); the
+   technical line of an install that did not start; Steam taking the session shows its veil at once */
+#dlg .btns{gap:64px}
+#dlg .tech{font-family:"IBM Plex Mono","JetBrains Mono",monospace;font-size:15px;line-height:22px;color:var(--slate);word-break:break-word}
+#sfront.now{transition:none}

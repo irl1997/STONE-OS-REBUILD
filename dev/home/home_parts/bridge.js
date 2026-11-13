@@ -65,7 +65,7 @@ const Sys = {
   artWant: appid => Bridge.call('art.want', appid),
   emuCheck: () => Bridge.call('emuCheck'), emuUpdate: k => Bridge.call('emuUpdate', k),
   /* 3.1.0-rc2: what Steam really did with an install, the downloads, updates on demand, Steam held during the setup */
-  installCancel: () => Bridge.call('install.cancel'), downloads: () => Bridge.call('downloads'),
+  installCancel: () => Bridge.call('install.cancel'), installAcceptEula: appid => Bridge.call('install.acceptEula', appid), downloads: () => Bridge.call('downloads'),
   updateNow: () => Bridge.call('update.now'), wantSteam: () => Bridge.call('session.wantSteam')
 };
 async function sys(method, ...a) {

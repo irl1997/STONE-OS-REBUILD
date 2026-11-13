@@ -49,7 +49,45 @@ FRONT_HOLD_CHECK_S = 2       # ... asking its interface this often; then its win
 STORE_FRESH_S = 600          # the shop window is read from Steam again after this long
 SHOW_WHAT = ("login", "store", "app", "install")
 INSTALL_CONFIRM_S = 20       # Steam said it started an install: its appmanifest must appear within this
+INSTALL_DOUBT_S = 8          # Steam's wizard gave no clear answer: its files are still looked at this long
+DOWNLOADS_LIVE_S = 1.0       # Steam's live downloads are asked for at most this often
 UNINSTALL_CONFIRM_S = 45     # Steam took an uninstall: the appmanifest must be gone within this
+
+
+def merge_downloads(rows, live):
+    """Steam's files (storage.downloads rows) joined with its live state (steamcef.downloads_state)."""
+    from . import steamcef
+    out, seen = [], set()
+    queue = {q["appid"]: q for q in (live or {}).get("queue") or []}
+    cur = (live or {}).get("appid") or 0
+    for r in rows:
+        try:
+            aid = int(r["appid"])
+        except (KeyError, TypeError, ValueError):
+            continue
+        seen.add(aid)
+        item = {"appid": str(aid), "name": r.get("name") or "", "installed": bool(r.get("installed")),
+                "downloaded": r.get("downloaded") or 0, "total": r.get("total") or 0, "progress": r.get("progress"),
+                "stage": "download", "rate": 0, "eta": None}
+        q = queue.get(aid)
+        if live is not None and aid == cur:
+            prog = live.get("progress") or []
+            if len(prog) > 2 and prog[2][1] > 0:
+                item["downloaded"], item["total"] = prog[2]
+            item["stage"] = "paused" if live.get("paused") else steamcef.stage_of(live) or "download"
+            if live.get("percent"):
+                item["progress"] = round(live["percent"] / 100.0, 4)
+            elif item["total"]:
+                item["progress"] = round(item["downloaded"] / item["total"], 4)
+            item["rate"], item["eta"] = live.get("rate") or 0, live.get("eta")
+        elif live is not None:
+            item["stage"] = "paused" if (q and q.get("paused")) or live.get("paused") else "queued"
+        out.append(item)
+    for aid, q in queue.items():          # queued in Steam, its appmanifest not written yet
+        if aid not in seen and not q.get("completed"):
+            out.append({"appid": str(aid), "name": "", "installed": False, "downloaded": 0, "total": 0, "progress": None,
+                        "stage": "queued", "rate": 0, "eta": None})
+    return out
 
 
 def _want_steam():
@@ -225,6 +263,7 @@ class Host:
         for g in res["games"]:
             art = g.setdefault("art", {})
             art.setdefault("header", False)
+            art["hero2x"] = g.get("source") == "steam" and artcache.have(g["appid"], "hero2x") is not None
             if g.get("source") != "steam" or (art.get("capsule") and art.get("hero")):
                 continue
             kept = artcache.flags(g["appid"])                   # fetched by STONE: Steam had not cached it
@@ -317,7 +356,8 @@ class Host:
         if len(args) != 1 or not library.valid_appid(args[0]) or \
                 (args[0] not in self.games and args[0] not in self.owned and args[0] not in self.store_seen):
             return done(None, "InvalidValue", "unknown game")
-        done({"queued": self.art.want(args[0], ("hero", "capsule"), first=True)})
+        # the picture at twice the size comes last: it is the background of a 4K screen (artcache.KINDS)
+        done({"queued": self.art.want(args[0], ("hero", "capsule", "hero2x"), first=True)})
 
     def _scanned(self, res, done):
         self.games = {g["appid"]: g["launch"] for g in res["games"] if g.get("launch")}
@@ -389,23 +429,56 @@ class Host:
             except (OSError, ValueError) as e:
                 return {"ok": False, "state": "noanswer", "detail": str(e)[:160]}
             return {"ok": True, "state": "steam-dialog"}
-        a = ans.get("answer")
-        if a == "started":
-            end = time.monotonic() + INSTALL_CONFIRM_S
-            while True:
-                m = storage.manifest_state(root, appid)
-                if m is not None:
-                    return {"ok": True, "state": "queued", "progress": m.get("progress")}
-                if time.monotonic() >= end:
-                    return {"ok": True, "state": "unconfirmed"}
-                time.sleep(1.0)
-        if a in ("eula", "asks"):
-            return {"ok": False, "state": a, "step": ans.get("state")}
+        return self._install_answer(appid, root, ans)
+
+    def _install_answer(self, appid, root, ans):
+        """What Steam's wizard said, checked against Steam's own files. Whatever the wizard answered,
+        an appmanifest for the game means Steam took the install; a clear question (licence, key) or a
+        full disk comes back as it is. "trace" (the wizard's steps) goes to the log and to the page,
+        so a photo of the message says what Steam did."""
+        a, trace = ans.get("answer"), ans.get("trace") or []
+        print(f"[stone] install {appid}: wizard {a} via {'>'.join(trace) or '-'}", flush=True)
+        if a == "eula":
+            return {"ok": False, "state": "eula", "eulas": ans.get("eulas") or [], "trace": trace}
+        if a == "asks":
+            return {"ok": False, "state": "asks", "step": ans.get("state"), "trace": trace}
         if a == "space":
             return {"ok": False, "state": "space", "need": ans.get("need", 0), "free": ans.get("free", 0)}
         if a in ("failed", "canceled"):
-            return {"ok": False, "state": a, "error": ans.get("err"), "detail": ans.get("detail")}
-        return {"ok": False, "state": "noanswer", "step": ans.get("state"), "detail": ans.get("detail")}
+            return {"ok": False, "state": a, "error": ans.get("err"), "detail": ans.get("detail"), "trace": trace}
+        sure = a in ("started", "gone")
+        end = time.monotonic() + (INSTALL_CONFIRM_S if sure else INSTALL_DOUBT_S)
+        while True:
+            m = storage.manifest_state(root, appid)
+            if m is not None:
+                return {"ok": True, "state": "queued", "progress": m.get("progress")}
+            if time.monotonic() >= end:
+                break
+            time.sleep(1.0)
+        if sure:
+            return {"ok": True, "state": "unconfirmed", "trace": trace}
+        return {"ok": False, "state": "noanswer", "step": ans.get("state"), "detail": ans.get("detail"), "trace": trace}
+
+    def m_install_acceptEula(self, args, done):
+        """install.acceptEula(appid): the person read the game's licence agreement in STONE Home and
+        accepted it. Steam is told so (as its own dialog does) and its waiting wizard goes on; the
+        answer is the one of install."""
+        if len(args) != 1 or not isinstance(args[0], str) or not args[0].isdigit() \
+                or (args[0] not in self.owned and args[0] not in self.store_free):
+            return done(None, "InvalidValue", "unknown game")
+        appid, root = int(args[0]), self.root()
+        self._lib_kick()
+
+        def work():
+            try:
+                ans = self.steam_ui.accept_eula(appid)
+                res = self._install_answer(appid, root, ans) if isinstance(ans, dict) \
+                    else {"ok": False, "state": "noanswer", "detail": "Steam's interface did not answer"}
+            except Exception as e:  # noqa: BLE001
+                res = {"ok": False, "state": "noanswer", "detail": repr(e)[:160]}
+            print(f"[stone] install {appid} (licence accepted): {res}", flush=True)
+            GLib.idle_add(lambda: (done(res), False)[1])
+        threading.Thread(target=work, daemon=True).start()
 
     def m_install_cancel(self, args, done):
         """install.cancel(): close Steam's install wizard (the person said no to what it asked)."""
@@ -418,17 +491,38 @@ class Host:
         threading.Thread(target=work, daemon=True).start()
 
     def m_downloads(self, args, done):
-        """downloads(): what Steam is downloading or updating now (no disk sizes: cheap enough to ask
-        every few seconds while a game page or the loading screen is open)."""
+        """downloads(): what Steam is downloading, installing or has queued, for the bar in STONE Home.
+        Steam's files say which games (their appmanifest); Steam's interface says how far, live:
+        {"downloads": [{"appid", "name", "stage": download|prealloc|install|verify|queued|paused,
+        "progress" (0..1, the whole install), "downloaded", "total" (bytes of the download), "rate"
+        (bytes/s), "eta" (s), "installed"}], "live": bool}. Without Steam's interface the figures are
+        the ones Steam last wrote to disk ("live": false)."""
         root = self.root()
 
         def work():
             try:
-                res = ({"downloads": storage.downloads(root)}, None, "")
+                res = ({"downloads": [], "live": False}, None, "")
+                rows = storage.downloads(root)
+                live = self._downloads_live()
+                res[0]["live"] = live is not None
+                res[0]["downloads"] = merge_downloads(rows, live)
             except Exception as e:  # noqa: BLE001
                 res = (None, "HardwareError", f"downloads: {e!r}")
             GLib.idle_add(lambda: (done(*res), False)[1])
         threading.Thread(target=work, daemon=True).start()
+
+    def _downloads_live(self):
+        now = time.monotonic()
+        last = getattr(self, "_dl_live", None)
+        if last and now - last[0] < DOWNLOADS_LIVE_S:
+            return last[1]
+        try:
+            fn = getattr(self.steam_ui, "downloads_state", None)
+            live = fn() if fn else None
+        except Exception:  # noqa: BLE001  (Steam's interface changed: the files still answer)
+            live = None
+        self._dl_live = (now, live)
+        return live
 
     def m_update_now(self, args, done):
         """update.now(): look for a STONE OS update now and download it (applied at the next restart)."""
@@ -859,10 +953,13 @@ class Host:
         a game starting): a "steam" event says when. Passwords and payments are typed into Steam,
         never into STONE."""
         what = args[0] if args else None
-        if what not in SHOW_WHAT or len(args) != (2 if what == "app" else 1) or \
-                (what == "app" and not library.valid_appid(args[1])):
+        if what not in SHOW_WHAT or len(args) not in ((2,) if what == "app" else (1, 2) if what == "install" else (1,)) or \
+                (len(args) == 2 and not library.valid_appid(args[1])):
             return done(None, "InvalidValue", "what to show")
-        url = None if what in ("login", "install") else system.STEAM_URLS["store"] if what == "store" else f"steam://store/{args[1]}"
+        # "install" with a game: Steam's own install dialog is opened first, so there is a window to
+        # show (board, 3.1.0-rc3: "Ver en Steam" after a failed install had nothing to show)
+        url = None if what == "login" else system.STEAM_URLS["store"] if what == "store" else \
+            f"steam://store/{args[1]}" if what == "app" else f"steam://install/{args[1]}" if len(args) == 2 else None
         _want_steam()
         if os.environ.get("STONE_SESSION") != "stone":
             # Inside Steam's own Game Mode (or in development) Steam shows its pages by itself.
@@ -894,6 +991,9 @@ class Host:
             print(f"[stone] steam: its window could not be asked for ({e!r})", flush=True)
             return False
         fr["hold"], fr["since"] = None, time.monotonic()
+        if fr["what"] == "install" and fr["url"] and not fr["sent"]:
+            fr["sent"] = True
+            self._steam_url(fr["url"])                           # its dialog is the window to show
         if fr["what"] in ("store", "app"):
             fr["big"] = True
             self._steam_url(system.FRONT_URLS["bigpicture"])     # the interface made for a controller
@@ -1259,7 +1359,7 @@ class Host:
     def _details_done(self, appid, res, done):
         if res[0] is not None:
             self.store_seen.add(appid)
-            self.art.want(appid, ("hero",), first=True)
+            self.art.want(appid, ("hero", "hero2x"), first=True)
         self._store_done(res, done)
 
     # ---- STONE STORAGE and DOWNLOADS (M20, M13) ---------------------------------------------

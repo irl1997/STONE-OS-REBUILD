@@ -33,6 +33,11 @@ const Bridge = (() => {
     { appid: '1086940', name: "Baldur's Gate 3", source: 'steam', installed: false, last: 0, min: 0, size: 150e9, kind: 'upscaler' },
     { appid: '620', name: 'Portal 2', source: 'steam', installed: false, last: now - DAY * 200, min: 600, size: 12e9, kind: 'plain' }
   ];
+  function simStart(g) {
+    g.updating = true; g.dl = { at: Date.now(), total: Math.max(2 ** 30, g.size || 20e9) }; emit('library', { reason: 'changed' });
+    setTimeout(() => { g.updating = false; g.installed = true; g.dl = null; g.last = Date.now() / 1000; emit('library', { reason: 'changed' }); }, 24000);
+    return { ok: true, state: 'queued', progress: 0 };
+  }
   const gameOf = appid => GAMES.find(g => g.appid === appid) || bad('InvalidValue', 'unknown game');
   const SIM = { t0: Date.now(), signed: !/nosteam/.test(location.search), fresh: /fresh/.test(location.search), art: false, front: null };
   if (SIM.fresh) GAMES.forEach(g => { g.hidden = g.installed; });        /* a new console: nothing installed yet */
@@ -181,12 +186,13 @@ const Bridge = (() => {
       return { root_found: true, owned_known: live, owned_cached: false, logged: live ? 'in' : null, account: true,
         games: list.slice().sort((x, y) => y.installed - x.installed || y.last - x.last).map(g => ({
           appid: g.appid, name: g.name, source: g.source, installed: g.installed, updating: !!g.updating, playtime_min: g.min, last_played: g.last,
-          size_bytes: g.size, art: g.installed || SIM.art || !/noart/.test(location.search) ? { capsule: !g.wide, hero: !g.wide, header: !!g.wide } : { capsule: false, hero: false, header: false },
+          size_bytes: g.size, art: g.installed || SIM.art || !/noart/.test(location.search) ? { capsule: !g.wide, hero: !g.wide, header: !!g.wide, hero2x: !!(SIM.big && SIM.big[g.appid]) } : { capsule: false, hero: false, header: false },
           launch: g.installed ? 'steam://rungameid/' + g.appid : null })) };
     },
     launch: async ([appid]) => { gameOf(appid); if (/ask/.test(location.search)) SimPanel.ask = Date.now() + 3000; if (/slow/.test(location.search)) { SimPanel.running = appid; setTimeout(() => SimStoned.sim.steamLaunch(appid), 12000); return { ok: true }; } SimStoned.sim.steamLaunch(appid); SimPanel.running = appid; SimPanel.refresh && SimPanel.refresh(); return { ok: true }; },
-    /* installing (3.1.0-rc2: what Steam really did): ?eula / ?nospace / ?noanswer make Steam ask, run out
-       of disk or not answer the first time; otherwise the download advances for 16 s, then installed */
+    /* installing (what Steam really did): ?eula / ?nospace / ?noanswer make Steam ask for its licence
+       agreement, run out of disk or not start the first time; otherwise the download advances for 24 s
+       (downloading, then installing), then the game is installed */
     install: async ([appid]) => {
       let g = GAMES.find(x => x.appid === appid);
       if (!g) { const it = storeItem(appid); if (!it || !it.free) bad('InvalidValue', 'unknown game'); g = addOwned(appid); }
@@ -194,26 +200,29 @@ const Bridge = (() => {
       const q = location.search;
       if (!SIM.asked && /eula|nospace|noanswer/.test(q)) {
         SIM.asked = true;
-        if (/eula/.test(q)) return { ok: false, state: 'eula', step: 'eula' };
+        if (/eula/.test(q)) return { ok: false, state: 'eula', trace: ['setup', 'wait-appinfo', 'config', 'eula'],
+          eulas: [{ id: appid + '_eula_0', version: 2, url: 'https://store.steampowered.com/eula/' + appid + '_eula_0' }] };
         if (/nospace/.test(q)) return { ok: false, state: 'space', need: 74 * 2 ** 30, free: 12.5 * 2 ** 30 };
-        return { ok: false, state: 'noanswer', step: null };
+        return { ok: false, state: 'noanswer', step: 'config', trace: ['setup', 'wait-appinfo', 'config'] };
       }
-      g.updating = true; g.dl = { at: Date.now(), total: Math.max(2 ** 30, g.size || 20e9) }; emit('library', { reason: 'changed' });
-      setTimeout(() => { g.updating = false; g.installed = true; g.dl = null; g.last = Date.now() / 1000; emit('library', { reason: 'changed' }); }, 16000);
-      return { ok: true, state: 'queued', progress: 0 };
+      return simStart(g);
     },
+    'install.acceptEula': async ([appid]) => { await wait(1200); return simStart(gameOf(appid)); },
     'install.cancel': () => ({ ok: true }),
-    downloads: () => ({ downloads: GAMES.filter(g => g.dl).map(g => { const p = Math.min(0.99, (Date.now() - g.dl.at) / 16000);
-      return { appid: g.appid, name: g.name, downloaded: Math.round(g.dl.total * p), total: g.dl.total, progress: Math.round(p * 1000) / 1000, installed: false }; }) }),
+    downloads: () => ({ live: true, downloads: GAMES.filter(g => g.dl).map((g, k) => {
+      const t = (Date.now() - g.dl.at) / 24000, dl = Math.min(1, t / .75), total = g.dl.total;
+      const stage = k > 0 ? 'queued' : t < .75 ? 'download' : 'install';
+      return { appid: g.appid, name: g.name, downloaded: Math.round(total * dl), total, progress: k > 0 ? 0 : Math.round(Math.min(.99, t) * 1000) / 1000,
+        stage, rate: stage === 'download' ? 36.4 * 2 ** 20 : 0, eta: stage === 'download' ? Math.round((1 - t) * 1500) : null, installed: false }; }) }),
     'session.wantSteam': () => ({ ok: true }),
     /* Buscar actualizaciones: uupd "runs" 10 s, then a newer version is staged */
     'update.now': () => { SIM.updUntil = Date.now() + 10000; return { ok: true, unit: 'uupd-manual.service', already: false }; },
     openSteam: async () => ({ ok: true }), openSteamSettings: async () => ({ ok: true }), restart: async () => ({ ok: true }),
     power: async ([a]) => { toast(`Simulación: «${a === 'off' ? 'Apagar' : 'Reiniciar'}» no hace nada aquí`, false); return { ok: true }; },
-    systemInfo: () => ({ session: 'stone', release: { STONE_VERSION: '3.1.0-rc3 (simulación)', STONE_BASE_IMAGE: 'bazzite-deck', STONE_KERNEL: 'simulado', STONE_MESA: 'simulado', STONE_GOVERNOR_VERSION: 'simulado' },
+    systemInfo: () => ({ session: 'stone', release: { STONE_VERSION: '3.1.0-rc4 (simulación)', STONE_BASE_IMAGE: 'bazzite-deck', STONE_KERNEL: 'simulado', STONE_MESA: 'simulado', STONE_GOVERNOR_VERSION: 'simulado' },
       boot_time: Math.round(now - 3600),
-      deployments: { booted: { image: 'simulación', version: '3.1.0-rc3', timestamp: now },
-        staged: SIM.updUntil && Date.now() > SIM.updUntil ? { image: 'simulación', version: '3.1.0-rc4', timestamp: now } : null,
+      deployments: { booted: { image: 'simulación', version: '3.1.0-rc4', timestamp: now },
+        staged: SIM.updUntil && Date.now() > SIM.updUntil ? { image: 'simulación', version: '3.1.0-rc5', timestamp: now } : null,
         rollback: { image: 'simulación', version: '3.0.0-rc1', timestamp: now - 86400 } },
       updates: { unit: 'uupd.timer', enabled: true, last: Math.round(now - 3600 * 15), next: Math.round(now + 3600 * 9) },
       updating: { unit: 'uupd-manual.service', running: !!SIM.updUntil && Date.now() < SIM.updUntil, result: 'success' } }),
@@ -246,7 +255,8 @@ const Bridge = (() => {
       setTimeout(() => emit('art', { art: { [appid]: { capsule: false, hero: true, header: true } } }), 1200);
       return Object.assign(storeRow(it), { about: it.about || 'Descripción simulada del juego, como la da la tienda de Steam: un párrafo corto que cuenta de qué trata y que nunca ocupa más de tres líneas en la ficha de STONE.',
         genres: it.genres || ['Acción', 'Aventura'], release: it.soon ? 'Próximamente' : '16 JUN 2025', by: [it.by || 'Estudio de ejemplo'], kind: 'game', url: 'https://store.steampowered.com/app/' + appid }); },
-    'art.want': () => ({ queued: 0 }),
+    /* the background at twice the size arrives 2 s after a game is looked at (never for Portal 2: older games have none) */
+    'art.want': ([appid]) => { if (appid !== '620') setTimeout(() => { SIM.big = SIM.big || {}; SIM.big[appid] = true; emit('art', { art: { [appid]: { capsule: true, hero: true, header: false, hero2x: true } } }); }, 2000); return { queued: 1 }; },
     'session.info': () => ({ session: 'stone' }),
     /* Steam's own window in front (D-34), played with a stand-in window. ?nowindow: Steam shows nothing.
        SimPanel.buy(appid): the purchase arrives in the account (as after paying in Steam or on the phone). */
@@ -352,6 +362,7 @@ const Bridge = (() => {
   const artCache = {};
   function artOf(appid, kind) {
     if (/^shot\d+$/.test(kind)) { const g = GAMES[+kind.slice(4) % GAMES.length]; return artOf(g.appid, 'hero'); }
+    if (kind === 'hero2x') return artOf(appid, 'hero');          /* the simulation has one size of each picture */
     const real = window.STONE_SIM_ART && window.STONE_SIM_ART[appid];
     if (real && real[kind]) return real[kind];
     const k = appid + kind; if (artCache[k]) return artCache[k];

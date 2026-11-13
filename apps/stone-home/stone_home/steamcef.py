@@ -328,57 +328,118 @@ def owned_games(port=PORT):
     return out
 
 
-# Steam's install wizard, step by step (EInstallMgrState, decky-frontend-lib
-# src/globals/steam-client/Installs.ts). STONE moves it on only where Steam would just wait for a
-# click on "Install": the free licence the person asked for (a free game) and the folder.
+# Steam's install wizard, step by step. Everything here is what Steam's own interface does, read from
+# its code (steamui/sp.js and library.js of the client package of 12-11-2026, client-update.steamstatic.com):
+#   SteamClient.Installs.OpenInstallWizard([appid], "0")     "0" is the local client: Steam can also
+#                                                            install on another of the person's machines
+#   SteamClient.Installs.RegisterForShowInstallWizard(cb)    cb(info) at every step; info.eInstallState,
+#                                                            info.rgApps [{nAppID}], disk space, folder
+#   SetInstallFolder(i) / ContinueInstall() / CancelInstall()
+#   SteamClient.Apps.LoadEula(appid) -> [{id, version, url}] and MarkEulaAccepted(appid, id, version)
+#   SteamClient.Installs.OpenUninstallWizard([appid], "0", true)
+# 3.1.0-rc3 called OpenInstallWizard with one argument and looked for the app in "rgAppIDs", which does
+# not exist: on the board (12-11-2026) every install ended in "Steam no respondió".
 INSTALL_STATES = {0: "none", 1: "setup", 2: "wait-license", 3: "free-license", 4: "cd-key", 5: "wait-appinfo",
                   6: "password", 7: "config", 8: "eula", 9: "create-apps", 10: "read-media", 11: "change-media",
                   12: "wait-legacy-keys", 13: "signup", 14: "complete", 15: "failed", 16: "canceled"}
-INSTALL_ANSWERS = ("started", "failed", "canceled", "eula", "asks", "space", "timeout", "nowizard", "error")
+INSTALL_ANSWERS = ("started", "gone", "failed", "canceled", "eula", "asks", "space", "timeout", "nowizard", "error")
+LOCAL_CLIENT = "0"
+
+# Shared by the install and by the licence acceptance: the wizard's steps are noted as Steam tells them
+# (the callback) and, where this build still has it, asked for (GetInstallManagerInfo). No call can hang
+# the answer: each one races a timer. `out` always gives the steps seen (tr), for the console's own log.
+_WIZARD = (
+    "const I=window.SteamClient&&SteamClient.Installs;"
+    "if(!I||!I.OpenInstallWizard||!I.ContinueInstall)return null;"
+    "const z=ms=>new Promise(r=>setTimeout(r,ms));const tr=[];let last=null,reg=null;"
+    "const note=d=>{if(!d||typeof d.eInstallState!=='number')return;last=d;"
+    "if(tr[tr.length-1]!==d.eInstallState)tr.push(d.eInstallState);};"
+    "try{if(I.RegisterForShowInstallWizard)reg=I.RegisterForShowInstallWizard(note);}catch(e){}"
+    "const poll=async()=>{if(!I.GetInstallManagerInfo)return;"
+    "try{note(await Promise.race([I.GetInstallManagerInfo(),z(1500)]));}catch(e){}};"
+    "const out=(s,x)=>{try{reg&&reg.unregister&&reg.unregister();}catch(e){}"
+    "return JSON.stringify(Object.assign({s:s,st:last?last.eInstallState:null,tr:tr.slice(-16),"
+    "need:last?Number(last.nDiskSpaceRequired)||0:0,free:last?Number(last.nDiskSpaceAvailable)||0:0},x||{}));};"
+    # follow(A, pushed, grace): until Steam has started the install, or asks what only the person can
+    # answer. A finished state only counts after a live one was seen: the wizard keeps its last state.
+    "const follow=async(A,pushed,grace)=>{let folder=false,live=pushed>0;"
+    "for(let i=0;i<110;i++){await z(250);if(i%4===0||!last)await poll();const d=last;if(!d)continue;"
+    "const st=d.eInstallState;if(st>0&&st<14)live=true;"
+    "if(st===14&&live)return out('started');"
+    "if(st===15&&live)return out('failed',{err:Number(d.eAppError)||0,detail:String(d.errorDetail||'').slice(0,160)});"
+    "if(st===16&&live)return out('canceled');"
+    "if(st===0&&pushed>0&&i>=grace)return out('gone');"
+    "if(st===8){if(i<grace)continue;let eu=[];"
+    "try{const v=await Promise.race([SteamClient.Apps.LoadEula(A),z(4000)]);"
+    "eu=[...(v||[])].slice(0,6).map(x=>({id:String(x.id==null?'':x.id).slice(0,64),version:Number(x.version)||0,"
+    "url:String(x.url||'').slice(0,300)}));}catch(e){}"
+    "return out('eula',{eulas:eu});}"
+    "if(st===4||st===6||st===11||st===12||st===13)return out('asks');"
+    "if(st===7){const apps=[...(d.rgApps||d.rgAppIDs||[])].map(x=>x&&x.nAppID);"
+    "if(apps.length&&apps.indexOf(A)<0&&d.currentAppID!==A)return out('error',{detail:'another install is open in Steam'});"
+    "if(d.nDiskSpaceRequired>0&&d.nDiskSpaceAvailable>0&&d.nDiskSpaceRequired>d.nDiskSpaceAvailable)"
+    "{try{I.CancelInstall();}catch(e){}return out('space');}"
+    "if(!folder){folder=true;if(!(d.iInstallFolder>=0)){try{note(await Promise.race([I.SetInstallFolder(0),z(1500)]));}catch(e){}}}"
+    "if(pushed<4){pushed++;try{note(await Promise.race([I.ContinueInstall(),z(1500)]));}"
+    "catch(e){return out('error',{detail:String(e).slice(0,160)});}await z(500);}}"
+    "else if(st===3&&pushed<4){pushed++;try{note(await Promise.race([I.ContinueInstall(),z(1500)]));}catch(e){}await z(500);}}"
+    "return out(tr.length?'timeout':'nowizard');};")
+
+
+def _appid(appid):
+    a = int(appid)
+    if not 0 < a < 0x80000000:
+        raise ValueError("not a Steam app id")
+    return a
 
 
 def install_expression(appid):
     """Install without showing Steam's dialog: in the STONE session Steam's interface is hidden behind
-    STONE Home (rc1 on the board: the dialog opened where nobody could see it). Steam's install wizard
-    is opened and its state read (GetInstallManagerInfo) until Steam has started the install or asks
-    something only the person can answer: a licence agreement (EULA), a key, a password, a disc. Those
-    and a full disk come back to STONE as they are; nothing is accepted on the person's behalf except
-    the free licence of the free game they asked to install. 3.0.0-rc1 continued the wizard blindly
-    after 1.5 s and said "ok" whatever Steam did (board, 12-11-2026: games that never installed).
-    Returns null where this page has no SteamClient (the next page is tried), else a JSON answer."""
-    a = int(appid)
-    if not 0 < a < 0x80000000:
-        raise ValueError("not a Steam app id")
-    return ("(async()=>{const I=window.SteamClient&&SteamClient.Installs;"
-            "if(!I||!I.OpenInstallWizard||!I.GetInstallManagerInfo)return null;"
-            "const z=ms=>new Promise(r=>setTimeout(r,ms));"
-            "const get=async()=>{try{return await I.GetInstallManagerInfo();}catch(e){return null;}};"
-            "const out=(s,d,x)=>JSON.stringify(Object.assign({s:s,st:d?d.eInstallState:null,"
-            "need:d?Number(d.nDiskSpaceRequired)||0:0,free:d?Number(d.nDiskSpaceAvailable)||0:0},x||{}));"
-            "let d=await get();"
+    STONE Home. Steam's install wizard is opened as Steam's own interface opens it and followed until
+    Steam has started the install or asks something only the person can answer: a licence agreement
+    (its address comes back, STONE shows it and passes the acceptance on: accept_eula_expression), a
+    key, a password, a disc. A full disk comes back with its figures. Only two steps are taken for the
+    person, the ones Steam's own interface takes by itself on a console: the install folder and the
+    free licence of the free game they asked for. Returns null where this page has no SteamClient (the
+    next page is tried), else a JSON answer with the steps seen."""
+    a = _appid(appid)
+    return ("(async()=>{" + _WIZARD +
             # a wizard left open by an earlier request (or by Steam itself) would swallow this one
-            "if(d&&d.eInstallState>0&&d.eInstallState<14){try{I.CancelInstall();}catch(e){}await z(400);}"
-            f"const A={a};I.OpenInstallWizard([{a}]);"
-            "let pushed=0,folder=false,seen=false;"
-            "for(let i=0;i<80;i++){await z(250);d=await get();if(!d)continue;"
-            "const ids=(d.rgAppIDs||[]).map(x=>x&&x.nAppID);"
-            "if(!seen){if(ids.indexOf(A)<0&&d.currentAppID!==A)continue;seen=true;}"
-            "const st=d.eInstallState;"
-            "if(st===14)return out('started',d);"
-            "if(st===15)return out('failed',d,{err:Number(d.eAppError)||0,detail:String(d.errorDetail||'').slice(0,160)});"
-            "if(st===16)return out('canceled',d);"
-            "if(st===8)return out('eula',d);"
-            "if(st===4||st===6||st===11||st===12||st===13)return out('asks',d);"
-            "if(st===7){if(d.nDiskSpaceRequired>0&&d.nDiskSpaceAvailable>0&&d.nDiskSpaceRequired>d.nDiskSpaceAvailable)"
-            "{try{I.CancelInstall();}catch(e){}return out('space',d);}"
-            "if(!folder){folder=true;if(!(d.iInstallFolder>=0)){try{I.SetInstallFolder(0);}catch(e){}await z(250);}}"
-            "if(pushed<4){pushed++;try{I.ContinueInstall();}catch(e){return out('error',d,{detail:String(e).slice(0,160)});}await z(600);}}"
-            "else if(st===3&&pushed<4){pushed++;try{I.ContinueInstall();}catch(e){}await z(600);}}"
-            "return out(seen?'timeout':'nowizard',d);})()")
+            "await poll();if(last&&last.eInstallState>0&&last.eInstallState<14){try{I.CancelInstall();}catch(e){}await z(500);}"
+            "tr.length=0;last=null;"
+            f"try{{I.OpenInstallWizard([{a}],'{LOCAL_CLIENT}');}}catch(e){{return out('error',{{detail:String(e).slice(0,160)}});}}"
+            f"return await follow({a},0,0);}})()")
+
+
+def accept_eula_expression(appid):
+    """The person read the game's licence agreement in STONE and accepted it: every agreement Steam
+    lists for the game is marked accepted, as Steam's own dialog does, and the waiting wizard goes on."""
+    a = _appid(appid)
+    return ("(async()=>{" + _WIZARD +
+            "await poll();let v=[];"
+            f"try{{v=[...(await Promise.race([SteamClient.Apps.LoadEula({a}),z(4000)])||[])];}}catch(e){{}}"
+            f"for(const x of v){{try{{SteamClient.Apps.MarkEulaAccepted({a},x.id,x.version);}}"
+            "catch(e){return out('error',{detail:String(e).slice(0,160)});}}"
+            "await z(300);try{note(await Promise.race([I.ContinueInstall(),z(1500)]));}"
+            "catch(e){return out('error',{detail:String(e).slice(0,160)});}"
+            f"return await follow({a},1,8);}})()")
+
+
+def _eulas(rows):
+    out = []
+    for r in rows if isinstance(rows, list) else []:
+        if not isinstance(r, dict) or not isinstance(r.get("url"), str):
+            continue
+        url = r["url"].replace("http://", "https://", 1)
+        if not url.startswith("https://") or len(url) > 300 or any(c in url for c in " \"'<>\\\n\r"):
+            continue
+        out.append({"id": str(r.get("id") or "")[:64], "version": int(r.get("version") or 0), "url": url})
+    return out[:6]
 
 
 def parse_install(raw):
-    """Steam's answer to install_expression as a dict, or None (no page with SteamClient answered)."""
+    """Steam's answer to install_expression as a dict, or None (no page with SteamClient answered).
+    "trace": the wizard's steps by name, e.g. ["setup", "wait-appinfo", "config"]."""
     try:
         d = json.loads(raw) if isinstance(raw, str) else None
     except ValueError:
@@ -386,19 +447,27 @@ def parse_install(raw):
     if not isinstance(d, dict) or d.get("s") not in INSTALL_ANSWERS:
         return None
     st = d.get("st")
-    out = {"answer": d["s"], "state": INSTALL_STATES.get(st) if isinstance(st, int) else None}
+    out = {"answer": d["s"], "state": INSTALL_STATES.get(st) if isinstance(st, int) else None,
+           "trace": [INSTALL_STATES.get(x, str(x)) for x in (d.get("tr") or []) if isinstance(x, int)][:16]}
     for k in ("need", "free", "err"):
         if isinstance(d.get(k), (int, float)) and d[k] >= 0:
             out[k] = int(d[k])
     if isinstance(d.get("detail"), str) and d["detail"]:
         out["detail"] = d["detail"][:160]
+    if d["s"] == "eula":
+        out["eulas"] = _eulas(d.get("eulas"))
     return out
 
 
 def install(appid, port=PORT):
-    """Steam's answer ({"answer": started|failed|canceled|eula|asks|space|timeout|nowizard|error, ...})
-    or None when Steam's interface does not answer (not up, or its remote debugging is off)."""
-    return parse_install(ui_value(install_expression(appid), port, timeout=40.0))
+    """Steam's answer ({"answer": started|gone|failed|canceled|eula|asks|space|timeout|nowizard|error,
+    "trace": [...], ...}) or None when Steam's interface does not answer (not up, or its remote
+    debugging is off)."""
+    return parse_install(ui_value(install_expression(appid), port, timeout=45.0))
+
+
+def accept_eula(appid, port=PORT):
+    return parse_install(ui_value(accept_eula_expression(appid), port, timeout=45.0))
 
 
 CANCEL_INSTALL_EXPRESSION = ("(()=>{const I=window.SteamClient&&SteamClient.Installs;"
@@ -411,19 +480,83 @@ def cancel_install(port=PORT):
 
 
 def uninstall_expression(appid):
-    """Uninstall without Steam's dialog (STONE asked first); Steam keeps cloud saves as always."""
-    a = int(appid)
-    if not 0 < a < 0x80000000:
-        raise ValueError("not a Steam app id")
+    """Uninstall without Steam's dialog (STONE asked first); Steam keeps cloud saves as always.
+    Three arguments, as Steam's interface calls it: the games, the local client, "do not ask"."""
+    a = _appid(appid)
     return ("(async()=>{const I=window.SteamClient&&SteamClient.Installs;"
             "if(!I||!I.OpenUninstallWizard)return null;"
-            f"I.OpenUninstallWizard([{a}],true);return 'ok';}})()")
+            f"I.OpenUninstallWizard([{a}],'{LOCAL_CLIENT}',true);return 'ok';}})()")
 
 
 def uninstall(appid, port=PORT):
     """True when Steam took the request (the files are then removed by Steam), None if its
     interface does not answer."""
     return True if ui_value(uninstall_expression(appid), port) == "ok" else None
+
+
+# ---- Steam's downloads, live (the bar in STONE Home) ------------------------------------------
+# Steam's interface keeps what it is downloading in window.downloadsStore: the overview of the local
+# client ("0") with the app being updated, its state ("Downloading", "Preallocating", "Unpacking",
+# "None"), the bytes of each stage (EAppUpdateProgress: 0 verifying installed files, 1 preallocating,
+# 2 download, 3 staging, 4 verifying staged files, 5 copying, 6 committing), the speed and the time
+# left; and the queue. The appmanifest on disk has the same bytes, but written only now and then.
+STAGES = ("verify", "prealloc", "download", "install", "verify", "install", "install")
+DOWNLOADS_EXPRESSION = (
+    "(()=>{const S=window.downloadsStore;if(!S)return null;let o=null,q=[];"
+    "try{o=S.LocalDownloadOverview||null;}catch(e){}"
+    f"try{{if(!o&&S.m_DownloadOverview&&S.m_DownloadOverview.get)o=S.m_DownloadOverview.get('{LOCAL_CLIENT}')||null;}}catch(e){{}}"
+    f"try{{const m=S.m_DownloadItems,a=m&&m.get?m.get('{LOCAL_CLIENT}'):null;"
+    "if(a)q=[...a].slice(0,40).map(x=>[x.appid|0,x.active?1:0,x.completed?1:0,x.paused?1:0,Number(x.queue_index)||0]);}catch(e){}"
+    "const p=o&&o.progress?[...o.progress].slice(0,7).map(x=>[Number(x.bytes_in_progress)||0,Number(x.bytes_total)||0]):[];"
+    "return JSON.stringify({a:o?o.update_appid|0:0,s:o?String(o.update_state||''):'',pa:!!(o&&o.paused),"
+    "r:o?Number(o.update_network_bytes_per_second)||0:0,eta:o?Number(o.overall_estimated_time_remaining_sec):-1,"
+    "pct:o?Number(o.overall_percent_complete)||0:0,p:p,q:q});})()")
+
+
+def parse_downloads(raw):
+    """Steam's live downloads as {"appid", "state", "paused", "rate", "eta", "percent", "progress",
+    "queue"} or None. "progress": [[bytes done, bytes total] per stage]; "queue": [{"appid", "active",
+    "completed", "paused", "index"}]."""
+    try:
+        d = json.loads(raw) if isinstance(raw, str) else None
+    except ValueError:
+        return None
+    if not isinstance(d, dict):
+        return None
+
+    def num(v, lo=0, hi=2**53):
+        return int(v) if isinstance(v, (int, float)) and lo <= v <= hi else 0
+    prog = [[num(x[0]), num(x[1])] for x in (d.get("p") or []) if isinstance(x, list) and len(x) == 2][:7]
+    queue = [{"appid": num(x[0], 1, 0x7FFFFFFF), "active": bool(x[1]), "completed": bool(x[2]), "paused": bool(x[3]),
+              "index": num(x[4])} for x in (d.get("q") or []) if isinstance(x, list) and len(x) == 5][:40]
+    eta = d.get("eta")
+    pct = d.get("pct")
+    return {"appid": num(d.get("a"), 0, 0x7FFFFFFF), "state": str(d.get("s") or "")[:24], "paused": bool(d.get("pa")),
+            "rate": num(d.get("r")), "eta": int(eta) if isinstance(eta, (int, float)) and 0 <= eta < 10**7 else None,
+            "percent": float(pct) if isinstance(pct, (int, float)) and 0 <= pct <= 100 else 0.0,
+            "progress": prog, "queue": [q for q in queue if q["appid"]]}
+
+
+def downloads_state(port=PORT):
+    """What Steam is downloading now, live, or None (its interface does not answer)."""
+    return parse_downloads(ui_value(DOWNLOADS_EXPRESSION, port, timeout=4.0))
+
+
+def stage_of(live):
+    """The stage of the app Steam is updating, in STONE's words: "prealloc", "download", "install",
+    "verify", or None (nothing in progress). Steam's state names first, then the stage with bytes left."""
+    if not live or not live.get("appid"):
+        return None
+    state = live.get("state")
+    if state == "Preallocating":
+        return "prealloc"
+    if state == "Unpacking":
+        return "install"
+    prog = live.get("progress") or []
+    for i in (2, 3, 5, 6, 4, 0, 1):
+        if i < len(prog) and prog[i][1] > 0 and prog[i][0] < prog[i][1]:
+            return STAGES[i]
+    return "download" if state == "Downloading" else "install"
 
 
 # ---- Steam asking the person something, answered from STONE Home -----------------------------

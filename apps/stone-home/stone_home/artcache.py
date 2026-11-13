@@ -4,7 +4,7 @@ Steam keeps artwork on disk only for games its own library has shown. STONE Home
 reach the internet (it is confined to 127.0.0.1), so the host fetches the public images of a game
 from Steam's image servers and keeps them:
 
-    ~/.cache/stone/art/<appid>/<kind>.jpg|.png     kind: capsule | hero | header
+    ~/.cache/stone/art/<appid>/<kind>.jpg|.png     kind: capsule | hero | header | hero2x
     ~/.cache/stone/art/<appid>/<kind>.none         looked for and not there (asked again after MISS_DAYS)
 
 Without internet nothing is kept and the same pictures are asked for again later, with a pause
@@ -25,9 +25,12 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
-KINDS = ("capsule", "hero", "header")
+# hero2x: the same big picture at twice the size (3840 x 1240), for the background of a 4K screen.
+# Steam's own cache only keeps the 1920 x 620 one, which a 4K television shows enlarged 3.5 times
+# (board, 12-11-2026: "los fondos se ven pixelados"). Newer games have it; older ones do not.
+KINDS = ("capsule", "hero", "header", "hero2x")
 CLASSIC = "https://cdn.cloudflare.steamstatic.com/steam/apps/{a}/{f}"
-FILES = {"capsule": "library_600x900.jpg", "hero": "library_hero.jpg", "header": "header.jpg"}
+FILES = {"capsule": "library_600x900.jpg", "hero": "library_hero.jpg", "header": "header.jpg", "hero2x": "library_hero_2x.jpg"}
 HOST_SUFFIX = ".steamstatic.com"
 MAX_BYTES = 6 * 2**20
 MIN_BYTES = 2048                 # smaller than this is a placeholder, not artwork
