@@ -1,12 +1,41 @@
 function bgGame(g, sharp, veil) {
   S.bgFor = { i: g.i, sharp, veil };
   accentFor(g);
-  const u = heroUrl(g);
+  const u = bgUrl(g);
+  bgTune(g, !!u && sharp);
   if (!u) return setBg(neutralBg, veil, true);
-  if (sharp) return setBg(`url("${u}")`, veil, true);
+  if (sharp) { bgWant(g); return setBg(`url("${u}")`, veil, true); }
   const b = blurOf(g, () => { if (S.bgFor && S.bgFor.i === g.i && !S.bgFor.sharp) setBg(`url(${BLUR.get(g.appid)})`, S.bgFor.veil, true); });
   if (b) return setBg(`url(${b})`, veil, true);
   $('#veil').className = veil;
+}
+
+/* THE BACKGROUND AT THE SCREEN'S SIZE (3.1.0-rc4; board, 12-11-2026: "los fondos se ven pixelados").
+   Steam's big picture is 1920 × 620: filling a 4K television it is enlarged 3.5 times. STONE asks for
+   the one at twice the size (when the game has it, artcache hero2x) for the game being looked at, and
+   softens what still has to be enlarged a lot, so it looks out of focus instead of made of blocks.
+   Bright art (a white sky) gets a deeper shade under the text (--bg-dim). */
+const BG_SIZE = new Map(), BG_LUM = new Map(), BG_ASKED = new Set();
+let bgWantT = 0;
+function bgWant(g) {
+  clearTimeout(bgWantT);
+  if (g.src !== 'steam' || g.art.hero2x || BG_ASKED.has(g.appid)) return;
+  /* only for a game that stays in focus: moving along a row asks for nothing */
+  bgWantT = setTimeout(() => { if (S.bgFor && S.bgFor.i === g.i) { BG_ASKED.add(g.appid); Sys.artWant(g.appid).catch(() => {}); } }, 900);
+}
+function bgTune(g, shown) {
+  let blur = 0, dim = 0;
+  if (shown) {
+    const sz = g.art.hero2x ? [3840, 1240] : BG_SIZE.get(g.appid);
+    if (sz) {
+      const up = Math.max(1920 / sz[0], 1080 / sz[1]) * SCALE * (window.devicePixelRatio || 1);
+      blur = Math.max(0, Math.min(4.5, (up - 1.3) * 1.1));
+    }
+    const lum = BG_LUM.get(g.appid);
+    if (lum != null) dim = Math.max(0, Math.min(.46, (lum - .34) * .9));
+  }
+  stage.style.setProperty('--bg-blur', `${blur.toFixed(1)}px`);
+  stage.style.setProperty('--bg-dim', dim.toFixed(2));
 }
 
 /* CRISTAL: the colour of the game in focus, read from its own art (a 24 × 14 copy, colourful and
@@ -35,17 +64,22 @@ function accentFor(g) {
       const cv = document.createElement('canvas'); cv.width = 24; cv.height = 14;
       const x = cv.getContext('2d'); x.drawImage(img, 0, 0, 24, 14);
       const d = x.getImageData(0, 0, 24, 14).data;
-      let r = 0, gg = 0, b = 0, w = 0;
+      let r = 0, gg = 0, b = 0, w = 0, lum = 0;
       for (let i = 0; i < d.length; i += 4) {
         const mx = Math.max(d[i], d[i + 1], d[i + 2]), mn = Math.min(d[i], d[i + 1], d[i + 2]);
         const wt = (mx ? (mx - mn) / mx : 0) ** 2 * (mx / 255) + .01;
         r += d[i] * wt; gg += d[i + 1] * wt; b += d[i + 2] * wt; w += wt;
+        lum += (.2126 * d[i] + .7152 * d[i + 1] + .0722 * d[i + 2]) / 255;
       }
       c = vivid(r / w, gg / w, b / w);
+      /* how big the picture is and how bright: the background's softness and shade (bgTune) */
+      BG_SIZE.set(g.appid, [img.naturalWidth || 1920, img.naturalHeight || 620]);
+      BG_LUM.set(g.appid, lum / (d.length / 4));
+      [BG_SIZE, BG_LUM].forEach(m => { while (m.size > ACCENT_MAX) m.delete(m.keys().next().value); });
     } catch (e) { c = null; }           /* artwork that cannot be read keeps the default */
     ACCENT.set(g.appid, c);
     while (ACCENT.size > ACCENT_MAX) ACCENT.delete(ACCENT.keys().next().value);
-    if (S.bgFor && S.bgFor.i === g.i) setAccent(c);
+    if (S.bgFor && S.bgFor.i === g.i) { setAccent(c); bgTune(g, !!S.bgFor.sharp); }
   };
   img.src = u;
 }

@@ -27,7 +27,7 @@ async function loadLibrary() {
   const run = idOf(S.running), lau = idOf(S.launching), cur = typeof curG === 'number' ? idOf(curG) : null;
   G = list.map((x, i) => ({ i, appid: x.appid, n: x.name, o: SRC[x.source] || 'Steam', src: x.source, min: x.playtime_min,
     h: Math.round(x.playtime_min / 60), lastT: x.last_played, last: ago(x.last_played), sz: sizeText(x.size_bytes),
-    inst: x.installed, upd: x.updating, art: Object.assign({ capsule: false, hero: false, header: false }, x.art), fav: favs.has(x.appid), perf: null }));
+    inst: x.installed, upd: x.updating, art: Object.assign({ capsule: false, hero: false, header: false, hero2x: false }, x.art), fav: favs.has(x.appid), perf: null }));
   const at = a => { const k = a === null ? -1 : G.findIndex(g => g.appid === a); return k < 0 ? null : k; };
   S.running = at(run); S.launching = at(lau);
   S.detailGone = cur !== null && at(cur) === null;
@@ -46,6 +46,8 @@ async function loadLibrary() {
 const capUrl = g => g.art.capsule ? `url("${Bridge.artUrl(g.appid, 'capsule')}")` : g.art.header ? `url("${Bridge.artUrl(g.appid, 'header')}")` : 'none';
 const capWide = g => !g.art.capsule && !!g.art.header;
 const heroUrl = g => g.art.hero || g.art.capsule || g.art.header ? Bridge.artUrl(g.appid, g.art.hero ? 'hero' : g.art.capsule ? 'capsule' : 'header') : null;
+/* The background of the screen: the picture at twice the size when STONE has it (artcache hero2x) */
+const bgUrl = g => g.art.hero2x ? Bridge.artUrl(g.appid, 'hero2x') : heroUrl(g);
 /* A cover without art: the machine itself in miniature (black gloss, the stone band, the light line); the
    name is never written on a cover, it shows under the row (Home) or at the foot of the grid (Library). */
 const nameTag = () => '<span class="ph"></span>';

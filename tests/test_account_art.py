@@ -105,10 +105,14 @@ def test_only_steams_image_servers_and_real_pictures_reach_the_cache():
         assert not ART.fetch("620", "header", get=get)                          # a web page, not a picture
         assert ART.have("620", "header") is None and ART.missed("620", "header")
         assert not ART.missed("620", "header", now=time.time() + (ART.MISS_DAYS + 1) * 86400)   # asked again later
-        assert ART.flags("620") == {"capsule": True, "hero": True, "header": False}
+        assert ART.flags("620") == {"capsule": True, "hero": True, "header": False, "hero2x": False}
+        # the background at twice the size (3.1.0-rc4): its own file on Steam's servers; older games have none
+        assert ART.valid("620", "hero2x") and ART.FILES["hero2x"] == "library_hero_2x.jpg"
+        assert not ART.fetch("620", "hero2x", get=get) and ART.missed("620", "hero2x")
+        assert seen[-1] == ART.CLASSIC.format(a="620", f="library_hero_2x.jpg")
         assert not ART.fetch("620", "header", url="https://evil.example/x.jpg", get=get)       # never fetched
         assert not ART.fetch("../../x", "capsule", get=get) and not ART.fetch("620", "logo", get=get)
-        assert len(seen) == 3
+        assert len(seen) == 4                    # the cover, the big picture, the wide one, the big one at twice the size
 
         def offline(url):
             raise OSError("no network")
@@ -155,8 +159,8 @@ def test_fetcher_falls_back_to_the_stores_wide_picture_and_tells_what_arrived():
         got = {}
         for n in news:
             got.update(n)
-        assert got["620"] == {"capsule": True, "hero": False, "header": False}
-        assert got["3527290"] == {"capsule": False, "hero": False, "header": True}     # the wide picture instead
+        assert got["620"] == {"capsule": True, "hero": False, "header": False, "hero2x": False}
+        assert got["3527290"] == {"capsule": False, "hero": False, "header": True, "hero2x": False}     # the wide picture instead
         assert "999" not in got and ART.missed("999", "capsule") and ART.missed("999", "header")
         assert ("lookup", "3527290") in asked and ("lookup", "999") in asked
         assert "https://evil.example/header.jpg" not in asked

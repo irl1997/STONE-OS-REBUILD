@@ -869,6 +869,43 @@ body.dormant *,body.dormant *::before,body.dormant *::after{animation-play-state
 .cov .ln{position:absolute;left:30%;right:30%;top:calc(var(--bh) - 1px);height:2px;border-radius:2px;background:#fff;
   box-shadow:0 0 8px rgba(255,255,255,.9),0 0 22px var(--accent-glow)}
 .card.f .cov .band{filter:brightness(1.3)}
+
+/* ---- 3.1.0-rc4, after the board of 12-11-2026 ---- */
+/* A game not installed: its cover stays whole. The card used to be drawn at 72 % opacity and the
+   background showed through the cover ("errores de transparencia"). Now: a light shade over the art
+   and a mark in the corner (an arrow: to download); the chosen one has almost no shade. */
+#stage .card.dim,#stage .card.hero.dim,#stage .card.cap.dim{opacity:1}
+#stage .card.dim::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 36 36'%3E%3Ccircle cx='18' cy='18' r='17' fill='rgb%288 9 12/.8%29' stroke='rgb%28255 255 255/.55%29'/%3E%3Cpath d='M18 9v13M12.5 17l5.5 5.5 5.5-5.5M11 26.5h14' fill='none' stroke='%23fff' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") right 12px top 12px/36px 36px no-repeat,rgb(6 7 11/.34)}
+#stage .card.dim.f::before{background-color:rgb(6 7 11/.08)}
+/* The download on a cover: how far, and a bar */
+.card .cdl{position:absolute;left:12px;right:12px;bottom:12px;display:flex;flex-direction:column;gap:7px;pointer-events:none}
+.card .cdl em{align-self:flex-start;font-style:normal;font-family:var(--f-text);font-size:15px;line-height:1;letter-spacing:.04em;
+  padding:6px 11px;border-radius:999px;background:rgb(8 9 12/.84);color:#fff;font-variant-numeric:tabular-nums}
+.card .cdl span{height:5px;border-radius:3px;background:rgb(8 9 12/.72);overflow:hidden;box-shadow:0 0 0 1px rgb(255 255 255/.2)}
+.card .cdl i{display:block;height:100%;border-radius:3px;background:#fff;transition:width .8s linear}
+.cdl .wait i,#detail .dl-bar.wait i{width:34%!important;animation:dlwait 1.5s ease-in-out infinite alternate}
+@keyframes dlwait{from{transform:translateX(-12%)}to{transform:translateX(206%)}}
+#stage.rm .cdl .wait i,#stage.rm #detail .dl-bar.wait i{animation:none}
+/* The download on the game's page: stage and percentage, the bar, bytes, speed and time left */
+#detail .dl{position:absolute;left:96px;top:770px;width:880px;display:none;font-family:var(--f-text);text-shadow:0 1px 14px rgb(0 0 0/.6)}
+#detail .dl.on{display:block}
+#detail .dl-top{display:flex;justify-content:space-between;align-items:baseline;gap:24px;font-size:21px;line-height:26px;color:var(--warm);font-variant-numeric:tabular-nums}
+#detail .dl-top b{font-weight:400;letter-spacing:.04em}
+#detail .dl-bar{height:6px;margin-top:9px;border-radius:3px;background:rgb(255 255 255/.2);overflow:hidden}
+#detail .dl-bar i{display:block;height:100%;width:0;border-radius:3px;background:#fff;box-shadow:0 0 14px var(--accent-glow);transition:width .8s linear}
+#detail .dl-sub{margin-top:8px;font-size:17px;line-height:22px;color:var(--text-2);font-variant-numeric:tabular-nums}
+#dlst{font-variant-numeric:tabular-nums;white-space:nowrap}
+/* Backgrounds: what must be enlarged a lot is softened (bgTune sets --bg-blur), and bright art gets a
+   deeper shade under the text (--bg-dim). Without GPU nothing is filtered. */
+#stage .bg{inset:-16px;filter:blur(var(--bg-blur,0px))}
+#stage.lite .bg{inset:0;filter:none}
+#veil.home::after,#veil.side::after{content:"";position:absolute;inset:0;pointer-events:none;background:rgb(5 6 10/var(--bg-dim,0))}
+/* Dialogs: room between the buttons (the chosen one's white plate touched its neighbours); the
+   technical line of an install that did not start; Steam taking the session shows its veil at once */
+#dlg .btns{gap:64px}
+#dlg .tech{font-family:"IBM Plex Mono","JetBrains Mono",monospace;font-size:15px;line-height:22px;color:var(--slate);word-break:break-word}
+#sfront.now{transition:none}
 </style>
 
 <!-- LIQUID GLASS (cristal.css): the lens of the section bar and the status. Chromium bends what is behind them
@@ -1058,7 +1095,7 @@ const Sys = {
   artWant: appid => Bridge.call('art.want', appid),
   emuCheck: () => Bridge.call('emuCheck'), emuUpdate: k => Bridge.call('emuUpdate', k),
   /* 3.1.0-rc2: what Steam really did with an install, the downloads, updates on demand, Steam held during the setup */
-  installCancel: () => Bridge.call('install.cancel'), downloads: () => Bridge.call('downloads'),
+  installCancel: () => Bridge.call('install.cancel'), installAcceptEula: appid => Bridge.call('install.acceptEula', appid), downloads: () => Bridge.call('downloads'),
   updateNow: () => Bridge.call('update.now'), wantSteam: () => Bridge.call('session.wantSteam')
 };
 async function sys(method, ...a) {
@@ -1171,7 +1208,7 @@ async function loadLibrary() {
   const run = idOf(S.running), lau = idOf(S.launching), cur = typeof curG === 'number' ? idOf(curG) : null;
   G = list.map((x, i) => ({ i, appid: x.appid, n: x.name, o: SRC[x.source] || 'Steam', src: x.source, min: x.playtime_min,
     h: Math.round(x.playtime_min / 60), lastT: x.last_played, last: ago(x.last_played), sz: sizeText(x.size_bytes),
-    inst: x.installed, upd: x.updating, art: Object.assign({ capsule: false, hero: false, header: false }, x.art), fav: favs.has(x.appid), perf: null }));
+    inst: x.installed, upd: x.updating, art: Object.assign({ capsule: false, hero: false, header: false, hero2x: false }, x.art), fav: favs.has(x.appid), perf: null }));
   const at = a => { const k = a === null ? -1 : G.findIndex(g => g.appid === a); return k < 0 ? null : k; };
   S.running = at(run); S.launching = at(lau);
   S.detailGone = cur !== null && at(cur) === null;
@@ -1190,6 +1227,8 @@ async function loadLibrary() {
 const capUrl = g => g.art.capsule ? `url("${Bridge.artUrl(g.appid, 'capsule')}")` : g.art.header ? `url("${Bridge.artUrl(g.appid, 'header')}")` : 'none';
 const capWide = g => !g.art.capsule && !!g.art.header;
 const heroUrl = g => g.art.hero || g.art.capsule || g.art.header ? Bridge.artUrl(g.appid, g.art.hero ? 'hero' : g.art.capsule ? 'capsule' : 'header') : null;
+/* The background of the screen: the picture at twice the size when STONE has it (artcache hero2x) */
+const bgUrl = g => g.art.hero2x ? Bridge.artUrl(g.appid, 'hero2x') : heroUrl(g);
 /* A cover without art: the machine itself in miniature (black gloss, the stone band, the light line); the
    name is never written on a cover, it shows under the row (Home) or at the foot of the grid (Library). */
 const nameTag = () => '<span class="ph"></span>';
@@ -1327,12 +1366,41 @@ function setBg(css, veil, keepFor) {
 function bgGame(g, sharp, veil) {
   S.bgFor = { i: g.i, sharp, veil };
   accentFor(g);
-  const u = heroUrl(g);
+  const u = bgUrl(g);
+  bgTune(g, !!u && sharp);
   if (!u) return setBg(neutralBg, veil, true);
-  if (sharp) return setBg(`url("${u}")`, veil, true);
+  if (sharp) { bgWant(g); return setBg(`url("${u}")`, veil, true); }
   const b = blurOf(g, () => { if (S.bgFor && S.bgFor.i === g.i && !S.bgFor.sharp) setBg(`url(${BLUR.get(g.appid)})`, S.bgFor.veil, true); });
   if (b) return setBg(`url(${b})`, veil, true);
   $('#veil').className = veil;
+}
+
+/* THE BACKGROUND AT THE SCREEN'S SIZE (3.1.0-rc4; board, 12-11-2026: "los fondos se ven pixelados").
+   Steam's big picture is 1920 × 620: filling a 4K television it is enlarged 3.5 times. STONE asks for
+   the one at twice the size (when the game has it, artcache hero2x) for the game being looked at, and
+   softens what still has to be enlarged a lot, so it looks out of focus instead of made of blocks.
+   Bright art (a white sky) gets a deeper shade under the text (--bg-dim). */
+const BG_SIZE = new Map(), BG_LUM = new Map(), BG_ASKED = new Set();
+let bgWantT = 0;
+function bgWant(g) {
+  clearTimeout(bgWantT);
+  if (g.src !== 'steam' || g.art.hero2x || BG_ASKED.has(g.appid)) return;
+  /* only for a game that stays in focus: moving along a row asks for nothing */
+  bgWantT = setTimeout(() => { if (S.bgFor && S.bgFor.i === g.i) { BG_ASKED.add(g.appid); Sys.artWant(g.appid).catch(() => {}); } }, 900);
+}
+function bgTune(g, shown) {
+  let blur = 0, dim = 0;
+  if (shown) {
+    const sz = g.art.hero2x ? [3840, 1240] : BG_SIZE.get(g.appid);
+    if (sz) {
+      const up = Math.max(1920 / sz[0], 1080 / sz[1]) * SCALE * (window.devicePixelRatio || 1);
+      blur = Math.max(0, Math.min(4.5, (up - 1.3) * 1.1));
+    }
+    const lum = BG_LUM.get(g.appid);
+    if (lum != null) dim = Math.max(0, Math.min(.46, (lum - .34) * .9));
+  }
+  stage.style.setProperty('--bg-blur', `${blur.toFixed(1)}px`);
+  stage.style.setProperty('--bg-dim', dim.toFixed(2));
 }
 
 /* CRISTAL: the colour of the game in focus, read from its own art (a 24 × 14 copy, colourful and
@@ -1361,17 +1429,22 @@ function accentFor(g) {
       const cv = document.createElement('canvas'); cv.width = 24; cv.height = 14;
       const x = cv.getContext('2d'); x.drawImage(img, 0, 0, 24, 14);
       const d = x.getImageData(0, 0, 24, 14).data;
-      let r = 0, gg = 0, b = 0, w = 0;
+      let r = 0, gg = 0, b = 0, w = 0, lum = 0;
       for (let i = 0; i < d.length; i += 4) {
         const mx = Math.max(d[i], d[i + 1], d[i + 2]), mn = Math.min(d[i], d[i + 1], d[i + 2]);
         const wt = (mx ? (mx - mn) / mx : 0) ** 2 * (mx / 255) + .01;
         r += d[i] * wt; gg += d[i + 1] * wt; b += d[i + 2] * wt; w += wt;
+        lum += (.2126 * d[i] + .7152 * d[i + 1] + .0722 * d[i + 2]) / 255;
       }
       c = vivid(r / w, gg / w, b / w);
+      /* how big the picture is and how bright: the background's softness and shade (bgTune) */
+      BG_SIZE.set(g.appid, [img.naturalWidth || 1920, img.naturalHeight || 620]);
+      BG_LUM.set(g.appid, lum / (d.length / 4));
+      [BG_SIZE, BG_LUM].forEach(m => { while (m.size > ACCENT_MAX) m.delete(m.keys().next().value); });
     } catch (e) { c = null; }           /* artwork that cannot be read keeps the default */
     ACCENT.set(g.appid, c);
     while (ACCENT.size > ACCENT_MAX) ACCENT.delete(ACCENT.keys().next().value);
-    if (S.bgFor && S.bgFor.i === g.i) setAccent(c);
+    if (S.bgFor && S.bgFor.i === g.i) { setAccent(c); bgTune(g, !!S.bgFor.sharp); }
   };
   img.src = u;
 }
@@ -1981,7 +2054,7 @@ function sfVeil(what, title, text) {
     v.innerHTML = '<div class="sf-box"><span class="st-cap">STEAM</span><h2></h2><p></p><div class="sf-foot"><span class="g">STONE</span>El botón guía del mando vuelve a STONE</div></div>';
     stage.appendChild(v);
   }
-  if (!what) return v.classList.remove('on');
+  if (!what) return v.classList.remove('on', 'now');
   v.querySelector('h2').textContent = title || SF_TEXT[what][0];
   v.querySelector('p').textContent = text || SF_TEXT[what][1];
   v.classList.add('on');
@@ -1993,7 +2066,7 @@ async function steamOpen(what, appid) {
   if (S.running !== null) { play('error'); return toast('Cierra antes el juego en curso: Steam ocuparía su lugar en la pantalla', false); }
   play('select');
   let r = null;
-  try { r = await (what === 'app' ? Sys.steamShow('app', appid) : Sys.steamShow(what)); }
+  try { r = await (appid && (what === 'app' || what === 'install') ? Sys.steamShow(what, appid) : Sys.steamShow(what)); }
   catch (e) { return steamNoWindow(what, appid); }
   if (!r.managed) {
     /* not the STONE session (Steam's own Game Mode, or development): Steam shows its pages itself */
@@ -2067,7 +2140,10 @@ function steamFullAsk(why) {
       Sys.steamFull(why).then(() => {
         S.steamFront = { what: why, appid: null, t: Date.now(), full: true };
         line.classList.add('off'); $('#hints').classList.add('hide');
+        /* STONE Home is stopped within a second: the veil is whole at once, not caught half-way
+           through its fade with the page showing through (board, 3.1.0-rc3) */
         sfVeil(why, 'CAMBIANDO A STEAM', 'Steam abre su propia interfaz. Para volver a STONE: mantén pulsado el botón guía 3 segundos.');
+        $('#sfront').classList.add('now');
         /* the supervisor stops STONE Home in about a second; if it does not, the lock is released */
         setTimeout(() => { if (S.steamFront && S.steamFront.full) { S.steamFront = null; sfVeil(null); line.classList.remove('off'); applyFocus(); toast('Steam no tomó la pantalla. Reinicia la consola e inténtalo de nuevo', false); } }, 20000);
       }, e => { play('error'); toast(e && e.code === 'Unsupported' ? 'Solo disponible en la sesión STONE de la consola' : 'No se pudo cambiar a Steam', false); });
@@ -2129,7 +2205,7 @@ Bridge.on('art', d => {
   const got = (d && d.art) || {}, ids = new Set(Object.keys(got));
   G.forEach(g => {
     const a = got[g.appid]; if (!a) return;
-    g.art.capsule = g.art.capsule || !!a.capsule; g.art.hero = g.art.hero || !!a.hero;
+    g.art.capsule = g.art.capsule || !!a.capsule; g.art.hero = g.art.hero || !!a.hero; g.art.hero2x = g.art.hero2x || !!a.hero2x;
     g.art.header = !g.art.capsule && (g.art.header || !!a.header);
   });
   document.querySelectorAll('#home .card[data-g], #library .card[data-g]').forEach(el => {
@@ -2212,61 +2288,126 @@ function cover(act) {
   return `<i class="cov" aria-hidden="true"><i class="band"></i><i class="cg"><i class="panel" style="--m:${coverMask[k]}"></i>` +
     `${cut ? `<svg class="cut" viewBox="0 0 100 100">${cut}</svg>` : ''}</i><i class="ln"></i></i>`;
 }
-/* ---------- INSTALL, UNINSTALL AND DOWNLOADS (3.1.0-rc2) ----------
-   The host follows Steam's install wizard and proves the result with Steam's own files (host.m_install):
-   STONE says what really happened, in its own words, instead of "instalando" whatever Steam did
-   (board, 12-11-2026: games that never installed and nothing said why). The download's progress is
-   shown on the game's page and on the loading screen when Steam updates a game before opening it. */
-const DL = { at: {}, t: 0, want: 0, busy: new Set() };
-const dlPct = d => d && d.progress != null ? `${Math.round(d.progress * 100)} %` : '';
+/* ---------- INSTALL, UNINSTALL AND DOWNLOADS ----------
+   Games are downloaded and installed from STONE, without going into Steam's own interface. The host
+   drives Steam's install wizard as Steam's interface does and proves the result with Steam's own files
+   (host.m_install); what Steam asks comes back here: a licence agreement is shown by STONE (its
+   address as a QR code for the phone) and the person's acceptance is passed on to Steam.
+   The bar: Steam's live downloads (host.m_downloads) on the game's page, on its cover in Home and in
+   the Library, and in the status at the top right. 3.1.0-rc4, after the board of 12-11-2026. */
+const DL = { at: {}, t: 0, want: 0, busy: new Set(), live: false, seen: new Set(), lastLaunch: '' };
+const DL_STAGE = { download: 'Descargando', prealloc: 'Reservando espacio en disco', install: 'Instalando', verify: 'Verificando archivos',
+  queued: 'En cola', paused: 'En pausa' };
 const dlGB = b => b >= 2 ** 30 ? `${(b / 2 ** 30).toFixed(1).replace('.', ',')} GB` : `${Math.max(1, Math.round(b / 2 ** 20))} MB`;
-/* Look at Steam's downloads for a while (an install was asked, a game page or a loading screen is open). */
+const dlPct = d => d && d.progress != null ? `${Math.min(100, Math.floor(d.progress * 100))} %` : '';
+const dlRate = r => r >= 2 ** 20 ? `${(r / 2 ** 20).toFixed(1).replace('.', ',')} MB/s` : r > 0 ? `${Math.max(1, Math.round(r / 1024))} kB/s` : '';
+function dlEta(s) {
+  if (s == null || s < 0) return '';
+  if (s < 90) return 'falta 1 min';
+  if (s < 3600) return `faltan ${Math.round(s / 60)} min`;
+  const h = Math.floor(s / 3600), m = Math.round((s % 3600) / 60);
+  return `faltan ${h} h${m ? ' ' + m + ' min' : ''}`;
+}
+/* One line that says how far a download is: "12,4 de 54,0 GB · 35,2 MB/s · faltan 20 min" */
+function dlLine(d) {
+  const a = [];
+  if (d.total && (d.stage === 'download' || d.stage === 'paused' || d.stage === 'queued')) a.push(`${dlGB(d.downloaded)} de ${dlGB(d.total)}`);
+  if (d.stage === 'download') { const r = dlRate(d.rate), e = dlEta(d.eta); if (r) a.push(r); if (e) a.push(e); }
+  if (d.stage === 'install' || d.stage === 'verify' || d.stage === 'prealloc') a.push('Steam prepara los archivos del juego');
+  if (d.stage === 'queued') a.push('empieza cuando termine la descarga en curso');
+  return a.join(' · ');
+}
+/* Look at Steam's downloads now (an install was asked, a game is opening). */
 function dlKick(ms = 0) {
   DL.want = Math.max(DL.want, Date.now() + ms);
-  if (!DL.t) DL.t = setTimeout(dlTick, 1200);
-}
-function dlFocus() {
-  if (S.launching !== null && G[S.launching]) return G[S.launching];
-  return S.screen === 'detail' ? G[curG] : null;
+  clearTimeout(DL.t); DL.t = setTimeout(dlTick, 900);
 }
 async function dlTick() {
   DL.t = 0;
-  const g = dlFocus();
-  const watch = Date.now() < DL.want || (g && (g.upd || !g.inst || DL.at[g.appid]));
-  if (!watch) return;
-  if (!S.dormant) {
+  if (!S.dormant && S.screen !== 'off' && S.screen !== 'asleep') {
     const r = await Sys.downloads().catch(() => null);
-    if (r && Array.isArray(r.downloads)) { DL.at = {}; r.downloads.forEach(d => { DL.at[d.appid] = d; }); dlShow(); }
+    if (r && Array.isArray(r.downloads)) {
+      const now = {};
+      r.downloads.forEach(d => { now[d.appid] = d; });
+      const ended = [...DL.seen].filter(id => !now[id]);
+      DL.at = now; DL.live = !!r.live; DL.seen = new Set(Object.keys(now));
+      dlShow();
+      if (ended.length) dlEnded(ended);
+    }
   }
-  DL.t = setTimeout(dlTick, 3000);
+  clearTimeout(DL.t);
+  DL.t = setTimeout(dlTick, Object.keys(DL.at).length || Date.now() < DL.want ? 2500 : 20000);
+}
+/* A download left Steam's list: the library says whether the game is ready now */
+async function dlEnded(ids) {
+  await reloadLibrary();
+  ids.forEach(id => {
+    const g = G.find(x => x.appid === id);
+    if (g && g.inst && !g.upd) { play('notify'); longToast(`${g.n} está listo para jugar`, 7000); }
+  });
+  dlShow();
+}
+function dlBarHTML() {
+  return '<div class="dl" id="ddl"><div class="dl-top"><b id="ddl-ph"></b><span id="ddl-pc"></span></div><div class="dl-bar" id="ddl-bar"><i></i></div><div class="dl-sub" id="ddl-sub"></div></div>';
 }
 function dlShow() {
+  /* the game's page */
   if (S.screen === 'detail' && G[curG]) {
-    const g = G[curG], d = DL.at[g.appid], el = $('#dprim');
-    if (el && S.running !== g.i && !DL.busy.has(g.appid)) {
-      const st = $('#dstate'), canPlay = g.inst || g.src === 'shortcut';
+    const g = G[curG], d = DL.at[g.appid], el = $('#dprim'), box = $('#ddl'), st = $('#dstate');
+    const canPlay = g.inst || g.src === 'shortcut';
+    if (box) {
+      box.classList.toggle('on', !!d);
       if (d) {
-        el.textContent = g.inst ? `ACTUALIZANDO${dlPct(d) ? ' · ' + dlPct(d) : '…'}` : `INSTALANDO${dlPct(d) ? ' · ' + dlPct(d) : '…'}`;
-        if (st) st.textContent = `${g.inst ? 'Actualizando' : 'Descargando'} en Steam${d.total ? ` · ${dlGB(d.downloaded)} de ${dlGB(d.total)}` : ''}`;
-      } else if (/^(INSTALANDO|ACTUALIZANDO)/.test(el.textContent)) {
+        $('#ddl-ph').textContent = (g.inst && d.stage === 'download' ? 'Actualizando' : DL_STAGE[d.stage] || 'Descargando');
+        $('#ddl-pc').textContent = dlPct(d);
+        const bar = $('#ddl-bar'); bar.classList.toggle('wait', d.progress == null || d.stage === 'queued');
+        bar.firstChild.style.width = d.progress == null ? '' : `${Math.max(1, Math.min(100, d.progress * 100)).toFixed(1)}%`;
+        $('#ddl-sub').textContent = dlLine(d);
+      }
+    }
+    if (el && S.running !== g.i && !DL.busy.has(g.appid)) {
+      if (d) {
+        el.textContent = g.inst ? 'ACTUALIZANDO' : d.stage === 'queued' ? 'EN COLA' : d.stage === 'paused' ? 'EN PAUSA' : 'INSTALANDO';
+        if (st) st.textContent = `${g.inst ? 'Actualizando' : DL_STAGE[d.stage] || 'Descargando'}${dlPct(d) ? ' · ' + dlPct(d) : ''}`;
+      } else if (/^(INSTALANDO|ACTUALIZANDO|EN COLA|EN PAUSA)/.test(el.textContent)) {
         /* the download ended: the page says what the game is now */
         el.textContent = canPlay ? 'JUGAR' : g.upd ? 'INSTALANDO…' : 'INSTALAR';
         if (st) st.textContent = g.upd ? (g.inst ? 'Actualizando en Steam' : 'Instalándose') : g.inst ? 'Instalado' : 'En tu cuenta · sin instalar';
       }
     }
   }
+  /* the covers of Home and of the Library */
+  document.querySelectorAll('#home .card[data-g], #library .card[data-g]').forEach(c => {
+    const g = G[+c.dataset.g], d = g && DL.at[g.appid];
+    let b = c.querySelector('.cdl');
+    if (!d) { if (b) b.remove(); return; }
+    if (!b) { b = document.createElement('span'); b.className = 'cdl'; b.innerHTML = '<em></em><span><i></i></span>'; c.appendChild(b); }
+    b.firstChild.textContent = d.stage === 'queued' ? 'En cola' : d.stage === 'paused' ? 'En pausa' : dlPct(d) || 'Descargando';
+    b.lastChild.classList.toggle('wait', d.progress == null || d.stage === 'queued');
+    b.lastChild.firstChild.style.width = d.progress == null ? '' : `${Math.max(2, Math.min(100, d.progress * 100)).toFixed(1)}%`;
+  });
+  /* the status at the top right: the download in progress, whatever screen is open */
+  const act = Object.values(DL.at).find(d => d.stage !== 'queued' && d.stage !== 'paused') || Object.values(DL.at)[0];
+  let chip = $('#dlst');
+  if (!chip && act && $('#status')) { chip = document.createElement('span'); chip.id = 'dlst'; $('#status').insertBefore(chip, $('#clock')); }
+  if (chip) { chip.hidden = !act; if (act) chip.textContent = `↓ ${dlPct(act) || (DL_STAGE[act.stage] || '').toLowerCase()}`; }
+  /* a game that Steam updates before opening it */
   if (S.launching !== null && G[S.launching]) {
     const g = G[S.launching], d = DL.at[g.appid], gm = $('#game');
     if (d && gm && gm.querySelector('.ld-step')) {
-      /* Steam updates the game before opening it: say so, and do not call it stalled while it advances */
       ldT.forEach(clearTimeout); ldT = [];
       gm.querySelector('.ld-step').textContent = `STEAM ACTUALIZA EL JUEGO${dlPct(d) ? ' · ' + dlPct(d) : ''}`;
-      gm.querySelector('.ld-note').textContent = d.total ? `${dlGB(d.downloaded)} de ${dlGB(d.total)}. El juego se abre solo al terminar; B vuelve al inicio y la descarga sigue.` : 'El juego se abre solo al terminar; B vuelve al inicio y la descarga sigue.';
-      const key = `${d.downloaded}`;
+      gm.querySelector('.ld-note').textContent = `${dlLine(d) || 'Descargando la actualización'}. El juego se abre solo al terminar; B vuelve al inicio y la descarga sigue.`;
+      const key = `${d.downloaded}|${d.progress}`;
       if (key !== DL.lastLaunch) { DL.lastLaunch = key; clearTimeout(launchT); launchT = setTimeout(() => launchStalled(g), 90000); }
     }
   }
 }
+/* Screens are redrawn whole: the bars go back on their covers at once, not at the next reading */
+const dlShowScreen = showScreen;
+showScreen = function (...a) { const r = dlShowScreen(...a); if (Object.keys(DL.at).length) setTimeout(dlShow, 0); return r; };
+setTimeout(() => dlKick(), 9000);
+
 /* INSTALAR: Steam's answer, said by STONE. Returns true when the install is under way. */
 async function installGame(appid, name, opts = {}) {
   if (DL.busy.has(appid)) { play('error'); toast('Esperando la respuesta de Steam…', false); return false; }
@@ -2278,15 +2419,18 @@ async function installGame(appid, name, opts = {}) {
   DL.busy.delete(appid);
   return installAnswer(r || {}, appid, name, opts);
 }
+/* What Steam's wizard did, step by step: in a photo of the message it says where Steam stopped */
+const installTrace = r => r && r.trace && r.trace.length ? `Detalle técnico: Steam ${r.trace.join(' › ')}${r.detail ? ' · ' + r.detail : ''}` : (r && r.detail ? `Detalle técnico: ${r.detail}` : '');
 function installAnswer(r, appid, name, opts) {
   const again = () => installGame(appid, name, opts);
+  const inSteam = () => steamOpen('install', appid);
   switch (r.state) {
     case 'queued':
-      steamWatch(20000); dlKick(120000); play('notify');
-      longToast(`${name}: Steam lo está instalando. El avance se ve en su ficha y en Ajustes → Almacenamiento`, 7000);
+      steamWatch(20000); dlKick(180000); play('notify');
+      longToast(`${name}: descarga en marcha. El avance se ve en su ficha y en su carátula`, 7000);
       return true;
     case 'unconfirmed':
-      steamWatch(30000); dlKick(120000);
+      steamWatch(30000); dlKick(180000);
       longToast(`${name}: Steam aceptó la instalación. La descarga aparece en cuanto empiece`, 8000);
       return true;
     case 'steam-dialog':
@@ -2294,8 +2438,7 @@ function installAnswer(r, appid, name, opts) {
       steamOpen('install');
       return true;
     case 'eula':
-      installDlg(name, 'Este juego tiene un contrato de licencia (EULA) que debes leer y aceptar tú. Steam lo muestra en su propia ventana; al aceptarlo, la instalación sigue sola.',
-        [['VER EN STEAM', () => steamOpen('install')], ['AHORA NO', () => Sys.installCancel().catch(() => {})]]);
+      eulaDlg(appid, name, r.eulas || [], opts, 0);
       return false;
     case 'asks':
       installDlg(name, 'Steam necesita un dato que solo tú puedes darle (una clave del producto o una contraseña). Lo pide en su propia ventana.',
@@ -2309,22 +2452,54 @@ function installAnswer(r, appid, name, opts) {
       toast(`${name}: Steam canceló la instalación`, false);
       return false;
     case 'failed':
-      installDlg(name, `Steam no pudo instalarlo${r.detail ? ` (${r.detail})` : ''}. Suele ser la conexión o un servidor de Steam ocupado.`,
-        [['REINTENTAR', again], ['VER EN STEAM', () => steamOpen('install')], ['CERRAR', null]]);
+      installDlg(name, 'Steam no pudo instalarlo. Suele ser la conexión o un servidor de Steam ocupado.',
+        [['REINTENTAR', again], ['VER EN STEAM', inSteam], ['CERRAR', null]], installTrace(r));
       return false;
     default:
-      installDlg(name, 'Steam no respondió. Si la consola acaba de encenderse, Steam puede estar arrancando o actualizándose: espera un momento y vuelve a intentarlo.',
-        [['REINTENTAR', again], ['VER EN STEAM', () => steamOpen('install')], ['CERRAR', null]]);
+      installDlg(name, 'Steam no empezó la instalación. Si la consola acaba de encenderse, Steam puede estar arrancando o actualizándose: espera un momento y vuelve a intentarlo.',
+        [['REINTENTAR', again], ['VER EN STEAM', inSteam], ['CERRAR', null]], installTrace(r));
       return false;
   }
 }
-function installDlg(name, text, buttons) {
+function installDlg(name, text, buttons, tech) {
   const back = dlgOver();
   play('notify');
-  openDlg(`<span class="st-cap">INSTALAR</span><h2>${esc(name.toUpperCase())}</h2><p>${esc(text)}</p>
+  openDlg(`<span class="st-cap">INSTALAR</span><h2>${esc(name.toUpperCase())}</h2><p>${esc(text)}</p>${tech ? `<p class="tech">${esc(tech)}</p>` : ''}
     <div class="btns">${buttons.map(([l], i) => `<span class="txt-f" data-f data-i="${i}">${l}</span>`).join('')}</div>`, {
     onA: el => { const fn = buttons[+el.dataset.i][1]; play('select'); back(); if (fn) fn(); },
     onB: () => { play('back'); back(); } });
+}
+/* A licence agreement (EULA): the person reads it on the phone and answers here; STONE tells Steam.
+   Nothing is accepted for them: the answer in focus is "no". */
+function eulaDlg(appid, name, eulas, opts, k) {
+  const e = eulas[k], back = dlgOver(), qr = e ? qrSvg(e.url, 260) : '';
+  play('notify');
+  if (!e) {
+    return installDlg(name, 'Este juego tiene un contrato de licencia y Steam no entregó su dirección. Steam lo muestra en su propia ventana.',
+      [['VER EN STEAM', () => steamOpen('install')], ['AHORA NO', () => Sys.installCancel().catch(() => {})]]);
+  }
+  openDlg(`<span class="st-cap">CONTRATO DE LICENCIA${eulas.length > 1 ? ` · ${k + 1} DE ${eulas.length}` : ''}</span><h2>${esc(name.toUpperCase())}</h2>
+    <div class="qrrow">${qr}<div><p>Este juego pide aceptar su contrato de licencia antes de instalarse. Léelo en el móvil${qr ? ' con este código' : ''}.</p>
+    <p>Si lo aceptas, STONE se lo comunica a Steam y la instalación sigue sola.</p><p class="url">${esc(e.url.slice(8))}</p></div></div>
+    <div class="btns"><span class="txt-f" data-f data-b="no">NO ACEPTO</span><span class="txt-f" data-f data-b="yes">ACEPTO E INSTALAR</span></div>`, {
+    onA: el => {
+      play('select'); back();
+      if (el.dataset.b !== 'yes') { toast(`${name}: no se instala sin aceptar su contrato`, false); return Sys.installCancel().catch(() => {}); }
+      if (k + 1 < eulas.length) return eulaDlg(appid, name, eulas, opts, k + 1);
+      eulaAccept(appid, name, opts);
+    },
+    onB: () => { play('back'); back(); Sys.installCancel().catch(() => {}); } });
+}
+async function eulaAccept(appid, name, opts) {
+  DL.busy.add(appid);
+  toast(`${name}: comunicando tu aceptación a Steam…`, false);
+  let r = null;
+  try { r = await Sys.installAcceptEula(appid); }
+  catch (e) { DL.busy.delete(appid); play('error'); toast(ERR_TEXT[e.code] || e.message, false); return false; }
+  DL.busy.delete(appid);
+  const ok = installAnswer(r || {}, appid, name, opts);
+  if (S.screen === 'detail') dlShow();
+  return ok;
 }
 /* DESINSTALAR: done by Steam without its dialog; STONE waits until Steam's files say it is gone. */
 function uninstallGame(appid, name) {
@@ -2334,6 +2509,119 @@ function uninstallGame(appid, name) {
     steamWatch(15000);
     toast(r && r.state === 'removed' ? `${name} se desinstaló` : `${name}: Steam lo sigue desinstalando`, false);
   }, e => { play('error'); toast((e && e.message) || 'No se pudo desinstalar', false); });
+}
+/* ---------- STARTING A GAME, FOLLOWED STEP BY STEP (3.1.0-rc4) ----------
+   Steam starts a game in steps and some wait for the person: a launch option, a licence agreement,
+   saves in the cloud that do not match, an install script that failed, another session playing. In the
+   STONE session those questions opened in Steam's hidden windows and the game waited for ever (board,
+   13-11-2026: Batman: Arkham City on "SIGUE CARGANDO"). The host follows Steam's steps
+   (launch.state); the loading screen says them and STONE asks the questions itself (launch.answer). */
+const LW = { t: 0, g: null, asked: '', last: null };
+const LW_STEP = {
+  UpdatingAppInfo: 'COMPROBANDO LA CONFIGURACIÓN', ConnectingToSteam: 'CONECTANDO CON STEAM', SynchronizingCloud: 'SINCRONIZANDO CON LA NUBE',
+  SynchronizingControllerConfig: 'SINCRONIZANDO EL MANDO', DownloadingDepots: 'DESCARGANDO CONTENIDO', DownloadingWorkshop: 'DESCARGANDO CONTENIDO',
+  UpdatingDRM: 'ACTUALIZANDO EL EJECUTABLE', GettingLegacyKey: 'ACTUALIZANDO LA CLAVE', RunningInstallScript: 'INSTALANDO COMPONENTES',
+  VerifyingFiles: 'VERIFICANDO ARCHIVOS', ProcessingShaderCache: 'PREPARANDO SOMBREADORES', CreatingProcess: 'ABRIENDO EL JUEGO',
+  WaitingGameWindow: 'ABRIENDO EL JUEGO', DelayLaunch: 'ESPERANDO A STEAM', Completed: 'ABRIENDO EL JUEGO' };
+const LW_NOTE = { RunningInstallScript: 'La primera vez, Steam instala lo que el juego necesita (DirectX, Visual C++…).',
+  ProcessingShaderCache: 'La primera vez el juego prepara sus sombreadores: puede tardar unos minutos.',
+  SynchronizingCloud: 'Steam trae tus partidas guardadas de la nube.' };
+/* Steam's own reasons (Steam_AppUpdateError_N, its Spanish texts) */
+const LW_ERR = { 2: 'la actualización está en pausa', 3: 'la actualización se canceló', 5: 'no tienes licencia para este juego', 6: 'no hay conexión a internet',
+  7: 'se agotó el tiempo de conexión', 9: 'la configuración del juego no está disponible', 10: 'hubo un error al leer el disco', 11: 'hubo un error al escribir en el disco',
+  12: 'no hay espacio suficiente en el disco', 13: 'hay archivos del juego dañados', 16: 'el juego ya se está ejecutando', 17: 'falta contenido compartido',
+  18: 'el juego no está instalado', 19: 'el juego necesita actualizarse', 20: 'Steam está ocupado', 21: 'los servidores de contenido no responden',
+  25: 'el juego aún no se ha lanzado', 26: 'no está disponible en tu región', 28: 'falta el ejecutable del juego', 29: 'el juego no es para esta plataforma',
+  32: 'las descargas están desactivadas', 35: 'se está jugando desde otra sesión', 36: 'la descarga está dañada', 42: 'faltan archivos descargados',
+  46: 'no se pudo crear el proceso del juego', 47: 'el cliente de Steam está desactualizado', 50: 'faltan archivos instalados',
+  51: 'falló la herramienta de compatibilidad (Proton)', 57: 'Steam bloqueó los argumentos de inicio' };
+function lwStart(g, first) {
+  clearTimeout(LW.t); LW.g = g.appid; LW.asked = ''; LW.last = null;
+  if (first) lwApply(g, first);
+  LW.t = setTimeout(() => lwTick(g), 2500);
+}
+async function lwTick(g) {
+  LW.t = 0;
+  if (S.launching !== g.i || LW.g !== g.appid) return;
+  if (S.screen !== 'dlg') {
+    const r = await Bridge.call('launch.state', g.appid).catch(() => null);
+    if (r && r.state && S.launching === g.i) lwApply(g, r.state);
+  }
+  if (S.launching === g.i) LW.t = setTimeout(() => lwTick(g), 2500);
+}
+function lwApply(g, st) {
+  LW.last = st;
+  const gm = $('#game'), last = (st.trace || []).filter(t => !/^(ask|answer|error):/.test(t)).pop();
+  if (gm && gm.querySelector('.ld-step') && last && LW_STEP[last] && !DL.at[g.appid]) {
+    ldT.forEach(clearTimeout); ldT = [];
+    const [n, t] = st.progress || [0, 0];
+    gm.querySelector('.ld-step').textContent = LW_STEP[last] + (t > 0 && n <= t ? ` · ${Math.floor(n * 100 / t)} %` : '');
+    gm.querySelector('.ld-note').textContent = LW_NOTE[last] || 'B vuelve al inicio; el juego seguirá abriéndose.';
+    if (last !== LW.step) { LW.step = last; clearTimeout(launchT); launchT = setTimeout(() => launchStalled(g), 90000); }
+  }
+  if (st.error) return lwError(g, st);
+  if (st.request && st.request + st.action !== LW.asked) { LW.asked = st.request + st.action; lwAsk(g, st); }
+}
+const lwTech = st => st && st.trace && st.trace.length ? `Detalle técnico: Steam ${st.trace.join(' › ')}${st.details ? ' · ' + st.details : ''}` : '';
+function lwAnswer(g, a) {
+  play('select');
+  Bridge.call('launch.answer', g.appid, a).then(r => { if (!r || !r.ok) toast('Steam ya no lo pregunta', false); }, () => toast('No se pudo responder a Steam', false));
+  if (a === 'cancel') { S.launching = null; S.running = null; clearTimeout(launchT); loadingOff(); returnHome(); }
+  else { S.screen = 'game'; NAV = null; line.classList.add('off'); $('#hints').classList.add('hide'); }
+}
+function lwDlg(g, cap, text, buttons, extra) {
+  play('notify');
+  openDlg(`<span class="st-cap">${cap}</span><h2>${esc(g.n.toUpperCase())}</h2>${extra || ''}<p>${esc(text)}</p>
+    <div class="btns">${buttons.map(([l], i) => `<span class="txt-f" data-f data-i="${i}">${esc(l)}</span>`).join('')}</div>`, {
+    onA: el => { const a = buttons[+el.dataset.i][1]; closeDlg(); lwAnswer(g, a); },
+    onB: () => { closeDlg(); lwAnswer(g, 'cancel'); } });
+}
+function lwAsk(g, st) {
+  const r = st.request;
+  if (['CreatingProcess', 'ShowInterstitials', 'ShowCDKey', 'ShowDurationControl', 'ShowVROculusOnly'].includes(r)) {
+    /* steps Steam's own interface goes through with one OK */
+    return Bridge.call('launch.answer', g.appid, r === 'ShowCDKey' || r === 'ShowDurationControl' ? '' : r === 'ShowVROculusOnly' ? '1' : r).catch(() => {});
+  }
+  if (r === 'ProcessingShaderCache') return;              /* Steam goes on by itself; OMITIR is offered if it takes long */
+  if (r === 'ShowLaunchOption') {
+    const o = st.options || [];
+    if (!o.length) return lwAnswer(g, '0');
+    return lwDlg(g, 'OPCIÓN DE INICIO', 'Este juego tiene varias formas de iniciarse. Elige una:', [...o.slice(0, 4).map(x => [x.label || `Opción ${x.index + 1}`, String(x.index)]), ['CANCELAR', 'cancel']]);
+  }
+  if (r === 'ShowEula') {
+    const e = (st.eulas || [])[0], qr = e ? `<div class="qrrow">${qrSvg(e.url, 220)}<div><p class="url">${esc(e.url.slice(8))}</p></div></div>` : '';
+    return lwDlg(g, 'CONTRATO DE LICENCIA', 'El juego pide aceptar su contrato de licencia antes de abrirse. Léelo en el móvil con el código. Si lo aceptas, STONE se lo comunica a Steam.',
+      [['NO ACEPTO', 'cancel'], ['ACEPTO Y JUGAR', 'ShowEula']], qr);
+  }
+  if (r === 'SynchronizingCloud' || r === 'SynchronizingControllerConfig') {
+    if (st.details === 'cloudconflict') return lwDlg(g, 'PARTIDAS EN LA NUBE', 'Las partidas guardadas de esta consola y las de la nube de Steam no coinciden. ¿Cuáles quieres usar?',
+      [['LAS DE LA NUBE', 'KeepRemote'], ['LAS DE ESTA CONSOLA', 'KeepLocal'], ['CANCELAR', 'cancel']]);
+    if (st.details === 'pendingcloudsessions') return lwDlg(g, 'PARTIDAS EN LA NUBE', 'Hay una partida de este juego abierta en otro equipo que todavía no subió a la nube. Si juegas ahora, puedes perder ese progreso.',
+      [['CANCELAR', 'cancel'], ['JUGAR DE TODOS MODOS', 'IgnorePendingCloudSessions']]);
+    return lwDlg(g, 'PARTIDAS EN LA NUBE', 'Steam no pudo sincronizar tus partidas con la nube. Puedes jugar igual: se sincronizarán más tarde.',
+      [['JUGAR SIN SINCRONIZAR', 'IgnoreCloud'], ['CANCELAR', 'cancel']]);
+  }
+  if (r === 'RunningInstallScript') return lwDlg(g, 'COMPONENTES', 'Falló la instalación de un componente que el juego usa (por ejemplo DirectX o Visual C++). Muchas veces el juego funciona igual.',
+    [['SEGUIR DE TODOS MODOS', 'IgnoreInstallError'], ['CANCELAR', 'cancel']]);
+  if (r === 'KickingOtherSession') return lwDlg(g, 'OTRA SESIÓN', 'Tu cuenta está jugando a un juego en otro equipo. Si sigues, ese equipo se desconecta de Steam.',
+    [['CANCELAR', 'cancel'], ['SEGUIR', 'KickOtherSession']]);
+  if (r === 'ShowGameArgs') return lwDlg(g, 'ARGUMENTOS DE INICIO', `El juego se iniciará con argumentos personalizados: ${st.details || '—'}`,
+    [['CANCELAR', 'cancel'], ['INICIAR', 'ShowGameArgs']]);
+  /* a question STONE does not know: Steam's window, as before */
+  lwDlg(g, 'STEAM PREGUNTA', 'Steam pide algo para abrir el juego. Puedes verlo en su ventana o cancelar.', [['CANCELAR', 'cancel']], `<p class="tech">${esc(lwTech(st))}</p>`);
+}
+function lwError(g, st) {
+  if (LW.asked === 'error' + st.action) return;
+  LW.asked = 'error' + st.action;
+  clearTimeout(LW.t); clearTimeout(launchT);
+  const n = /^AppError_(\d+)$/.test(st.error || '') ? +st.error.slice(9) : null;
+  const why = n !== null ? (LW_ERR[n] || `error ${n} de Steam`) : (st.error || 'error desconocido');
+  S.launching = null; S.running = null; loadingOff();
+  play('error');
+  const back = () => { closeDlg(); returnHome(); };
+  openDlg(`<span class="st-cap">NO SE PUDO ABRIR</span><h2>${esc(g.n.toUpperCase())}</h2><p>Steam no pudo abrir el juego: ${esc(why)}.</p>
+    <p class="tech">${esc(lwTech(st) + (st.error_details ? ' · ' + st.error_details : ''))}</p>
+    <div class="btns"><span class="txt-f" data-f data-b="ok">ENTENDIDO</span></div>`, { onA: back, onB: back });
 }
 
 /* ---------- LIBRARY ---------- */
@@ -2413,7 +2701,7 @@ function enterDetail(i, opts = {}) {
   curG = i; const g = G[i], running = S.running === i;
   S.screen = 'detail';
   const canPlay = g.inst || g.src === 'shortcut';
-  const prim = running ? 'REANUDAR' : canPlay ? 'JUGAR' : g.upd ? 'INSTALANDO…' : 'INSTALAR';
+  const prim = running ? 'REANUDAR' : canPlay ? 'JUGAR' : g.upd ? 'INSTALANDO' : 'INSTALAR';
   /* Five actions at most on one line (they always fit the 1920 stage); the image options live in GRÁFICOS. */
   const sec = [[g.fav ? 'Quitar de favoritos' : 'Favorito', 'fav'], [`Rendimiento: ${g.perf ? profOf(g.perf).n : 'Global'}`, 'perf'], ['Propiedades', 'opt']];
   if (g.src === 'steam' && g.inst) sec.splice(2, 0, ['Gráficos', 'gfx'], ['Experiencia', 'xp']);
@@ -2423,10 +2711,11 @@ function enterDetail(i, opts = {}) {
       <div class="stats exp" id="dexp" style="margin-top:.35em;opacity:.85"></div></div>
     <div class="primary txt-f" data-f data-act="primary" id="dprim">${prim}</div>
     <div class="second">${sec.map(([s, a]) => `<span class="txt-f" data-f data-act="${a}">${s}</span>`).join('')}</div>
+    ${dlBarHTML()}
     <div class="info"><div><span>Tamaño</span><b>${g.sz}</b></div><div><span>Origen</span><b>${esc(g.o)}</b></div><div><span>Estado</span><b id="dstate">${g.upd ? (g.inst ? 'Actualizando en Steam' : 'Instalándose') : g.inst ? 'Instalado' : 'En tu cuenta · sin instalar'}</b></div><div><span>Al iniciarse</span><b>${g.perf ? profOf(g.perf).n : 'Perfil global'}${S.safeMode && g.perf ? ' (en pausa: Safe Mode)' : ''}</b></div></div>`;
   showScreen('detail'); chrome(true, false);
   bgGame(g, true, 'side');
-  if (!canPlay || g.upd || DL.at[g.appid]) { dlShow(); dlKick(); }
+  dlShow(); if (!canPlay || g.upd) dlKick();
   const d = $('#detail');
   NAV = mkNav([[d.querySelector('#dprim')], [...d.querySelectorAll('.second [data-f]')]], {
     r: opts.r || 0, c: opts.c || 0,
@@ -2532,9 +2821,9 @@ function detailA(el) {
     play('select');
     if (S.running === g.i) return resumeGame();
     if (!g.inst && g.src !== 'shortcut') {
-      if (g.upd) { play('error'); return toast(`${g.n} ya se está instalando: el avance se ve aquí y en Ajustes → Almacenamiento`, false); }
-      const pe = $('#dprim'); if (pe) pe.textContent = 'PIDIENDO A STEAM…';
-      return installGame(g.appid, g.n).then(ok => { const e2 = $('#dprim'); if (e2 && G[curG] === g && /^PIDIENDO/.test(e2.textContent)) e2.textContent = ok ? 'INSTALANDO…' : 'INSTALAR'; if (S.screen === 'detail') dlShow(); });
+      if (g.upd || DL.at[g.appid]) { play('error'); return toast(`${g.n} ya se está instalando: el avance se ve en esta pantalla`, false); }
+      const pe = $('#dprim'); if (pe) pe.textContent = 'PIDIENDO A STEAM';
+      return installGame(g.appid, g.n).then(ok => { const e2 = $('#dprim'); if (e2 && G[curG] === g && /^PIDIENDO/.test(e2.textContent)) e2.textContent = ok ? 'INSTALANDO' : 'INSTALAR'; if (S.screen === 'detail') dlShow(); });
     }
     return launch(g);
   }
@@ -2611,6 +2900,7 @@ async function launch(g, starter) {
   await wait(700);
   showGame(g, true);
   steamWatch(95000); DL.lastLaunch = ''; dlKick(95000);
+  LW.step = ''; lwStart(g, ok && ok.launch);            /* Steam's steps and questions (launchwatch.js) */
   /* stoned may have seen the game before STONE started waiting for it */
   if (S.game && S.game.appid === g.appid) launchFound(g.i);
   /* Steam updating the game first, a long first start or a game that never opens: after 90 s STONE asks. */
@@ -2640,12 +2930,16 @@ function launchStalled(g) {
   if (S.launching !== g.i) return;
   if (S.screen === 'dlg') { launchT = setTimeout(() => launchStalled(g), 15000); return; }
   play('notify');
-  const dl = DL.at[g.appid];
-  openDlg(`<h2>${esc(g.n.toUpperCase())}</h2><p>${dl ? `Steam sigue actualizando el juego (${dlPct(dl) || 'en cola'}). Se abre solo al terminar.` : 'El juego todavía no se ha abierto. Si Steam lo está actualizando, la descarga aparece en Ajustes → Almacenamiento.'}</p>
-    <div class="btns"><span class="txt-f" data-f data-b="wait">ESPERAR</span><span class="txt-f" data-f data-b="home">VOLVER AL INICIO</span></div>`, {
+  const dl = DL.at[g.appid], st = LW.last, shaders = st && (st.trace || []).slice(-1)[0] === 'ask:ProcessingShaderCache' || st && st.request === 'ProcessingShaderCache';
+  openDlg(`<h2>${esc(g.n.toUpperCase())}</h2><p>${dl ? `Steam sigue actualizando el juego (${dlPct(dl) || 'en cola'}). Se abre solo al terminar.`
+    : shaders ? 'Steam sigue preparando los sombreadores del juego. Puedes omitirlo: el juego se abre antes, pero puede ir a tirones al principio.'
+    : 'El juego todavía no se ha abierto.'}</p>${lwTech(st) ? `<p class="tech">${esc(lwTech(st))}</p>` : ''}
+    <div class="btns"><span class="txt-f" data-f data-b="wait">ESPERAR</span>${shaders ? '<span class="txt-f" data-f data-b="skip">OMITIR</span>' : ''}<span class="txt-f" data-f data-b="cancel">CANCELAR</span></div>`, {
     onA: el => {
       closeDlg(); play('select');
-      if (el.dataset.b === 'wait') { S.screen = 'game'; NAV = null; line.classList.add('off'); $('#hints').classList.add('hide'); steamWatch(95000); launchT = setTimeout(() => launchStalled(g), 90000); return; }
+      if (el.dataset.b === 'skip') { Bridge.call('launch.answer', g.appid, 'SkipShaders').catch(() => {}); }
+      if (el.dataset.b !== 'cancel') { S.screen = 'game'; NAV = null; line.classList.add('off'); $('#hints').classList.add('hide'); steamWatch(95000); launchT = setTimeout(() => launchStalled(g), 90000); return; }
+      Bridge.call('launch.answer', g.appid, 'cancel').catch(() => {});
       S.launching = null; S.running = null; loadingOff(); returnHome();
     } });
 }

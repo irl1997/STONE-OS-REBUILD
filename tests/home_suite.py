@@ -894,13 +894,42 @@ def H05_library_lists_account_games_not_installed_and_installs_through_steam():
         assert run_host(h, {"method": "install", "args": ["1001"]})[1] == "InvalidValue"     # installed: nothing to install
         assert ("install", 35140) in ui.calls
         os.remove(os.path.join(root, "steamapps", "appmanifest_35140.acf"))
-        for ans, want in (({"answer": "eula", "state": "eula"}, {"ok": False, "state": "eula", "step": "eula"}),
+        eulas = [{"id": "35140_eula_0", "version": 2, "url": "https://store.steampowered.com/eula/35140_eula_0"}]
+        host_mod.INSTALL_DOUBT_S = 1                         # Steam's files are looked at after an unclear answer, briefly here
+        for ans, want in (({"answer": "eula", "state": "eula", "trace": ["config", "eula"], "eulas": eulas},
+                           {"ok": False, "state": "eula", "eulas": eulas, "trace": ["config", "eula"]}),
                           ({"answer": "space", "state": "config", "need": 9, "free": 1}, {"ok": False, "state": "space", "need": 9, "free": 1}),
-                          ({"answer": "timeout", "state": "config"}, {"ok": False, "state": "noanswer", "step": "config", "detail": None})):
+                          ({"answer": "timeout", "state": "config", "trace": ["setup", "config"]},
+                           {"ok": False, "state": "noanswer", "step": "config", "detail": None, "trace": ["setup", "config"]})):
             answers[35140] = ans
             assert run_host(h, {"method": "install", "args": ["35140"]}, timeout=15) == (want, None), ans
+        # the wizard closed after being continued ("gone"): Steam's files decide, here they say it started
+        answers[35140] = {"answer": "gone", "state": "none", "trace": ["setup", "config", "create-apps", "none"]}
+        ui.install = lambda appid: (install(appid), open(os.path.join(root, "steamapps", "appmanifest_35140.acf"), "w").write(
+            '"AppState"\n{\n "appid" "35140"\n "name" "Batman"\n "StateFlags" "1026"\n}\n'), answers[appid])[2]
+        assert run_host(h, {"method": "install", "args": ["35140"]}, timeout=15)[0]["state"] == "queued"
+        os.remove(os.path.join(root, "steamapps", "appmanifest_35140.acf"))
+        # the licence accepted in STONE Home is passed on to Steam, and the answer is the one of install
+        ui.accept_eula = lambda appid: (ui.calls.append(("accept", appid)), {"answer": "space", "state": "config", "need": 9, "free": 1})[1]
+        assert run_host(h, {"method": "install.acceptEula", "args": ["35140"]}, timeout=15) == \
+            ({"ok": False, "state": "space", "need": 9, "free": 1}, None) and ("accept", 35140) in ui.calls
+        assert run_host(h, {"method": "install.acceptEula", "args": ["999999"]})[1] == "InvalidValue"
+        # Steam's files joined with its live downloads: the bar of STONE Home
+        with open(os.path.join(root, "steamapps", "appmanifest_35140.acf"), "w") as f:
+            f.write('"AppState"\n{\n "appid" "35140"\n "name" "Batman"\n "StateFlags" "1026"\n "BytesToDownload" "100"\n "BytesDownloaded" "10"\n}\n')
+        ui.downloads_state = lambda: {"appid": 35140, "state": "Downloading", "paused": False, "rate": 2048, "eta": 60, "percent": 40.0,
+                                      "progress": [[0, 0], [0, 0], [50, 100], [0, 100]], "queue": [{"appid": 35140, "active": True, "completed": False, "paused": False, "index": 0},
+                                                                                                   {"appid": 620, "active": False, "completed": False, "paused": False, "index": 1}]}
+        r = run_host(h, {"method": "downloads", "args": []}, timeout=15)[0]
+        rows = {d["appid"]: d for d in r["downloads"]}
+        assert r["live"] is True and rows["35140"]["stage"] == "download" and rows["35140"]["progress"] == 0.4 and rows["35140"]["downloaded"] == 50
+        assert rows["35140"]["rate"] == 2048 and rows["35140"]["eta"] == 60 and rows["620"]["stage"] == "queued"
+        h._dl_live = None
+        ui.downloads_state = lambda: None                  # Steam's interface silent: what Steam last wrote to disk
+        r = run_host(h, {"method": "downloads", "args": []}, timeout=15)[0]
+        assert r["live"] is False and [d["appid"] for d in r["downloads"] if d["appid"] == "35140"] and r["downloads"][-1]["progress"] in (0.1, None)
     from stone_home import steamcef
-    assert "OpenInstallWizard([35140])" in steamcef.install_expression(35140)
+    assert "OpenInstallWizard([35140],'0')" in steamcef.install_expression(35140)     # the games and the local client
     for bad in (0, -1, 0x80000000):
         try:
             steamcef.install_expression(bad)

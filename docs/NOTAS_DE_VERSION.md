@@ -1,3 +1,64 @@
+# STONE OS (rebuild) 3.1.0-rc4
+
+Arregla lo que se vio en la consola con 3.1.0-rc3 (12 y 13-11-2026, fotos del propietario): **Batman: Arkham City no se abría** (se quedaba en «SIGUE CARGANDO»), **instalar un juego respondía «Steam no respondió»**, **las carátulas de los juegos sin instalar se transparentaban** y **los fondos se veían pixelados** en el televisor 4K. Añade la **barra de descarga e instalación**. Decisión D-37.
+
+**Todo está probado en software (CODE TESTED): pruebas automáticas, el código de instalación ejecutado contra un Steam simulado, y la simulación de la interfaz. Nada de esta versión se ha observado todavía en la BC-250.** Pruebas de placa: T-STEAM-15 (actualizada), T-STEAM-17, T-STEAM-18 y T-HOME-06 en `hardware/validation/matrix.yaml`.
+
+## Abrir juegos
+
+Steam abre un juego por pasos y en algunos se detiene a preguntar: qué opción de inicio usar, aceptar el contrato de licencia, qué partidas usar si las de la nube no coinciden, qué hacer si falló la instalación de un componente (DirectX, Visual C++) o si otra sesión está jugando. En la sesión STONE esas preguntas se abrían en ventanas ocultas de Steam y el juego quedaba esperando para siempre.
+
+- STONE sigue los pasos de Steam con sus propios avisos (los mismos que usa la interfaz de Steam) y **la pantalla de carga dice en qué está**: comprobando la configuración, sincronizando con la nube, instalando componentes, preparando sombreadores (con porcentaje), abriendo el juego.
+- **Las preguntas las hace STONE** con el mando y le pasa tu respuesta a Steam: la opción de inicio, el contrato de licencia (con código QR), las partidas de la nube, el componente que falló y la otra sesión. Los pasos que Steam resuelve con un simple «Aceptar» se aceptan solos.
+- **Si Steam no puede abrir el juego**, STONE dice por qué con las palabras de Steam (por ejemplo «falló la herramienta de compatibilidad (Proton)» o «no hay espacio suficiente») y una línea de detalle técnico.
+- Si tarda, el aviso ofrece ESPERAR, CANCELAR y, mientras prepara sombreadores, **OMITIR**.
+- **Juegos de Windows:** STONE activa «Steam Play para todos los títulos» (Proton Experimental) si nadie lo eligió antes en Steam. Lo hace al arrancar la sesión, con Steam cerrado, y guarda una copia de la configuración de Steam. Si ya elegiste otra versión de Proton, se respeta. Batman: Arkham City es solo para Windows: es la causa más probable de tu foto. Se confirma en la placa (T-STEAM-19).
+
+## Instalar: la causa del fallo
+
+STONE pedía la instalación a Steam con una llamada incompleta. La interfaz de Steam llama a su instalador con **dos datos** (los juegos y en qué equipo instalarlos, porque Steam ya permite instalar en otro equipo de la cuenta) y STONE pasaba solo uno. Además STONE buscaba el juego en un campo de la respuesta que la interfaz de Steam no usa. Es la causa más probable del «Steam no respondió» de la consola; que quede resuelto se confirma en la placa (T-STEAM-15).
+
+Esta vez las llamadas no se dedujeron: se leyeron del código de la propia interfaz de Steam, que Valve publica con cada versión del cliente (paquete del 12-11-2026).
+
+- La instalación se pide como la pide Steam, y se sigue paso a paso con los avisos del propio instalador.
+- Desinstalar tenía el mismo defecto (faltaba un dato) y también está corregido.
+- La prueba de que empezó sigue siendo el archivo del juego en la biblioteca de Steam, y ahora se mira **siempre**, respondiera lo que respondiera el instalador.
+- Si aun así no empieza, el mensaje incluye una línea de **detalle técnico** con los pasos que dio Steam. Una foto de esa pantalla basta para saber dónde se detuvo.
+- **«Ver en Steam»** ahora abre primero el diálogo de instalación de Steam. Antes no había ninguna ventana que mostrar («Steam no mostró su ventana»).
+
+## Contrato de licencia sin entrar a Steam
+
+Muchos juegos piden aceptar un contrato de licencia (EULA) antes de instalarse. Ahora se resuelve en STONE:
+
+- STONE muestra la dirección del contrato y un **código QR** para leerlo en el móvil.
+- El foco está en **NO ACEPTO**. Si eliges **ACEPTO E INSTALAR**, STONE le comunica tu aceptación a Steam (la misma llamada que hace el diálogo de Steam) y la instalación sigue sola.
+- STONE no acepta nada por su cuenta: sin tu respuesta, el juego no se instala.
+
+## Barra de descarga e instalación
+
+El avance sale de Steam en vivo (la misma información que usa su pantalla de descargas), no del archivo en disco, que Steam solo actualiza de vez en cuando.
+
+- **En la ficha del juego:** la etapa (Descargando, Reservando espacio en disco, Instalando, Verificando archivos, En cola, En pausa), el porcentaje, una barra, los GB descargados, la velocidad y el tiempo que falta.
+- **En la carátula** del juego, en Inicio y en la Biblioteca: el porcentaje y una barra pequeña.
+- **Arriba a la derecha**, junto al reloj, en cualquier pantalla: «↓ 23 %».
+- Al terminar, STONE avisa «listo para jugar» y el botón pasa a JUGAR.
+- Si Steam actualiza un juego antes de abrirlo, la pantalla de carga muestra la misma información.
+
+## Carátulas y fondos
+
+- **Carátulas sólidas.** Los juegos sin instalar se dibujaban con toda la tarjeta al 72 % de opacidad y el fondo se veía a través de la carátula. Ahora la carátula es opaca, con una sombra ligera y una **marca de descarga** en la esquina.
+- **Fondos al doble de resolución.** El fondo era una imagen de 1920 × 620 estirada unas 3,5 veces en un televisor 4K. STONE descarga ahora la versión de 3840 × 1240 del juego que estás mirando, cuando Steam la tiene (los juegos más recientes; los antiguos, como Batman: Arkham City, no la tienen).
+- **Sin bloques.** Cuando la imagen aún debe ampliarse mucho, se suaviza: se ve desenfocada en vez de pixelada. Con «Efectos ligeros» (o sin GPU) no se aplica.
+- **Arte muy claro.** Con fondos casi blancos, la sombra bajo los textos se hace más profunda según el brillo de la imagen.
+- Los botones de los diálogos ya no se tocan entre sí.
+- Al pasar a «Steam completo», el aviso aparece de una vez. Antes la pantalla podía quedar congelada a medio fundido, con el texto de la ficha encima.
+
+## Límites
+
+- Las llamadas al instalador de Steam son internas de Steam y pueden cambiar con una versión futura. Si cambian, STONE lo dice con el detalle técnico y ofrece «Ver en Steam».
+- La barra en vivo necesita que la interfaz de Steam responda. Si no responde, STONE muestra las cifras que Steam escribió por última vez en disco.
+- El contrato de licencia se lee en el móvil; STONE no muestra su texto en el televisor.
+
 # STONE OS (rebuild) 3.1.0-rc3
 
 Es 3.1.0-rc2 con una prueba automática corregida: la compilación de 3.1.0-rc2 se detuvo en las pruebas de la sesión y nunca se publicó.

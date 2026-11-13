@@ -108,20 +108,36 @@ def test_game_page_is_plain_text_with_its_price_and_refuses_bad_ids():
 
 def test_install_and_uninstall_need_no_dialog_and_library_has_two_sources():
     e = CEF.install_expression(570)
-    assert "OpenInstallWizard([570])" in e and "ContinueInstall" in e and "SetInstallFolder(0)" in e
-    # 3.1.0-rc2: the wizard is followed (GetInstallManagerInfo), a wizard left open is closed first, and
-    # what only the person can answer (EULA 8, key 4, password 6, disc 11/12, signup 13) comes back
-    assert "GetInstallManagerInfo" in e and "CancelInstall" in e and "return null" in e
-    for state, answer in ((14, "started"), (15, "failed"), (16, "canceled"), (8, "eula")):
-        assert f"st==={state})return out('{answer}'" in e, state
-    assert "st===4||st===6||st===11||st===12||st===13" in e and "out('space'" in e
-    assert CEF.parse_install('{"s":"space","st":7,"need":5000000000,"free":1000}') == \
-        {"answer": "space", "state": "config", "need": 5000000000, "free": 1000}
+    # as Steam's own interface calls it (its code of 12-11-2026): the games and the local client "0";
+    # 3.1.0-rc3 passed one argument and every install on the board ended in "Steam no respondió"
+    assert "OpenInstallWizard([570],'0')" in e and "ContinueInstall" in e and "SetInstallFolder(0)" in e
+    assert "RegisterForShowInstallWizard" in e and "rgApps" in e and "CancelInstall" in e and "return null" in e
+    for state, answer in ((14, "started"), (15, "failed"), (16, "canceled")):
+        assert f"st==={state}&&live)return out('{answer}'" in e, state      # only after a live step: the wizard keeps its last state
+    assert "st===4||st===6||st===11||st===12||st===13" in e and "out('space'" in e and "out('eula'" in e and "out('gone'" in e
+    assert "MarkEulaAccepted" not in e                                   # installing never accepts a licence
+    acc = CEF.accept_eula_expression(570)
+    assert "LoadEula(570)" in acc and "MarkEulaAccepted(570,x.id,x.version)" in acc and "OpenInstallWizard" not in acc.split("const follow")[1]
+    assert CEF.parse_install('{"s":"space","st":7,"tr":[1,5,7],"need":5000000000,"free":1000}') == \
+        {"answer": "space", "state": "config", "trace": ["setup", "wait-appinfo", "config"], "need": 5000000000, "free": 1000}
     assert CEF.parse_install('{"s":"started","st":14,"need":0,"free":0}')["state"] == "complete"
+    eula = CEF.parse_install(json.dumps({"s": "eula", "st": 8, "tr": [7, 8], "eulas": [
+        {"id": "570_eula_0", "version": 3, "url": "http://store.steampowered.com/eula/570_eula_0"},
+        {"id": "x", "version": 1, "url": "javascript:alert(1)"}, {"id": "y", "version": 1, "url": "https://a.example/\"><b>"}, "junk"]}))
+    assert eula["eulas"] == [{"id": "570_eula_0", "version": 3, "url": "https://store.steampowered.com/eula/570_eula_0"}], eula
     for bad in (None, "", "x", '{"s":"ok"}', "[1]", 7):
         assert CEF.parse_install(bad) is None, bad
     assert CEF.install(570, port=1) is None and CEF.uninstall(570, port=1) is None and CEF.cancel_install(port=1) is False
-    assert "OpenUninstallWizard([570],true)" in CEF.uninstall_expression(570)
+    assert CEF.accept_eula(570, port=1) is None and CEF.downloads_state(port=1) is None
+    # three arguments, as Steam's interface calls it: the games, the local client, "do not ask"
+    assert "OpenUninstallWizard([570],'0',true)" in CEF.uninstall_expression(570)
+    live = CEF.parse_downloads(json.dumps({"a": 570, "s": "Downloading", "pa": False, "r": 4096, "eta": 90, "pct": 12.5,
+                                           "p": [[0, 0], [0, 0], [5, 10], [0, 10]], "q": [[570, 1, 0, 0, 0], [0, 0, 0, 0, 1], [620, 0, 0, 0, 1]]}))
+    assert live["appid"] == 570 and live["rate"] == 4096 and live["eta"] == 90 and live["percent"] == 12.5
+    assert [q["appid"] for q in live["queue"]] == [570, 620] and CEF.stage_of(live) == "download"
+    assert CEF.stage_of(dict(live, state="Unpacking")) == "install" and CEF.stage_of(dict(live, state="Preallocating")) == "prealloc"
+    assert CEF.stage_of(dict(live, state="", progress=[[0, 0], [0, 0], [10, 10], [3, 10]])) == "install"
+    assert CEF.stage_of(dict(live, appid=0)) is None and CEF.parse_downloads("nope") is None
     for bad in (0, -1, 0x80000000):
         for fn in (CEF.install_expression, CEF.uninstall_expression):
             try:

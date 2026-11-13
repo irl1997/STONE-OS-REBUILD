@@ -82,9 +82,12 @@ def signature_rows(rows):
 
 
 def signature(games, live):
-    """What makes the library on screen different: the games, their state and their artwork."""
+    """What makes the library on screen different: the games, their state and their artwork. The
+    background at twice the size (hero2x) is not part of it: it only sharpens a picture already shown,
+    and the page hears of it by itself (the "art" event)."""
     return (bool(live), tuple(sorted((g["appid"], bool(g.get("installed")), bool(g.get("updating")), g.get("name"),
-                                      tuple(sorted((g.get("art") or {}).items()))) for g in games)))
+                                      tuple(sorted((k, v) for k, v in (g.get("art") or {}).items() if k != "hero2x")))
+                                     for g in games)))
 
 
 class SignIn:

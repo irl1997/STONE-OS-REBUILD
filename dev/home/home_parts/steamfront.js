@@ -18,7 +18,7 @@ function sfVeil(what, title, text) {
     v.innerHTML = '<div class="sf-box"><span class="st-cap">STEAM</span><h2></h2><p></p><div class="sf-foot"><span class="g">STONE</span>El botón guía del mando vuelve a STONE</div></div>';
     stage.appendChild(v);
   }
-  if (!what) return v.classList.remove('on');
+  if (!what) return v.classList.remove('on', 'now');
   v.querySelector('h2').textContent = title || SF_TEXT[what][0];
   v.querySelector('p').textContent = text || SF_TEXT[what][1];
   v.classList.add('on');
@@ -30,7 +30,7 @@ async function steamOpen(what, appid) {
   if (S.running !== null) { play('error'); return toast('Cierra antes el juego en curso: Steam ocuparía su lugar en la pantalla', false); }
   play('select');
   let r = null;
-  try { r = await (what === 'app' ? Sys.steamShow('app', appid) : Sys.steamShow(what)); }
+  try { r = await (appid && (what === 'app' || what === 'install') ? Sys.steamShow(what, appid) : Sys.steamShow(what)); }
   catch (e) { return steamNoWindow(what, appid); }
   if (!r.managed) {
     /* not the STONE session (Steam's own Game Mode, or development): Steam shows its pages itself */
@@ -104,7 +104,10 @@ function steamFullAsk(why) {
       Sys.steamFull(why).then(() => {
         S.steamFront = { what: why, appid: null, t: Date.now(), full: true };
         line.classList.add('off'); $('#hints').classList.add('hide');
+        /* STONE Home is stopped within a second: the veil is whole at once, not caught half-way
+           through its fade with the page showing through (board, 3.1.0-rc3) */
         sfVeil(why, 'CAMBIANDO A STEAM', 'Steam abre su propia interfaz. Para volver a STONE: mantén pulsado el botón guía 3 segundos.');
+        $('#sfront').classList.add('now');
         /* the supervisor stops STONE Home in about a second; if it does not, the lock is released */
         setTimeout(() => { if (S.steamFront && S.steamFront.full) { S.steamFront = null; sfVeil(null); line.classList.remove('off'); applyFocus(); toast('Steam no tomó la pantalla. Reinicia la consola e inténtalo de nuevo', false); } }, 20000);
       }, e => { play('error'); toast(e && e.code === 'Unsupported' ? 'Solo disponible en la sesión STONE de la consola' : 'No se pudo cambiar a Steam', false); });

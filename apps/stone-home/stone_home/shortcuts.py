@@ -23,6 +23,7 @@ and the computed one. The game id for steam:// URLs is (id << 32) | 0x02000000.
 import binascii
 import hashlib
 import json
+import re
 import os
 import shutil
 import tempfile
@@ -327,6 +328,62 @@ def register(root=None, proc="/proc"):
     return out
 
 
+COMPAT_TOOL = "proton_experimental"
+
+
+def ensure_steam_play(root):
+    """Steam Play for every game (the setting "Enable Steam Play for all other titles"): Windows games
+    run with Proton. The STONE session starts Steam as a desktop client (`steam -silent`), where it is
+    off unless someone turned it on, and a Windows-only game then does not start (board, 13-11-2026:
+    Batman: Arkham City stayed on "SIGUE CARGANDO"). Steam's Game Mode turns it on by itself. Steam keeps
+    it in config.vdf as CompatToolMapping "0"; it is added only when there is no "0" entry (a choice the
+    person made in Steam stays), only while Steam is not running, and the file is kept as it was
+    (a copy, config.vdf.stone-bak) if anything does not read back right. Returns what it did."""
+    path = os.path.join(root, "config", "config.vdf")
+    try:
+        with open(path, encoding="utf-8") as f:
+            text = f.read()
+        doc = vdf.loads(text)
+    except FileNotFoundError:
+        return "no config.vdf yet"
+    except (OSError, UnicodeDecodeError, vdf.VDFError) as e:
+        return f"not read: {e.__class__.__name__}"
+    steam = vdf.get_ci(doc, "InstallConfigStore", "Software", "Valve", "Steam")
+    if not isinstance(steam, dict):
+        return "no Steam section"
+    mapping = vdf.get_ci(steam, "CompatToolMapping")
+    if isinstance(mapping, dict) and isinstance(mapping.get("0"), dict):
+        return "already set"
+    entry = ('"0"\n{\n"name"\t"%s"\n"config"\t""\n"priority"\t"75"\n}\n' % COMPAT_TOOL)
+    # the text is changed at one place: inside the existing block, or a new block in the Steam section
+    pos = None
+    if isinstance(mapping, dict):
+        m = re.search(r'"CompatToolMapping"\s*\{', text, re.I)
+        pos = m.end() if m else None
+    else:
+        m = re.search(r'"InstallConfigStore"\s*\{.*?"Software"\s*\{.*?"Valve"\s*\{.*?"Steam"\s*\{', text, re.I | re.S)
+        if m:
+            pos, entry = m.end(), '\n"CompatToolMapping"\n{\n' + entry + '}\n'
+    if pos is None:
+        return "Steam section not found in the text"
+    new = text[:pos] + "\n" + entry + text[pos:]
+    try:
+        check = vdf.get_ci(vdf.loads(new), "InstallConfigStore", "Software", "Valve", "Steam", "CompatToolMapping", "0", "name")
+    except vdf.VDFError:
+        check = None
+    if check != COMPAT_TOOL:
+        return "not written: it did not read back"
+    try:
+        shutil.copyfile(path, path + ".stone-bak")
+        tmp = path + ".stone-tmp"
+        with open(tmp, "w", encoding="utf-8") as f:
+            f.write(new)
+        os.replace(tmp, path)
+    except OSError as e:
+        return f"not written: {e.__class__.__name__}"
+    return "turned on"
+
+
 def prepare_session(root=None, proc="/proc"):
     """STONE session start (supervisor.run), before Steam starts: what rc23's `register` did that
     the STONE session still needs. Steam's interface flag (steamcef: JUGAR through Steam, Steam's
@@ -347,6 +404,7 @@ def prepare_session(root=None, proc="/proc"):
         except OSError:
             pass
         out["steam_ui_launch"] = os.path.isdir(root) and steamcef.enable(root)
+    out["steam_play"] = ensure_steam_play(root)
     from . import emulators
     extra = emulators.pending_entries()
     accts = accounts(root)

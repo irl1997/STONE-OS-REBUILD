@@ -39,7 +39,7 @@ Bridge.on('art', d => {
   const got = (d && d.art) || {}, ids = new Set(Object.keys(got));
   G.forEach(g => {
     const a = got[g.appid]; if (!a) return;
-    g.art.capsule = g.art.capsule || !!a.capsule; g.art.hero = g.art.hero || !!a.hero;
+    g.art.capsule = g.art.capsule || !!a.capsule; g.art.hero = g.art.hero || !!a.hero; g.art.hero2x = g.art.hero2x || !!a.hero2x;
     g.art.header = !g.art.capsule && (g.art.header || !!a.header);
   });
   document.querySelectorAll('#home .card[data-g], #library .card[data-g]').forEach(el => {
