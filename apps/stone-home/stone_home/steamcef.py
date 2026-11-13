@@ -559,6 +559,137 @@ def stage_of(live):
     return "download" if state == "Downloading" else "install"
 
 
+# ---- Starting a game, followed step by step ----------------------------------------------------
+# Steam starts a game as a "game action" and tells every step to its interface (its own code, client
+# package of 12-11-2026): RegisterForGameAction{Start,TaskChange,UserRequest,ShowError,End}, with
+# (actionID, gameid, "LaunchApp", task|request|error, details). Some steps wait for the person
+# (UserRequest): a launch option, a licence agreement, saves in the cloud that do not match, an install
+# script that failed, another session playing... Steam's interface answers with
+# SteamClient.Apps.ContinueGameAction(actionID, answer) or CancelGameAction(actionID). In the STONE
+# session those questions open in Steam's hidden windows, so the game waited for ever (board,
+# 13-11-2026: Batman: Arkham City "SIGUE CARGANDO"). STONE listens to the same steps (one listener,
+# kept on window.__stoneGA in Steam's page), says them on the loading screen, asks the questions itself
+# and passes the person's answer on.
+LAUNCH_ANSWERS = {          # request -> answers STONE may pass on (Steam's own words, from its code)
+    "ShowEula": ("ShowEula",), "ShowLaunchOption": None,             # None: a launch option index
+    "SynchronizingCloud": ("KeepLocal", "KeepRemote", "IgnoreCloud", "IgnorePendingCloudSessions"),
+    "SynchronizingControllerConfig": ("KeepLocal", "KeepRemote", "IgnoreCloud"),
+    "RunningInstallScript": ("IgnoreInstallError",), "KickingOtherSession": ("KickOtherSession",),
+    "ProcessingShaderCache": ("SkipShaders",), "ShowCDKey": ("",), "ShowDurationControl": ("",),
+    "ShowInterstitials": ("ShowInterstitials",), "ShowGameArgs": ("ShowGameArgs",), "CreatingProcess": ("CreatingProcess",),
+    "ShowVROculusOnly": ("1",)}
+_GA = (
+    "const A=window.SteamClient&&SteamClient.Apps;if(!A||!A.RunGame)return null;"
+    "const z=ms=>new Promise(r=>setTimeout(r,ms));"
+    "if(!window.__stoneGA){const W=window.__stoneGA={g:{}};"
+    "const at=(gid,id)=>{gid=String(gid);let e=W.g[gid];if(!e||(id&&e.act&&e.act!==id&&e.done))"
+    "e=W.g[gid]={act:id||0,tr:[],req:null,det:'',err:null,errd:'',done:false,t:Date.now()};if(id&&!e.act)e.act=id;return e;};"
+    "W.at=at;const on=(f,cb)=>{try{if(A[f])A[f](cb);}catch(e){}};"
+    "on('RegisterForGameActionStart',(id,gid,n)=>{if(n==='LaunchApp')at(gid,id);});"
+    "on('RegisterForGameActionTaskChange',(id,gid,n,t,d)=>{if(n!=='LaunchApp')return;const e=at(gid,id);"
+    "if(e.tr[e.tr.length-1]!==t)e.tr.push(String(t).slice(0,40));if(e.tr.length>24)e.tr.shift();e.det=String(d||'').slice(0,160);"
+    "if(e.req&&t!==e.req)e.req=null;});"
+    "on('RegisterForGameActionUserRequest',(id,gid,n,r,d)=>{if(n!=='LaunchApp')return;const e=at(gid,id);"
+    "e.req=String(r).slice(0,40);e.det=String(d||'').slice(0,160);e.tr.push('ask:'+e.req);});"
+    "on('RegisterForGameActionShowError',(id,gid,n,er,d)=>{if(n!=='LaunchApp')return;const e=at(gid,id);"
+    "e.err=String(er).slice(0,40);e.errd=String(d||'').slice(0,160);e.tr.push('error:'+e.err);});"
+    "on('RegisterForGameActionEnd',id=>{for(const k in W.g){if(W.g[k].act===id){W.g[k].done=true;W.g[k].req=null;}}});}"
+    "const W=window.__stoneGA;"
+    # what Steam says now about this game's action (also when STONE Home was restarted meanwhile)
+    "const state=async G=>{const e=W.at(G);try{const acts=await Promise.race([A.GetActiveGameActions(),z(1500)])||[];"
+    "const a=acts.find(x=>String(x.gameid)===G&&x.strActionName==='LaunchApp');"
+    "if(a){e.act=a.nGameActionID;if(a.strTaskName&&e.tr.indexOf(String(a.strTaskName))<0)e.tr.push(String(a.strTaskName).slice(0,40));"
+    "if(a.bWaitingForUI&&!e.req){e.req=String(a.strTaskName).slice(0,40);e.det=String(a.strTaskDetails||'').slice(0,160);}"
+    "e.num=Number(a.strNumDone)||0;e.tot=Number(a.strNumTotal)||0;}else if(e.act&&!e.done&&acts.length>=0&&Date.now()-e.t>3000)e.done=true;}catch(x){}"
+    "let opts=null,eulas=null;const appid=Number(G)<2**32?Number(G):0;"
+    "if(e.req==='ShowLaunchOption'&&appid){try{opts=[...(await Promise.race([A.GetLaunchOptionsForApp(appid),z(2000)])||[])].slice(0,8)"
+    ".map(o=>({i:Number(o.nIndex)||0,d:String(o.strDescription||o.strGameName||'').slice(0,80)}));}catch(x){}}"
+    "if(e.req==='ShowEula'&&appid){try{eulas=[...(await Promise.race([A.LoadEula(appid),z(4000)])||[])].slice(0,6)"
+    ".map(x=>({id:String(x.id==null?'':x.id).slice(0,64),version:Number(x.version)||0,url:String(x.url||'').slice(0,300)}));}catch(x){}}"
+    "return JSON.stringify({act:e.act,tr:e.tr.slice(-12),req:e.req,det:e.det,err:e.err,errd:e.errd,done:e.done,num:e.num||0,tot:e.tot||0,opts:opts,eulas:eulas});};")
+
+
+def _gid(game_id):
+    g = int(game_id)
+    if not 0 < g < 2**64:
+        raise ValueError("not a game id")
+    return str(g)
+
+
+def launch_expression(game_id):
+    """Start a game as Steam's interface does (RunGame(gameid, "", -1, source)) with the listener in
+    place first, so no step is missed; the state after a few seconds is the answer."""
+    g = _gid(game_id)
+    return ("(async()=>{" + _GA +
+            f"const G='{g}';const old=W.g[G];if(old&&(old.done||old.err))delete W.g[G];W.at(G);"
+            f"try{{A.RunGame(G,'',-1,100);}}catch(x){{return JSON.stringify({{act:0,tr:[],err:'RunGame',errd:String(x).slice(0,160)}});}}"
+            "for(let i=0;i<16;i++){await z(250);const e=W.g[G];if(e&&(e.req||e.err))break;}"
+            "return await state(G);})()")
+
+
+def launch_state_expression(game_id):
+    g = _gid(game_id)
+    return "(async()=>{" + _GA + f"return await state('{g}');}})()"
+
+
+def launch_answer_expression(game_id, answer):
+    """Pass the person's answer to the question Steam is asking about this game. "ShowEula": every
+    agreement Steam lists is marked accepted first, as Steam's own dialog does. "cancel": the start is
+    cancelled. Answers are only Steam's own words for that question (LAUNCH_ANSWERS) or a launch option."""
+    g = _gid(game_id)
+    if not isinstance(answer, str) or not (answer == "cancel" or answer.isdigit() and len(answer) <= 2
+                                           or any(answer in (v or ()) for v in LAUNCH_ANSWERS.values())):
+        raise ValueError("answer")
+    appid = int(g) if int(g) < 2**32 else 0
+    eula = (f"if(a==='ShowEula'){{let v=[];try{{v=[...(await Promise.race([A.LoadEula({appid}),z(4000)])||[])];}}catch(x){{}}"
+            f"for(const x of v){{try{{A.MarkEulaAccepted({appid},x.id,x.version);}}catch(x){{}}}}await z(300);}}") if appid else ""
+    return ("(async()=>{" + _GA + f"const G='{g}',a={json.dumps(answer)};await state(G);const e=W.g[G];"
+            "if(!e||!e.act)return JSON.stringify({ok:false,why:'no action'});"
+            "e.req=null;e.tr.push('answer:'+(a||'-'));"
+            "try{if(a==='cancel'){A.CancelGameAction(e.act);e.done=true;}else{" + eula +
+            "A.ContinueGameAction(e.act,a);}}catch(x){return JSON.stringify({ok:false,why:String(x).slice(0,160)});}"
+            "return JSON.stringify({ok:true});})()")
+
+
+def parse_launch(raw):
+    """{"action", "trace", "request", "details", "error", "error_details", "done", "done_n", "total",
+    "options", "eulas"} or None."""
+    try:
+        d = json.loads(raw) if isinstance(raw, str) else None
+    except ValueError:
+        return None
+    if not isinstance(d, dict):
+        return None
+
+    def s(v, n):
+        return str(v)[:n] if isinstance(v, (str, int)) and v != "" else None
+    opts = [{"index": int(o.get("i") or 0), "label": str(o.get("d") or "")[:80]} for o in (d.get("opts") or [])
+            if isinstance(o, dict)][:8] or None
+    return {"action": int(d.get("act") or 0) if str(d.get("act") or "0").isdigit() else 0,
+            "trace": [str(t)[:40] for t in (d.get("tr") or []) if isinstance(t, str)][:12],
+            "request": s(d.get("req"), 40), "details": s(d.get("det"), 160) or "", "error": s(d.get("err"), 40),
+            "error_details": s(d.get("errd"), 160) or "", "done": bool(d.get("done")),
+            "progress": [int(d.get("num") or 0), int(d.get("tot") or 0)], "options": opts,
+            "eulas": _eulas(d.get("eulas")) if d.get("eulas") else None}
+
+
+def launch(game_id, port=PORT):
+    """Steam's state of the start (parse_launch), or None when its interface does not answer."""
+    return parse_launch(ui_value(launch_expression(game_id), port, timeout=15.0))
+
+
+def launch_state(game_id, port=PORT):
+    return parse_launch(ui_value(launch_state_expression(game_id), port, timeout=12.0))
+
+
+def launch_answer(game_id, answer, port=PORT):
+    raw = ui_value(launch_answer_expression(game_id, answer), port, timeout=12.0)
+    try:
+        return bool(json.loads(raw).get("ok")) if isinstance(raw, str) else None
+    except ValueError:
+        return None
+
+
 # ---- Steam asking the person something, answered from STONE Home -----------------------------
 # A cloud-save conflict, a choice of launch options, a licence or a first-launch question: Steam
 # shows it in its own interface, which the STONE session keeps hidden. STONE Home reads the topmost

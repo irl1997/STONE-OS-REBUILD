@@ -81,7 +81,7 @@ def build(src):
     # HOME, then what 3.0 adds next to it: the store and a game's store page, the QR code for the
     # phone, Steam's own window in front (D-34), the library following Steam, and the sections' covers.
     t = replace_span(t, "/* ---------- HOME ---------- */", "/* ---------- LIBRARY ---------- */",
-                     "\n".join(part(n) for n in ("home.js", "store.js", "qr.js", "steamfront.js", "libwatch.js", "covers.js", "install.js")) + "\n\n", "home")
+                     "\n".join(part(n) for n in ("home.js", "store.js", "qr.js", "steamfront.js", "libwatch.js", "covers.js", "install.js", "launchwatch.js")) + "\n\n", "home")
     t = replace_once(t, "<span>INICIO</span><span>BIBLIOTECA</span><span>EXPLORAR</span><span>MEDIA</span></div>",
                      "<span>Inicio</span><span>Biblioteca</span><span>Explorar</span><span>Media</span><span>Tienda</span></div>", "store tab")
     t = replace_span(t, "const FILTERS = [", "function enterLibrary(", part("libfilter.js") + "\n", "filters")

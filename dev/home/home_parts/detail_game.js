@@ -203,6 +203,7 @@ async function launch(g, starter) {
   await wait(700);
   showGame(g, true);
   steamWatch(95000); DL.lastLaunch = ''; dlKick(95000);
+  LW.step = ''; lwStart(g, ok && ok.launch);            /* Steam's steps and questions (launchwatch.js) */
   /* stoned may have seen the game before STONE started waiting for it */
   if (S.game && S.game.appid === g.appid) launchFound(g.i);
   /* Steam updating the game first, a long first start or a game that never opens: after 90 s STONE asks. */
@@ -232,12 +233,16 @@ function launchStalled(g) {
   if (S.launching !== g.i) return;
   if (S.screen === 'dlg') { launchT = setTimeout(() => launchStalled(g), 15000); return; }
   play('notify');
-  const dl = DL.at[g.appid];
-  openDlg(`<h2>${esc(g.n.toUpperCase())}</h2><p>${dl ? `Steam sigue actualizando el juego (${dlPct(dl) || 'en cola'}). Se abre solo al terminar.` : 'El juego todavía no se ha abierto. Si Steam lo está actualizando, la descarga aparece en Ajustes → Almacenamiento.'}</p>
-    <div class="btns"><span class="txt-f" data-f data-b="wait">ESPERAR</span><span class="txt-f" data-f data-b="home">VOLVER AL INICIO</span></div>`, {
+  const dl = DL.at[g.appid], st = LW.last, shaders = st && (st.trace || []).slice(-1)[0] === 'ask:ProcessingShaderCache' || st && st.request === 'ProcessingShaderCache';
+  openDlg(`<h2>${esc(g.n.toUpperCase())}</h2><p>${dl ? `Steam sigue actualizando el juego (${dlPct(dl) || 'en cola'}). Se abre solo al terminar.`
+    : shaders ? 'Steam sigue preparando los sombreadores del juego. Puedes omitirlo: el juego se abre antes, pero puede ir a tirones al principio.'
+    : 'El juego todavía no se ha abierto.'}</p>${lwTech(st) ? `<p class="tech">${esc(lwTech(st))}</p>` : ''}
+    <div class="btns"><span class="txt-f" data-f data-b="wait">ESPERAR</span>${shaders ? '<span class="txt-f" data-f data-b="skip">OMITIR</span>' : ''}<span class="txt-f" data-f data-b="cancel">CANCELAR</span></div>`, {
     onA: el => {
       closeDlg(); play('select');
-      if (el.dataset.b === 'wait') { S.screen = 'game'; NAV = null; line.classList.add('off'); $('#hints').classList.add('hide'); steamWatch(95000); launchT = setTimeout(() => launchStalled(g), 90000); return; }
+      if (el.dataset.b === 'skip') { Bridge.call('launch.answer', g.appid, 'SkipShaders').catch(() => {}); }
+      if (el.dataset.b !== 'cancel') { S.screen = 'game'; NAV = null; line.classList.add('off'); $('#hints').classList.add('hide'); steamWatch(95000); launchT = setTimeout(() => launchStalled(g), 90000); return; }
+      Bridge.call('launch.answer', g.appid, 'cancel').catch(() => {});
       S.launching = null; S.running = null; loadingOff(); returnHome();
     } });
 }

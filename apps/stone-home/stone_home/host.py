@@ -107,6 +107,7 @@ class Host:
         self.steam_root = steam_root
         self.games = {}                                       # appid -> launch URL, from the last scan
         self.owned = set()                                    # not installed, in the account: may be installed
+        self.launch_seen = {}                                 # appid -> Steam's steps when the game was started
         self.store_free = set()                               # free games seen in the store: may be installed
         self.store_seen = set()                               # games seen in the store: their pages may be asked for
         self.store_window = None                              # (monotonic time, the shop window as read)
@@ -646,8 +647,62 @@ class Host:
                           f"graphics={r.get('graphics_applied')} performance={r.get('performance')}", flush=True)
                 except Exception as e:  # noqa: BLE001
                     print(f"[stone] optimized: {appid} not prepared ({e!r}); launching unchanged", flush=True)
+            # Steam's steps are followed from the start (steamcef.launch): what it asks comes back to
+            # STONE Home (launch.state / launch.answer). Without that listener, the old call.
+            fn = getattr(self.steam_ui, "launch", None)
+            st = None
+            if fn:
+                try:
+                    st = fn(int(gid))
+                except Exception as e:  # noqa: BLE001
+                    print(f"[stone] launch {appid}: steam ui error {e!r}", flush=True)
+            if isinstance(st, dict):
+                self.launch_seen[appid] = st
+                print(f"[stone] launch {appid}: {'>'.join(st.get('trace') or []) or '-'}"
+                      f"{' asks ' + st['request'] if st.get('request') else ''}{' error ' + st['error'] if st.get('error') else ''}", flush=True)
+                return "cef[launch]: ok"
             return self.steam_ui.run_game(int(gid))
-        self._in_steam_ui(launch, lambda: self.sys.open_url(url), done)
+
+        def answered(res=None, code=None, msg=""):
+            if res is not None and appid in self.launch_seen:
+                res = dict(res, launch=self.launch_seen.pop(appid))
+            done(res, code, msg)
+        self._in_steam_ui(launch, lambda: self.sys.open_url(url), answered)
+
+    def m_launch_state(self, args, done):
+        """launch.state(appid): where Steam is in starting the game (its steps, a question it asks,
+        an error), for the loading screen. {"state": null} when Steam's interface does not answer."""
+        if len(args) != 1 or args[0] not in self.games:
+            return done(None, "InvalidValue", "unknown game")
+        gid = self.games[args[0]].rsplit("/", 1)[-1]
+
+        def work():
+            try:
+                st = self.steam_ui.launch_state(int(gid)) if hasattr(self.steam_ui, "launch_state") else None
+            except Exception:  # noqa: BLE001
+                st = None
+            GLib.idle_add(lambda: (done({"state": st}), False)[1])
+        threading.Thread(target=work, daemon=True).start()
+
+    def m_launch_answer(self, args, done):
+        """launch.answer(appid, answer): the person's answer to what Steam asked while starting the
+        game ("cancel" cancels the start). Only Steam's own answers are passed (steamcef.LAUNCH_ANSWERS)."""
+        if len(args) != 2 or args[0] not in self.games or not isinstance(args[1], str):
+            return done(None, "InvalidValue", "unknown game")
+        gid = self.games[args[0]].rsplit("/", 1)[-1]
+        try:
+            steamcef.launch_answer_expression(int(gid), args[1])
+        except ValueError:
+            return done(None, "InvalidValue", "answer")
+
+        def work():
+            try:
+                ok = self.steam_ui.launch_answer(int(gid), args[1])
+            except Exception:  # noqa: BLE001
+                ok = None
+            print(f"[stone] launch {args[0]}: answer {args[1]!r} -> {ok}", flush=True)
+            GLib.idle_add(lambda: (done({"ok": bool(ok)}), False)[1])
+        threading.Thread(target=work, daemon=True).start()
 
     # ---- STONE OPTIMIZED API ---------------------------------------------------------------
     def _opt_call(self, done, fn):

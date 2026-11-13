@@ -1,8 +1,18 @@
 # STONE OS (rebuild) 3.1.0-rc4
 
-Arregla lo que se vio en la consola con 3.1.0-rc3 (12-11-2026, fotos del propietario): **instalar un juego respondía «Steam no respondió»**, **las carátulas de los juegos sin instalar se transparentaban** y **los fondos se veían pixelados** en el televisor 4K. Añade la **barra de descarga e instalación**. Decisión D-37.
+Arregla lo que se vio en la consola con 3.1.0-rc3 (12 y 13-11-2026, fotos del propietario): **Batman: Arkham City no se abría** (se quedaba en «SIGUE CARGANDO»), **instalar un juego respondía «Steam no respondió»**, **las carátulas de los juegos sin instalar se transparentaban** y **los fondos se veían pixelados** en el televisor 4K. Añade la **barra de descarga e instalación**. Decisión D-37.
 
 **Todo está probado en software (CODE TESTED): pruebas automáticas, el código de instalación ejecutado contra un Steam simulado, y la simulación de la interfaz. Nada de esta versión se ha observado todavía en la BC-250.** Pruebas de placa: T-STEAM-15 (actualizada), T-STEAM-17, T-STEAM-18 y T-HOME-06 en `hardware/validation/matrix.yaml`.
+
+## Abrir juegos
+
+Steam abre un juego por pasos y en algunos se detiene a preguntar: qué opción de inicio usar, aceptar el contrato de licencia, qué partidas usar si las de la nube no coinciden, qué hacer si falló la instalación de un componente (DirectX, Visual C++) o si otra sesión está jugando. En la sesión STONE esas preguntas se abrían en ventanas ocultas de Steam y el juego quedaba esperando para siempre.
+
+- STONE sigue los pasos de Steam con sus propios avisos (los mismos que usa la interfaz de Steam) y **la pantalla de carga dice en qué está**: comprobando la configuración, sincronizando con la nube, instalando componentes, preparando sombreadores (con porcentaje), abriendo el juego.
+- **Las preguntas las hace STONE** con el mando y le pasa tu respuesta a Steam: la opción de inicio, el contrato de licencia (con código QR), las partidas de la nube, el componente que falló y la otra sesión. Los pasos que Steam resuelve con un simple «Aceptar» se aceptan solos.
+- **Si Steam no puede abrir el juego**, STONE dice por qué con las palabras de Steam (por ejemplo «falló la herramienta de compatibilidad (Proton)» o «no hay espacio suficiente») y una línea de detalle técnico.
+- Si tarda, el aviso ofrece ESPERAR, CANCELAR y, mientras prepara sombreadores, **OMITIR**.
+- **Juegos de Windows:** STONE activa «Steam Play para todos los títulos» (Proton Experimental) si nadie lo eligió antes en Steam. Lo hace al arrancar la sesión, con Steam cerrado, y guarda una copia de la configuración de Steam. Si ya elegiste otra versión de Proton, se respeta. Batman: Arkham City es solo para Windows: es la causa más probable de tu foto. Se confirma en la placa (T-STEAM-19).
 
 ## Instalar: la causa del fallo
 

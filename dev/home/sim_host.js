@@ -189,7 +189,17 @@ const Bridge = (() => {
           size_bytes: g.size, art: g.installed || SIM.art || !/noart/.test(location.search) ? { capsule: !g.wide, hero: !g.wide, header: !!g.wide, hero2x: !!(SIM.big && SIM.big[g.appid]) } : { capsule: false, hero: false, header: false },
           launch: g.installed ? 'steam://rungameid/' + g.appid : null })) };
     },
-    launch: async ([appid]) => { gameOf(appid); if (/ask/.test(location.search)) SimPanel.ask = Date.now() + 3000; if (/slow/.test(location.search)) { SimPanel.running = appid; setTimeout(() => SimStoned.sim.steamLaunch(appid), 12000); return { ok: true }; } SimStoned.sim.steamLaunch(appid); SimPanel.running = appid; SimPanel.refresh && SimPanel.refresh(); return { ok: true }; },
+    /* starting (Steam's steps): ?askcloud / ?askopt / ?launcherr make Steam ask about the cloud, a launch option, or fail */
+    'launch.state': ([appid]) => ({ state: SIM.ls && SIM.ls[appid] || null }),
+    'launch.answer': ([appid, a]) => { const L = SIM.ls && SIM.ls[appid]; if (L) { L.request = null; L.trace.push('answer:' + a);
+      if (a !== 'cancel') { L.trace.push('CreatingProcess'); setTimeout(() => { SimStoned.sim.steamLaunch(appid); SimPanel.running = appid; }, 1500); } } return { ok: !!L }; },
+    launch: async ([appid]) => { gameOf(appid); const q = location.search;
+      if (/askcloud|askopt|launcherr/.test(q)) { SIM.ls = SIM.ls || {};
+        const L = SIM.ls[appid] = { action: 7, trace: ['UpdatingAppInfo', 'SynchronizingCloud'], request: null, details: '', error: null, error_details: '', done: false, progress: [0, 0], options: null, eulas: null };
+        if (/askcloud/.test(q)) { L.request = 'SynchronizingCloud'; L.details = 'cloudconflict'; L.trace.push('ask:SynchronizingCloud'); }
+        if (/askopt/.test(q)) { L.request = 'ShowLaunchOption'; L.options = [{ index: 0, label: 'Jugar' }, { index: 1, label: 'Jugar en DirectX 11' }]; L.trace.push('ask:ShowLaunchOption'); }
+        if (/launcherr/.test(q)) { L.error = 'AppError_51'; L.error_details = 'proton_experimental'; L.trace.push('error:AppError_51'); }
+        return { ok: true, via: 'steam-ui', launch: L }; } if (/ask/.test(location.search)) SimPanel.ask = Date.now() + 3000; if (/slow/.test(location.search)) { SimPanel.running = appid; setTimeout(() => SimStoned.sim.steamLaunch(appid), 12000); return { ok: true }; } SimStoned.sim.steamLaunch(appid); SimPanel.running = appid; SimPanel.refresh && SimPanel.refresh(); return { ok: true }; },
     /* installing (what Steam really did): ?eula / ?nospace / ?noanswer make Steam ask for its licence
        agreement, run out of disk or not start the first time; otherwise the download advances for 24 s
        (downloading, then installing), then the game is installed */
