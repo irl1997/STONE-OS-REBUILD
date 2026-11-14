@@ -60,6 +60,11 @@
 #hdr .brand{font-size:30px;letter-spacing:.5em;text-shadow:0 2px 18px rgba(0,0,0,.35)}
 #status{padding:12px 22px;border-radius:999px;gap:22px;color:var(--warm)}
 #status svg{stroke:var(--warm)}
+#neticon{position:relative;display:inline-flex;width:28px;height:28px}
+#neticon svg{stroke:var(--warm)}
+#neticon.n-none,#neticon.n-off{opacity:.75}
+#neticon .nwarn{position:absolute;right:-7px;top:-5px;min-width:15px;height:15px;border-radius:50%;background:#e8b04a;color:#1a1408;
+  font:700 11px/15px var(--f-text);text-align:center;text-shadow:none}
 #tabs{left:50%;top:42px;transform:translateX(-50%);display:flex;gap:4px;padding:6px;border-radius:999px;
   font-family:var(--f-text);font-weight:400;font-size:19px;letter-spacing:.01em}
 #tabs span{padding:12px 26px;border-radius:999px;color:var(--text-2);transition:background var(--d-step) var(--e-step),color var(--d-step) var(--e-step)}
@@ -272,6 +277,12 @@
   background:linear-gradient(158deg,rgba(255,255,255,.15) 0%,rgba(255,255,255,.03) 30%,rgba(255,255,255,0) 30.5%),
     linear-gradient(180deg,rgba(0,0,0,0) 35.5%,rgba(0,0,0,.45) 35.5% 36.5%,rgba(0,0,0,0) 36.5% 63.5%,rgba(0,0,0,.45) 63.5% 64.5%,rgba(0,0,0,0) 64.5%),
     var(--roca) 0 36% / 100% 28% no-repeat,linear-gradient(180deg,#202125 0%,#0b0b0d 100%)}
+.card .ph .pht{position:absolute;left:12%;right:9%;top:68%;bottom:19%;display:flex;flex-direction:column;justify-content:flex-start;gap:6px;overflow:hidden}
+.card .ph .pht .lbl{font:500 12px/1.2 var(--f-mono);letter-spacing:.16em;color:var(--vein);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card .ph .pht em{font:400 19px/1.18 var(--f-text);font-style:normal;color:var(--warm);display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;overflow-wrap:anywhere}
+.card.hero .ph .pht{top:66%}
+.card.hero .ph .pht .lbl{font-size:15px}
+.card.hero .ph .pht em{font-size:30px}
 .card .ph::after{content:"";position:absolute;left:12%;bottom:13%;width:42%;height:3px;border-radius:2px;background:#fff;
   box-shadow:0 0 8px rgba(255,255,255,.9),0 0 22px rgba(255,255,255,.4)}
 /* the primary button: obsidian at rest, the white panel when chosen */
@@ -366,7 +377,9 @@
 .srow .l b{font-weight:400;font-size:calc(24px * var(--ts));letter-spacing:.02em}
 .srow .l small{font-weight:400;font-size:calc(20px * var(--ts));letter-spacing:.01em}
 .srow .v{font-weight:400;font-size:20px;letter-spacing:.06em}
-#dlg .sres{font-weight:400;letter-spacing:.02em}
+#dlg .sres{font-weight:400;letter-spacing:.02em;align-items:baseline}
+/* the value of each row on the row's own line, readable from the sofa (rc6: it floated above, at 15 px) */
+#dlg .sres small{font-size:19px;color:var(--text-2);text-align:right}
 #store .scard .cap2 b{font-weight:400;letter-spacing:.02em}
 #store .scard .cap2 i{font-weight:400;letter-spacing:.08em}
 #library .filters,#store .filters{font-weight:400;letter-spacing:.06em}

@@ -172,7 +172,8 @@ function frConfigText() {
   const d = (cfg && cfg.detected) || {}, r = (cfg && cfg.reference) || {};
   const row = (label, have, want, unit) => `<p>${label}: <b>${have === null || have === undefined ? 'no se pudo leer' : have + unit}</b>${want ? ` · referencia ${want}${unit}` : ''}</p>`;
   const ok = c.board && cfg && cfg.matches !== false;
-  return [`<p>Placa BC-250: <b>${c.board ? 'detectada' : 'no detectada'}</b></p>${row('Núcleos de CPU', d.cpu_cores, r.cpu_cores, '')}${row('GPU', d.gpu_cu, r.gpu_cu, ' CU')}
+  /* without stoned's reading of the configuration only the board is said (no rows of «no se pudo leer») */
+  return [`<p>Placa BC-250: <b>${c.board ? 'detectada' : 'no detectada'}</b></p>${cfg ? row('Núcleos de CPU', d.cpu_cores, r.cpu_cores, '') + row('GPU', d.gpu_cu, r.gpu_cu, ' CU') : ''}
     ${cfg && cfg.matches === false ? `<p>Esta configuración no es la de referencia (${esc(cfg.reasons.join('; '))}). Los perfiles de fábrica funcionan; CUSTOM, pruebas y calibración quedan bloqueados.</p>` : ''}
     ${S.safeMode ? '<p>STONE arrancó en Safe Mode: valores de fábrica.</p>' : ''}`, ok];
 }
@@ -254,22 +255,32 @@ const SU_FN = {
     let net = null, wifi = null, note = '';
     const draw = () => {
       const online = net && net.online, cable = net && net.devices.find(d => d.type === 'ethernet' && d.state === 'connected');
-      const rows = [{ l: 'Estado', v: !net ? 'leyendo…' : online ? (cable ? 'conectado por cable' : 'conectado') : 'sin conexión' }];
-      (wifi || []).slice(0, 6).forEach(w => rows.push({ l: w.ssid, v: w.active ? 'conectado' : `${w.secure ? 'con contraseña' : 'abierta'} · señal ${w.signal} %`, k: w.active ? null : 'wifi', w }));
-      rows.push({ l: 'Buscar redes Wi-Fi', v: note, k: 'scan' });
+      const rows = [{ l: 'Estado', v: !net ? 'leyendo…' : online ? (cable ? 'conectado por cable' : `conectado a ${net.ssid || 'una red Wi-Fi'} (Wi-Fi)`) + (net.internet === 'limited' || net.internet === 'portal' ? ' · sin internet' : '') : 'sin conexión' }];
+      if (net && net.radio === false) rows.push({ l: 'Activar el Wi-Fi', v: 'está apagado', k: 'radio' });
+      else {
+        (wifi || []).slice(0, 6).forEach(w => rows.push({ l: w.ssid, v: w.active ? 'conectado' : `${w.known ? 'guardada' : w.secure ? 'con contraseña' : 'abierta'} · señal ${w.signal} %`, k: w.active ? null : 'wifi', w }));
+        rows.push({ l: 'Buscar redes Wi-Fi', v: note, k: 'scan' });
+      }
       suDraw({ key: 'red', title: 'INTERNET', r: SU.at, rows,
         lead: 'STONE necesita internet para Steam, las descargas y las actualizaciones. Con cable ya está; si no, elige tu Wi-Fi.',
         buttons: online ? [['next', 'CONTINUAR']] : [['next', 'OMITIR POR AHORA']], onButton: suNext,
         onRow: async r => {
-          if (r.k === 'scan') { note = 'buscando…'; draw(); wifi = ((await Bridge.call('net.wifiList').catch(() => null)) || {}).networks || []; note = wifi.length ? '' : 'ninguna red'; return draw(); }
-          const go = async pw => {            /* pw null: an open network */
+          const scan = async () => { note = 'buscando…'; draw(); wifi = ((await Bridge.call('net.wifiList').catch(() => null)) || {}).networks || []; note = wifi.length ? '' : 'ninguna red'; draw(); };
+          if (r.k === 'scan') return scan();
+          if (r.k === 'radio') {
+            note = ''; await Bridge.call('net.wifiRadio', true).catch(() => null);
+            net = await Bridge.call('net.status').catch(() => net); netIconKick(); return scan();
+          }
+          const ask = () => osk(`Contraseña de ${r.w.ssid}`, pw => (pw === null ? draw() : go(pw)), true);
+          const go = async pw => {            /* pw null: an open network, or one joined before */
             note = `conectando a ${r.w.ssid}…`; draw();
             const x = await Bridge.call('net.wifiConnect', r.w.ssid, pw).catch(e => ({ error: (e && e.message) || 'no se pudo' }));
+            if (x && x.error && pw === null && /contraseña/i.test(x.error)) { note = ''; draw(); return ask(); }
             note = x && x.error ? x.error : ''; if (!(x && x.error)) toast(`Conectado a ${r.w.ssid}`, false);
-            net = await Bridge.call('net.status').catch(() => net); wifi = ((await Bridge.call('net.wifiList').catch(() => null)) || {}).networks || wifi; draw();
+            net = await Bridge.call('net.status').catch(() => net); wifi = ((await Bridge.call('net.wifiList').catch(() => null)) || {}).networks || wifi; draw(); netIconKick();
           };
-          if (!r.w.secure) return go(null);
-          osk(`Contraseña de ${r.w.ssid}`, pw => (pw === null ? draw() : go(pw)), true);
+          if (!r.w.secure || r.w.known) return go(null);
+          ask();
         } });
     };
     draw();

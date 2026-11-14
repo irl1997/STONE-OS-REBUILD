@@ -6,16 +6,21 @@
    If Steam shows no window, plan B hands the whole session to Steam's own Game Mode interface. */
 const SF_TEXT = {
   login: ['INICIA SESIÓN EN STEAM', 'Steam muestra ahora su propia ventana. Escanea su código QR con la app de Steam del móvil, o escribe tu usuario con un teclado. STONE nunca ve tu contraseña.'],
-  store: ['ABRIENDO LA TIENDA DE STEAM', 'La tienda y el pago son de Steam: se usan tu cuenta y tu forma de pago de Steam. Lo que compres aparece después en tu biblioteca de STONE.'],
-  app: ['ABRIENDO EL JUEGO EN STEAM', 'La compra se hace en Steam, con tu cuenta y tu forma de pago. Al volver, STONE instala el juego en cuanto Steam lo añada a tu cuenta.'],
-  install: ['STEAM PREGUNTA EN SU VENTANA', 'Responde en la ventana de Steam. Cuando termines, o para dejarlo para después, el botón guía del mando vuelve a STONE.']
+  store: ['ABRIENDO LA TIENDA DE STEAM', 'La tienda y el pago son de Steam: se usan tu cuenta y tu forma de pago. Lo que compres aparece después en tu biblioteca de STONE. Para volver, sal de la tienda con B.'],
+  app: ['ABRIENDO EL JUEGO EN STEAM', 'La compra se hace en Steam, con tu cuenta y tu forma de pago. Al volver, STONE instala el juego en cuanto Steam lo añada a tu cuenta. Para volver, sal de la tienda con B.'],
+  install: ['STEAM PREGUNTA EN SU VENTANA', 'Responde en la ventana de Steam. Cuando termines, o para dejarlo para después, el botón guía del mando vuelve a STONE.'],
+  settings: ['AJUSTES DE STEAM', 'Steam abre sus ajustes en la sección que elegiste. Para volver a STONE, sal de los ajustes con B.'],
+  downloads: ['DESCARGAS DE STEAM', 'Steam abre su pantalla de descargas. Para volver a STONE, sal de ella con B.']
 };
+/* How STONE hands the screen to Steam and takes it back: the dark curtain is whole before Steam's
+   window comes in front (no half-faded STONE cut away), and STONE comes back with a soft fade. */
+const SF_CURTAIN_MS = 420;
 let sfT = 0;
 function sfVeil(what, title, text) {
   let v = $('#sfront');
   if (!v) {
     v = document.createElement('div'); v.id = 'sfront';
-    v.innerHTML = '<div class="sf-box"><span class="st-cap">STEAM</span><h2></h2><p></p><div class="sf-foot"><span class="g">STONE</span>El botón guía del mando vuelve a STONE</div></div>';
+    v.innerHTML = '<div class="sf-box"><span class="st-cap">STEAM</span><h2></h2><p></p><div class="sf-foot"><span class="g">STONE</span>El botón guía del mando vuelve a STONE desde cualquier pantalla de Steam</div></div>';
     stage.appendChild(v);
   }
   if (!what) return v.classList.remove('on', 'now');
@@ -24,32 +29,47 @@ function sfVeil(what, title, text) {
   v.classList.add('on');
 }
 /* Steam is not up yet (the first start of a new console downloads Steam's own update, which takes minutes) */
-const SF_WAIT = ['PREPARANDO STEAM', 'Steam todavía está arrancando. Si la consola acaba de instalarse, primero descarga su propia actualización: puede tardar unos minutos. Su ventana aparece aquí en cuanto esté lista.'];
+const SF_WAIT = ['PREPARANDO STEAM', 'Steam todavía está arrancando. Si la consola acaba de instalarse, primero descarga su propia actualización: puede tardar unos minutos. Su ventana aparece aquí en cuanto esté lista. B vuelve a STONE sin esperar.'];
 async function steamOpen(what, appid) {
   if (S.steamFront) return;
   if (S.running !== null) { play('error'); return toast('Cierra antes el juego en curso: Steam ocuparía su lugar en la pantalla', false); }
+  if (['login', 'store', 'app'].includes(what) && !needNet(what === 'login' ? 'iniciar sesión en Steam' : 'la tienda de Steam')) return;
   play('select');
-  let r = null;
-  try { r = await (appid && (what === 'app' || what === 'install') ? Sys.steamShow(what, appid) : Sys.steamShow(what)); }
-  catch (e) { return steamNoWindow(what, appid); }
-  if (!r.managed) {
-    /* not the STONE session (Steam's own Game Mode, or development): Steam shows its pages itself */
-    return toast(what === 'login' ? 'Steam muestra su inicio de sesión en su propia pantalla' : 'Steam abre su tienda en su propia pantalla', false);
-  }
-  S.steamFront = { what, appid: appid || null, t: Date.now() };
+  /* the curtain first: Steam's window comes in front of a calm dark screen */
+  S.steamFront = { what, appid: appid || null, t: Date.now(), opening: true };
   line.classList.add('off'); $('#hints').classList.add('hide');
   sfVeil(what);
+  await new Promise(ok => setTimeout(ok, S.rm ? 60 : SF_CURTAIN_MS));
+  let r = null;
+  try { r = await (appid && ['app', 'install', 'settings'].includes(what) ? Sys.steamShow(what, appid) : Sys.steamShow(what)); }
+  catch (e) { sfLift(); return steamNoWindow(what, appid); }
+  if (!r.managed) {
+    /* not the STONE session (Steam's own Game Mode, or development): Steam shows its pages itself */
+    sfLift();
+    return toast(what === 'login' ? 'Steam muestra su inicio de sesión en su propia pantalla' : what === 'settings' ? (r.sent ? 'Steam abrió sus ajustes' : 'Steam no respondió: Botón STEAM → Ajustes')
+      : what === 'downloads' ? 'Steam abre sus descargas' : 'Steam abre su tienda en su propia pantalla', false);
+  }
+  S.steamFront.opening = false;
   clearInterval(sfT); sfT = setInterval(sfCheck, 5000);
+}
+/* The curtain goes away and STONE is back as it was, with a soft entrance. */
+function sfLift() {
+  const v = $('#sfront');
+  if (v) { v.classList.remove('now'); v.classList.add('slow'); setTimeout(() => v.classList.remove('slow'), 1000); }
+  S.steamFront = null; clearInterval(sfT); sfVeil(null);
+  line.classList.remove('off'); applyFocus(); showHints(); armIdleOff();
 }
 /* The host says when Steam's window leaves the front and why: closed (guide button, Steam closed it,
    a game started), signed (the sign-in is done) or nowindow (Steam showed nothing). */
 function sfEnd(why) {
   const fr = S.steamFront;
   if (!fr) return;
-  S.steamFront = null; clearInterval(sfT); sfVeil(null);
-  line.classList.remove('off'); applyFocus(); showHints(); armIdleOff();
+  sfLift(); play('back');
   if (why === 'nowindow') return steamNoWindow(fr.what, fr.appid);
+  if (why === 'navfail') { play('error'); return toast(fr.what === 'downloads' ? 'Steam no abrió sus descargas. Inténtalo de nuevo en unos segundos' : 'Steam no abrió sus ajustes. Inténtalo de nuevo en unos segundos', false); }
   if (why === 'signed') { play('notify'); longToast('Sesión iniciada en Steam. STONE está leyendo tu biblioteca…', 7000); }
+  else if (!fr.shown && why === 'closed') toast('De vuelta en STONE: Steam no llegó a abrirse', false);
+  else if (fr.what === 'settings' || fr.what === 'downloads') { delete CX.net; delete CX.audio; delete CX.bt; netIconKick(); toast('De vuelta en STONE', false); if (S.screen === 'settings') enterSettings({ pane: !!(NAV && NAV.pane), ri: NAV && NAV.pane ? NAV.c : 0 }); }
   else toast(fr.what === 'login' ? 'De vuelta en STONE' : 'De vuelta en STONE. Lo que hayas comprado aparece en tu biblioteca', false);
   if (typeof SU !== 'undefined' && SU && SU.cur && SU.cur.key === 'steam') Sys.firstrunStatus().then(f => { SU.fr = f; if (SU && SU.cur && SU.cur.key === 'steam') SU_FN.steam(); }, () => {});
   S.steamAcct = undefined;
@@ -59,12 +79,12 @@ Bridge.on('steam', d => {
   if (!d) return;
   if (d.front === false) return sfEnd(d.why);
   if (S.steamFront && d.waiting) sfVeil(S.steamFront.what, SF_WAIT[0], SF_WAIT[1]);
-  else if (S.steamFront && d.shown && !S.steamFront.full) sfVeil(S.steamFront.what);
+  else if (S.steamFront && d.shown && !S.steamFront.full) { S.steamFront.shown = true; sfVeil(S.steamFront.what); }
 });
 /* If the event was lost (the host restarted), the lock never stays on: the host is asked. */
 function sfCheck() {
   if (!S.steamFront) return clearInterval(sfT);
-  Sys.steamStatus().then(st => { if (S.steamFront && st && st.front === false && Date.now() - S.steamFront.t > 4000) sfEnd('closed'); }, () => {});
+  Sys.steamStatus().then(st => { if (S.steamFront && !S.steamFront.opening && st && st.front === false && Date.now() - S.steamFront.t > 4000) sfEnd('closed'); }, () => {});
 }
 function longToast(msg, ms) {
   toast(msg, false);

@@ -198,7 +198,7 @@ def stone_expressions():
           "launch": C.launch_expression(620), "launch_state": C.launch_state_expression(620),
           "launch_answer": C.launch_answer_expression(620, "ShowEula"), "owned": C.OWNED_EXPRESSION, "login": C.LOGIN_EXPRESSION,
           "dialog": C.DIALOG_EXPRESSION, "open_settings": C.open_settings_expression("Display"), "open_page": C.open_page_expression("Downloads"),
-          "add_shortcut": C.add_shortcut_expression("x", "/x", "/", ""), "terminate": C.terminate_expression(620),
+          "add_shortcut": C.add_shortcut_expression("x", "/x", "/", ""), "terminate": C.terminate_expression(620), "location": C.LOCATION_EXPRESSION, "remove_shortcut": C.remove_shortcut_expression(2147483650),
           "download_pause": C.download_control_expression(620, "pause"), "download_resume": C.download_control_expression(620, "resume")}
     for sub in ("modules/display", "modules/games"):
         sys.path.insert(0, os.path.join(REPO, sub))

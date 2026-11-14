@@ -39,10 +39,10 @@ const imgLabel = g => 'Imagen: ' + (g.img ? (imgSel(g) ? imgSel(g).label : 'STON
 /* STONE IMAGE (look.py): a look per game through vkBasalt; Original = none. */
 const lookLabel = g => 'Aspecto: ' + (g.look ? (g.look.chosen ? g.look.looks.find(l => l.key === g.look.chosen).label : 'Original') : '…');
 /* D-22 frame generation (framegen.py): EXPERIMENTAL, only with OptiScaler installed by STONE. */
-const fgLabel = g => 'Fotogramas: ' + (g.fg ? (g.fg.on ? 'generados (exp.)' : 'normales') : '…');
+const fgLabel = g => 'Fotogramas: ' + (g.fg ? (g.fg.on ? 'Generados (experimental)' : 'Normales') : '…');
 const optzLabel = g => 'Optimizar' + (g.opz ? ` (${g.opz.done}/${g.opz.total})` : '');
 const optLabel = g => g.img && g.img.by_stone ? 'Quitar FSR (OptiScaler)' : 'Instalar FSR (OptiScaler)';
-const preLabel = g => 'Calidad: ' + (g.img && g.img.preset ? PRESET_TXT[g.img.preset] || g.img.preset : 'según el juego');
+const preLabel = g => 'Ajuste de FSR: ' + (g.img && g.img.preset ? PRESET_TXT[g.img.preset] || g.img.preset : 'El del juego');
 function imgRefresh(g) {
   const d = $('#detail'); if (!d) return;
   const a = d.querySelector('[data-act="img"]'), b = d.querySelector('[data-act="pre"]');
@@ -116,7 +116,8 @@ async function experience(g, i) {
   const el = $('#dexp');
   if (!r || !el || curG !== i || S.screen !== 'detail') return;
   g.exp = r;
-  el.textContent = `${r.label} · ${r.summary} · ${r.status_text}`;
+  /* «STONE RECOMMENDED … Recomendado por STONE» said the same twice: the state only when it adds something */
+  el.textContent = [r.label, r.summary, r.label === 'STONE RECOMMENDED' && /^Recomendado/.test(r.status_text || '') ? null : r.status_text].filter(Boolean).join(' · ');
   el.title = r.settings || '';
 }
 function detailA(el) {

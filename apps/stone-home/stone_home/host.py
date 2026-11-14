@@ -47,7 +47,9 @@ FRONT_URL_SETTLE_S = 1.5     # ... or this long after Big Picture is on screen
 FRONT_HOLD_S = 600           # Steam not up yet (its first start updates itself): waited for this long ...
 FRONT_HOLD_CHECK_S = 2       # ... asking its interface this often; then its window is asked for anyway
 STORE_FRESH_S = 600          # the shop window is read from Steam again after this long
-SHOW_WHAT = ("login", "store", "app", "install")
+SHOW_WHAT = ("login", "store", "app", "install", "settings", "downloads")
+FRONT_WATCH_S = 1.2          # Steam's settings or downloads in front: how often its page is read
+FRONT_NAV_TRIES = 8          # ... and how many times STONE asks it to open that page
 INSTALL_CONFIRM_S = 20       # Steam said it started an install: its appmanifest must appear within this
 INSTALL_DOUBT_S = 8          # Steam's wizard gave no clear answer: its files are still looked at this long
 DOWNLOADS_LIVE_S = 1.0       # Steam's live downloads are asked for at most this often
@@ -273,6 +275,7 @@ class Host:
             art["header"] = kept["header"] and not art["capsule"]
             if not art["capsule"]:
                 self.art.want(g["appid"], ("capsule",))
+        self._romart_want(root, [g for g in res["games"] if g.get("source") == "shortcut" and not (g.get("art") or {}).get("capsule")])
         res["owned_known"] = live
         res["owned_cached"] = cached
         res["logged"] = logged
@@ -347,6 +350,31 @@ class Host:
             print(f"[stone] library: changed ({len(res['games'])} games, account "
                   f"{'live' if res['owned_known'] else 'kept' if res['owned_cached'] else 'unknown'}, signed {res['logged']})", flush=True)
             self.emit("library", {"reason": "changed"})
+
+    def _romart_want(self, root, games):
+        """Emulator games without a cover: their box art from libretro, once per game and session, in
+        one background thread (romart.py). STONE Home redraws them when it arrives (the "art" event)."""
+        from . import romart
+        tried = self.__dict__.setdefault("_romart_tried", set())
+        todo = [(g["appid"], g["name"]) for g in games if g["appid"] not in tried and romart.system_of(g.get("name"))]
+        if not todo:
+            return
+        tried.update(a for a, _n in todo)
+
+        def work():
+            news = {}
+            for appid, name in todo:
+                try:
+                    got = romart.fetch(root, appid, name)
+                except Exception as e:  # noqa: BLE001  (no internet, the server changed: STONE's own cover stays)
+                    print(f"[stone] cover for {name}: not fetched ({e!r})", flush=True)
+                    got = None
+                if got:
+                    news[appid] = {"capsule": True}
+                    print(f"[stone] cover for {name}: {got}", flush=True)
+            if news:
+                self._art_news(news)
+        threading.Thread(target=work, daemon=True).start()
 
     def _art_news(self, news):
         """Artwork fetched by STONE (artcache worker thread): STONE Home redraws those games."""
@@ -558,6 +586,36 @@ class Host:
                 emulators.install(key, progress, steam_ui=self.steam_ui)
             finally:
                 self.emu_busy.discard(key)
+        threading.Thread(target=work, daemon=True).start()
+        done({"ok": True})
+
+    # ---- Ports of Switch 2 games (ports.py, 3.1.0-rc6) -----------------------------------------
+    def m_ports_list(self, args, done):
+        from . import ports
+        self._bg(done, lambda: {"ports": ports.catalog()}, "ports")
+
+    def m_ports_install(self, args, done):
+        """ports.install(key): download the project's Linux build (checked against GitHub's SHA-256),
+        unpack it and add it to the library. Progress as "emulator" events, like the emulators."""
+        from . import ports
+        if len(args) != 1 or args[0] not in ports.CATALOG:
+            return done(None, "InvalidValue", "unknown port")
+        key = "port:" + args[0]
+        if key in self.emu_busy:
+            return done({"ok": True, "already": True})
+        self.emu_busy.add(key)
+
+        def progress(state, text):
+            GLib.idle_add(lambda: (self.emit("emulator", {"key": key, "state": state, "text": text}), False)[1])
+
+        def work():
+            try:
+                ports.install(args[0], progress, steam_ui=self.steam_ui)
+            except Exception as e:  # noqa: BLE001
+                progress("error", f"No se pudo instalar: {e!r}")
+            finally:
+                self.emu_busy.discard(key)
+                GLib.idle_add(lambda: (self._lib_kick(), False)[1])
         threading.Thread(target=work, daemon=True).start()
         done({"ok": True})
 
@@ -1043,16 +1101,21 @@ class Host:
         a game starting): a "steam" event says when. Passwords and payments are typed into Steam,
         never into STONE."""
         what = args[0] if args else None
-        if what not in SHOW_WHAT or len(args) not in ((2,) if what == "app" else (1, 2) if what == "install" else (1,)) or \
-                (len(args) == 2 and not library.valid_appid(args[1])):
+        if what not in SHOW_WHAT or len(args) not in ((2,) if what in ("app", "settings") else (1, 2) if what == "install" else (1,)) or \
+                (len(args) == 2 and what != "settings" and not library.valid_appid(args[1])) or \
+                (what == "settings" and args[1] not in steamcef.SETTINGS_SECTIONS):
             return done(None, "InvalidValue", "what to show")
         # "install" with a game: Steam's own install dialog is opened first, so there is a window to
         # show (board, 3.1.0-rc3: "Ver en Steam" after a failed install had nothing to show)
-        url = None if what == "login" else system.STEAM_URLS["store"] if what == "store" else \
+        url = None if what in ("login", "settings") else system.STEAM_URLS["store"] if what == "store" else \
+            system.STEAM_URLS["downloads"] if what == "downloads" else \
             f"steam://store/{args[1]}" if what == "app" else f"steam://install/{args[1]}" if len(args) == 2 else None
         _want_steam()
         if os.environ.get("STONE_SESSION") != "stone":
             # Inside Steam's own Game Mode (or in development) Steam shows its pages by itself.
+            if what == "settings":
+                return self._in_steam_ui(lambda: self.steam_ui.open_settings(args[1]), None,
+                                         lambda res=None, code=None, msg="": done({"managed": False, "sent": bool(res and res.get("ok"))}))
             if url:
                 self._steam_url(url)
             return done({"managed": False, "sent": bool(url)})
@@ -1064,7 +1127,13 @@ class Host:
         now = time.monotonic()
         self.front = {"what": what, "url": url, "since": now, "sent": url is None, "shown": None, "big": False,
                       "had_account": library.account_id(self.root()) is not None, "signed": None,
-                      "hold": now, "checking": False, "checked": 0.0, "ready": False, "cancel": False}
+                      "hold": now, "checking": False, "checked": 0.0, "ready": False, "cancel": False,
+                      # Steam's settings or downloads: the page STONE opens, then follows (B leaves it: STONE is back)
+                      "nav": args[1] if what == "settings" else "Downloads" if what == "downloads" else None,
+                      "nav_state": None, "nav_tries": 0, "watch_busy": False, "watch_t": 0.0, "in_page": False,
+                      "out_n": 0, "leave": False}
+        if what == "downloads":
+            self.front["sent"] = True                     # the page is opened by navigating, not by its URL
         print(f"[stone] steam: its own window wanted in front ({what})", flush=True)
         if self.front_timer is None:
             self.front_timer = GLib.timeout_add(FRONT_POLL_MS, self._front_tick)
@@ -1084,7 +1153,7 @@ class Host:
         if fr["what"] == "install" and fr["url"] and not fr["sent"]:
             fr["sent"] = True
             self._steam_url(fr["url"])                           # its dialog is the window to show
-        if fr["what"] in ("store", "app"):
+        if fr["what"] in ("store", "app", "settings", "downloads"):
             fr["big"] = True
             self._steam_url(system.FRONT_URLS["bigpicture"])     # the interface made for a controller
         print(f"[stone] steam: its own window asked in front ({fr['what']})", flush=True)
@@ -1169,6 +1238,15 @@ class Host:
                                or now - fr["since"] >= FRONT_URL_WAIT_S):
             fr["sent"] = True
             self._steam_url(fr["url"])
+        if fr["nav"] or fr["what"] in ("store", "app"):
+            if fr["leave"] or fr["nav_state"] == "failed":
+                # left with B; or Steam never opened the page: the person is not left on Steam's home
+                try:
+                    self.session_focus.set_steam_value(0)
+                except Exception:  # noqa: BLE001
+                    pass
+                return self._front_end("back" if fr["leave"] else "navfail")
+            self._front_nav(fr, now)
         if fr["what"] == "login" and not fr["had_account"]:
             # The sign-in is done when the account's folder exists: STONE takes the screen back by
             # itself (Steam may open its main window then, which is not for a controller).
@@ -1181,6 +1259,47 @@ class Host:
                     pass
                 return self._front_end("signed")
         return True
+
+    def _front_nav(self, fr, now):
+        """Steam's settings or downloads in front: STONE opens that page in Steam's interface (as its
+        own navigator does) and then follows it. When the person leaves it (B, as anywhere in SteamOS)
+        STONE takes the screen back; the guide button does too, as always (supervisor)."""
+        if fr["shown"] is None:
+            return
+        if not fr["nav"]:                         # the store: opened by its URL, then followed the same way
+            if fr["sent"] and fr["nav_state"] is None:
+                fr["nav_state"], fr["watch_t"] = "done", now
+        elif fr["nav_state"] is None and now - fr["shown"] >= FRONT_URL_SETTLE_S:
+            fr["nav_state"] = "busy"
+
+            def go():
+                try:
+                    r = self.steam_ui.open_settings(fr["nav"]) if fr["what"] == "settings" else self.steam_ui.open_page(fr["nav"])
+                except Exception as e:  # noqa: BLE001
+                    r = f"error {e!r}"
+                ok = isinstance(r, str) and r.endswith(": ok")
+                fr["nav_tries"] += 1
+                fr["nav_state"] = "done" if ok else None if fr["nav_tries"] < FRONT_NAV_TRIES else "failed"
+                fr["watch_t"] = time.monotonic()
+                print(f"[stone] steam: {fr['what']} {fr['nav']} opened in its interface: {r}", flush=True)
+            threading.Thread(target=go, daemon=True).start()
+        if fr["nav_state"] == "done" and not fr["watch_busy"] and now - fr["watch_t"] >= FRONT_WATCH_S:
+            fr["watch_busy"] = True
+
+            def watch():
+                try:
+                    path = self.steam_ui.location()
+                except Exception:  # noqa: BLE001
+                    path = None
+                if steamcef.on_page(path, fr["what"]):
+                    fr["in_page"], fr["out_n"] = True, 0
+                elif fr["in_page"] and steamcef.left_page(path, fr["what"]):
+                    fr["out_n"] += 1
+                    if fr["out_n"] >= 2:
+                        print(f"[stone] steam: the person left its {fr['what']} ({path}); STONE takes the screen back", flush=True)
+                        fr["leave"] = True
+                fr["watch_busy"], fr["watch_t"] = False, time.monotonic()
+            threading.Thread(target=watch, daemon=True).start()
 
     def _front_end(self, why):
         fr, self.front, self.front_timer = self.front, None, None
@@ -1318,6 +1437,8 @@ class Host:
         "net.wifiList": (lambda: connect.wifi_list(), 0),
         "net.wifiConnect": (lambda ssid, pw: connect.wifi_connect(ssid, pw), 2),
         "net.wifiDisconnect": (lambda dev: connect.wifi_disconnect(dev), 1),
+        "net.wifiForget": (lambda ssid: connect.wifi_forget(ssid), 1),
+        "net.wifiRadio": (lambda on: connect.wifi_radio(on), 1),
     }
 
     def _connect(self, name, args, done):
@@ -1379,6 +1500,87 @@ class Host:
 
     def m_roms_add(self, args, done):
         self._bg(done, lambda: roms.add_to_library(steam_ui=self.steam_ui), "roms")
+
+    # ---- Games from a USB drive (usbgames.py, 3.1.0-rc6) ----------------------------------------
+    def m_usb_scan(self, args, done):
+        """usb.scan(): the drives with games on them, mounting removable drives nobody mounted.
+        {"drives": [{"path", "label", "count", "bytes", "systems": {name: count}, "new", "new_bytes"}],
+        "busy": bool}."""
+        from . import usbgames
+
+        def scan():
+            out = []
+            for v in usbgames.scan():
+                todo, need = usbgames.plan(v)
+                systems = {}
+                for g in v["games"]:
+                    systems[g["system_name"]] = systems.get(g["system_name"], 0) + 1
+                out.append({"path": v["path"], "label": v["label"], "count": len(v["games"]), "bytes": v["bytes"],
+                            "systems": systems, "new": len(todo), "new_bytes": need})
+            return {"drives": out, "busy": bool(self.__dict__.get("_usb_busy"))}
+        self._bg(done, scan, "usb")
+
+    def m_usb_copy(self, args, done):
+        """usb.copy(path): copy that drive's games to the console, then add them to the library.
+        Progress and the end come as "usb" events: {"state": "copying", "done", "total", "name"} and
+        {"state": "done", "copied", "skipped", "error", "added"}."""
+        from . import usbgames
+        if len(args) != 1 or not isinstance(args[0], str) or args[0] not in usbgames.volumes():
+            return done(None, "InvalidValue", "drive")
+        if self.__dict__.get("_usb_busy"):
+            return done(None, "Unsupported", "Ya se están copiando juegos")
+        self._usb_busy, self._usb_cancel = True, False
+        path = args[0]
+        last = {"t": 0.0}
+
+        def progress(n, total, name):
+            now = time.monotonic()
+            if now - last["t"] >= 0.5:
+                last["t"] = now
+                GLib.idle_add(lambda: (self.emit("usb", {"state": "copying", "done": n, "total": total, "name": name}), False)[1])
+
+        def work():
+            try:
+                r = usbgames.copy(usbgames.scan_volume(path), progress, cancel=lambda: self._usb_cancel)
+                if r["copied"] and not r["error"]:
+                    try:
+                        r["added"] = roms.add_to_library(steam_ui=self.steam_ui)
+                    except Exception as e:  # noqa: BLE001
+                        r["added"] = {"error": repr(e)}
+                r["canceled"] = bool(self._usb_cancel)
+            except Exception as e:  # noqa: BLE001
+                r = {"copied": 0, "skipped": 0, "error": f"No se pudo copiar: {e!r}"}
+            self._usb_busy = False
+            print(f"[stone] usb: {path}: {r}", flush=True)
+            GLib.idle_add(lambda: (self.emit("usb", dict(r, state="done")), self._lib_kick(), False)[2])
+        threading.Thread(target=work, daemon=True).start()
+        done({"ok": True})
+
+    def m_usb_cancel(self, args, done):
+        self._usb_cancel = True
+        done({"ok": True})
+
+    # ---- Games sent from the phone (phonedrop.py, 3.1.0-rc6) ------------------------------------
+    def m_drop_start(self, args, done):
+        """drop.start(): open «Juegos desde el móvil» for 30 minutes: {"url", "seconds", "received"}.
+        What arrives comes as "drop" events."""
+        from . import phonedrop
+        if self.__dict__.get("_drop") is None:
+            self._drop = phonedrop.Drop(lambda n, d: GLib.idle_add(lambda: (self.emit(n, d), False)[1]))
+        try:
+            done(self._drop.start())
+        except OSError as e:
+            done(None, "Unsupported", str(e))
+
+    def m_drop_stop(self, args, done):
+        """drop.stop(): close it; the games received are added to the library."""
+        d = self.__dict__.get("_drop")
+        out = d.stop() if d else {"received": []}
+        if out["received"]:
+            self._bg(lambda res=None, code=None, msg="": (self._lib_kick(), done(dict(out, added=res)))[1],
+                     lambda: roms.add_to_library(steam_ui=self.steam_ui), "drop")
+        else:
+            done(out)
 
     # ---- Steam's store read by STONE (M13, D-34): search, the shop window, a game's page ---------
     def _store_row(self, row):

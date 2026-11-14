@@ -762,14 +762,40 @@ def reachable(port=PORT):
         return False
 
 
+# A non-Steam shortcut, the way Steam's own interface makes one (its code, client 1792618285: the
+# "Add a non-Steam game" dialog calls AddShortcut(strAppName, strExePath, strArguments, strCmdline),
+# and the shortcut's properties use SetShortcutName / SetShortcutExe (the path quoted, "<path>") /
+# SetShortcutStartDir / SetShortcutLaunchOptions). Until 3.1.0-rc6 STONE called it as
+# AddShortcut(name, exe, start_dir, options), Decky's old order: Steam kept "/" as the launch options
+# and every emulator ran `flatpak /` (board, 14-11-2026: emulators that never opened).
+def _js(v):
+    if not isinstance(v, str) or len(v) > 4000 or any(c in v for c in "\n\r\x00"):
+        raise ValueError("unsafe shortcut field")
+    return json.dumps(v)                   # ASCII-only JSON string: a safe JavaScript literal
+
+
 def add_shortcut_expression(name, exe, start_dir, launch_options):
-    for v in (name, exe, start_dir, launch_options):
-        if not isinstance(v, str) or any(c in v for c in "'\\\n\r\"`$"):
-            raise ValueError("unsafe shortcut field")
-    return ("(async()=>{if(!window.SteamClient||!SteamClient.Apps||!SteamClient.Apps.AddShortcut)return 'no SteamClient';"
-            f"const id=await SteamClient.Apps.AddShortcut('{name}','{exe}','{start_dir}','{launch_options}');"
-            f"try{{SteamClient.Apps.SetShortcutName(id,'{name}');}}catch(e){{}}"
+    n, e, d, o = _js(name), _js(exe.strip('"')), _js(start_dir.strip('"')), _js(launch_options)
+    q = _js('"' + exe.strip('"') + '"')
+    cmd = _js('"' + exe.strip('"') + '"' + (" " + launch_options if launch_options else ""))
+    return ("(async()=>{const A=window.SteamClient&&SteamClient.Apps;if(!A||!A.AddShortcut)return 'no SteamClient';"
+            f"const id=await A.AddShortcut({n},{e},{o},{cmd});if(!id)return 'no id';"
+            f"try{{A.SetShortcutName(id,{n});}}catch(x){{}}try{{A.SetShortcutExe(id,{q});}}catch(x){{}}"
+            f"try{{A.SetShortcutStartDir(id,{d});}}catch(x){{}}try{{A.SetShortcutLaunchOptions(id,{o});}}catch(x){{}}"
             "return 'ok '+id;})()")
+
+
+def remove_shortcut_expression(appid):
+    a = int(appid)
+    if not 0 < a < 2**32:
+        raise ValueError("shortcut id")
+    return ("(()=>{const A=window.SteamClient&&SteamClient.Apps;if(!A||!A.RemoveShortcut)return null;"
+            f"A.RemoveShortcut({a});return 'ok';}})()")
+
+
+def remove_shortcut(appid, port=PORT):
+    """Remove a non-Steam shortcut (Steam's own RemoveShortcut). True, or None if Steam does not answer."""
+    return True if ui_value(remove_shortcut_expression(appid), port) == "ok" else None
 
 
 def add_shortcut(name, exe, start_dir, launch_options, port=PORT):
@@ -818,3 +844,36 @@ def download_control_expression(appid, action):
 def download_control(appid, action, port=PORT):
     """Pause Steam's downloads or let this game's download go on. True, or None if Steam does not answer."""
     return True if ui_value(download_control_expression(appid, action), port, timeout=6.0) == "ok" else None
+
+
+# ---- Where Steam's own interface is (its page), to give the screen back to STONE ---------------
+# Steam's Game Mode interface keeps its page in the main window's LocationPathName ("/settings/...",
+# "/library/downloads", "/library/home"): its code, client 1792618285, routes Settings.Root ->
+# "/settings" and Downloads -> "<library>/downloads". When STONE opened Steam's settings and the person
+# leaves them (B, as anywhere in SteamOS), STONE takes the screen back.
+LOCATION_EXPRESSION = (
+    "(()=>{const S=window.SteamUIStore;const w=S&&S.WindowStore&&S.WindowStore.GamepadUIMainWindowInstance;"
+    "if(!w)return null;try{return String(w.LocationPathName||'');}catch(e){return null;}})()")
+# What counts as still being on the page STONE opened. The store goes on through its web pages and the
+# payment's confirmation (Steam's routes /store, /steamweb, /externalweb, /microtxnauth): STONE never
+# takes the screen back in the middle of a purchase.
+_STORE = ("/store", "/steamweb", "/externalweb", "/microtxnauth", "/browser")
+FRONT_PAGES = {"settings": ("/settings",), "downloads": ("/downloads",), "store": _STORE, "app": _STORE}
+
+
+def location(port=PORT):
+    """The page Steam's Game Mode interface shows ("/settings/display"...), or None."""
+    v = ui_value(LOCATION_EXPRESSION, port, timeout=4.0)
+    return v[:200] if isinstance(v, str) else None
+
+
+def left_page(path, what):
+    """True when Steam's interface shows a page outside the one STONE opened for `what`."""
+    want = FRONT_PAGES.get(what)
+    return bool(want and isinstance(path, str) and path and not any(w in path for w in want))
+
+
+def on_page(path, what):
+    """True when Steam's interface shows the page STONE opened for `what` (or one that belongs to it)."""
+    want = FRONT_PAGES.get(what)
+    return bool(want and isinstance(path, str) and any(w in path for w in want))

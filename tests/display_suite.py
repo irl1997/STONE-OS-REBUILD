@@ -599,11 +599,12 @@ def D22_set_output_only_reachable_modes_and_reset_removes_it():
 def D23_steam_settings_are_built_from_what_steam_offers_and_stay_safe():
     from stone_home import steamsettings as SS
     tree = {"System": {"Display": {"GetBrightness": "f0", "SetBrightness": "f1", "GetHdrEnabled": "f0", "SetHdrEnabled": "f1"},
-                       "Audio": {"GetMute": "f0", "SetMute": "f1"}, "Account": {"GetEmail": "f0", "SetEmail": "f1"},
+                       "Audio": {"GetMute": "f0", "SetMute": "f1", "GetVolume": "f0", "SetVolume": "f1"}, "Account": {"GetEmail": "f0", "SetEmail": "f1"},
                        "GetShutdownDelay": "f0", "GetNoArgsOnly": "f2"},
             "Apps": {"GetAppOverview": "f1", "GetLanguage": "f0"}}
     ids = {c["id"]: c for c in SS.catalog(tree)}
-    assert set(ids) == {"System.Display.Brightness", "System.Display.HdrEnabled", "System.Audio.Mute", "Apps.Language"}, set(ids)
+    # no Brightness: a TV console has no built-in screen (3.1.0-rc6; it is the Steam Deck's)
+    assert set(ids) == {"System.Display.HdrEnabled", "System.Audio.Mute", "System.Audio.Volume", "Apps.Language"}, set(ids)
     assert ids["System.Audio.Mute"]["set_path"] == ["System", "Audio", "SetMute"] and ids["Apps.Language"]["set_path"] is None
     assert ids["System.Display.HdrEnabled"]["label"] == "Hdr Enabled" and ids["System.Display.HdrEnabled"]["area"] == "Display"
     assert SS.catalog({"A": {"Get$x": "f0"}}) == [] and SS.catalog({"System": {"GetOk;x": "f0"}}) == []
@@ -617,7 +618,7 @@ def D23_steam_settings_are_built_from_what_steam_offers_and_stay_safe():
 
         def ui_value(self, expr):
             if "setTimeout" in expr:                                   # the batched read
-                return json.dumps({"System.Display.Brightness": 70, "System.Display.HdrEnabled": True,
+                return json.dumps({"System.Audio.Volume": 70, "System.Display.HdrEnabled": True,
                                    "System.Audio.Mute": False, "Apps.Language": "spanish"})
             self.written.append(expr)
             return "ok"
@@ -630,11 +631,11 @@ def D23_steam_settings_are_built_from_what_steam_offers_and_stay_safe():
         r = ss.read()
         by = {x["id"]: x for x in r["settings"]}
         assert r["available"] and by["System.Audio.Mute"]["writable"] and by["System.Audio.Mute"]["type"] == "bool"
-        assert not by["System.Display.Brightness"]["writable"]            # numbers are shown, not changed
+        assert not by["System.Audio.Volume"]["writable"]                  # numbers are shown, not changed
         assert not by["Apps.Language"]["writable"] and by["Apps.Language"]["type"] == "text"
         assert os.path.isfile(SS.state_path())                             # the list of functions is kept
         assert ss.set_bool("System.Audio.Mute", True)["ok"] and "SetMute" in cef.written[-1] and "true" in cef.written[-1]
-        for bad in (("System.Display.Brightness", True), ("Account.Email", True), ("../x", True), ("System.Audio.Mute", 1)):
+        for bad in (("System.Audio.Volume", True), ("Account.Email", True), ("../x", True), ("System.Audio.Mute", 1)):
             try:
                 ss.set_bool(*bad)
                 raise AssertionError(bad)

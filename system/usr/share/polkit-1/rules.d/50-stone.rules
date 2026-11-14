@@ -18,6 +18,12 @@ polkit.addRule(function (action, subject) {
     if (action.id.indexOf("org.freedesktop.NetworkManager.") == 0 && subject.isInGroup("wheel")) {
         return polkit.Result.YES;
     }
+    // Games from a USB drive (Ajustes → Emuladores): a removable drive nobody mounted is mounted with
+    // udisksctl. Only "filesystem-mount" (removable drives); internal disks are "filesystem-mount-system",
+    // which stays as polkit has it.
+    if (action.id == "org.freedesktop.udisks2.filesystem-mount" && subject.isInGroup("wheel")) {
+        return polkit.Result.YES;
+    }
     // Previous STONE OS version from STONE Home (Opciones de arranque): this exact command line only
     if (action.id == "org.stonemachine.boot.rollback" && subject.isInGroup("wheel") &&
         action.lookup("command_line") == "/usr/bin/bootc rollback") {

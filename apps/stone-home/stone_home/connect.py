@@ -142,7 +142,15 @@ def _nm_fields(line):
     return out
 
 
+# How NetworkManager tells whether there is internet (`nmcli networking connectivity`): "full" is
+# internet; "limited" a network without internet; "portal" a network that asks to sign in on a web
+# page (hotels); "none" no network; "unknown" when it has not checked (checks off, or just started).
+CONNECTIVITY = ("full", "limited", "portal", "none", "unknown")
+
+
 def net_status(run=_run):
+    """Wired and Wi-Fi devices, whether the Wi-Fi radio is on, the signal of the Wi-Fi network in
+    use and whether there is internet: what the status icon and Ajustes → Red show."""
     rc, out, err = run(["nmcli", "-t", "-f", "DEVICE,TYPE,STATE,CONNECTION", "device"])
     if rc is None or rc != 0:
         return {"error": "Red no disponible" + (": " + err.strip() if err else "")}
@@ -151,37 +159,100 @@ def net_status(run=_run):
         f = _nm_fields(line)
         if len(f) >= 4 and f[1] in ("ethernet", "wifi"):
             devs.append({"device": f[0], "type": f[1], "state": f[2], "connection": f[3] or None})
-    return {"devices": devs, "online": any(d["state"] == "connected" for d in devs)}
+    online = any(d["state"] == "connected" for d in devs)
+    rc, out, _ = run(["nmcli", "-t", "-f", "WIFI", "radio"])
+    radio = None if rc != 0 else out.strip() == "enabled"
+    signal, ssid = None, None
+    if any(d["type"] == "wifi" and d["state"] == "connected" for d in devs):
+        rc, out, _ = run(["nmcli", "-t", "-f", "IN-USE,SSID,SIGNAL", "device", "wifi", "list", "--rescan", "no"])
+        for line in out.splitlines() if rc == 0 else []:
+            f = _nm_fields(line)
+            if len(f) >= 3 and f[0].strip() == "*":
+                ssid, signal = f[1] or None, int(f[2]) if f[2].isdigit() else None
+                break
+    conn = "none"
+    if online:
+        rc, out, _ = run(["nmcli", "networking", "connectivity"])
+        conn = out.strip() if rc == 0 and out.strip() in CONNECTIVITY else "unknown"
+    return {"devices": devs, "online": online, "radio": radio, "signal": signal, "ssid": ssid, "internet": conn}
+
+
+def _known_wifi(run=_run):
+    """{SSID: connection name} of the Wi-Fi networks NetworkManager keeps (joined before)."""
+    rc, out, _ = run(["nmcli", "-t", "-f", "NAME,TYPE", "connection", "show"])
+    known = {}
+    for line in out.splitlines() if rc == 0 else []:
+        f = _nm_fields(line)
+        if len(f) >= 2 and f[1] in ("802-11-wireless", "wifi"):
+            rc2, ssid, _ = run(["nmcli", "-g", "802-11-wireless.ssid", "connection", "show", f[0]])
+            known[(ssid.strip() if rc2 == 0 and ssid.strip() else f[0])] = f[0]
+    return known
 
 
 def wifi_list(run=_run):
     rc, out, err = run(["nmcli", "-t", "-f", "IN-USE,SSID,SIGNAL,SECURITY", "device", "wifi", "list", "--rescan", "auto"], timeout=30)
     if rc is None or rc != 0:
         return {"error": "Wi-Fi no disponible" + (": " + err.strip() if err else "")}
+    known = _known_wifi(run)
     nets = {}
     for line in out.splitlines():
         f = _nm_fields(line)
         if len(f) < 4 or not f[1]:
             continue
         sig = int(f[2]) if f[2].isdigit() else 0
-        if f[1] not in nets or sig > nets[f[1]]["signal"]:
-            nets[f[1]] = {"ssid": f[1], "signal": sig, "secure": f[3] not in ("", "--"), "active": f[0].strip() == "*"}
-    return {"networks": sorted(nets.values(), key=lambda n: (not n["active"], -n["signal"]))}
+        active = f[0].strip() == "*" or (f[1] in nets and nets[f[1]]["active"])
+        if f[1] not in nets or sig > nets[f[1]]["signal"] or active:
+            nets[f[1]] = {"ssid": f[1], "signal": max(sig, nets[f[1]]["signal"]) if f[1] in nets else sig,
+                          "secure": f[3] not in ("", "--"), "known": f[1] in known, "active": active}
+    return {"networks": sorted(nets.values(), key=lambda n: (not n["active"], not n["known"], -n["signal"]))}
+
+
+def _ssid_ok(ssid):
+    return isinstance(ssid, str) and 0 < len(ssid.encode()) <= 32 and "\n" not in ssid
 
 
 def wifi_connect(ssid, password=None, run=_run):
-    if not isinstance(ssid, str) or not 0 < len(ssid.encode()) <= 32 or "\n" in ssid:
+    """Join a network. Without a password, a network joined before is joined again with what
+    NetworkManager kept; a protected network it does not know answers "needs_password"."""
+    if not _ssid_ok(ssid):
         return {"error": "Nombre de red no válido"}
     if password is not None and (not isinstance(password, str) or not 8 <= len(password) <= 63):
         return {"error": "La contraseña de Wi-Fi tiene entre 8 y 63 caracteres"}
+    if password is None:
+        name = _known_wifi(run).get(ssid)
+        if name:
+            rc, _out, _err = run(["nmcli", "connection", "up", "id", name], timeout=60)
+            if rc == 0:
+                return {"ok": True}
     argv = ["nmcli", "device", "wifi", "connect", ssid] + (["password", password] if password else [])
     rc, out, err = run(argv, timeout=60)
     if rc == 0:
         return {"ok": True}
     msg = (err or out).strip()
-    if "Secrets were required" in msg or "802-11-wireless-security" in msg:
-        return {"error": "Contraseña incorrecta"}
+    if "Secrets were required" in msg or "802-11-wireless-security" in msg or "password" in msg.lower():
+        return {"error": "Contraseña incorrecta" if password else "Esta red pide contraseña", "needs_password": True}
+    if "No network with SSID" in msg:
+        return {"error": f"La red {ssid} ya no está al alcance"}
     return {"error": "No se pudo conectar" + (": " + msg.splitlines()[-1] if msg else "")}
+
+
+def wifi_forget(ssid, run=_run):
+    """Forget a network joined before, and its saved password (SteamOS's «Olvidar»)."""
+    if not _ssid_ok(ssid):
+        return {"error": "Nombre de red no válido"}
+    name = _known_wifi(run).get(ssid)
+    if not name:
+        return {"ok": True}
+    rc, _, _ = run(["nmcli", "connection", "delete", "id", name])
+    return {"ok": True} if rc == 0 else {"error": "No se pudo olvidar la red"}
+
+
+def wifi_radio(on, run=_run):
+    """Turn the Wi-Fi on or off (`nmcli radio wifi on|off`)."""
+    if not isinstance(on, bool):
+        return {"error": "Valor no válido"}
+    rc, _, _ = run(["nmcli", "radio", "wifi", "on" if on else "off"])
+    return {"ok": True} if rc == 0 else {"error": "No se pudo " + ("activar" if on else "desactivar") + " el Wi-Fi"}
 
 
 def wifi_disconnect(device, run=_run):

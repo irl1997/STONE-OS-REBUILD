@@ -413,7 +413,8 @@ const SimStoned = (() => {
   const gpuTemp = () => fault === 'hot' ? 88 : fault === 'fanfail' ? 74 : 55;
   const caps = () => ({ board: true, driver: 'amdgpu', governor: hasGov(), advanced: hasGov(), gpu_range: ALLOWED,
     max_range: hasGov() ? [1500, 2000] : [], min_range: hasGov() ? [1000, 1500] : [], temp_range: [65, 85],
-    stability_test: hasGov(), cu40: { available: true, active: false }, missing: hasGov() ? [] : ['regulador de GPU'], simulated: true });
+    stability_test: hasGov(), cu40: { available: true, active: false }, missing: hasGov() ? [] : ['regulador de GPU'], simulated: true,
+    configuration: { reference: { cpu_cores: 6, gpu_cu: 24 }, detected: { cpu_cores: 6, gpu_cu: 24 }, matches: true, reasons: [] } });
   const actual = () => fault === 'unavailable' ? { error: 'ServiceUnavailable' } : !hasGov() ? { error: 'Unsupported' }
     : { min: gov.min, max: gov.max, temp: gov.temp, recovery: gov.rec };
   function apply(v) {           /* REQUEST -> EXECUTION -> VERIFY, rollback on mismatch */

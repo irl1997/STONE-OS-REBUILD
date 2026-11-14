@@ -1,3 +1,127 @@
+# STONE OS (rebuild) 3.1.0-rc6
+
+Auditoría del sistema completo después de probar 3.1.0-rc5 en la consola (14-11-2026), con los emuladores que no se abrían y sin carátulas, juegos desde un USB o desde el móvil (iCloud y otras nubes) y los ports de Switch 2. La regla: **llegar y jugar, como en SteamOS**. Lo que la pantalla dice tiene que ser verdad y de Steam siempre se vuelve a STONE. Llega a la consola **por actualización en línea**. Decisiones D-39 y D-40.
+
+**Todo está probado en software (CODE TESTED): pruebas automáticas y la simulación de la interfaz. Nada de esta versión se ha observado todavía en la BC-250.** Pruebas de placa: T-NET-01, T-NET-02, T-NET-03, T-STEAM-22, T-HOME-07, T-EMU-10, T-EMU-11, T-EMU-12, T-EMU-13 y T-EMU-14 en `hardware/validation/matrix.yaml`.
+
+## Steam desde STONE: siempre se vuelve
+
+Se revisaron todas las formas de llegar a Steam desde STONE: iniciar sesión, la tienda, comprar un juego, el diálogo de instalación, los ajustes, las descargas y «Steam completo».
+
+- **Mientras Steam arranca**, la cortina «PREPARANDO STEAM» puede durar minutos en una consola nueva. Antes solo el botón guía cancelaba la espera, y la pantalla no lo decía. Ahora **B vuelve a STONE sin esperar**, y la cortina lo dice.
+- **Tienda y compra:** al salir de la tienda con B, STONE vuelve sola, como con los ajustes. STONE sigue la página de Steam y trata la tienda, sus páginas web y la **confirmación del pago** como una sola, así que nunca te saca a mitad de una compra.
+- **Si Steam no consigue abrir sus ajustes**, STONE recupera la pantalla y lo dice, en lugar de dejarte en el inicio de Steam.
+- Si cancelas antes de que Steam se abra, el aviso dice «Steam no llegó a abrirse», y no «lo que hayas comprado aparece en tu biblioteca».
+- El botón guía vuelve a STONE desde **cualquier** pantalla de Steam. «Steam completo» se deja con el botón guía mantenido 3 segundos, al cerrar Steam o al reiniciar la consola.
+
+## Depuración completa
+
+Antes de esta versión se revisó todo el sistema.
+
+**Análisis automático de todo el código:**
+- **La interfaz:** todo su JavaScript, unas 10 000 líneas, pasó por un analizador estático. No hay ninguna función ni variable usada sin definir.
+- **Python:** el host, los módulos de juegos y pantalla y el servicio de rendimiento pasaron por reglas estrictas. No hay nombres sin definir ni errores probables.
+- **Scripts de shell:** pasaron `shellcheck`.
+
+**Revisión a mano de los filtros de imagen y los reescaladores:**
+- Los filtros (NATURAL, CLARITY, CINEMA, VIVID, RETRO) son correctos.
+- FSR y OptiScaler se descargan solo de sus autores, con la suma comprobada, y nunca pisan tus archivos.
+- La generación de fotogramas es correcta.
+- Tus opciones de inicio en Steam se guardan antes de cambiarlas y se restauran incluso tras un cuelgue.
+
+**Arreglos de lo visto en pantalla:**
+- **Gráficos:** el valor de cada opción quedaba desalineado y en letra muy pequeña. Ahora va en su fila y se lee desde el sofá. «Calidad: Calidad» pasa a ser «Ajuste de FSR», y las mayúsculas son coherentes.
+- **Ficha del juego:** ya no repite «STONE RECOMMENDED … Recomendado por STONE».
+- **Primer encendido:** el paso Inicio ya no muestra dos filas de «no se pudo leer» si falta un dato, y el paso Internet dice a qué red estás conectado.
+- **Acerca de:** muestra los núcleos que lee la consola, no un cálculo del navegador.
+
+## Emuladores: ahora se abren
+
+**La causa:** STONE creaba los accesos directos de Steam con los datos en un orden equivocado. La interfaz de Steam crea un acceso directo con (nombre, programa, **argumentos**, línea de comandos), y STONE pasaba (nombre, programa, **carpeta**, argumentos). Steam guardaba «/» como argumentos y cada emulador ejecutaba `flatpak /`, que no abre nada.
+
+- Los accesos directos se crean ahora como los crea Steam, con el nombre, el programa, la carpeta y las opciones en su sitio.
+- **Los emuladores que ya instalaste se reparan solos** al arrancar la sesión, antes de que se abra Steam.
+- Los nombres con comillas u otros símbolos ya no impiden añadir un juego al momento.
+
+## Carátulas para los juegos de los emuladores
+
+- **La carátula real** de cada juego se descarga de la colección pública de libretro, la que usan RetroArch y otros. STONE busca el nombre del juego aunque el archivo no se llame exactamente igual (sin región, versión ni signos, y con o sin tildes). La guarda donde Steam guarda las imágenes de los accesos directos, así que se ve en STONE y en Steam.
+- **Si no hay carátula**, por ejemplo con Switch, o mientras se descarga, el juego lleva la portada de STONE con su consola y su nombre, en lugar de un hueco vacío. Los emuladores llevan «EMULADOR».
+
+## Tus juegos desde un USB
+
+- Conecta un pendrive con carpetas por consola (`ps2`, `gba`, `switch`, `PlayStation 2`…). Valen también las carpetas `roms/` y `Emulation/roms/` de EmuDeck y RetroDECK.
+- **STONE lo detecta en unos segundos y ofrece copiar los juegos**, como una consola que instala desde un disco. Después siguen funcionando sin el USB.
+- La copia muestra su avance y se puede cancelar. Deja siempre 2 GB libres, no copia dos veces el mismo juego y añade los juegos a la biblioteca al terminar.
+- Si nadie montó el USB, STONE lo monta. Solo se permiten unidades extraíbles.
+
+## Tus juegos desde el móvil: iCloud, Google Drive y otras nubes
+
+STONE nunca inicia sesión con tu contraseña. Por eso la nube se alcanza a través del móvil, que ya tiene tu sesión:
+
+- Ajustes → Emuladores → **Juegos desde el móvil** muestra un código QR.
+- El móvil, conectado al mismo Wi-Fi, abre una página de la consola. Ahí eliges los juegos con el selector de archivos del móvil (en iPhone, «Archivos» incluye iCloud Drive).
+- Cada juego va directo a la carpeta de su consola. Al terminar, se añaden a la biblioteca.
+- Seguridad: la página solo existe mientras esa pantalla está abierta, con 30 minutos como máximo. Lleva una clave al azar, solo acepta archivos de juegos y nunca ejecuta nada.
+
+## Switch 2: ports y emulador experimental
+
+STONE no hace ports: un port es el trabajo de meses de un proyecto, para un juego concreto. Lo que STONE hace es **instalar los ports que esos proyectos publican para Linux**, desde su propia página en GitHub, comprobando cada descarga con la suma que publica GitHub, y añadirlos a la biblioteca.
+
+- **Mario Kart World** (mkw-recomp, licencia MIT).
+- **Eglantine**, un emulador de Switch 2 muy experimental (GPL-3.0).
+- Los dos necesitan **tu propia copia** del juego, volcada de tu consola. STONE no descarga juegos, claves ni herramientas para volcarlos.
+- Todo es experimental: los proyectos tienen días o semanas.
+- Se revisaron otros. El de Star Fox solo tiene versión para Windows y el de Pokémon Pokopia no tiene aún un paquete que STONE pueda comprobar, así que se añadirán cuando los tengan.
+
+## Wi-Fi: siempre se puede volver a conectar
+
+En la consola, después de DESCONECTAR el Wi-Fi no había forma de volver a conectarlo. STONE volvía a leer el estado de la red, pero conservaba la lista anterior de redes, donde tu red seguía diciendo «Conectada». Al elegirla respondía «Ya conectada».
+
+Ajustes → Red funciona ahora como en SteamOS:
+
+- **Wi-Fi activado / desactivado**, con A.
+- **La red en uso** abre sus opciones: **DESCONECTAR**, **OLVIDAR** (borra también la contraseña guardada) o VOLVER.
+- **Las redes guardadas** se vuelven a conectar **sin escribir la contraseña**. Si la red la pide de nuevo, aparece el teclado.
+- **Internet:** dice si hay salida a internet, si la red no la tiene o si pide iniciar sesión en una página web, como en hoteles y cafeterías.
+- Después de cada cambio se vuelve a leer todo: la lista, el estado y el icono.
+- El primer encendido también permite activar el Wi-Fi si está apagado, y se conecta a redes guardadas sin pedir la contraseña.
+
+## El icono de red dice la verdad
+
+El icono de arriba a la derecha era un dibujo fijo de Wi-Fi con señal completa: se veía igual sin red. Ahora es real y se actualiza cada 15 segundos:
+
+- **Cable** si estás conectado por cable.
+- **Wi-Fi con 1, 2 o 3 barras** según la señal.
+- **Un «!»** si la red no tiene internet.
+- **Tachado** si no hay conexión o el Wi-Fi está apagado.
+
+Cuando se pierde internet, STONE lo avisa una vez, y otra vez cuando vuelve. Lo que necesita internet (descargar un juego, la tienda, iniciar sesión, buscar actualizaciones) lo dice antes de intentarlo, en lugar de terminar en «Steam no respondió».
+
+## Abrir en Steam y volver a STONE
+
+«Abrir en Steam» en Ajustes pedía a Steam que mostrara sus ajustes, pero su ventana no pasaba al frente y no había un camino de vuelta. Ahora funciona igual que la tienda y el inicio de sesión:
+
+- **Una transición suave:** STONE se cubre primero con su cortina oscura y entonces aparece Steam. Al volver, STONE reaparece con un fundido, sin cortes.
+- Steam abre **sus ajustes en la sección pedida** (Pantalla, Red, Audio…).
+- **Para volver a STONE, sal de los ajustes con B**, como en cualquier pantalla de SteamOS. También funciona el botón guía del mando.
+- Lo mismo vale para la pantalla de Descargas de Steam.
+
+## Menú rápido durante el juego
+
+En la sesión STONE, Steam funciona sin su propia interfaz de consola, así que el menú rápido de Steam (botón ···) puede no responder. El menú de STONE (botón ☰ durante el juego) tiene ahora:
+
+- **Volumen**, que se cambia con ← →.
+- **El estado de la red.**
+
+## Coherencia de las pantallas
+
+- **Pantalla:** «Encuadre» y «Área segura» hacían lo mismo. Queda solo **Encuadre**, que es el que ajusta la imagen, y las esquinas de ajuste aparecen al elegirlo. Antes aparecían sobre la fila «Televisor».
+- **Almacenamiento:** los discos se llaman «Disco de la consola» o «Disco externo» en lugar de su ruta de Linux. Una descarga abre la ficha del juego, donde se puede pausar. Antes decía que seguía «con la consola en reposo», y esta consola no tiene modo reposo.
+- **Sistema y Mandos** dicen qué hay en los ajustes de Steam (idioma, fecha y hora, botones, vibración…), en lugar de «Panel nativo de Steam».
+- **Ajustes → Steam:** los niveles se muestran en porcentaje («70 %» y no «0.7»). Ya no aparecen el brillo de pantalla, que es de la Steam Deck, ni el modo desarrollador.
+- **Acerca de:** NEURAL RENDER, que hoy no funciona, solo aparece en el modo técnico.
+
 # STONE OS (rebuild) 3.1.0-rc5
 
 Revisión de todo lo que STONE le pide a Steam, **comprobado contra el código de la propia interfaz de Steam** (cliente 1792618285) y no deducido. Corrige tres fallos encontrados en esa revisión y añade dos cosas que faltaban para usar la consola sin entrar a Steam: **cerrar un juego** y **pausar una descarga**. Llega a la consola **por actualización en línea**. Decisión D-38.

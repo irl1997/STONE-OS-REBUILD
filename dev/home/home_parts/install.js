@@ -121,6 +121,7 @@ setTimeout(() => dlKick(), 9000);
 /* INSTALAR: Steam's answer, said by STONE. Returns true when the install is under way. */
 async function installGame(appid, name, opts = {}) {
   if (DL.busy.has(appid)) { play('error'); toast('Esperando la respuesta de Steam…', false); return false; }
+  if (!needNet('descargar un juego')) return false;
   DL.busy.add(appid);
   if (!opts.quiet) toast(`${name}: pidiendo la instalación a Steam…`, false);
   let r = null;

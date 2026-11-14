@@ -408,6 +408,14 @@ def prepare_session(root=None, proc="/proc"):
     from . import emulators
     extra = emulators.pending_entries()
     accts = accounts(root)
+    fixed = []
+    for a in accts:
+        try:
+            fixed += repair_emulator_shortcuts(a)
+        except (OSError, vdf.VDFError):
+            pass
+    if fixed:
+        out["shortcuts_repaired"] = sorted(set(fixed))
     if extra and not accts:
         emulators.requeue_entries(extra)
         out["shortcuts"] = "waiting for the first Steam sign-in"
@@ -420,6 +428,40 @@ def prepare_session(root=None, proc="/proc"):
                 pass
         out["shortcuts_added"] = sorted(set(added))
     return out
+
+
+def repair_emulator_shortcuts(acct):
+    """Emulator shortcuts made while Steam ran by 3.1.0-rc1..rc5 (steamcef.add_shortcut passed the start
+    folder where Steam takes the launch options: they ran `flatpak /` and never opened, board
+    14-11-2026) get their launch options back: "run <flatpak id>". Steam must be closed."""
+    from . import emulators
+    names = {name: fid for fid, name, _ in emulators.CATALOG.values()}
+    path = os.path.join(acct, "config", "shortcuts.vdf")
+    if not os.path.exists(path):
+        return []
+    with open(path, "rb") as f:
+        data = vdf.binary_loads(f.read())
+    items = data.get("shortcuts") if isinstance(data, dict) else None
+    if not isinstance(items, dict):
+        return []
+    fixed = []
+    for v in items.values():
+        if not isinstance(v, dict):
+            continue
+        exe = str(vdf.get_ci(v, "Exe") or "").strip('"')
+        opts = str(vdf.get_ci(v, "LaunchOptions") or "").strip()
+        name = str(vdf.get_ci(v, "AppName") or "")
+        if exe == emulators.FLATPAK and opts in ("/", '"/"', "") and name in names:
+            for k in list(v):
+                if k.lower() in ("launchoptions", "startdir", "exe"):
+                    del v[k]
+            v.update({"Exe": f'"{emulators.FLATPAK}"', "StartDir": '"/"', "LaunchOptions": f"run {names[name]}"})
+            fixed.append(name)
+    if fixed:
+        if not os.path.exists(path + ".stone-backup"):
+            shutil.copy2(path, path + ".stone-backup")
+        _write_atomic(path, vdf.binary_dumps(data))
+    return fixed
 
 
 def add_extra_shortcuts(acct, entries):

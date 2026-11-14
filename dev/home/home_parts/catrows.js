@@ -1,6 +1,9 @@
 /* Steam's own settings section for each STONE category (opened in Steam's interface). */
 const STEAM_SEC = { 'Sistema': 'System', 'Pantalla': 'Display', 'Audio': 'Audio', 'Mandos': 'Controller', 'Red': 'Internet',
   'Bluetooth': 'Bluetooth', 'Almacenamiento': 'Storage', 'Energía': 'Power', 'Actualizaciones': 'System', 'Accesibilidad': 'Accessibility' };
+/* What each category Steam handles holds, in Steam's own settings (its sections, client 1792618285). */
+const STEAM_WHAT = { 'Sistema': ['El idioma, la fecha y hora, el nombre de la consola y la información del sistema', 'Idioma, fecha y hora, nombre de la consola'],
+  'Mandos': ['La configuración de los mandos, sus botones y la vibración', 'Botones, vibración y distribución de cada mando'] };
 /* How STONE draws inside Game Mode (read at start by /usr/libexec/stone-home). GPU: Chromium,
    at the screen's own resolution (4K on a 4K TV), the same engine as Steam's interface. Sin GPU:
    the WebKit shell drawing in software, the fallback (smooth only at low resolutions). */
@@ -54,7 +57,7 @@ function displayRows() {
       v: resTxt(D.output), act: 'info', where: D.native && D.output && D.output.w < D.native.w
         ? 'El cable o el adaptador no llevan la nativa: «Conexión» dice lo máximo que llevan' : 'La consola envía esta resolución al televisor' },
     ...linkRows(D),
-    { l: 'Encuadre', s: 'Si los bordes se cortan en tu televisor, reduce la imagen hasta ver las esquinas', v: `${FRAME} %`, key: 'frame' },
+    { l: 'Encuadre', s: 'Si las cuatro esquinas marcadas no se ven completas en tu televisor, usa ← → hasta verlas', v: `${FRAME} %`, key: 'frame' },
     { l: 'Juegos ven', s: D.policy === 'native' ? 'La resolución del televisor; cada juego decide cómo dibujar' : 'Lo que Steam da por defecto',
       v: D.policy === 'native' ? `Televisor · ${games}` : `Steam · ${games}`, key: 'gameres' }];
 }
@@ -67,12 +70,14 @@ function loadSteamSet(refresh) {
     if (S.screen === 'settings' && CATS[cat] === 'Steam') enterSettings({ pane: !!NAV.pane, ri: NAV.pane ? NAV.c : 0 });
   });
 }
+/* a level from 0 to 1 (volumes) as a percentage, as Steam shows it; anything else as Steam gives it */
+const ssValue = v => typeof v === 'number' && v >= 0 && v <= 1 && !Number.isInteger(v) ? `${Math.round(v * 100)} %` : String(v);
 function steamSetRows() {
   const ss = S.ss;
   if (!ss) { if (!S.ssLoading) loadSteamSet(); return [{ l: 'Leyendo…', s: 'Preguntando a Steam qué ajustes ofrece', v: '', ro: true }]; }
   const head = { l: 'Actualizar la lista', s: ss.available ? `${ss.settings.length} ajustes leídos de este Steam` : (ss.error || 'Steam no respondió'), v: 'Actualizar', act: 'sset', refresh: true };
   const rows = (ss.settings || []).slice().sort((a, b) => a.area.localeCompare(b.area) || a.label.localeCompare(b.label)).map(x => ({
-    l: x.label, s: x.area, v: x.type === 'bool' ? (x.value ? 'Sí' : 'No') : String(x.value),
+    l: x.label, s: x.area, v: x.type === 'bool' ? (x.value ? 'Sí' : 'No') : ssValue(x.value),
     act: x.writable ? 'sset' : 'info', sset: x, where: `${x.area}: ${x.label} = ${x.value}${x.writable ? '' : ' (solo lectura)'}` }));
   if (S.steamAcct === undefined) { S.steamAcct = null; Sys.firstrunStatus().then(f => { S.steamAcct = !!f.steam_account; }, () => { S.steamAcct = false; }).then(() => { if (S.screen === 'settings' && CATS[cat] === 'Steam') enterSettings({ pane: !!NAV.pane, ri: NAV.pane ? NAV.c : 0 }); }); }
   /* signed in: Steam says so (S.libLogged), or at least an account has signed in on this console */
@@ -80,7 +85,7 @@ function steamSetRows() {
   const acct = { l: 'Cuenta de Steam', s: inn ? 'Conectada en esta consola' : S.steamAcct === null && S.libLogged !== 'out' ? 'Leyendo…' : 'Sin iniciar sesión: Steam muestra su ventana, con un código QR para la app de Steam del móvil',
     v: inn ? 'Conectada' : 'Iniciar sesión', act: 'sset', login: !inn };
   const more = [
-    { l: 'Tienda de Steam', s: 'La tienda propia de Steam, en pantalla: para comprar con tu cuenta. El botón guía vuelve a STONE', v: 'Abrir', act: 'sset', front: 'store' },
+    { l: 'Tienda de Steam', s: 'La tienda propia de Steam, para comprar con tu cuenta. Sal de ella con B para volver a STONE', v: 'Abrir', act: 'sset', front: 'store' },
     { l: 'Steam completo', s: 'Steam ocupa la pantalla con su propia interfaz; STONE vuelve después', v: 'Abrir', act: 'sset', full: true },
     { l: 'Estado de Steam', s: 'Lo que STONE sabe de Steam ahora: cuenta, sesión y biblioteca', v: 'Ver', act: 'sset', status: true }];
   return [acct, ...more, head, ...rows];
@@ -127,23 +132,50 @@ Bridge.on('emulator', d => {
   const was = EMU_STATE[d.key] && EMU_STATE[d.key].state;
   EMU_STATE[d.key] = d;
   toast(d.text, false);
+  if (String(d.key).startsWith('port:')) { if (d.state !== 'installing') { S.ports = null; reloadLibrary(); } return emuRedraw(); }
   if (d.state === 'done') { EMU_UPD.keys.delete(d.key); loadEmulators(); if (was !== 'updating') reloadLibrary(); }
   else emuRedraw();
 });
+/* Switch 2 (ports.py): ports of single games (recompilations that need the person's own copy) and the
+   experimental emulator, installed from each project's own GitHub releases. 3.1.0-rc6. */
+function portRows() {
+  if (!S.ports) { if (!S.portsLoading) { S.portsLoading = true; Bridge.call('ports.list').then(r => { S.ports = r.ports; }, () => { S.ports = []; }).then(() => { S.portsLoading = false; emuRedraw(); }); }
+    return [{ l: 'Switch 2', s: 'Leyendo…', v: '', ro: true }]; }
+  return S.ports.map(p => {
+    const st = EMU_STATE['port:' + p.key], busy = st && st.state === 'installing';
+    return { l: p.kind === 'port' ? `${p.name} · port de Switch 2` : `${p.name} · emulador de Switch 2`,
+      s: busy ? st.text : p.installed ? `Instalado · ${p.project} ${p.tag || ''} · necesita tu copia del juego` : `${p.project} · experimental · necesita tu copia del juego`,
+      v: busy ? 'Instalando…' : p.installed ? 'Actualizar' : 'Instalar', act: 'emu', port: p };
+  });
+}
+function portDlg(p) {
+  const back = dlgOver();
+  play('select');
+  openDlg(`<span class="st-cap">${p.kind === 'port' ? 'PORT DE SWITCH 2' : 'EMULADOR DE SWITCH 2'}</span><h2>${esc(p.name.toUpperCase())}</h2>
+    <p>${p.kind === 'port' ? `Un port es el juego convertido en un programa para PC por el proyecto ${esc(p.project)} (licencia ${esc(p.license)}). STONE lo descarga de su página en GitHub y comprueba la descarga.` : `${esc(p.project)} (licencia ${esc(p.license)}), desde su página en GitHub.`}</p>
+    <p><b>Necesitas:</b> ${esc(p.needs)} Tus archivos llegan desde un USB o desde el móvil.</p><p class="tech">${esc(p.note)}</p>
+    <div class="btns"><span class="txt-f" data-f data-b="go">${p.installed ? 'ACTUALIZAR' : 'INSTALAR'}</span><span class="txt-f" data-f data-b="no">VOLVER</span></div>`, {
+    onA: el => { back(); if (el.dataset.b !== 'go') return play('back');
+      if (!needNet('instalar un port')) return;
+      EMU_STATE['port:' + p.key] = { state: 'installing', text: 'Empezando…' }; emuRedraw();
+      Bridge.call('ports.install', p.key).catch(e => { EMU_STATE['port:' + p.key] = null; play('error'); toast((e && e.message) || 'No se pudo', false); emuRedraw(); }); },
+    onB: () => { play('back'); back(); } });
+}
 function emuRows() {
   const have = S.emu.filter(e => e.installed);
   /* asked once by itself when the list is opened with emulators installed */
   if (have.length && !EMU_UPD.checked && !EMU_UPD.busy) setTimeout(() => { if (!EMU_UPD.checked) emuCheck(true); }, 0);
   const head = have.length ? [{ l: 'Buscar actualizaciones', s: emuUpdText(), v: EMU_UPD.busy ? 'Buscando…' : 'Buscar', act: 'emu', check: true },
     ...(EMU_UPD.keys.size ? [{ l: 'Actualizar todos', s: 'Cada emulador con versión nueva se actualiza desde Flathub', v: 'Actualizar', act: 'emu', all: true }] : [])] : [];
-  return head.concat(S.emu.map(e => {
+  return head.concat(S.emu.filter(e => !e.not_yet).map(e => {
     if (e.not_yet) return { l: e.name, s: 'Todavía no hay un emulador que instalar. Pulsa A para saber por qué', v: 'No disponible', act: 'emu', emu: e };
     const st = EMU_STATE[e.key], busy = emuBusy(e.key), upd = e.installed && EMU_UPD.keys.has(e.key);
     return { l: e.name, s: busy ? st.text : e.plays + (e.installed && e.version ? ` · versión ${e.version}` : '') + (upd ? ' · hay una versión nueva' : ''),
       v: busy ? (st.state === 'updating' ? 'Actualizando…' : 'Instalando…') : upd ? 'Actualizar' : e.installed ? 'Instalado' : 'Instalar', act: 'emu', emu: e };
-  }));
+  })).concat(portRows());
 }
 function emuA(r) {
+  if (r.port) return portDlg(r.port);
   if (r.check) { play('select'); return emuCheck(false); }
   if (r.all) {
     play('select');
@@ -194,9 +226,12 @@ function measureSmoothness() {
   }, 450);
 }
 /* Opens the matching section of Steam's settings over STONE; if Steam cannot be reached, says where it is. */
+/* 3.1.0-rc6: through the same way as the sign-in and the store (steamOpen): Steam's window in front,
+   B out of its settings or the guide button gives the screen back to STONE (rc5: Steam was asked to
+   navigate, but its window was not brought in front and there was no way back). */
 function openSteamSettings(r) {
   if (!r.sec) return toast(r.where, false);
-  return Sys.openSteamSettings(r.sec).then(res => { if (!res || !res.ok) toast(r.where, false); }, () => toast(r.where, false));
+  return steamOpen('settings', r.sec);
 }
 /* A new drawing mode applies when STONE Home starts: save, say so, restart. */
 function applyRender() {
@@ -219,6 +254,7 @@ function updRow() {
   return { l: 'Buscar actualizaciones', s: u.result && u.result !== 'success' ? 'La última búsqueda no terminó bien: vuelve a intentarlo' : 'Busca una versión nueva de STONE OS y la descarga ahora', v: 'Buscar', act: 'updnow' };
 }
 function updateNow(ri) {
+  if (!needNet('buscar actualizaciones')) return;
   play('select');
   Sys.updateNow().then(() => { S.updAsked = Date.now(); toast('Buscando una versión nueva de STONE OS…', false); enterSettings({ pane: true, ri }); updPoll(ri); },
     e => { play('error'); toast(e && e.code === 'Unsupported' ? 'Esta imagen no tiene servicio de actualización' : 'No se pudo empezar a buscar', false); });
@@ -273,7 +309,6 @@ function catRows() {
   switch (CATS[cat]) {
     case 'Pantalla': return { d: 'Ajusta cómo se ve STONE en tu televisor.', rows: [
       ...displayRows(),
-      { l: 'Área segura', s: 'Usa ← → hasta que las cuatro esquinas se vean completas', v: `${S.safe} %`, key: 'safe' },
       steam('Resolución y frecuencia', 'Las fija Steam para todo el sistema', 'Botón STEAM → Ajustes → Pantalla'),
       steam('HDR', 'Según el televisor y el juego', 'Botón STEAM → Ajustes → Pantalla'),
       { l: 'Tamaño del texto', s: 'Se aplica a STONE Home', v: SIZES[S.ts], key: 'ts' },
@@ -295,8 +330,8 @@ function catRows() {
     case 'Steam': return { d: 'Tu cuenta, la tienda y los ajustes de Steam, con el aspecto de STONE. Los ajustes de sí/no se cambian con A.', rows: steamSetRows() };
     case 'Emuladores': {
       if (!S.emu) { if (!S.emuLoading) loadEmulators(); return { d: 'Emuladores de otras consolas, desde Flathub.', rows: [{ l: 'Leyendo…', s: 'Buscando qué emuladores están instalados', v: '', ro: true }] }; }
-      return { d: 'Se instalan desde Flathub y aparecen en tu biblioteca como accesos directos. Pulsa A sobre uno instalado para actualizarlo. Los juegos, las BIOS y las claves de cada consola los pones tú.',
-        rows: emuRows().concat(romRows()) };
+      return { d: 'Tus juegos de otras consolas: tráelos de un USB o del móvil y aparecen en tu biblioteca. Debajo, los emuladores (desde Flathub). Las BIOS y las claves de cada consola las pones tú.',
+        rows: romRows().concat(emuRows()) };
     }
     case 'Rendimiento': return { d: `Perfil activo: ${profOf(S.prof).n}. Elige entre silencio y rendimiento, o ajusta tu propio perfil.`, rows: [
       { l: 'Performance Center', s: 'SILENT, BALANCED, PERFORMANCE y CUSTOM', v: 'Abrir', act: 'perf' },
@@ -316,20 +351,27 @@ function catRows() {
       { l: 'Sistema base', s: rel.STONE_BASE_IMAGE ? `Bazzite · ${rel.STONE_BASE_IMAGE}${rel.STONE_BASE_DIGEST ? ' @ ' + rel.STONE_BASE_DIGEST.slice(7, 19) : ''}` : 'Bazzite (imagen derivada de bazzite-deck)', v: '' },
       { l: 'Componentes', s: [rel.STONE_KERNEL && `kernel ${rel.STONE_KERNEL}`, rel.STONE_MESA && `Mesa ${rel.STONE_MESA}`, rel.STONE_GOVERNOR_VERSION && `regulador ${rel.STONE_GOVERNOR_VERSION}`].filter(Boolean).join(' · ') || '—', v: '' },
       { l: 'Modo escritorio', s: 'Avanzado: el escritorio de Linux, fuera de la experiencia de consola', v: 'Abrir', act: 'desktop' },
-      { l: 'NEURAL RENDER', s: 'Experimental: sin backends; ninguno funciona hoy de forma medible en la GPU de la BC-250', v: 'Sin backend' }] };
+      /* a feature that does not work today is not put in front of the person: only in technical mode */
+      ...(S.tech ? [{ l: 'NEURAL RENDER', s: 'Experimental: sin backends; ninguno funciona hoy de forma medible en la GPU de la BC-250', v: 'Sin backend' }] : [])] };
     case 'Actualizaciones': return { d: 'Las actualizaciones llegan como una imagen completa y se aplican al reiniciar. Si una falla, la anterior sigue disponible.', rows: [
       { l: 'Estado', s: !dep ? 'No se pudo leer el estado del sistema' : dep.staged ? `Actualización lista: ${dep.staged.version || 'nueva versión'}. Se aplica al reiniciar` : `Instalada: ${(dep.booted && dep.booted.version) || rel.STONE_VERSION || '—'}`, v: '' },
       ...(dep && dep.staged ? [{ l: 'Reiniciar y actualizar', s: 'La consola se reinicia con la versión nueva', v: 'Reiniciar', act: 'reboot' }] : []),
       ...(dep && dep.staged ? [] : [updRow()]),
       { l: 'Comprobación automática', s: updTimerText(S.info && S.info.updates), v: '' },
       { l: 'Volver a la versión anterior', s: dep && dep.rollback ? `Guardada: ${dep.rollback.version || 'versión anterior'}` : 'No hay una versión anterior guardada todavía', v: 'Cómo', act: 'info', where: 'Reinicia y, en el menú de arranque, elige la segunda entrada. STONE OS arranca con la versión anterior' }] };
-    default: return { d: `${CATS[cat]}: lo gestiona Steam.`, rows: [steam(`Abrir ${CATS[cat].toLowerCase()}`, 'Panel nativo de Steam', `Botón STEAM → Ajustes → ${CATS[cat]}`)] };
+    default: {
+      /* what lives in Steam's own settings, said plainly; B out of them comes back here */
+      const what = STEAM_WHAT[CATS[cat]] || ['Ajustes de Steam', 'Se abren los ajustes de Steam'];
+      return { d: `${what[0]} están en los ajustes de Steam. Se abren aquí mismo; para volver, B o el botón guía.`,
+        rows: [steam(`Abrir ${CATS[cat].toLowerCase()} en Steam`, what[1], `Botón STEAM → Ajustes → ${CATS[cat]}`)] };
+    }
   }
 }
 
 /* CPU cores the system sees (threads / 2: Zen 2 has 2 threads per core). Boards sold
    unlocked report 8; the BC-250's stock firmware 6. */
-function cores() { const t = navigator.hardwareConcurrency || 12; return Math.max(1, Math.round(t / 2)); }
+/* the cores stoned read from the console (its configuration), else the browser's count of threads, halved */
+function cores() { const d = S.caps && S.caps.configuration && S.caps.configuration.detected; if (d && d.cpu_cores) return d.cpu_cores; const t = navigator.hardwareConcurrency || 12; return Math.max(1, Math.round(t / 2)); }
 
 /* 40 CU (M04, D-31): switched from here with STONE's own confirmation; stone-cu40 does the work
    through pkexec (polkit allows these three command lines to the console administrator only). The

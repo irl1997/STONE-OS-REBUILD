@@ -43,7 +43,8 @@ const Bridge = (() => {
     return { ok: true, state: 'queued', progress: 0 };
   }
   const gameOf = appid => GAMES.find(g => g.appid === appid) || bad('InvalidValue', 'unknown game');
-  const SIM = { t0: Date.now(), signed: !/nosteam/.test(location.search), fresh: /fresh/.test(location.search), art: false, front: null };
+  const SIM = { t0: Date.now(), signed: !/nosteam/.test(location.search), fresh: /fresh/.test(location.search), art: false, front: null,
+    net: { radio: true, active: /nocable/.test(location.search) ? 'Casa' : null, known: new Set(['Casa']), sig: { Casa: 82, Invitados: 54, Vecino: 31 } } };
   if (SIM.fresh) GAMES.forEach(g => { g.hidden = g.installed; });        /* a new console: nothing installed yet */
   if (/noart/.test(location.search)) setTimeout(() => { SIM.art = true; const art = {}; GAMES.filter(g => !g.installed).forEach(g => { art[g.appid] = { capsule: !g.wide, hero: !g.wide, header: !!g.wide }; }); emit('art', { art }); }, 4000);
   if (/late/.test(location.search)) setTimeout(() => emit('library', { reason: 'changed' }), 6200);
@@ -86,12 +87,15 @@ const Bridge = (() => {
     w.style.display = on ? 'flex' : 'none';
     if (!on) return;
     const it = appid && storeItem(appid);
-    w.innerHTML = `<b style="font-size:30px;letter-spacing:.1em">VENTANA DE STEAM (simulada)</b><span>${what === 'login' ? 'Inicio de sesión de Steam: código QR o usuario y contraseña' : it ? 'Tienda de Steam · ' + it.name : 'Tienda de Steam'}</span>
-      <span style="display:flex;gap:10px">${what === 'login' ? '<button data-k="sign">Iniciar sesión</button>' : it ? '<button data-k="buy">Comprar</button>' : ''}<button data-k="close">Botón guía: volver a STONE</button></span>`;
+    const page = what === 'login' ? 'Inicio de sesión de Steam: código QR o usuario y contraseña' : what === 'settings' ? `Ajustes de Steam · ${appid}` : what === 'downloads' ? 'Descargas de Steam'
+      : it ? 'Tienda de Steam · ' + it.name : 'Tienda de Steam';
+    w.innerHTML = `<b style="font-size:30px;letter-spacing:.1em">VENTANA DE STEAM (simulada)</b><span>${page}</span>
+      <span style="display:flex;gap:10px">${what === 'login' ? '<button data-k="sign">Iniciar sesión</button>' : it ? '<button data-k="buy">Comprar</button>' : ''}${what === 'settings' || what === 'downloads' ? '<button data-k="back">B: salir de los ajustes</button>' : ''}<button data-k="close">Botón guía: volver a STONE</button></span>`;
     w.querySelectorAll('button').forEach(bn => { bn.style.cssText = 'font:inherit;padding:8px 14px;background:#2a475e;color:#fff;border:0;border-radius:4px;cursor:pointer';
       bn.onclick = () => { const k = bn.dataset.k;
         if (k === 'sign') { SIM.signed = true; return endFront('signed'); }
         if (k === 'buy') { setTimeout(() => SimPanel.buy(appid), 2500); return endFront('closed'); }
+        if (k === 'back') return endFront('back');
         endFront('closed'); }; });
   }
   function endFront(why) { const fr = SIM.front; SIM.front = null; steamWindow(false); if (fr) emit('steam', { front: false, why, what: fr.what }); }
@@ -136,7 +140,6 @@ const Bridge = (() => {
   const STEAMSET = [
     { id: 'Settings.Display.EnableHdr', label: 'Enable Hdr', area: 'Display', value: false, writable: true },
     { id: 'Settings.Display.UseNativeResolution', label: 'Use Native Resolution', area: 'Display', value: true, writable: true },
-    { id: 'Settings.Display.ScreenBrightness', label: 'Screen Brightness', area: 'Display', value: 0.8, writable: false },
     { id: 'Settings.Audio.GameVolume', label: 'Game Volume', area: 'Audio', value: 0.7, writable: false },
     { id: 'Settings.Audio.MuteOnMinimize', label: 'Mute On Minimize', area: 'Audio', value: false, writable: true },
     { id: 'Settings.Controller.EnableXboxSupport', label: 'Enable Xbox Support', area: 'Controller', value: true, writable: true },
@@ -148,7 +151,6 @@ const Bridge = (() => {
     { id: 'Settings.Interface.ShowFpsCounter', label: 'Show Fps Counter', area: 'Interface', value: false, writable: true },
     { id: 'Settings.Interface.EnableAnimations', label: 'Enable Animations', area: 'Interface', value: true, writable: true },
     { id: 'Settings.Compatibility.EnableSteamPlay', label: 'Enable Steam Play', area: 'Compatibility', value: true, writable: true },
-    { id: 'Settings.System.EnableDeveloperMode', label: 'Enable Developer Mode', area: 'System', value: false, writable: true },
     { id: 'Settings.Notifications.ShowToastNotifications', label: 'Show Toast Notifications', area: 'Notifications', value: true, writable: true }
   ].map(x => Object.assign({}, x, { label_en: x.label, label: SS_ES[x.label] || x.label, area: SS_AREA[x.area] || x.area })).map(x => Object.assign({ type: typeof x.value === 'boolean' ? 'bool' : typeof x.value === 'number' ? 'number' : 'text' }, x));
 
@@ -190,7 +192,7 @@ const Bridge = (() => {
       return { root_found: true, owned_known: live, owned_cached: false, logged: live ? 'in' : null, account: true,
         games: list.slice().sort((x, y) => y.installed - x.installed || y.last - x.last).map(g => ({
           appid: g.appid, name: g.name, source: g.source, installed: g.installed, updating: !!g.updating, playtime_min: g.min, last_played: g.last,
-          size_bytes: g.size, art: g.installed || SIM.art || !/noart/.test(location.search) ? { capsule: !g.wide, hero: !g.wide, header: !!g.wide, hero2x: !!(SIM.big && SIM.big[g.appid]) } : { capsule: false, hero: false, header: false },
+          size_bytes: g.size, art: g.source === 'shortcut' && /^3/.test(g.appid) ? { capsule: false, hero: false, header: false } : g.installed || SIM.art || !/noart/.test(location.search) ? { capsule: !g.wide, hero: !g.wide, header: !!g.wide, hero2x: !!(SIM.big && SIM.big[g.appid]) } : { capsule: false, hero: false, header: false },
           launch: g.installed ? 'steam://rungameid/' + g.appid : null })) };
     },
     /* starting (Steam's steps): ?askcloud / ?askopt / ?launcherr make Steam ask about the cloud, a launch option, or fail */
@@ -239,10 +241,10 @@ const Bridge = (() => {
     'update.now': () => { SIM.updUntil = Date.now() + 10000; return { ok: true, unit: 'uupd-manual.service', already: false }; },
     openSteam: async () => ({ ok: true }), openSteamSettings: async () => ({ ok: true }), restart: async () => ({ ok: true }),
     power: async ([a]) => { toast(`Simulación: «${a === 'off' ? 'Apagar' : 'Reiniciar'}» no hace nada aquí`, false); return { ok: true }; },
-    systemInfo: () => ({ session: 'stone', release: { STONE_VERSION: '3.1.0-rc5 (simulación)', STONE_BASE_IMAGE: 'bazzite-deck', STONE_KERNEL: 'simulado', STONE_MESA: 'simulado', STONE_GOVERNOR_VERSION: 'simulado' },
+    systemInfo: () => ({ session: 'stone', release: { STONE_VERSION: '3.1.0-rc6 (simulación)', STONE_BASE_IMAGE: 'bazzite-deck', STONE_KERNEL: 'simulado', STONE_MESA: 'simulado', STONE_GOVERNOR_VERSION: 'simulado' },
       boot_time: Math.round(now - 3600),
-      deployments: { booted: { image: 'simulación', version: '3.1.0-rc5', timestamp: now },
-        staged: SIM.updUntil && Date.now() > SIM.updUntil ? { image: 'simulación', version: '3.1.0-rc5', timestamp: now } : null,
+      deployments: { booted: { image: 'simulación', version: '3.1.0-rc6', timestamp: now },
+        staged: SIM.updUntil && Date.now() > SIM.updUntil ? { image: 'simulación', version: '3.1.0-rc6', timestamp: now } : null,
         rollback: { image: 'simulación', version: '3.0.0-rc1', timestamp: now - 86400 } },
       updates: { unit: 'uupd.timer', enabled: true, last: Math.round(now - 3600 * 15), next: Math.round(now + 3600 * 9) },
       updating: { unit: 'uupd-manual.service', running: !!SIM.updUntil && Date.now() < SIM.updUntil, result: 'success' } }),
@@ -258,9 +260,47 @@ const Bridge = (() => {
     'game.frameGen': () => ({ available: false, reason: 'Solo con FSR (OptiScaler) instalado por STONE en este juego', on: false, experimental: true }), 'game.setFrameGen': ([, on]) => ({ ok: true, on }),
     'audio.status': () => ({ outputs: [{ id: 51, name: 'HDMI · Televisor', default: true }, { id: 52, name: 'Auriculares USB', default: false }], volume: 0.6, muted: false }),
     'audio.volume': () => ({ ok: true }), 'audio.default': () => ({ ok: true }),
-    'net.status': () => ({ devices: [{ device: 'enp1s0', type: 'ethernet', state: 'connected', connection: 'Cable' }, { device: 'wlan0', type: 'wifi', state: 'disconnected', connection: null }], online: true }),
-    'net.wifiList': async () => { await wait(600); return { networks: [{ ssid: 'Casa', signal: 82, secure: true, active: false }, { ssid: 'Invitados', signal: 54, secure: false, active: false }] }; },
-    'net.wifiConnect': async () => { await wait(800); return { ok: true }; }, 'net.wifiDisconnect': () => ({ ok: true }),
+    /* the network (nmcli): ?nocable = no cable, so Wi-Fi is the only way; ?nonet = the router has no internet */
+    'net.status': () => { const N = SIM.net, q = location.search, cable = !/nocable/.test(q);
+      const devs = [...(cable ? [{ device: 'enp1s0', type: 'ethernet', state: 'connected', connection: 'Cable' }] : []),
+        { device: 'wlan0', type: 'wifi', state: !N.radio ? 'unavailable' : N.active ? 'connected' : 'disconnected', connection: N.active }];
+      const online = devs.some(d => d.state === 'connected');
+      return { devices: devs, online, radio: N.radio, ssid: N.active, signal: N.active ? (N.sig[N.active] || 60) : null, internet: !online ? 'none' : /nonet/.test(q) ? 'limited' : 'full' }; },
+    'net.wifiList': async () => { await wait(600); const N = SIM.net; if (!N.radio) bad('Unsupported', 'Wi-Fi no disponible');
+      return { networks: Object.keys(N.sig).map(ssid => ({ ssid, signal: N.sig[ssid], secure: ssid !== 'Invitados', known: N.known.has(ssid), active: N.active === ssid }))
+        .sort((a, b) => b.active - a.active || b.known - a.known || b.signal - a.signal) }; },
+    'net.wifiConnect': async ([ssid, pw]) => { await wait(800); const N = SIM.net;
+      if (ssid !== 'Invitados' && !pw && !N.known.has(ssid)) bad('Unsupported', 'Esta red pide contraseña');
+      if (pw && pw.length < 8) bad('Unsupported', 'Contraseña incorrecta');
+      N.active = ssid; N.known.add(ssid); return { ok: true }; },
+    'net.wifiDisconnect': () => { SIM.net.active = null; return { ok: true }; },
+    /* games from a USB drive (?usb = a drive with games is plugged in) and from the phone */
+    'usb.scan': () => ({ busy: false, drives: /usb/.test(location.search) && !SIM.usbDone ? [{ path: '/run/media/stone/JUEGOS', label: 'JUEGOS', count: 3, bytes: 5.2 * 2 ** 30,
+      systems: { 'PlayStation 2': 2, 'Game Boy Advance': 1 }, new: 3, new_bytes: 5.2 * 2 ** 30 }] : [] }),
+    'usb.copy': () => { const total = 5.2 * 2 ** 30, t0 = Date.now(); const names = ['Shadow of the Colossus.iso', 'God of War II.iso', 'Metroid Fusion.gba'];
+      const tick = () => { const f = Math.min(1, (Date.now() - t0) / 9000);
+        if (f < 1) { emit('usb', { state: 'copying', done: f * total, total, name: names[Math.min(2, Math.floor(f * 3))] }); setTimeout(tick, 500); }
+        else { SIM.usbDone = true; ['Shadow of the Colossus (PlayStation 2)', 'God of War II (PlayStation 2)', 'Metroid Fusion (Game Boy Advance)'].forEach((n, k) => GAMES.push({ appid: String(3100000000 + k), name: n, source: 'shortcut', installed: true, last: 0, min: 0, size: 0, kind: 'plain', wide: false }));
+          emit('usb', { state: 'done', copied: 3, skipped: 0, error: null }); emit('library', { reason: 'changed' }); } };
+      setTimeout(tick, 300); return { ok: true }; },
+    'usb.cancel': () => ({ ok: true }),
+    'ports.list': () => ({ ports: [
+      { key: 'mkw', name: 'Mario Kart World', project: 'mkw-recomp', kind: 'port', license: 'MIT', installed: !!SIM.mkw, tag: SIM.mkw ? 'v0.1.11' : null,
+        needs: 'Tu copia de Mario Kart World 1.0.0 o 1.8.0 volcada de tu Switch 2 (carpetas exefs y romfs, o un archivo .nup o .nx). La primera vez, su pantalla de inicio la prepara: unos 30 GB.',
+        note: 'Experimental: algunos menús aún fallan y en algunas GPU AMD la imagen puede colgarse. Sin juego en línea.' },
+      { key: 'eglantine', name: 'Eglantine', project: 'Eglantine', kind: 'emulator', license: 'GPL-3.0', installed: false, tag: null,
+        needs: 'Tus juegos de Switch 2 y las claves de tu propia consola, que se indican dentro del emulador.', note: 'Emulador de Switch 2 muy experimental: pocos juegos arrancan y con fallos.' }] }),
+    'ports.install': ([k]) => { const key = 'port:' + k;
+      setTimeout(() => emit('emulator', { key, state: 'installing', text: 'Descargando mkw-recomp v0.1.11 (147 MB)…' }), 400);
+      setTimeout(() => { SIM.mkw = true; GAMES.push({ appid: '3200000001', name: 'Mario Kart World (Switch 2)', source: 'shortcut', installed: true, last: 0, min: 0, size: 0, kind: 'plain' });
+        emit('emulator', { key, state: 'done', text: 'Mario Kart World instalado. Ya está en tu biblioteca' }); emit('library', { reason: 'changed' }); }, 4000);
+      return { ok: true }; },
+    'drop.start': () => { setTimeout(() => emit('drop', { state: 'receiving', name: 'Mario Kart Wii.rvz', done: 1.1e9, total: 2.9e9 }), 2500);
+      setTimeout(() => emit('drop', { state: 'received', name: 'Mario Kart Wii.rvz', system: 'Wii', size: 2.9e9 }), 5000);
+      return { open: true, url: 'http://192.168.1.40:41817/kD9x2mQe7LwP4sZa/', seconds: 1800, received: [] }; },
+    'drop.stop': () => ({ received: [{ name: 'Mario Kart Wii.rvz', system: 'Wii', size: 2.9e9 }] }),
+    'net.wifiForget': ([ssid]) => { SIM.net.known.delete(ssid); return { ok: true }; },
+    'net.wifiRadio': ([on]) => { SIM.net.radio = on; if (!on) SIM.net.active = null; return { ok: true }; },
     'bt.devices': () => ({ devices: [{ mac: 'AA:BB:CC:DD:EE:01', name: 'Mando inalámbrico', icon: 'input-gaming', paired: true, connected: true, battery: 80 }] }),
     'bt.scan': async () => { await wait(1500); return { devices: [{ mac: 'AA:BB:CC:DD:EE:01', name: 'Mando inalámbrico', icon: 'input-gaming', paired: true, connected: true, battery: 80 }, { mac: 'AA:BB:CC:DD:EE:02', name: 'Auriculares', icon: 'audio-headset', paired: false, connected: false, battery: null }] }; },
     'bt.action': async () => { await wait(800); return { ok: true }; },

@@ -431,6 +431,7 @@ body.dormant *,body.dormant *::before,body.dormant *::after{animation-play-state
 /* Steam's own window is coming in front (D-34) */
 #sfront{position:absolute;inset:0;z-index:44;background:#0a0a0b;visibility:hidden;opacity:0;transition:opacity var(--d-enter) var(--e-light),visibility 0s linear var(--d-enter)}
 #sfront.on{visibility:visible;opacity:1;transition:opacity var(--d-enter) var(--e-light),visibility 0s}
+#sfront.slow{transition:opacity .8s var(--e-light),visibility 0s linear .8s}
 #sfront .sf-box{position:absolute;left:96px;top:300px;width:1100px;display:flex;flex-direction:column;gap:26px;border-top:3px solid var(--vein);padding-top:40px}
 #sfront .st-cap{font-family:var(--f-mono);font-size:16px;letter-spacing:.2em;color:var(--vein)}
 #sfront h2{margin:0;font-family:var(--f-display);font-weight:200;font-size:64px;line-height:76px;letter-spacing:.2em;color:var(--warm)}
@@ -512,6 +513,11 @@ body.dormant *,body.dormant *::before,body.dormant *::after{animation-play-state
 #hdr .brand{font-size:30px;letter-spacing:.5em;text-shadow:0 2px 18px rgba(0,0,0,.35)}
 #status{padding:12px 22px;border-radius:999px;gap:22px;color:var(--warm)}
 #status svg{stroke:var(--warm)}
+#neticon{position:relative;display:inline-flex;width:28px;height:28px}
+#neticon svg{stroke:var(--warm)}
+#neticon.n-none,#neticon.n-off{opacity:.75}
+#neticon .nwarn{position:absolute;right:-7px;top:-5px;min-width:15px;height:15px;border-radius:50%;background:#e8b04a;color:#1a1408;
+  font:700 11px/15px var(--f-text);text-align:center;text-shadow:none}
 #tabs{left:50%;top:42px;transform:translateX(-50%);display:flex;gap:4px;padding:6px;border-radius:999px;
   font-family:var(--f-text);font-weight:400;font-size:19px;letter-spacing:.01em}
 #tabs span{padding:12px 26px;border-radius:999px;color:var(--text-2);transition:background var(--d-step) var(--e-step),color var(--d-step) var(--e-step)}
@@ -724,6 +730,12 @@ body.dormant *,body.dormant *::before,body.dormant *::after{animation-play-state
   background:linear-gradient(158deg,rgba(255,255,255,.15) 0%,rgba(255,255,255,.03) 30%,rgba(255,255,255,0) 30.5%),
     linear-gradient(180deg,rgba(0,0,0,0) 35.5%,rgba(0,0,0,.45) 35.5% 36.5%,rgba(0,0,0,0) 36.5% 63.5%,rgba(0,0,0,.45) 63.5% 64.5%,rgba(0,0,0,0) 64.5%),
     var(--roca) 0 36% / 100% 28% no-repeat,linear-gradient(180deg,#202125 0%,#0b0b0d 100%)}
+.card .ph .pht{position:absolute;left:12%;right:9%;top:68%;bottom:19%;display:flex;flex-direction:column;justify-content:flex-start;gap:6px;overflow:hidden}
+.card .ph .pht .lbl{font:500 12px/1.2 var(--f-mono);letter-spacing:.16em;color:var(--vein);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card .ph .pht em{font:400 19px/1.18 var(--f-text);font-style:normal;color:var(--warm);display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;overflow-wrap:anywhere}
+.card.hero .ph .pht{top:66%}
+.card.hero .ph .pht .lbl{font-size:15px}
+.card.hero .ph .pht em{font-size:30px}
 .card .ph::after{content:"";position:absolute;left:12%;bottom:13%;width:42%;height:3px;border-radius:2px;background:#fff;
   box-shadow:0 0 8px rgba(255,255,255,.9),0 0 22px rgba(255,255,255,.4)}
 /* the primary button: obsidian at rest, the white panel when chosen */
@@ -818,7 +830,9 @@ body.dormant *,body.dormant *::before,body.dormant *::after{animation-play-state
 .srow .l b{font-weight:400;font-size:calc(24px * var(--ts));letter-spacing:.02em}
 .srow .l small{font-weight:400;font-size:calc(20px * var(--ts));letter-spacing:.01em}
 .srow .v{font-weight:400;font-size:20px;letter-spacing:.06em}
-#dlg .sres{font-weight:400;letter-spacing:.02em}
+#dlg .sres{font-weight:400;letter-spacing:.02em;align-items:baseline}
+/* the value of each row on the row's own line, readable from the sofa (rc6: it floated above, at 15 px) */
+#dlg .sres small{font-size:19px;color:var(--text-2);text-align:right}
 #store .scard .cap2 b{font-weight:400;letter-spacing:.02em}
 #store .scard .cap2 i{font-weight:400;letter-spacing:.08em}
 #library .filters,#store .filters{font-weight:400;letter-spacing:.06em}
@@ -1233,7 +1247,21 @@ const heroUrl = g => g.art.hero || g.art.capsule || g.art.header ? Bridge.artUrl
 const bgUrl = g => g.art.hero2x ? Bridge.artUrl(g.appid, 'hero2x') : heroUrl(g);
 /* A cover without art: the machine itself in miniature (black gloss, the stone band, the light line); the
    name is never written on a cover, it shows under the row (Home) or at the foot of the grid (Library). */
-const nameTag = () => '<span class="ph"></span>';
+/* A game without artwork wears STONE's own cover (the stone band and the light line) with what it is
+   written on it: its console and its name for emulator games ("Juego (PlayStation 2)"), "EMULADOR" for
+   the emulators, the origin for the rest. Until 3.1.0-rc6 it was blank (board, 14-11-2026). */
+const EMU_NAMES = new Set(['RetroDECK', 'RetroArch', 'Dolphin', 'PCSX2', 'PPSSPP', 'RPCS3', 'Cemu', 'Azahar', 'melonDS', 'mGBA', 'Flycast', 'xemu', 'Eden', 'Ryujinx (Ryubing)']);
+const ROM_SYS = ['GameCube', 'Wii', 'PlayStation 2', 'PlayStation Portable', 'PlayStation 3', 'Wii U', 'Nintendo 3DS', 'Nintendo DS', 'Game Boy Advance', 'Dreamcast', 'Xbox', 'Nintendo Switch'];
+function coverText(g) {
+  if (!g || !g.n) return null;
+  if (EMU_NAMES.has(g.n)) return ['EMULADOR', g.n];
+  const m = /^(.*) \(([^()]+)\)$/.exec(g.n);
+  if (m && ROM_SYS.includes(m[2])) return [m[2].toUpperCase(), m[1]];
+  if (m && m[2] === 'Switch 2') return ['SWITCH 2 · PORT', m[1]];
+  if (m && m[2] === 'emulador de Switch 2') return ['EMULADOR', m[1]];
+  return [(g.src === 'shortcut' ? 'ACCESO DIRECTO' : g.o || 'STEAM').toUpperCase(), g.n];
+}
+const nameTag = g => { const t = coverText(g); return `<span class="ph">${t ? `<span class="pht"><span class="lbl">${esc(t[0])}</span><em>${esc(t[1])}</em></span>` : ''}</span>`; };
 /* Background blur from a 64×36 copy of the hero: one tiny image scaled up, no live blur filter.
    A small LRU keeps the last ones; game mode empties it. */
 const BLUR = new Map(), BLUR_MAX = 24;
@@ -2044,16 +2072,21 @@ function qrSvg(text, px) {
    If Steam shows no window, plan B hands the whole session to Steam's own Game Mode interface. */
 const SF_TEXT = {
   login: ['INICIA SESIÓN EN STEAM', 'Steam muestra ahora su propia ventana. Escanea su código QR con la app de Steam del móvil, o escribe tu usuario con un teclado. STONE nunca ve tu contraseña.'],
-  store: ['ABRIENDO LA TIENDA DE STEAM', 'La tienda y el pago son de Steam: se usan tu cuenta y tu forma de pago de Steam. Lo que compres aparece después en tu biblioteca de STONE.'],
-  app: ['ABRIENDO EL JUEGO EN STEAM', 'La compra se hace en Steam, con tu cuenta y tu forma de pago. Al volver, STONE instala el juego en cuanto Steam lo añada a tu cuenta.'],
-  install: ['STEAM PREGUNTA EN SU VENTANA', 'Responde en la ventana de Steam. Cuando termines, o para dejarlo para después, el botón guía del mando vuelve a STONE.']
+  store: ['ABRIENDO LA TIENDA DE STEAM', 'La tienda y el pago son de Steam: se usan tu cuenta y tu forma de pago. Lo que compres aparece después en tu biblioteca de STONE. Para volver, sal de la tienda con B.'],
+  app: ['ABRIENDO EL JUEGO EN STEAM', 'La compra se hace en Steam, con tu cuenta y tu forma de pago. Al volver, STONE instala el juego en cuanto Steam lo añada a tu cuenta. Para volver, sal de la tienda con B.'],
+  install: ['STEAM PREGUNTA EN SU VENTANA', 'Responde en la ventana de Steam. Cuando termines, o para dejarlo para después, el botón guía del mando vuelve a STONE.'],
+  settings: ['AJUSTES DE STEAM', 'Steam abre sus ajustes en la sección que elegiste. Para volver a STONE, sal de los ajustes con B.'],
+  downloads: ['DESCARGAS DE STEAM', 'Steam abre su pantalla de descargas. Para volver a STONE, sal de ella con B.']
 };
+/* How STONE hands the screen to Steam and takes it back: the dark curtain is whole before Steam's
+   window comes in front (no half-faded STONE cut away), and STONE comes back with a soft fade. */
+const SF_CURTAIN_MS = 420;
 let sfT = 0;
 function sfVeil(what, title, text) {
   let v = $('#sfront');
   if (!v) {
     v = document.createElement('div'); v.id = 'sfront';
-    v.innerHTML = '<div class="sf-box"><span class="st-cap">STEAM</span><h2></h2><p></p><div class="sf-foot"><span class="g">STONE</span>El botón guía del mando vuelve a STONE</div></div>';
+    v.innerHTML = '<div class="sf-box"><span class="st-cap">STEAM</span><h2></h2><p></p><div class="sf-foot"><span class="g">STONE</span>El botón guía del mando vuelve a STONE desde cualquier pantalla de Steam</div></div>';
     stage.appendChild(v);
   }
   if (!what) return v.classList.remove('on', 'now');
@@ -2062,32 +2095,47 @@ function sfVeil(what, title, text) {
   v.classList.add('on');
 }
 /* Steam is not up yet (the first start of a new console downloads Steam's own update, which takes minutes) */
-const SF_WAIT = ['PREPARANDO STEAM', 'Steam todavía está arrancando. Si la consola acaba de instalarse, primero descarga su propia actualización: puede tardar unos minutos. Su ventana aparece aquí en cuanto esté lista.'];
+const SF_WAIT = ['PREPARANDO STEAM', 'Steam todavía está arrancando. Si la consola acaba de instalarse, primero descarga su propia actualización: puede tardar unos minutos. Su ventana aparece aquí en cuanto esté lista. B vuelve a STONE sin esperar.'];
 async function steamOpen(what, appid) {
   if (S.steamFront) return;
   if (S.running !== null) { play('error'); return toast('Cierra antes el juego en curso: Steam ocuparía su lugar en la pantalla', false); }
+  if (['login', 'store', 'app'].includes(what) && !needNet(what === 'login' ? 'iniciar sesión en Steam' : 'la tienda de Steam')) return;
   play('select');
-  let r = null;
-  try { r = await (appid && (what === 'app' || what === 'install') ? Sys.steamShow(what, appid) : Sys.steamShow(what)); }
-  catch (e) { return steamNoWindow(what, appid); }
-  if (!r.managed) {
-    /* not the STONE session (Steam's own Game Mode, or development): Steam shows its pages itself */
-    return toast(what === 'login' ? 'Steam muestra su inicio de sesión en su propia pantalla' : 'Steam abre su tienda en su propia pantalla', false);
-  }
-  S.steamFront = { what, appid: appid || null, t: Date.now() };
+  /* the curtain first: Steam's window comes in front of a calm dark screen */
+  S.steamFront = { what, appid: appid || null, t: Date.now(), opening: true };
   line.classList.add('off'); $('#hints').classList.add('hide');
   sfVeil(what);
+  await new Promise(ok => setTimeout(ok, S.rm ? 60 : SF_CURTAIN_MS));
+  let r = null;
+  try { r = await (appid && ['app', 'install', 'settings'].includes(what) ? Sys.steamShow(what, appid) : Sys.steamShow(what)); }
+  catch (e) { sfLift(); return steamNoWindow(what, appid); }
+  if (!r.managed) {
+    /* not the STONE session (Steam's own Game Mode, or development): Steam shows its pages itself */
+    sfLift();
+    return toast(what === 'login' ? 'Steam muestra su inicio de sesión en su propia pantalla' : what === 'settings' ? (r.sent ? 'Steam abrió sus ajustes' : 'Steam no respondió: Botón STEAM → Ajustes')
+      : what === 'downloads' ? 'Steam abre sus descargas' : 'Steam abre su tienda en su propia pantalla', false);
+  }
+  S.steamFront.opening = false;
   clearInterval(sfT); sfT = setInterval(sfCheck, 5000);
+}
+/* The curtain goes away and STONE is back as it was, with a soft entrance. */
+function sfLift() {
+  const v = $('#sfront');
+  if (v) { v.classList.remove('now'); v.classList.add('slow'); setTimeout(() => v.classList.remove('slow'), 1000); }
+  S.steamFront = null; clearInterval(sfT); sfVeil(null);
+  line.classList.remove('off'); applyFocus(); showHints(); armIdleOff();
 }
 /* The host says when Steam's window leaves the front and why: closed (guide button, Steam closed it,
    a game started), signed (the sign-in is done) or nowindow (Steam showed nothing). */
 function sfEnd(why) {
   const fr = S.steamFront;
   if (!fr) return;
-  S.steamFront = null; clearInterval(sfT); sfVeil(null);
-  line.classList.remove('off'); applyFocus(); showHints(); armIdleOff();
+  sfLift(); play('back');
   if (why === 'nowindow') return steamNoWindow(fr.what, fr.appid);
+  if (why === 'navfail') { play('error'); return toast(fr.what === 'downloads' ? 'Steam no abrió sus descargas. Inténtalo de nuevo en unos segundos' : 'Steam no abrió sus ajustes. Inténtalo de nuevo en unos segundos', false); }
   if (why === 'signed') { play('notify'); longToast('Sesión iniciada en Steam. STONE está leyendo tu biblioteca…', 7000); }
+  else if (!fr.shown && why === 'closed') toast('De vuelta en STONE: Steam no llegó a abrirse', false);
+  else if (fr.what === 'settings' || fr.what === 'downloads') { delete CX.net; delete CX.audio; delete CX.bt; netIconKick(); toast('De vuelta en STONE', false); if (S.screen === 'settings') enterSettings({ pane: !!(NAV && NAV.pane), ri: NAV && NAV.pane ? NAV.c : 0 }); }
   else toast(fr.what === 'login' ? 'De vuelta en STONE' : 'De vuelta en STONE. Lo que hayas comprado aparece en tu biblioteca', false);
   if (typeof SU !== 'undefined' && SU && SU.cur && SU.cur.key === 'steam') Sys.firstrunStatus().then(f => { SU.fr = f; if (SU && SU.cur && SU.cur.key === 'steam') SU_FN.steam(); }, () => {});
   S.steamAcct = undefined;
@@ -2097,12 +2145,12 @@ Bridge.on('steam', d => {
   if (!d) return;
   if (d.front === false) return sfEnd(d.why);
   if (S.steamFront && d.waiting) sfVeil(S.steamFront.what, SF_WAIT[0], SF_WAIT[1]);
-  else if (S.steamFront && d.shown && !S.steamFront.full) sfVeil(S.steamFront.what);
+  else if (S.steamFront && d.shown && !S.steamFront.full) { S.steamFront.shown = true; sfVeil(S.steamFront.what); }
 });
 /* If the event was lost (the host restarted), the lock never stays on: the host is asked. */
 function sfCheck() {
   if (!S.steamFront) return clearInterval(sfT);
-  Sys.steamStatus().then(st => { if (S.steamFront && st && st.front === false && Date.now() - S.steamFront.t > 4000) sfEnd('closed'); }, () => {});
+  Sys.steamStatus().then(st => { if (S.steamFront && !S.steamFront.opening && st && st.front === false && Date.now() - S.steamFront.t > 4000) sfEnd('closed'); }, () => {});
 }
 function longToast(msg, ms) {
   toast(msg, false);
@@ -2413,6 +2461,7 @@ setTimeout(() => dlKick(), 9000);
 /* INSTALAR: Steam's answer, said by STONE. Returns true when the install is under way. */
 async function installGame(appid, name, opts = {}) {
   if (DL.busy.has(appid)) { play('error'); toast('Esperando la respuesta de Steam…', false); return false; }
+  if (!needNet('descargar un juego')) return false;
   DL.busy.add(appid);
   if (!opts.quiet) toast(`${name}: pidiendo la instalación a Steam…`, false);
   let r = null;
@@ -2674,6 +2723,168 @@ async function downloadControl(g, act) {
   toast(act === 'pause' ? 'Descargas en pausa' : `${g.n}: descargando`, false);
   dlKick(600);
 }
+/* ---------- THE NETWORK ICON AT THE TOP RIGHT (3.1.0-rc6) ----------
+   Until rc5 it was a fixed drawing of a full Wi-Fi signal, there with or without a network (board,
+   14-11-2026: no Wi-Fi, and the icon showed signal). Now it says what NetworkManager says (net.status):
+   cable, Wi-Fi with its bars, a network without internet, Wi-Fi off, nothing. Read every 15 s outside
+   games and after every network change; losing and getting back internet is said once. */
+const NETI = { t: 0, last: null, seen: false };
+const NET_SVG = {
+  arcs: lit => `<svg width="28" height="28" viewBox="0 0 28 28" fill="none" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
+    <path d="M4 11 Q14 3 24 11" opacity="${lit >= 3 ? 1 : .28}"/><path d="M8 15 Q14 10 20 15" opacity="${lit >= 2 ? 1 : .28}"/><path d="M12 19 Q14 17.5 16 19" opacity="${lit >= 1 ? 1 : .28}"/></svg>`,
+  cable: '<svg width="28" height="28" viewBox="0 0 28 28" fill="none" stroke-width="2" aria-hidden="true"><rect x="7" y="6" width="14" height="12" rx="2"/><path d="M11 18v4M17 18v4M10.5 10h7"/></svg>',
+  slash: '<path d="M5 23 L23 5" stroke-width="2.4" stroke-linecap="round"/>'
+};
+function netState(N) {
+  if (!N || N.error) return { k: 'unknown', t: 'Red: sin datos' };
+  const cable = N.devices.find(d => d.type === 'ethernet' && d.state === 'connected');
+  const wifi = N.devices.find(d => d.type === 'wifi');
+  const noNet = N.online && (N.internet === 'limited' || N.internet === 'portal' || N.internet === 'none');
+  if (cable) return { k: noNet ? 'cable-warn' : 'cable', t: noNet ? 'Cable conectado, sin internet' : 'Conectado por cable' };
+  if (wifi && wifi.state === 'connected') {
+    const sig = N.signal == null ? 3 : N.signal >= 67 ? 3 : N.signal >= 34 ? 2 : 1;
+    return { k: noNet ? 'wifi-warn' : 'wifi', bars: sig, t: `${N.ssid || 'Wi-Fi'}${N.signal != null ? ` · señal ${N.signal} %` : ''}${noNet ? ' · sin internet' : ''}` };
+  }
+  if (wifi && (N.radio === false || wifi.state === 'unavailable')) return { k: 'off', t: 'Wi-Fi apagado' };
+  return { k: 'none', t: 'Sin conexión' };
+}
+function netIcon(N) {
+  const st = $('#status'); if (!st) return;
+  let el = $('#neticon');
+  if (!el) {
+    el = document.createElement('span'); el.id = 'neticon';
+    const old = st.querySelector(':scope > svg');
+    if (old) st.replaceChild(el, old); else st.insertBefore(el, st.firstChild);
+  }
+  const s = netState(N);
+  const warn = '<span class="nwarn">!</span>';
+  el.className = 'n-' + s.k;
+  el.title = s.t; el.setAttribute('aria-label', s.t);
+  el.innerHTML = s.k === 'cable' ? NET_SVG.cable : s.k === 'cable-warn' ? NET_SVG.cable + warn
+    : s.k === 'wifi' ? NET_SVG.arcs(s.bars) : s.k === 'wifi-warn' ? NET_SVG.arcs(s.bars) + warn
+    : s.k === 'unknown' ? NET_SVG.arcs(0) : NET_SVG.arcs(0).replace('</svg>', NET_SVG.slash + '</svg>');
+  /* losing internet and getting it back is said, once each (not at start) */
+  const up = !!(N && N.online && N.internet !== 'limited' && N.internet !== 'portal' && N.internet !== 'none');
+  if (NETI.seen && NETI.last !== null && up !== NETI.last && S.screen !== 'game' && S.screen !== 'off') {
+    if (up) toast('Conectado a internet', false);
+    else if (!(S.screen === 'settings' && CATS[cat] === 'Red')) { play('notify'); toast(N && N.online ? 'La red no tiene salida a internet' : 'Sin conexión a internet: Ajustes → Red', false); }
+  }
+  NETI.last = up; NETI.seen = true;
+}
+/* What needs internet says so first, as SteamOS does, instead of a confusing "Steam no respondió".
+   Only a known lack of internet stops it (no reading yet: it goes on). */
+function needNet(what) {
+  if (NETI.last !== false) return true;
+  play('error'); toast(`Sin conexión a internet: ${what} necesita internet. Ajustes → Red`, false); netIconKick(0);
+  return false;
+}
+function netIconKick(ms) {
+  clearTimeout(NETI.t);
+  NETI.t = setTimeout(netIconTick, ms == null ? 400 : ms);
+}
+async function netIconTick() {
+  NETI.t = 0;
+  if (S.screen !== 'game' && S.screen !== 'off' && !S.dormant) {
+    const N = await Bridge.call('net.status').catch(e => ({ error: (e && e.message) || 'no disponible' }));
+    netIcon(N);
+    if (S.screen === 'settings' && CATS[cat] === 'Red' && CX.net && !CX.net.error && N && !N.error
+        && JSON.stringify(N) !== JSON.stringify(CX.net)) { CX.net = N; enterSettings({ pane: !!(NAV && NAV.pane), ri: NAV && NAV.pane ? NAV.c : 0 }); }
+  }
+  NETI.t = setTimeout(netIconTick, 15000);
+}
+netIconKick(1500);
+/* ---------- GAMES FOR THE EMULATORS: FROM A USB DRIVE OR FROM THE PHONE (3.1.0-rc6) ----------
+   The owner, 14-11-2026: games on a pendrive, or in iCloud or another cloud. A USB drive with games is
+   noticed when it is plugged in and its games are copied to the console (usbgames.py): like installing
+   from a disc, they keep working without the drive. The cloud is reached through the phone, already
+   signed in: a QR code opens a page served by the console on the home Wi-Fi and the phone's own picker
+   (on an iPhone «Archivos», with iCloud Drive) sends the files (phonedrop.py). Both add the games to
+   the library by themselves. */
+const EG = { usb: null, seen: new Set(), copy: null, t: 0, drop: null };
+const egGB = b => b >= 2 ** 30 ? `${(b / 2 ** 30).toFixed(1).replace('.', ',')} GB` : `${Math.max(1, Math.round(b / 2 ** 20))} MB`;
+const egSys = d => Object.entries(d.systems).map(([k, n]) => `${n} de ${k}`).join(', ');
+function egRows() {
+  const rows = [];
+  if (EG.copy) rows.push({ l: `Copiando juegos del USB · ${EG.copy.total ? Math.floor(EG.copy.done * 100 / EG.copy.total) : 0} %`, s: EG.copy.name || 'Preparando…', v: 'Cancelar', act: 'usb-cancel' });
+  else if (EG.usb && EG.usb.length) EG.usb.forEach(d => rows.push({ l: `USB «${d.label}»: ${d.count} juego${d.count === 1 ? '' : 's'}`, s: d.new ? `${d.new} nuevo${d.new === 1 ? '' : 's'} · ${egGB(d.new_bytes)} · ${egSys(d)}` : 'Ya están todos en la consola',
+    v: d.new ? 'Copiar' : 'Listo', act: d.new ? 'usb' : 'info', drive: d, where: 'Ya están todos en la consola' }));
+  else rows.push({ l: 'Juegos desde un USB', s: 'Conecta un pendrive con carpetas por consola (ps2, gba, switch…): STONE copia los juegos y los añade', v: EG.usb === null ? '…' : 'Buscar', act: 'usb-scan' });
+  rows.push({ l: 'Juegos desde el móvil', s: 'iCloud Drive, Google Drive o el móvil: escanea un código y elige los archivos', v: 'Abrir', act: 'drop' });
+  return rows;
+}
+async function egScan(quiet) {
+  const r = await Bridge.call('usb.scan').catch(() => null);
+  if (!r) return;
+  EG.usb = r.drives || [];
+  if (S.screen === 'settings' && CATS[cat] === 'Emuladores') enterSettings({ pane: !!(NAV && NAV.pane), ri: NAV && NAV.pane ? NAV.c : 0 });
+  /* a drive that just appeared with new games: STONE offers to copy them, as a console offers a disc */
+  const fresh = EG.usb.filter(d => d.new && !EG.seen.has(d.path));
+  EG.usb.forEach(d => EG.seen.add(d.path));
+  if (quiet !== true && fresh.length && !EG.copy && ['home', 'library', 'settings'].includes(S.screen)) egAsk(fresh[0]);
+}
+function egAsk(d) {
+  const back = dlgOver();
+  play('notify');
+  openDlg(`<span class="st-cap">USB</span><h2>JUEGOS EN «${esc(d.label.toUpperCase())}»</h2><p>${d.new} juego${d.new === 1 ? '' : 's'} nuevo${d.new === 1 ? '' : 's'}: ${esc(egSys(d))}. Ocupan ${egGB(d.new_bytes)}.</p>
+    <p>STONE los copia a la consola y los añade a tu biblioteca: después siguen funcionando sin el USB.</p>
+    <div class="btns"><span class="txt-f" data-f data-b="go">COPIAR A LA CONSOLA</span><span class="txt-f" data-f data-b="no">AHORA NO</span></div>`, {
+    onA: el => { back(); if (el.dataset.b === 'go') egCopy(d); else play('back'); }, onB: () => { play('back'); back(); } });
+}
+function egCopy(d) {
+  play('select');
+  Bridge.call('usb.copy', d.path).then(() => { EG.copy = { done: 0, total: d.new_bytes, name: '' }; toast(`Copiando ${d.new} juegos del USB…`, false); egRefresh(); },
+    e => { play('error'); toast((e && e.message) || 'No se pudo copiar', false); });
+}
+const egRefresh = () => { if (S.screen === 'settings' && CATS[cat] === 'Emuladores') enterSettings({ pane: !!(NAV && NAV.pane), ri: NAV && NAV.pane ? NAV.c : 0 }); };
+Bridge.on('usb', d => {
+  if (!d) return;
+  if (d.state === 'copying') { EG.copy = d; return egRefresh(); }
+  if (d.state !== 'done') return;
+  EG.copy = null; delete CX.roms;
+  if (d.error) { play('error'); toast(d.error, false); }
+  else if (d.canceled) toast(`Copia cancelada: ${d.copied} juego${d.copied === 1 ? '' : 's'} copiado${d.copied === 1 ? '' : 's'}`, false);
+  else { play('notify'); longToast(`${d.copied} juego${d.copied === 1 ? '' : 's'} copiado${d.copied === 1 ? '' : 's'} y añadido${d.copied === 1 ? '' : 's'} a tu biblioteca. Ya puedes quitar el USB`, 7000); }
+  egScan(true); reloadLibrary();
+});
+/* «Juegos desde el móvil»: the QR code, what arrives, CERRAR adds them to the library */
+async function egDrop() {
+  play('select');
+  let r = null;
+  try { r = await Bridge.call('drop.start'); } catch (e) { play('error'); return toast((e && e.message) || 'No se pudo abrir', false); }
+  EG.drop = { got: [], now: null };
+  const back = dlgOver();
+  openDlg(`<span class="st-cap">DESDE EL MÓVIL</span><h2>ENVÍA TUS JUEGOS</h2>
+    <div class="qrrow">${qrSvg(r.url, 240)}<div><p>Escanea el código con el móvil, conectado al mismo Wi-Fi, y elige los juegos. En iPhone, «Archivos» incluye iCloud Drive.</p><p class="url">${esc(r.url.replace(/^http:\/\//, ''))}</p></div></div>
+    <p id="egdrop" class="tech">Esperando archivos… (abierto 30 minutos)</p>
+    <div class="btns"><span class="txt-f" data-f data-b="end">TERMINAR</span></div>`, {
+    onA: () => egDropEnd(back), onB: () => egDropEnd(back) });
+}
+function egDropLine() {
+  const e = $('#egdrop'); if (!e || !EG.drop) return;
+  const n = EG.drop.now, got = EG.drop.got;
+  e.textContent = (n ? `Recibiendo ${n.name} · ${n.total ? Math.floor(n.done * 100 / n.total) : 0} %` : 'Esperando archivos…')
+    + (got.length ? ` · Recibidos: ${got.map(g => `${g.name} (${g.system})`).slice(-4).join(', ')}${got.length > 4 ? ` y ${got.length - 4} más` : ''}` : '');
+}
+Bridge.on('drop', d => {
+  if (!d || !EG.drop) return;
+  if (d.state === 'receiving') EG.drop.now = d;
+  if (d.state === 'received') { EG.drop.now = null; EG.drop.got.push(d); play('notify'); }
+  egDropLine();
+});
+function egDropEnd(back) {
+  play('back'); back();
+  const n = EG.drop ? EG.drop.got.length : 0; EG.drop = null;
+  Bridge.call('drop.stop').then(() => { delete CX.roms; egRefresh(); if (n) { longToast(`${n} juego${n === 1 ? '' : 's'} recibido${n === 1 ? '' : 's'} y añadido${n === 1 ? '' : 's'} a tu biblioteca`, 6000); reloadLibrary(); } }, () => {});
+}
+function egAct(r, ri) {
+  if (r.act === 'usb') { egAsk(r.drive); return; }
+  if (r.act === 'usb-scan') { play('select'); toast('Buscando juegos en los USB conectados…', false); EG.seen.clear(); return egScan(); }
+  if (r.act === 'usb-cancel') { play('select'); return Bridge.call('usb.cancel').catch(() => {}); }
+  if (r.act === 'drop') return egDrop();
+}
+/* a drive plugged in is noticed within 10 s, outside games */
+setInterval(() => { if (['home', 'library', 'settings'].includes(S.screen) && !S.steamFront && !S.dormant) egScan(); }, 10000);
+setTimeout(() => egScan(true), 4000);
 
 /* ---------- LIBRARY ---------- */
 const FILTERS = ['Todos', 'Steam', 'Accesos directos', 'Favoritos', 'Por instalar', 'Sorpréndeme'];
@@ -2787,10 +2998,10 @@ const imgLabel = g => 'Imagen: ' + (g.img ? (imgSel(g) ? imgSel(g).label : 'STON
 /* STONE IMAGE (look.py): a look per game through vkBasalt; Original = none. */
 const lookLabel = g => 'Aspecto: ' + (g.look ? (g.look.chosen ? g.look.looks.find(l => l.key === g.look.chosen).label : 'Original') : '…');
 /* D-22 frame generation (framegen.py): EXPERIMENTAL, only with OptiScaler installed by STONE. */
-const fgLabel = g => 'Fotogramas: ' + (g.fg ? (g.fg.on ? 'generados (exp.)' : 'normales') : '…');
+const fgLabel = g => 'Fotogramas: ' + (g.fg ? (g.fg.on ? 'Generados (experimental)' : 'Normales') : '…');
 const optzLabel = g => 'Optimizar' + (g.opz ? ` (${g.opz.done}/${g.opz.total})` : '');
 const optLabel = g => g.img && g.img.by_stone ? 'Quitar FSR (OptiScaler)' : 'Instalar FSR (OptiScaler)';
-const preLabel = g => 'Calidad: ' + (g.img && g.img.preset ? PRESET_TXT[g.img.preset] || g.img.preset : 'según el juego');
+const preLabel = g => 'Ajuste de FSR: ' + (g.img && g.img.preset ? PRESET_TXT[g.img.preset] || g.img.preset : 'El del juego');
 function imgRefresh(g) {
   const d = $('#detail'); if (!d) return;
   const a = d.querySelector('[data-act="img"]'), b = d.querySelector('[data-act="pre"]');
@@ -2864,7 +3075,8 @@ async function experience(g, i) {
   const el = $('#dexp');
   if (!r || !el || curG !== i || S.screen !== 'detail') return;
   g.exp = r;
-  el.textContent = `${r.label} · ${r.summary} · ${r.status_text}`;
+  /* «STONE RECOMMENDED … Recomendado por STONE» said the same twice: the state only when it adds something */
+  el.textContent = [r.label, r.summary, r.label === 'STONE RECOMMENDED' && /^Recomendado/.test(r.status_text || '') ? null : r.status_text].filter(Boolean).join(' · ');
   el.title = r.settings || '';
 }
 function detailA(el) {
@@ -3196,17 +3408,32 @@ function openQuick() {
       <span id="qread" style="font-size:18px;color:var(--text-2);font-variant-numeric:tabular-nums">${S.actual && !S.actual.error ? `GPU hasta ${S.actual.max} MHz · ${S.actual.temp} °C` : noLimitText()} · ${quickReadings(S.metrics)}</span>
       <div class="opts">${['silent', 'balanced', 'performance', 'custom'].map(p => { const cur = p === 'custom' ? String(effective()).startsWith('c') : effective() === p; const label = p === 'custom' ? (String(effective()).startsWith('c') ? profOf(effective()).n : 'CUSTOM') : FACT[p].n; return `<span class="${cur ? 'cur' : ''}" style="font-size:15px;letter-spacing:.06em">${label}</span>`; }).join('')}</div></div>
     <div class="rule"></div>
-    <div class="steam"><span class="cap">MANDO, AUDIO, BLUETOOTH Y RED: BOTÓN ··· DE STEAM</span>
+    <div class="steam"><span class="it txt-f" data-f data-act="vol">Volumen <span class="tog" id="qvol">${QV.v == null ? '…' : `‹ ${Math.round(QV.v * 100)} % ›`}</span></span>
+      <span class="cap" id="qnet">${esc(netState(QV.net).t)}</span>
       <span class="it txt-f" data-f data-act="tech">Modo técnico <span class="tog">${S.tech ? 'activado' : 'desactivado'}</span></span>
       <span class="it txt-f" data-f data-act="power">Apagar</span></div>
     ${g ? `<div style="font-size:18px;color:var(--text-2)">${esc(g.n)} sigue abierto</div>` : ''}`;
-  $('#quick').classList.add('on');
+  $('#quick').classList.add('on'); quickSys();
   PerfAPI.getMetrics().then(m => { S.metrics = m; const q = $('#qread'); if (q && S.actual && !S.actual.error) q.textContent = `GPU hasta ${S.actual.max} MHz · ${S.actual.temp} °C · ${quickReadings(m)}`; }).catch(() => {});
   const items = [...q.querySelectorAll('[data-f]')];
   NAV = mkNav(items.map(e => [e]), { r: 0, place: (el, b) => ({ x: b.x, y: b.y + b.h + 8, w: b.w }) });
   NAV.id = 'quick';
   setTimeout(() => { line.classList.remove('off'); applyFocus(); }, S.rm ? 60 : 260);
   hints([['A', 'Elegir'], ['B', 'Cerrar']]);
+}
+/* The game's sound and the network, from STONE's own menu: in the STONE session Steam runs without its
+   Game Mode interface, so its quick access menu is not there to ask (3.1.0-rc6). ← → change the volume. */
+const QV = { v: null, net: null };
+function quickSys() {
+  Bridge.call('audio.status').then(a => { QV.v = a && a.volume != null ? a.volume : null; const e = $('#qvol'); if (e) e.textContent = QV.v == null ? 'no disponible' : `‹ ${Math.round(QV.v * 100)} % ›`; }, () => {});
+  Bridge.call('net.status').then(n => { QV.net = n; const e = $('#qnet'); if (e) e.textContent = netState(n).t; }, () => {});
+}
+function quickVol(d) {
+  if (QV.v == null) return bump(d);
+  const v = Math.max(0, Math.min(1, Math.round((QV.v + d * 0.05) * 100) / 100));
+  if (v === QV.v) return bump(d);
+  QV.v = v; play('nav'); const e = $('#qvol'); if (e) e.textContent = `‹ ${Math.round(v * 100)} % ›`;
+  Bridge.call('audio.volume', v).catch(() => toast('No se pudo cambiar el volumen', false));
 }
 function quickReadings(m) { return m ? `GPU ${nv(m.gpu_temp_c, ' °C')} · uso ${nv(m.gpu_busy_pct, ' %')}` : 'leyendo…'; }
 function closeQuick(silent) {
@@ -3220,6 +3447,7 @@ function quickA(el) {
   if (a === 'home') { play('select'); return returnHome(); }
   if (a === 'close') { play('select'); return closeGameAsk('quick'); }
   if (a === 'profile') { play('select'); return api('setSessionProfile', nextSession(1)).then(() => { if (S.screen === 'quick') refreshQuick(); }); }
+  if (a === 'vol') { play('select'); return toast('← → cambian el volumen', false); }
   if (a === 'tech') { play('select'); S.tech = !S.tech; savePrefs(); setMetrics(S.tech); return refreshQuick(); }
   if (a === 'power') { play('select'); closeQuick(true); S.screen = 'game'; return openPower(); }
 }
@@ -3233,6 +3461,7 @@ function nextSession(d, noWrap) {
 function refreshQuick() { const r = NAV.r; $('#quick').classList.remove('on'); S.screen = 'game'; openQuick(); NAV.r = r; applyFocus(); }
 function quickLR(dir) {
   const el = focusEl();
+  if (el && el.dataset.act === 'vol') return quickVol(dir === 'left' ? -1 : 1);
   if (el && el.dataset.act === 'profile') {
     const n = nextSession(dir === 'left' ? -1 : 1, true);
     if (!n) return bump(dir === 'left' ? -1 : 1);
@@ -3247,6 +3476,9 @@ let cat = 1;
 /* Steam's own settings section for each STONE category (opened in Steam's interface). */
 const STEAM_SEC = { 'Sistema': 'System', 'Pantalla': 'Display', 'Audio': 'Audio', 'Mandos': 'Controller', 'Red': 'Internet',
   'Bluetooth': 'Bluetooth', 'Almacenamiento': 'Storage', 'Energía': 'Power', 'Actualizaciones': 'System', 'Accesibilidad': 'Accessibility' };
+/* What each category Steam handles holds, in Steam's own settings (its sections, client 1792618285). */
+const STEAM_WHAT = { 'Sistema': ['El idioma, la fecha y hora, el nombre de la consola y la información del sistema', 'Idioma, fecha y hora, nombre de la consola'],
+  'Mandos': ['La configuración de los mandos, sus botones y la vibración', 'Botones, vibración y distribución de cada mando'] };
 /* How STONE draws inside Game Mode (read at start by /usr/libexec/stone-home). GPU: Chromium,
    at the screen's own resolution (4K on a 4K TV), the same engine as Steam's interface. Sin GPU:
    the WebKit shell drawing in software, the fallback (smooth only at low resolutions). */
@@ -3300,7 +3532,7 @@ function displayRows() {
       v: resTxt(D.output), act: 'info', where: D.native && D.output && D.output.w < D.native.w
         ? 'El cable o el adaptador no llevan la nativa: «Conexión» dice lo máximo que llevan' : 'La consola envía esta resolución al televisor' },
     ...linkRows(D),
-    { l: 'Encuadre', s: 'Si los bordes se cortan en tu televisor, reduce la imagen hasta ver las esquinas', v: `${FRAME} %`, key: 'frame' },
+    { l: 'Encuadre', s: 'Si las cuatro esquinas marcadas no se ven completas en tu televisor, usa ← → hasta verlas', v: `${FRAME} %`, key: 'frame' },
     { l: 'Juegos ven', s: D.policy === 'native' ? 'La resolución del televisor; cada juego decide cómo dibujar' : 'Lo que Steam da por defecto',
       v: D.policy === 'native' ? `Televisor · ${games}` : `Steam · ${games}`, key: 'gameres' }];
 }
@@ -3313,12 +3545,14 @@ function loadSteamSet(refresh) {
     if (S.screen === 'settings' && CATS[cat] === 'Steam') enterSettings({ pane: !!NAV.pane, ri: NAV.pane ? NAV.c : 0 });
   });
 }
+/* a level from 0 to 1 (volumes) as a percentage, as Steam shows it; anything else as Steam gives it */
+const ssValue = v => typeof v === 'number' && v >= 0 && v <= 1 && !Number.isInteger(v) ? `${Math.round(v * 100)} %` : String(v);
 function steamSetRows() {
   const ss = S.ss;
   if (!ss) { if (!S.ssLoading) loadSteamSet(); return [{ l: 'Leyendo…', s: 'Preguntando a Steam qué ajustes ofrece', v: '', ro: true }]; }
   const head = { l: 'Actualizar la lista', s: ss.available ? `${ss.settings.length} ajustes leídos de este Steam` : (ss.error || 'Steam no respondió'), v: 'Actualizar', act: 'sset', refresh: true };
   const rows = (ss.settings || []).slice().sort((a, b) => a.area.localeCompare(b.area) || a.label.localeCompare(b.label)).map(x => ({
-    l: x.label, s: x.area, v: x.type === 'bool' ? (x.value ? 'Sí' : 'No') : String(x.value),
+    l: x.label, s: x.area, v: x.type === 'bool' ? (x.value ? 'Sí' : 'No') : ssValue(x.value),
     act: x.writable ? 'sset' : 'info', sset: x, where: `${x.area}: ${x.label} = ${x.value}${x.writable ? '' : ' (solo lectura)'}` }));
   if (S.steamAcct === undefined) { S.steamAcct = null; Sys.firstrunStatus().then(f => { S.steamAcct = !!f.steam_account; }, () => { S.steamAcct = false; }).then(() => { if (S.screen === 'settings' && CATS[cat] === 'Steam') enterSettings({ pane: !!NAV.pane, ri: NAV.pane ? NAV.c : 0 }); }); }
   /* signed in: Steam says so (S.libLogged), or at least an account has signed in on this console */
@@ -3326,7 +3560,7 @@ function steamSetRows() {
   const acct = { l: 'Cuenta de Steam', s: inn ? 'Conectada en esta consola' : S.steamAcct === null && S.libLogged !== 'out' ? 'Leyendo…' : 'Sin iniciar sesión: Steam muestra su ventana, con un código QR para la app de Steam del móvil',
     v: inn ? 'Conectada' : 'Iniciar sesión', act: 'sset', login: !inn };
   const more = [
-    { l: 'Tienda de Steam', s: 'La tienda propia de Steam, en pantalla: para comprar con tu cuenta. El botón guía vuelve a STONE', v: 'Abrir', act: 'sset', front: 'store' },
+    { l: 'Tienda de Steam', s: 'La tienda propia de Steam, para comprar con tu cuenta. Sal de ella con B para volver a STONE', v: 'Abrir', act: 'sset', front: 'store' },
     { l: 'Steam completo', s: 'Steam ocupa la pantalla con su propia interfaz; STONE vuelve después', v: 'Abrir', act: 'sset', full: true },
     { l: 'Estado de Steam', s: 'Lo que STONE sabe de Steam ahora: cuenta, sesión y biblioteca', v: 'Ver', act: 'sset', status: true }];
   return [acct, ...more, head, ...rows];
@@ -3373,23 +3607,50 @@ Bridge.on('emulator', d => {
   const was = EMU_STATE[d.key] && EMU_STATE[d.key].state;
   EMU_STATE[d.key] = d;
   toast(d.text, false);
+  if (String(d.key).startsWith('port:')) { if (d.state !== 'installing') { S.ports = null; reloadLibrary(); } return emuRedraw(); }
   if (d.state === 'done') { EMU_UPD.keys.delete(d.key); loadEmulators(); if (was !== 'updating') reloadLibrary(); }
   else emuRedraw();
 });
+/* Switch 2 (ports.py): ports of single games (recompilations that need the person's own copy) and the
+   experimental emulator, installed from each project's own GitHub releases. 3.1.0-rc6. */
+function portRows() {
+  if (!S.ports) { if (!S.portsLoading) { S.portsLoading = true; Bridge.call('ports.list').then(r => { S.ports = r.ports; }, () => { S.ports = []; }).then(() => { S.portsLoading = false; emuRedraw(); }); }
+    return [{ l: 'Switch 2', s: 'Leyendo…', v: '', ro: true }]; }
+  return S.ports.map(p => {
+    const st = EMU_STATE['port:' + p.key], busy = st && st.state === 'installing';
+    return { l: p.kind === 'port' ? `${p.name} · port de Switch 2` : `${p.name} · emulador de Switch 2`,
+      s: busy ? st.text : p.installed ? `Instalado · ${p.project} ${p.tag || ''} · necesita tu copia del juego` : `${p.project} · experimental · necesita tu copia del juego`,
+      v: busy ? 'Instalando…' : p.installed ? 'Actualizar' : 'Instalar', act: 'emu', port: p };
+  });
+}
+function portDlg(p) {
+  const back = dlgOver();
+  play('select');
+  openDlg(`<span class="st-cap">${p.kind === 'port' ? 'PORT DE SWITCH 2' : 'EMULADOR DE SWITCH 2'}</span><h2>${esc(p.name.toUpperCase())}</h2>
+    <p>${p.kind === 'port' ? `Un port es el juego convertido en un programa para PC por el proyecto ${esc(p.project)} (licencia ${esc(p.license)}). STONE lo descarga de su página en GitHub y comprueba la descarga.` : `${esc(p.project)} (licencia ${esc(p.license)}), desde su página en GitHub.`}</p>
+    <p><b>Necesitas:</b> ${esc(p.needs)} Tus archivos llegan desde un USB o desde el móvil.</p><p class="tech">${esc(p.note)}</p>
+    <div class="btns"><span class="txt-f" data-f data-b="go">${p.installed ? 'ACTUALIZAR' : 'INSTALAR'}</span><span class="txt-f" data-f data-b="no">VOLVER</span></div>`, {
+    onA: el => { back(); if (el.dataset.b !== 'go') return play('back');
+      if (!needNet('instalar un port')) return;
+      EMU_STATE['port:' + p.key] = { state: 'installing', text: 'Empezando…' }; emuRedraw();
+      Bridge.call('ports.install', p.key).catch(e => { EMU_STATE['port:' + p.key] = null; play('error'); toast((e && e.message) || 'No se pudo', false); emuRedraw(); }); },
+    onB: () => { play('back'); back(); } });
+}
 function emuRows() {
   const have = S.emu.filter(e => e.installed);
   /* asked once by itself when the list is opened with emulators installed */
   if (have.length && !EMU_UPD.checked && !EMU_UPD.busy) setTimeout(() => { if (!EMU_UPD.checked) emuCheck(true); }, 0);
   const head = have.length ? [{ l: 'Buscar actualizaciones', s: emuUpdText(), v: EMU_UPD.busy ? 'Buscando…' : 'Buscar', act: 'emu', check: true },
     ...(EMU_UPD.keys.size ? [{ l: 'Actualizar todos', s: 'Cada emulador con versión nueva se actualiza desde Flathub', v: 'Actualizar', act: 'emu', all: true }] : [])] : [];
-  return head.concat(S.emu.map(e => {
+  return head.concat(S.emu.filter(e => !e.not_yet).map(e => {
     if (e.not_yet) return { l: e.name, s: 'Todavía no hay un emulador que instalar. Pulsa A para saber por qué', v: 'No disponible', act: 'emu', emu: e };
     const st = EMU_STATE[e.key], busy = emuBusy(e.key), upd = e.installed && EMU_UPD.keys.has(e.key);
     return { l: e.name, s: busy ? st.text : e.plays + (e.installed && e.version ? ` · versión ${e.version}` : '') + (upd ? ' · hay una versión nueva' : ''),
       v: busy ? (st.state === 'updating' ? 'Actualizando…' : 'Instalando…') : upd ? 'Actualizar' : e.installed ? 'Instalado' : 'Instalar', act: 'emu', emu: e };
-  }));
+  })).concat(portRows());
 }
 function emuA(r) {
+  if (r.port) return portDlg(r.port);
   if (r.check) { play('select'); return emuCheck(false); }
   if (r.all) {
     play('select');
@@ -3440,9 +3701,12 @@ function measureSmoothness() {
   }, 450);
 }
 /* Opens the matching section of Steam's settings over STONE; if Steam cannot be reached, says where it is. */
+/* 3.1.0-rc6: through the same way as the sign-in and the store (steamOpen): Steam's window in front,
+   B out of its settings or the guide button gives the screen back to STONE (rc5: Steam was asked to
+   navigate, but its window was not brought in front and there was no way back). */
 function openSteamSettings(r) {
   if (!r.sec) return toast(r.where, false);
-  return Sys.openSteamSettings(r.sec).then(res => { if (!res || !res.ok) toast(r.where, false); }, () => toast(r.where, false));
+  return steamOpen('settings', r.sec);
 }
 /* A new drawing mode applies when STONE Home starts: save, say so, restart. */
 function applyRender() {
@@ -3465,6 +3729,7 @@ function updRow() {
   return { l: 'Buscar actualizaciones', s: u.result && u.result !== 'success' ? 'La última búsqueda no terminó bien: vuelve a intentarlo' : 'Busca una versión nueva de STONE OS y la descarga ahora', v: 'Buscar', act: 'updnow' };
 }
 function updateNow(ri) {
+  if (!needNet('buscar actualizaciones')) return;
   play('select');
   Sys.updateNow().then(() => { S.updAsked = Date.now(); toast('Buscando una versión nueva de STONE OS…', false); enterSettings({ pane: true, ri }); updPoll(ri); },
     e => { play('error'); toast(e && e.code === 'Unsupported' ? 'Esta imagen no tiene servicio de actualización' : 'No se pudo empezar a buscar', false); });
@@ -3519,7 +3784,6 @@ function catRows() {
   switch (CATS[cat]) {
     case 'Pantalla': return { d: 'Ajusta cómo se ve STONE en tu televisor.', rows: [
       ...displayRows(),
-      { l: 'Área segura', s: 'Usa ← → hasta que las cuatro esquinas se vean completas', v: `${S.safe} %`, key: 'safe' },
       steam('Resolución y frecuencia', 'Las fija Steam para todo el sistema', 'Botón STEAM → Ajustes → Pantalla'),
       steam('HDR', 'Según el televisor y el juego', 'Botón STEAM → Ajustes → Pantalla'),
       { l: 'Tamaño del texto', s: 'Se aplica a STONE Home', v: SIZES[S.ts], key: 'ts' },
@@ -3541,8 +3805,8 @@ function catRows() {
     case 'Steam': return { d: 'Tu cuenta, la tienda y los ajustes de Steam, con el aspecto de STONE. Los ajustes de sí/no se cambian con A.', rows: steamSetRows() };
     case 'Emuladores': {
       if (!S.emu) { if (!S.emuLoading) loadEmulators(); return { d: 'Emuladores de otras consolas, desde Flathub.', rows: [{ l: 'Leyendo…', s: 'Buscando qué emuladores están instalados', v: '', ro: true }] }; }
-      return { d: 'Se instalan desde Flathub y aparecen en tu biblioteca como accesos directos. Pulsa A sobre uno instalado para actualizarlo. Los juegos, las BIOS y las claves de cada consola los pones tú.',
-        rows: emuRows().concat(romRows()) };
+      return { d: 'Tus juegos de otras consolas: tráelos de un USB o del móvil y aparecen en tu biblioteca. Debajo, los emuladores (desde Flathub). Las BIOS y las claves de cada consola las pones tú.',
+        rows: romRows().concat(emuRows()) };
     }
     case 'Rendimiento': return { d: `Perfil activo: ${profOf(S.prof).n}. Elige entre silencio y rendimiento, o ajusta tu propio perfil.`, rows: [
       { l: 'Performance Center', s: 'SILENT, BALANCED, PERFORMANCE y CUSTOM', v: 'Abrir', act: 'perf' },
@@ -3562,20 +3826,27 @@ function catRows() {
       { l: 'Sistema base', s: rel.STONE_BASE_IMAGE ? `Bazzite · ${rel.STONE_BASE_IMAGE}${rel.STONE_BASE_DIGEST ? ' @ ' + rel.STONE_BASE_DIGEST.slice(7, 19) : ''}` : 'Bazzite (imagen derivada de bazzite-deck)', v: '' },
       { l: 'Componentes', s: [rel.STONE_KERNEL && `kernel ${rel.STONE_KERNEL}`, rel.STONE_MESA && `Mesa ${rel.STONE_MESA}`, rel.STONE_GOVERNOR_VERSION && `regulador ${rel.STONE_GOVERNOR_VERSION}`].filter(Boolean).join(' · ') || '—', v: '' },
       { l: 'Modo escritorio', s: 'Avanzado: el escritorio de Linux, fuera de la experiencia de consola', v: 'Abrir', act: 'desktop' },
-      { l: 'NEURAL RENDER', s: 'Experimental: sin backends; ninguno funciona hoy de forma medible en la GPU de la BC-250', v: 'Sin backend' }] };
+      /* a feature that does not work today is not put in front of the person: only in technical mode */
+      ...(S.tech ? [{ l: 'NEURAL RENDER', s: 'Experimental: sin backends; ninguno funciona hoy de forma medible en la GPU de la BC-250', v: 'Sin backend' }] : [])] };
     case 'Actualizaciones': return { d: 'Las actualizaciones llegan como una imagen completa y se aplican al reiniciar. Si una falla, la anterior sigue disponible.', rows: [
       { l: 'Estado', s: !dep ? 'No se pudo leer el estado del sistema' : dep.staged ? `Actualización lista: ${dep.staged.version || 'nueva versión'}. Se aplica al reiniciar` : `Instalada: ${(dep.booted && dep.booted.version) || rel.STONE_VERSION || '—'}`, v: '' },
       ...(dep && dep.staged ? [{ l: 'Reiniciar y actualizar', s: 'La consola se reinicia con la versión nueva', v: 'Reiniciar', act: 'reboot' }] : []),
       ...(dep && dep.staged ? [] : [updRow()]),
       { l: 'Comprobación automática', s: updTimerText(S.info && S.info.updates), v: '' },
       { l: 'Volver a la versión anterior', s: dep && dep.rollback ? `Guardada: ${dep.rollback.version || 'versión anterior'}` : 'No hay una versión anterior guardada todavía', v: 'Cómo', act: 'info', where: 'Reinicia y, en el menú de arranque, elige la segunda entrada. STONE OS arranca con la versión anterior' }] };
-    default: return { d: `${CATS[cat]}: lo gestiona Steam.`, rows: [steam(`Abrir ${CATS[cat].toLowerCase()}`, 'Panel nativo de Steam', `Botón STEAM → Ajustes → ${CATS[cat]}`)] };
+    default: {
+      /* what lives in Steam's own settings, said plainly; B out of them comes back here */
+      const what = STEAM_WHAT[CATS[cat]] || ['Ajustes de Steam', 'Se abren los ajustes de Steam'];
+      return { d: `${what[0]} están en los ajustes de Steam. Se abren aquí mismo; para volver, B o el botón guía.`,
+        rows: [steam(`Abrir ${CATS[cat].toLowerCase()} en Steam`, what[1], `Botón STEAM → Ajustes → ${CATS[cat]}`)] };
+    }
   }
 }
 
 /* CPU cores the system sees (threads / 2: Zen 2 has 2 threads per core). Boards sold
    unlocked report 8; the BC-250's stock firmware 6. */
-function cores() { const t = navigator.hardwareConcurrency || 12; return Math.max(1, Math.round(t / 2)); }
+/* the cores stoned read from the console (its configuration), else the browser's count of threads, halved */
+function cores() { const d = S.caps && S.caps.configuration && S.caps.configuration.detected; if (d && d.cpu_cores) return d.cpu_cores; const t = navigator.hardwareConcurrency || 12; return Math.max(1, Math.round(t / 2)); }
 
 /* 40 CU (M04, D-31): switched from here with STONE's own confirmation; stone-cu40 does the work
    through pkexec (polkit allows these three command lines to the console administrator only). The
@@ -3651,19 +3922,60 @@ function setSysVol(d, ri) {
   Bridge.call('audio.volume', v).catch(() => toast('No se pudo cambiar el volumen', false));
   enterSettings({ pane: true, ri });
 }
+/* Ajustes → Red, as SteamOS has it: Wi-Fi on or off, the network in use (DESCONECTAR / OLVIDAR),
+   networks joined before join again without their password, whether there is internet. 3.1.0-rc5 on
+   the board: after DESCONECTAR the old list still said "Conectada" and offered no way back. */
+const NET_INTERNET = { full: ['Hay conexión a internet', 'Sí'], limited: ['La red no tiene salida a internet: revisa el router', 'No'],
+  portal: ['La red pide iniciar sesión en una página web (hoteles, cafeterías): no se puede desde la consola', 'No'],
+  none: ['Sin conexión', 'No'], unknown: ['Conectado; NetworkManager no comprobó internet', '—'] };
 function netRows() {
   const N = CX.net, W = CX.wifi;
   if (!N) { cxLoad('net', () => Bridge.call('net.status'), 'Red'); return [{ l: 'Leyendo…', s: 'Cable y Wi-Fi', v: '' }]; }
   if (N.error) return [{ l: 'Red no disponible', s: N.error, v: '' }];
-  const rows = N.devices.map(d => ({ l: d.type === 'wifi' ? 'Wi-Fi' : 'Cable', s: d.state === 'connected' ? `Conectado${d.connection ? ' · ' + d.connection : ''}` : d.state === 'unavailable' ? 'Sin cable o apagado' : 'Sin conectar',
-    v: d.state === 'connected' ? 'Conectado' : '—', act: d.type === 'wifi' && d.state === 'connected' ? 'wifi-off' : 'info', dev: d.device, where: d.type === 'wifi' ? 'Elige una red de la lista' : 'Conecta un cable de red: se configura solo' }));
-  if (N.devices.some(d => d.type === 'wifi')) {
+  const wifi = N.devices.find(d => d.type === 'wifi'), cable = N.devices.find(d => d.type === 'ethernet'), rows = [];
+  if (wifi) {
+    const on = N.radio !== false && wifi.state !== 'unavailable';
+    rows.push({ l: 'Wi-Fi', s: wifi.state === 'connected' ? `Conectado a ${N.ssid || wifi.connection || 'una red'}${N.signal != null ? ` · señal ${N.signal} %` : ''}`
+      : on ? (wifi.state === 'connecting' ? 'Conectando…' : 'Sin conectar: elige una red de la lista') : 'Apagado', v: on ? 'Activado' : 'Desactivado', act: 'wifi-radio', on });
+  }
+  if (cable) rows.push({ l: 'Cable de red', s: cable.state === 'connected' ? 'Conectado: se configura solo' : 'Sin cable conectado', v: cable.state === 'connected' ? 'Conectado' : '—', act: 'info', where: 'Conecta un cable de red: se configura solo' });
+  const it = NET_INTERNET[N.online ? N.internet || 'unknown' : 'none'] || NET_INTERNET.unknown;
+  rows.push({ l: 'Internet', s: it[0], v: it[1], act: 'info', where: it[0] });
+  if (wifi && N.radio !== false && wifi.state !== 'unavailable') {
     if (!W) { cxLoad('wifi', () => Bridge.call('net.wifiList'), 'Red'); rows.push({ l: 'Buscando redes Wi-Fi…', s: '', v: '' }); }
-    else if (W.error) rows.push({ l: 'Wi-Fi', s: W.error, v: '' });
-    else W.networks.slice(0, 12).forEach(n => rows.push({ l: n.ssid, s: `${n.secure ? 'Con contraseña' : 'Abierta'} · señal ${n.signal} %`, v: n.active ? 'Conectada' : 'Conectar', act: n.active ? 'info' : 'wifi', ssid: n.ssid, secure: n.secure, where: 'Ya conectada' }));
+    else if (W.error) rows.push({ l: 'Redes Wi-Fi', s: W.error, v: '' });
+    else {
+      if (!W.networks.length) rows.push({ l: 'Ninguna red a la vista', s: 'Acerca la consola al router o busca de nuevo', v: '' });
+      W.networks.slice(0, 12).forEach(n => rows.push({ l: n.ssid, s: `${n.active ? 'En uso' : n.known ? 'Guardada' : n.secure ? 'Con contraseña' : 'Abierta'} · señal ${n.signal} %`,
+        v: n.active ? 'Conectada' : 'Conectar', act: n.active ? 'wifi-net' : 'wifi', ssid: n.ssid, secure: n.secure, known: n.known, dev: wifi.device }));
+    }
     rows.push({ l: 'Buscar de nuevo', s: 'Actualiza la lista de redes', v: '', act: 'wifi-scan' });
   }
   return rows;
+}
+/* Every network change: the status, the list and the status icon are read again. */
+function netRun(method, args, ok, ri, onError) {
+  toast('Un momento…', false);
+  return Bridge.call(method, ...args).then(() => { if (ok) toast(ok, false); return true; },
+    e => { const m = (e && e.message) || 'No se pudo'; if (onError && onError(m)) return false; play('error'); toast(m, false); return false; })
+    .then(r => { delete CX.net; delete CX.wifi; netIconKick(); if (S.screen !== 'game' && S.screen !== 'off' && !$('#dlg').classList.contains('on')) enterSettings({ pane: true, ri }); return r; });
+}
+function wifiJoin(r, ri) {
+  const ask = () => osk(`CONTRASEÑA DE ${r.ssid}`, pw => pw === null ? enterSettings({ pane: true, ri }) : netRun('net.wifiConnect', [r.ssid, pw], `Conectado a ${r.ssid}`, ri), true);
+  if (r.secure && !r.known) return ask();
+  /* open networks and networks joined before: no password; if it is asked after all, the keyboard */
+  return netRun('net.wifiConnect', [r.ssid, null], `Conectado a ${r.ssid}`, ri, m => /contraseña/i.test(m) ? (ask(), true) : false);
+}
+function wifiNetDlg(r, ri) {
+  const back = () => { closeDlg(); play('back'); enterSettings({ pane: true, ri }); };
+  openDlg(`<span class="st-cap">WI-FI</span><h2>${esc(r.ssid)}</h2><p>Conectada · ${esc(r.s.split(' · ').pop())}</p><p>«Olvidar» borra también la contraseña guardada.</p>
+    <div class="btns"><span class="txt-f" data-f data-b="no">VOLVER</span><span class="txt-f" data-f data-b="off">DESCONECTAR</span><span class="txt-f" data-f data-b="forget">OLVIDAR</span></div>`, {
+    onA: el => {
+      const b = el.dataset.b; if (b === 'no') return back();
+      closeDlg(); play('select');
+      if (b === 'off') return netRun('net.wifiDisconnect', [r.dev], 'Wi-Fi desconectado. Elige una red para volver a conectar', ri);
+      return netRun('net.wifiDisconnect', [r.dev], null, ri).then(() => netRun('net.wifiForget', [r.ssid], `${r.ssid}: olvidada`, ri));
+    }, onB: back });
 }
 function btRows() {
   const B = CX.bt;
@@ -3679,13 +3991,9 @@ async function cxAct(r, ri) {
     return Bridge.call(method, ...args).then(() => { if (ok) toast(ok, false); cxReset(key, catName, ri); }, e => { play('error'); toast((e && e.message) || 'No se pudo', false); cxReset(key, catName, ri); }); };
   if (r.act === 'audio-out') { play('select'); return run('audio.default', [r.id], `Sonido por: ${r.l}`, 'audio', 'Audio'); }
   if (r.act === 'wifi-scan') { play('select'); delete CX.wifi; return enterSettings({ pane: true, ri }); }
-  if (r.act === 'wifi-off') { play('select'); return run('net.wifiDisconnect', [r.dev], 'Wi-Fi desconectado', 'net', 'Red'); }
-  if (r.act === 'wifi') {
-    play('select');
-    if (!r.secure) return run('net.wifiConnect', [r.ssid, null], `Conectado a ${r.ssid}`, 'net', 'Red').then(() => { delete CX.wifi; });
-    return osk(`CONTRASEÑA DE ${r.ssid}`, pw => pw === null ? enterSettings({ pane: true, ri })
-      : run('net.wifiConnect', [r.ssid, pw], `Conectado a ${r.ssid}`, 'net', 'Red').then(() => { delete CX.wifi; }), true);
-  }
+  if (r.act === 'wifi-radio') { play('select'); return netRun('net.wifiRadio', [!r.on], r.on ? 'Wi-Fi desactivado' : 'Wi-Fi activado: buscando redes…', ri); }
+  if (r.act === 'wifi-net') { play('select'); return wifiNetDlg(r, ri); }
+  if (r.act === 'wifi') { play('select'); return wifiJoin(r, ri); }
   if (r.act === 'bt-scan') {
     play('select'); CX.btScanning = true; enterSettings({ pane: true, ri });
     return Bridge.call('bt.scan').then(x => { CX.bt = x; }, e => { toast((e && e.message) || 'No se pudo buscar', false); }).then(() => { CX.btScanning = false; if (S.screen === 'settings') enterSettings({ pane: true, ri }); });
@@ -3731,15 +4039,21 @@ function storageRows() {
   const T = CX.storage;
   if (!T) { cxLoad('storage', () => Bridge.call('storage.status'), 'Almacenamiento'); return [{ l: 'Leyendo…', s: 'Discos, juegos y descargas', v: '' }]; }
   if (T.error) return [{ l: 'No se pudo leer el almacenamiento', s: T.error, v: '' }];
-  const rows = T.libraries.map(l => ({ l: l.path, s: `${GB(l.free)} libres de ${GB(l.total)}${l.low ? ' · queda poco espacio' : ''}`, v: l.low ? 'Aviso' : 'Bien', act: 'info', where: 'Biblioteca de Steam en este disco' }));
-  T.downloads.forEach(d => rows.push({ l: `Descargando · ${d.name}`, s: d.progress == null ? 'En cola o preparando' : `${GB(d.downloaded)} de ${GB(d.total)}`, v: d.progress == null ? '—' : `${Math.round(d.progress * 100)} %`, act: 'steam-dl' }));
+  /* the disk by what it is for the person (the console's own disk, a card, an external disk), not by its Linux path */
+  const disk = (l, k) => /\/run\/media\/|\/media\//.test(l.path) ? `Disco externo ${T.libraries.length > 2 ? k : ''}`.trim() : /\/mnt\//.test(l.path) ? 'Otro disco' : 'Disco de la consola';
+  const rows = T.libraries.map((l, k) => ({ l: disk(l, k), s: `${GB(l.free)} libres de ${GB(l.total)}${l.low ? ' · queda poco espacio: borra algún juego que no uses' : ''}`, v: l.low ? 'Poco espacio' : 'Bien', act: 'info', where: `Biblioteca de Steam en ${l.path}` }));
+  T.downloads.forEach(d => rows.push({ l: `Descargando · ${d.name}`, s: d.progress == null ? 'En cola o preparando' : `${GB(d.downloaded)} de ${GB(d.total)}`, v: d.progress == null ? '—' : `${Math.round(d.progress * 100)} %`, act: 'steam-dl', appid: d.appid }));
   T.games.slice(0, 20).forEach(g => rows.push({ l: g.name, s: `Juego ${GB(g.size)} · caché de sombreadores ${GB(g.shader_cache)} · Proton ${GB(g.prefix)}`, v: GB((g.size || 0) + (g.shader_cache || 0) + (g.prefix || 0)), act: 'game-store', game: g }));
   rows.push({ l: 'Volver a leer', s: 'Actualiza tamaños y descargas', v: '', act: 'storage-again' });
   return rows;
 }
 function storeAct(r, ri) {
   if (r.act === 'storage-again') { play('select'); return cxReset('storage', 'Almacenamiento', ri); }
-  if (r.act === 'steam-dl') { play('select'); return toast('La descarga sigue sola, también con la consola en reposo. Al terminar, el juego aparece listo para jugar', false); }
+  if (r.act === 'steam-dl') {
+    /* the game's page: its bar, PAUSAR / REANUDAR (rc5 said "también con la consola en reposo": this console has no standby) */
+    play('select'); const i = G.findIndex(g => g.appid === String(r.appid));
+    return i >= 0 ? enterDetail(i) : toast('La descarga sigue mientras la consola esté encendida. Al terminar, el juego aparece listo para jugar', false);
+  }
   const g = r.game, back = () => { closeDlg(); play('back'); enterSettings({ pane: true, ri }); };
   play('select');
   openDlg(`<h2>${esc(g.name)}</h2><p>Juego: <b>${GB(g.size)}</b> · caché de sombreadores: <b>${GB(g.shader_cache)}</b> · datos de Proton: <b>${GB(g.prefix)}</b></p>
@@ -3760,10 +4074,10 @@ function romRows() {
   if (!R) { cxLoad('roms', () => Bridge.call('roms.scan'), 'Emuladores'); return [{ l: 'Buscando tus juegos…', s: '~/Emulation/roms', v: '' }]; }
   if (R.error) return [{ l: 'Tus juegos', s: R.error, v: '' }];
   const found = R.systems.filter(s => s.games.length);
-  const rows = [{ l: 'Carpeta de tus juegos', s: `${R.base}/roms/<consola> · BIOS en ${R.base}/bios`, v: 'Preparar', act: 'roms-folders' }];
+  const rows = egRows();
   found.forEach(s => rows.push({ l: `${s.name}: ${s.games.length} juego${s.games.length === 1 ? '' : 's'}`, s: s.installed ? `Se abren con ${s.emulator}` : `Falta instalar ${s.emulator} (arriba)`, v: s.installed ? 'Listo' : 'Falta emulador', act: 'info', where: s.games.slice(0, 5).map(g => g.name).join(', ') }));
   if (found.length) rows.push({ l: 'Añadir juegos a la biblioteca', s: 'Los juegos con su emulador instalado aparecen en STONE como cualquier juego', v: 'Añadir', act: 'roms-add' });
-  else rows.push({ l: 'Todavía no hay juegos', s: 'Copia tus juegos en las carpetas de cada consola (por ejemplo desde el escritorio con un pendrive)', v: '', act: 'info', where: `${R.base}/roms/ps2, ${R.base}/roms/gc…` });
+  rows.push({ l: 'Carpeta de tus juegos', s: `${R.base}/roms/<consola> · BIOS en ${R.base}/bios`, v: 'Preparar', act: 'roms-folders' });
   return rows;
 }
 function romAct(r, ri) {
@@ -3793,7 +4107,7 @@ function enterSettings(opts = {}) {
   NAV.id = 'settings'; NAV.pane = opts.pane ? 1 : 0; NAV.right = right; NAV.ri = opts.ri || 0;
   if (NAV.pane && right.length) NAV.rows = [right], NAV.c = Math.min(NAV.ri, right.length - 1);
   requestAnimationFrame(() => applyFocus());
-  $('#safe').classList.toggle('on', CATS[cat] === 'Pantalla' && !!NAV.pane && NAV.c === 0);
+  $('#safe').classList.toggle('on', CATS[cat] === 'Pantalla' && !!NAV.pane && (catRows().rows[NAV.c] || {}).key === 'frame');
   hints([['A', 'Elegir'], ['B', 'Volver']]);
 }
 function settingsMove(dir) {
@@ -3825,7 +4139,7 @@ function applyPrefs() {
   [['--d-step', 220], ['--d-settle', 360], ['--d-exit', 450], ['--d-enter', 600], ['--d-light', 900], ['--d-cer', 1200]].forEach(([n, v]) => r.setProperty(n, Math.round(v * k) + 'ms'));
   r.setProperty('--fscale', S.rm ? 1 : 1.06);
   r.setProperty('--ts', [1, 1.25, 1.5][S.ts]);
-  stage.style.setProperty('--sx', (1920 * S.safe / 100) + 'px'); stage.style.setProperty('--sy', (1080 * S.safe / 100) + 'px');
+  stage.style.setProperty('--sx', '14px'); stage.style.setProperty('--sy', '14px');
   if (master) master.gain.setTargetAtTime(S.sound ? S.vol : 0, AC.currentTime, .05);
 }
 function adjust(key, d, ri) {
@@ -3852,9 +4166,10 @@ function settingsA(el) {
   if (!r) return;
   if (r.key) return adjust(r.key, 1, NAV.c);
   if (r.act === 'info') { play('select'); return toast(r.where, false); }
-  if (['audio-out', 'wifi', 'wifi-scan', 'wifi-off', 'bt', 'bt-scan'].includes(r.act)) return cxAct(r, NAV.c);
+  if (['audio-out', 'wifi', 'wifi-scan', 'wifi-radio', 'wifi-net', 'bt', 'bt-scan'].includes(r.act)) return cxAct(r, NAV.c);
   if (['storage-again', 'steam-dl', 'game-store'].includes(r.act)) return storeAct(r, NAV.c);
   if (['roms-folders', 'roms-add'].includes(r.act)) return romAct(r, NAV.c);
+  if (['usb', 'usb-scan', 'usb-cancel', 'drop'].includes(r.act)) return egAct(r, NAV.c);
   if (r.act === 'cu40') { play('select'); return cu40Dlg(NAV.c); }
   if (r.act === 'health') { play('select'); S.health = null; return enterSettings({ pane: true, ri: NAV.c }); }
   if (r.act === 'reboot') { play('select'); return shutdown(true); }
@@ -4342,7 +4657,8 @@ function frConfigText() {
   const d = (cfg && cfg.detected) || {}, r = (cfg && cfg.reference) || {};
   const row = (label, have, want, unit) => `<p>${label}: <b>${have === null || have === undefined ? 'no se pudo leer' : have + unit}</b>${want ? ` · referencia ${want}${unit}` : ''}</p>`;
   const ok = c.board && cfg && cfg.matches !== false;
-  return [`<p>Placa BC-250: <b>${c.board ? 'detectada' : 'no detectada'}</b></p>${row('Núcleos de CPU', d.cpu_cores, r.cpu_cores, '')}${row('GPU', d.gpu_cu, r.gpu_cu, ' CU')}
+  /* without stoned's reading of the configuration only the board is said (no rows of «no se pudo leer») */
+  return [`<p>Placa BC-250: <b>${c.board ? 'detectada' : 'no detectada'}</b></p>${cfg ? row('Núcleos de CPU', d.cpu_cores, r.cpu_cores, '') + row('GPU', d.gpu_cu, r.gpu_cu, ' CU') : ''}
     ${cfg && cfg.matches === false ? `<p>Esta configuración no es la de referencia (${esc(cfg.reasons.join('; '))}). Los perfiles de fábrica funcionan; CUSTOM, pruebas y calibración quedan bloqueados.</p>` : ''}
     ${S.safeMode ? '<p>STONE arrancó en Safe Mode: valores de fábrica.</p>' : ''}`, ok];
 }
@@ -4424,22 +4740,32 @@ const SU_FN = {
     let net = null, wifi = null, note = '';
     const draw = () => {
       const online = net && net.online, cable = net && net.devices.find(d => d.type === 'ethernet' && d.state === 'connected');
-      const rows = [{ l: 'Estado', v: !net ? 'leyendo…' : online ? (cable ? 'conectado por cable' : 'conectado') : 'sin conexión' }];
-      (wifi || []).slice(0, 6).forEach(w => rows.push({ l: w.ssid, v: w.active ? 'conectado' : `${w.secure ? 'con contraseña' : 'abierta'} · señal ${w.signal} %`, k: w.active ? null : 'wifi', w }));
-      rows.push({ l: 'Buscar redes Wi-Fi', v: note, k: 'scan' });
+      const rows = [{ l: 'Estado', v: !net ? 'leyendo…' : online ? (cable ? 'conectado por cable' : `conectado a ${net.ssid || 'una red Wi-Fi'} (Wi-Fi)`) + (net.internet === 'limited' || net.internet === 'portal' ? ' · sin internet' : '') : 'sin conexión' }];
+      if (net && net.radio === false) rows.push({ l: 'Activar el Wi-Fi', v: 'está apagado', k: 'radio' });
+      else {
+        (wifi || []).slice(0, 6).forEach(w => rows.push({ l: w.ssid, v: w.active ? 'conectado' : `${w.known ? 'guardada' : w.secure ? 'con contraseña' : 'abierta'} · señal ${w.signal} %`, k: w.active ? null : 'wifi', w }));
+        rows.push({ l: 'Buscar redes Wi-Fi', v: note, k: 'scan' });
+      }
       suDraw({ key: 'red', title: 'INTERNET', r: SU.at, rows,
         lead: 'STONE necesita internet para Steam, las descargas y las actualizaciones. Con cable ya está; si no, elige tu Wi-Fi.',
         buttons: online ? [['next', 'CONTINUAR']] : [['next', 'OMITIR POR AHORA']], onButton: suNext,
         onRow: async r => {
-          if (r.k === 'scan') { note = 'buscando…'; draw(); wifi = ((await Bridge.call('net.wifiList').catch(() => null)) || {}).networks || []; note = wifi.length ? '' : 'ninguna red'; return draw(); }
-          const go = async pw => {            /* pw null: an open network */
+          const scan = async () => { note = 'buscando…'; draw(); wifi = ((await Bridge.call('net.wifiList').catch(() => null)) || {}).networks || []; note = wifi.length ? '' : 'ninguna red'; draw(); };
+          if (r.k === 'scan') return scan();
+          if (r.k === 'radio') {
+            note = ''; await Bridge.call('net.wifiRadio', true).catch(() => null);
+            net = await Bridge.call('net.status').catch(() => net); netIconKick(); return scan();
+          }
+          const ask = () => osk(`Contraseña de ${r.w.ssid}`, pw => (pw === null ? draw() : go(pw)), true);
+          const go = async pw => {            /* pw null: an open network, or one joined before */
             note = `conectando a ${r.w.ssid}…`; draw();
             const x = await Bridge.call('net.wifiConnect', r.w.ssid, pw).catch(e => ({ error: (e && e.message) || 'no se pudo' }));
+            if (x && x.error && pw === null && /contraseña/i.test(x.error)) { note = ''; draw(); return ask(); }
             note = x && x.error ? x.error : ''; if (!(x && x.error)) toast(`Conectado a ${r.w.ssid}`, false);
-            net = await Bridge.call('net.status').catch(() => net); wifi = ((await Bridge.call('net.wifiList').catch(() => null)) || {}).networks || wifi; draw();
+            net = await Bridge.call('net.status').catch(() => net); wifi = ((await Bridge.call('net.wifiList').catch(() => null)) || {}).networks || wifi; draw(); netIconKick();
           };
-          if (!r.w.secure) return go(null);
-          osk(`Contraseña de ${r.w.ssid}`, pw => (pw === null ? draw() : go(pw)), true);
+          if (!r.w.secure || r.w.known) return go(null);
+          ask();
         } });
     };
     draw();
@@ -4533,7 +4859,13 @@ async function suFinish() {
 /* ---------- Input dispatch ---------- */
 function act(a) {
   /* Steam's own window is in front (D-34): the controller is Steam's; only the guide button is STONE's */
-  if (S.steamFront) { if (a === 'home' && !S.steamFront.full) Sys.steamHide().catch(() => {}); return; }
+  /* Steam's own window is in front (D-34): the controller is Steam's. A press that reaches STONE means
+     STONE is the one on screen (Steam still starting, its window not up yet): B or the guide button
+     give up waiting, as the curtain says (3.1.0-rc6; before, only the guide button did, unsaid). */
+  if (S.steamFront) {
+    if ((a === 'home' || a === 'b') && !S.steamFront.full && !S.steamFront.opening) { play('back'); Sys.steamHide().catch(() => sfEnd('closed')); }
+    return;
+  }
   if (S.screen === 'transition') return;
   if (S.screen === 'store') { showHints(); return storeInput(a); }
   if (S.screen === 'spage') { showHints(); return storePageInput(a); }

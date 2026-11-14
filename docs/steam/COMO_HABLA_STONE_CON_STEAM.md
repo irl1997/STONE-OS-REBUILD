@@ -45,6 +45,8 @@ python3 dev/steam/steam_api.py check --snapshot    # lo mismo sin internet, cont
 
 ## Cómo se trabaja un arreglo que toca Steam
 
+**Lección de 3.1.0-rc6:** que STONE pase el mismo número de argumentos que Steam no basta. `AddShortcut` lleva 4 en los dos casos, y STONE ponía la carpeta donde Steam espera los argumentos. Hay que leer en el código de Steam **qué va en cada argumento**: los ejemplos de `STEAM_API.md` muestran los nombres que usa Steam, como `pe.strAppName,pe.strExePath,pe.strArguments,pe.strCmdline`.
+
 1. `fetch`: la versión actual del cliente (la API cambia con Steam).
 2. Buscar en `sp.js` cómo lo hace la interfaz de Steam: la llamada, sus argumentos, los avisos que escucha y qué responde. Por ejemplo, para instalar, buscar `Installs.OpenInstallWizard` y leer `OnShowInstallWizard`.
 3. Hacer lo mismo en `steamcef.py`, con un comentario que diga de dónde salió.
@@ -66,8 +68,8 @@ python3 dev/steam/steam_api.py check --snapshot    # lo mismo sin internet, cont
 | Pausar y reanudar descargas | Pausar: `Downloads.EnableAllDownloads(false, "0")` (Steam pausa sus descargas, no un juego). Reanudar o descargar ya uno en cola: `Downloads.ResumeAppUpdate(appid, "0")`, y antes `EnableAllDownloads(true, "0")` si estaban en pausa. |
 | Resolución por juego | Se lee de `Apps.RegisterForAppDetails(appid, cb)` → `strResolutionOverride` (si falta, «Default») y se cambia con `Apps.SetAppResolutionOverride(appid, valor)`. `GetResolutionOverrideForApp` solo de respaldo. |
 | Quién inició sesión | `window.App.m_CurrentUser.strSteamID`. |
-| Abrir los ajustes o las descargas de Steam | `window.SteamUIStore.GetFocusedWindowInstance()` (o `WindowStore.GamepadUIMainWindowInstance`) → `.Navigator`; `MenuStore.OpenMainMenu()` para traer la interfaz de Steam sobre STONE; `Navigator.Settings("System")`, que en el modo consola va a la ruta `Settings[sección]` (las secciones de STONE son claves de esa tabla de rutas, y `check` lo comprueba), o `Navigator.Downloads()`; después, `MenuStore.CloseSideMenus()`. |
-| Accesos directos | `Apps.AddShortcut(nombre, exe, carpeta, opciones)` y `Apps.SetShortcutName(id, nombre)`. |
+| Abrir los ajustes o las descargas de Steam | Steam pasa al frente como su tienda: `steam://open/bigpicture`, y la sesión muestra su ventana (supervisor). Después `window.SteamUIStore.GetFocusedWindowInstance()` (o `WindowStore.GamepadUIMainWindowInstance`) → `.Navigator`; `Navigator.Settings("Display")`, que en el modo consola va a la ruta `Settings[sección]` (las secciones de STONE son claves de esa tabla, y `check` lo comprueba), o `Navigator.Downloads()`. **Volver a STONE:** STONE lee la página de Steam en `GamepadUIMainWindowInstance.LocationPathName` (rutas de Steam: `/settings/...`, `/library/downloads`). Cuando la persona sale de ella con B, STONE recupera la pantalla. El botón guía también vuelve, como siempre. |
+| Accesos directos | Como el diálogo «Añadir un juego que no es de Steam»: `Apps.AddShortcut(strAppName, strExePath, strArguments, strCmdline)` y después las propiedades: `SetShortcutName`, `SetShortcutExe` (la ruta entre comillas, como hace Steam), `SetShortcutStartDir` y `SetShortcutLaunchOptions`. Quitar: `Apps.RemoveShortcut(appid)`. Hasta 3.1.0-rc5 STONE pasaba (nombre, exe, carpeta, opciones) y los emuladores no abrían. |
 | Steam Play para juegos de Windows | `CompatToolMapping` «0» en `config/config.vdf` (lo que Steam escribe al activar «Steam Play para todos los títulos»), solo si no existe y con Steam cerrado. |
 
 Hay dos funciones que STONE usa y la interfaz de Steam no. Las dos se usan solo si existen y como respaldo:

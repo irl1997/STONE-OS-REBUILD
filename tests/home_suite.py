@@ -1122,6 +1122,72 @@ def H15_steam_in_front_for_the_sign_in_and_the_store_and_plan_b():
 
 
 @test
+def H15b_steams_settings_in_front_and_b_out_of_them_gives_the_screen_back():
+    """3.1.0-rc6 (board, 14-11-2026: «Abrir en Steam» had no way back): Steam's settings come in front
+    like its store (Big Picture), STONE opens the section in its interface, and when the person leaves
+    the settings (B, as anywhere in SteamOS) STONE takes the screen back."""
+    with Tmp() as d:
+        root = FX.build(os.path.join(d, "Steam"))
+        seen, events = [], []
+        h = host_mod.Host(lambda n, data: events.append((n, data)), stoned=FakeStoned(), sysapi=system.System(spawn=seen.append), steam_root=root)
+        for bad in (["settings"], ["settings", "Wallet"], ["settings", 620], ["downloads", "620"]):
+            assert run_host(h, {"method": "steam.show", "args": bad})[1] == "InvalidValue", bad
+        os.environ["STONE_SESSION"] = "stone"
+        try:
+            f = h.session_focus = FakeFront()
+            ui = h.steam_ui = FakeSteamUI(ok=True)
+            ui.reachable = lambda: True
+            where = {"path": "/library/home"}
+            ui.location = lambda: where["path"]
+            assert run_host(h, {"method": "steam.show", "args": ["settings", "Display"]})[0] == {"managed": True}
+            assert wait_for(lambda: f.value == 3) and seen == ["steam://open/bigpicture"]
+            f.window = 0x600030                                                    # Big Picture on screen
+            assert wait_for(lambda: ("settings", "Display") in ui.calls, timeout=6), ui.calls
+            where["path"] = "/settings/display"
+            spin(2.0)
+            assert h.front is not None and h.front["in_page"] and f.value == 3     # still in Steam's settings
+            where["path"] = "/library/home"                                        # B out of the settings
+            assert wait_for(lambda: h.front is None, timeout=8), "STONE did not take the screen back"
+            assert f.value == 0 and events[-1] == ("steam", {"front": False, "why": "back", "what": "settings"})
+            assert seen == ["steam://open/bigpicture", "steam://close/bigpicture"]     # no page URL: it is navigated to
+            # Steam's downloads: the same way; its page is opened in its interface, never by a blind URL
+            del seen[:], events[:], ui.calls[:]
+            f.window = 0
+            assert run_host(h, {"method": "steam.show", "args": ["downloads"]})[0] == {"managed": True}
+            assert wait_for(lambda: f.value == 3)
+            f.window = 0x600031
+            assert wait_for(lambda: ("page", "Downloads") in ui.calls, timeout=6)
+            f.value = 0                                                            # guide button (supervisor)
+            assert wait_for(lambda: h.front is None) and events[-1][1]["why"] == "closed"
+            assert seen == ["steam://open/bigpicture", "steam://close/bigpicture"]
+            # the store: followed the same way, and never left in the middle of a purchase
+            del seen[:], events[:]
+            f.window = 0
+            where["path"] = "/library/home"
+            assert run_host(h, {"method": "steam.show", "args": ["store"]})[0] == {"managed": True}
+            assert wait_for(lambda: f.value == 3)
+            f.window = 0x600032
+            assert wait_for(lambda: "steam://url/StoreFrontPage" in seen, timeout=6)
+            where["path"] = "/store"
+            spin(1.6)
+            where["path"] = "/microtxnauth"                                        # the payment's confirmation
+            spin(3.0)
+            assert h.front is not None and f.value == 3, "STONE took the screen back during a purchase"
+            where["path"] = "/library/home"                                        # B out of the store
+            assert wait_for(lambda: h.front is None, timeout=8) and events[-1][1]["why"] == "back"
+            # Steam never opens the page: the person is not left on Steam's home
+            del events[:]
+            ui.open_settings = lambda sec: "cef unavailable (URLError)"
+            f.window = 0
+            assert run_host(h, {"method": "steam.show", "args": ["settings", "Audio"]})[0] == {"managed": True}
+            assert wait_for(lambda: f.value == 3)
+            f.window = 0x600033
+            assert wait_for(lambda: h.front is None, timeout=20) and events[-1][1]["why"] == "navfail" and f.value == 0
+        finally:
+            del os.environ["STONE_SESSION"]
+
+
+@test
 def H16_store_pages_through_the_host_and_artwork_from_stones_own_cache():
     with Tmp() as d:
         os.environ["XDG_CACHE_HOME"] = os.path.join(d, "cache")
@@ -1278,8 +1344,10 @@ def E01_emulators_fixed_catalog_install_and_shortcut_now_or_at_next_start():
         assert run_host(h, {"method": "emuUpdate", "args": bad})[1] == "InvalidValue", bad
     assert run_host(h, {"method": "emuInstall", "args": ["switch2"]})[1] == "InvalidValue"     # nothing to install for Switch 2
     from stone_home import steamcef
+    js = steamcef.add_shortcut_expression("x'); evil('", "/usr/bin/flatpak", "/", "run a")
+    assert "AddShortcut(\"x'); evil('\",\"/usr/bin/flatpak\",\"run a\"," in js          # a JSON string: never code
     try:
-        steamcef.add_shortcut_expression("x'); evil('", "/usr/bin/flatpak", "/", "run a")
+        steamcef.add_shortcut_expression("x\nevil", "/usr/bin/flatpak", "/", "run a")
         raise AssertionError("unsafe shortcut accepted")
     except ValueError:
         pass
