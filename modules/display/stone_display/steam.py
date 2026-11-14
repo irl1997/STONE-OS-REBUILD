@@ -225,10 +225,21 @@ def _appid(appid):
     return a
 
 
+# A game's "Game resolution" as Steam's own interface reads it: the app's details
+# (Apps.RegisterForAppDetails(appid, cb) -> strResolutionOverride; absent means "Default"). Steam's
+# interface never calls Apps.GetResolutionOverrideForApp (its code, client 1792618285): it is only a
+# fallback, when present, for a game whose details do not come.
+_RES = ("const res=async id=>{let d=null;try{d=await new Promise(ok=>{let h=null,end=false;const fin=v=>{if(end)return;end=true;"
+        "setTimeout(()=>{try{h&&h.unregister();}catch(e){}},0);ok(v);};setTimeout(()=>fin(null),2000);"
+        "h=A.RegisterForAppDetails(id,x=>fin(x||null));});}catch(e){}"
+        "if(d)return String(d.strResolutionOverride||'Default');"
+        "if(A.GetResolutionOverrideForApp)return String(await A.GetResolutionOverrideForApp(id));return null;};")
+
+
 def app_resolution(appid, cef=steamcef):
     a = _appid(appid)
-    v = cef.ui_value("(async()=>{if(!window.SteamClient||!SteamClient.Apps||!SteamClient.Apps.GetResolutionOverrideForApp)"
-                     f"return null;return String(await SteamClient.Apps.GetResolutionOverrideForApp({a}));}})()")
+    v = cef.ui_value("(async()=>{const A=window.SteamClient&&SteamClient.Apps;if(!A||!A.RegisterForAppDetails)return null;"
+                     + _RES + f"return await res({a});}})()")
     return v if isinstance(v, str) and len(v) <= 32 else None
 
 
@@ -246,9 +257,9 @@ def ensure_native_expression(appids):
     Explicit choices ("Native" or a size the person picked) are left as they are. Returns the
     ids changed and how many were already set."""
     ids = sorted({_appid(a) for a in appids})
-    return ("(async()=>{const A=window.SteamClient&&SteamClient.Apps;if(!A||!A.GetResolutionOverrideForApp||!A.SetAppResolutionOverride)"
-            "return JSON.stringify({error:'no SteamClient.Apps resolution API'});const ch=[],kept={};"
-            f"for(const id of {json.dumps(ids)}){{let v=null;try{{v=String(await A.GetResolutionOverrideForApp(id));}}catch(e){{continue;}}"
+    return ("(async()=>{const A=window.SteamClient&&SteamClient.Apps;if(!A||!A.RegisterForAppDetails||!A.SetAppResolutionOverride)"
+            "return JSON.stringify({error:'no SteamClient.Apps resolution API'});const ch=[],kept={};" + _RES +
+            f"for(const id of {json.dumps(ids)}){{let v=null;try{{v=await res(id);}}catch(e){{continue;}}if(v===null)continue;"
             "if(v==='Default'){A.SetAppResolutionOverride(id,'Native');ch.push(id);}else{kept[id]=v;}}"
             "return JSON.stringify({changed:ch,kept:kept});})()")
 
@@ -256,9 +267,9 @@ def ensure_native_expression(appids):
 def restore_default_expression(appids):
     """Back to "Default" for games STONE set to "Native" (and that are still "Native")."""
     ids = sorted({_appid(a) for a in appids})
-    return ("(async()=>{const A=window.SteamClient&&SteamClient.Apps;if(!A||!A.SetAppResolutionOverride)"
-            "return JSON.stringify({error:'no SteamClient.Apps resolution API'});const ch=[];"
-            f"for(const id of {json.dumps(ids)}){{let v=null;try{{v=String(await A.GetResolutionOverrideForApp(id));}}catch(e){{continue;}}"
+    return ("(async()=>{const A=window.SteamClient&&SteamClient.Apps;if(!A||!A.RegisterForAppDetails||!A.SetAppResolutionOverride)"
+            "return JSON.stringify({error:'no SteamClient.Apps resolution API'});const ch=[];" + _RES +
+            f"for(const id of {json.dumps(ids)}){{let v=null;try{{v=await res(id);}}catch(e){{continue;}}"
             "if(v==='Native'){A.SetAppResolutionOverride(id,'Default');ch.push(id);}}"
             "return JSON.stringify({changed:ch});})()")
 

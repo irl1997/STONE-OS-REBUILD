@@ -3086,15 +3086,89 @@
 "this.OnNotification"
 ]
 },
-"OpenVR.Device": {
-"arities": [],
-"count": 4,
-"samples": []
+"OpenVR.Device.BIsConnected": {
+"arities": [
+1
+],
+"count": 2,
+"samples": [
+"Z",
+"R"
+]
 },
-"OpenVR.DeviceProperties": {
-"arities": [],
-"count": 8,
-"samples": []
+"OpenVR.Device.RegisterForDeviceConnectivityChange": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"R,re"
+]
+},
+"OpenVR.Device.RegisterForVRDeviceSeenRecently": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnVRDeviceSeenRecentlyChanged"
+]
+},
+"OpenVR.DeviceProperties.GetBoolDeviceProperty": {
+"arities": [
+2
+],
+"count": 2,
+"samples": [
+"Z,s.fD.DeviceProvidesBatteryStatus_Bool",
+"he,ae"
+]
+},
+"OpenVR.DeviceProperties.GetDoubleDeviceProperty": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"he,ae"
+]
+},
+"OpenVR.DeviceProperties.GetFloatDeviceProperty": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"he,ae"
+]
+},
+"OpenVR.DeviceProperties.GetInt32DeviceProperty": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"he,ae"
+]
+},
+"OpenVR.DeviceProperties.GetStringDeviceProperty": {
+"arities": [
+2
+],
+"count": 2,
+"samples": [
+"he,ae",
+"\"/user/head\",i.fD.ActualTrackingSystemName_String"
+]
+},
+"OpenVR.DeviceProperties.RegisterForDevicePropertyChange": {
+"arities": [
+3
+],
+"count": 1,
+"samples": [
+"R,Z,V"
+]
 },
 "OpenVR.ExtendActivityTimeout": {
 "arities": [
@@ -3169,15 +3243,137 @@
 ""
 ]
 },
-"OpenVR.Keyboard": {
-"arities": [],
-"count": 5,
-"samples": []
+"OpenVR.Keyboard.Hide": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
 },
-"OpenVR.PathProperties": {
-"arities": [],
-"count": 19,
-"samples": []
+"OpenVR.Keyboard.RegisterForStatus": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnKeyboardStatus"
+]
+},
+"OpenVR.Keyboard.SendDone": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"OpenVR.Keyboard.SendText": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"k"
+]
+},
+"OpenVR.Keyboard.Show": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"OpenVR.PathProperties.GetBoolPathProperty": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.m_strPath"
+]
+},
+"OpenVR.PathProperties.GetDoublePathProperty": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.m_strPath"
+]
+},
+"OpenVR.PathProperties.GetFloatPathProperty": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.m_strPath"
+]
+},
+"OpenVR.PathProperties.GetInt32PathProperty": {
+"arities": [
+1
+],
+"count": 2,
+"samples": [
+"this.m_strPath",
+"D"
+]
+},
+"OpenVR.PathProperties.GetStringPathProperty": {
+"arities": [
+1
+],
+"count": 2,
+"samples": [
+"this.m_strPath"
+]
+},
+"OpenVR.PathProperties.RegisterForPathPropertyChange": {
+"arities": [
+2
+],
+"count": 2,
+"samples": [
+"this.m_strPath,()=>this.UpdateValueInternal()",
+"D,z"
+]
+},
+"OpenVR.PathProperties.SetBoolPathProperty": {
+"arities": [
+2
+],
+"count": 6,
+"samples": [
+"am.k_strSceneAppInputPreferencePrefersSteamInputPath,he",
+"\"/steam/oobe\",!1",
+"\"/steam/streamingtodevice\",he"
+]
+},
+"OpenVR.PathProperties.SetInt32PathProperty": {
+"arities": [
+2
+],
+"count": 3,
+"samples": [
+"am.k_strSceneAppInputPreferenceAppIdPath,Z",
+"\"/steam/guidedtour\",C",
+"mm.k_strSceneAppInputPreferenceAppIdPath,C"
+]
+},
+"OpenVR.PathProperties.SetStringPathProperty": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"T,L"
+]
 },
 "OpenVR.QuitAllVR": {
 "arities": [
@@ -3309,15 +3505,106 @@
 "lr,0"
 ]
 },
-"OpenVR.VRNotifications": {
-"arities": [],
-"count": 3,
+"OpenVR.VRNotifications.HideCustomNotification": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"Ft"
+]
+},
+"OpenVR.VRNotifications.RegisterForNotificationEvent": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnVRNotificationEvent"
+]
+},
+"OpenVR.VRNotifications.ShowCustomNotification": {
+"arities": [
+3
+],
+"count": 1,
+"samples": [
+"Ct.GetVROverlayKey(),Se.A0,zt"
+]
+},
+"OpenVR.VROverlay.HideDashboard": {
+"arities": [
+0
+],
+"count": 4,
+"samples": [
+""
+]
+},
+"OpenVR.VROverlay.RegisterForButtonPress": {
+"arities": [
+1
+],
+"count": 2,
+"samples": [
+"Oe=>{G.Info(`Button press for window ${re.name} button=${Oe}`),V(Oe)}"
+]
+},
+"OpenVR.VROverlay.RegisterForCursorMovement": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"(dr,cr,Mr,Ie)=>{dr===1&&Vt(cr,Mr,Ie,dr)}"
+]
+},
+"OpenVR.VROverlay.RegisterForOverlayMousePressEvents": {
+"arities": [
+1
+],
+"count": 1,
 "samples": []
 },
-"OpenVR.VROverlay": {
-"arities": [],
-"count": 18,
-"samples": []
+"OpenVR.VROverlay.RegisterForThumbnailChanged": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"h"
+]
+},
+"OpenVR.VROverlay.RegisterForVisibilityChanged": {
+"arities": [
+1
+],
+"count": 2,
+"samples": [
+"c",
+"w"
+]
+},
+"OpenVR.VROverlay.ShowDashboard": {
+"arities": [
+1
+],
+"count": 2,
+"samples": [
+" \"${f}\" ",
+"f"
+]
+},
+"OpenVR.VROverlay.SwitchToDashboardOverlay": {
+"arities": [
+1
+],
+"count": 5,
+"samples": [
+"Jn",
+" \"${Xr.GetVROverlayKey()}\" ",
+"Xr.GetVROverlayKey()"
+]
 },
 "Overlay.DestroyGamePadUIDesktopConfiguratorWindow": {
 "arities": [
@@ -5134,13 +5421,153 @@
 },
 "System.Audio": {
 "arities": [],
-"count": 17,
+"count": 1,
 "samples": []
 },
-"System.AudioDevices": {
-"arities": [],
+"System.Audio.ClearDefaultDeviceOverride": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"W"
+]
+},
+"System.Audio.GetApps": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"System.Audio.GetDevices": {
+"arities": [
+0
+],
 "count": 3,
-"samples": []
+"samples": [
+""
+]
+},
+"System.Audio.RegisterForAppAdded": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnAppAdded"
+]
+},
+"System.Audio.RegisterForAppRemoved": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnAppRemoved"
+]
+},
+"System.Audio.RegisterForAppVolumeChanged": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnAppVolumeChanged"
+]
+},
+"System.Audio.RegisterForDeviceAdded": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnAudioDeviceAdded"
+]
+},
+"System.Audio.RegisterForDeviceRemoved": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnAudioDeviceRemoved"
+]
+},
+"System.Audio.RegisterForDeviceVolumeChanged": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnAudioDeviceVolumeChanged"
+]
+},
+"System.Audio.RegisterForServiceConnectionStateChanges": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnServiceConnectionStateChanged"
+]
+},
+"System.Audio.RegisterForVolumeButtonPressed": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnVolumeButtonPressed"
+]
+},
+"System.Audio.SetAppVolume": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"this.id,W"
+]
+},
+"System.Audio.SetDefaultDeviceOverride": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"this.m_id,W"
+]
+},
+"System.Audio.SetDeviceVolume": {
+"arities": [
+3
+],
+"count": 1,
+"samples": [
+"this.m_id,W,Be"
+]
+},
+"System.AudioDevices.RegisterForStateChanges": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnStateChanged"
+]
+},
+"System.AudioDevices.UpdateSomething": {
+"arities": [
+1
+],
+"count": 2,
+"samples": [
+"wt.serializeBase64String()",
+"Et.serializeBase64String()"
+]
 },
 "System.CopyFile": {
 "arities": [
@@ -5174,25 +5601,157 @@
 "\"mp4\""
 ]
 },
-"System.Devkit": {
-"arities": [],
-"count": 3,
-"samples": []
+"System.Devkit.RegisterForPairingPrompt": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnPairingPrompt"
+]
 },
-"System.Display": {
-"arities": [],
-"count": 9,
-"samples": []
+"System.Devkit.RespondToPairingPrompt": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"Et,wt"
+]
+},
+"System.Devkit.SetPairing": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"Et"
+]
+},
+"System.Display.EnableUnderscan": {
+"arities": [
+1
+],
+"count": 4,
+"samples": [
+"!Y",
+"!K",
+"!0"
+]
+},
+"System.Display.RegisterForBrightnessChanges": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnDisplayBrightnessChanged"
+]
+},
+"System.Display.SetBrightness": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"k"
+]
+},
+"System.Display.SetUnderscanLevel": {
+"arities": [
+1
+],
+"count": 3,
+"samples": [
+"X",
+"U"
+]
 },
 "System.DisplayManager": {
 "arities": [],
-"count": 8,
+"count": 1,
 "samples": []
 },
-"System.Dock": {
-"arities": [],
-"count": 3,
-"samples": []
+"System.DisplayManager.ClearModeOverride": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"k"
+]
+},
+"System.DisplayManager.GetState": {
+"arities": [
+0
+],
+"count": 2,
+"samples": [
+""
+]
+},
+"System.DisplayManager.RegisterForStateChanges": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnStateChanged"
+]
+},
+"System.DisplayManager.SetCompatibilityMode": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"k"
+]
+},
+"System.DisplayManager.SetGamescopeInternalResolution": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"A,U/K==1.6?A/1.6:M"
+]
+},
+"System.DisplayManager.SetMode": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"H.serializeBase64String()"
+]
+},
+"System.Dock.DisarmSafetyNet": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"System.Dock.RegisterForStateChanges": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnStateChanged"
+]
+},
+"System.Dock.UpdateFirmware": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"C.serializeBase64String()"
+]
 },
 "System.FormatStorage": {
 "arities": [
@@ -5239,10 +5798,109 @@
 ""
 ]
 },
-"System.Network": {
+"System.Network.Device": {
 "arities": [],
-"count": 16,
+"count": 5,
 "samples": []
+},
+"System.Network.ForceTestConnectivity": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"System.Network.GetProxyInfo": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"System.Network.RegisterForAppSummaryUpdate": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"pt"
+]
+},
+"System.Network.RegisterForConnectionStateUpdate": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"Me"
+]
+},
+"System.Network.RegisterForConnectivityTestChanges": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnConnectivityTestStateChanged"
+]
+},
+"System.Network.RegisterForDeviceChanges": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnNetworkDevicesChanged"
+]
+},
+"System.Network.SetFakeLocalSystemState": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"ze"
+]
+},
+"System.Network.SetProxyInfo": {
+"arities": [
+4
+],
+"count": 1,
+"samples": [
+"ze.proxy_mode,ze.address??\"\",ze.port??0,ze.exclude_local??!0"
+]
+},
+"System.Network.SetWifiEnabled": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"ze"
+]
+},
+"System.Network.StartScanningForNetworks": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"System.Network.StopScanningForNetworks": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
 },
 "System.NotifyGameOverlayStateChanged": {
 "arities": [
@@ -5286,10 +5944,34 @@
 "Vr.strInstallFolder"
 ]
 },
-"System.Perf": {
-"arities": [],
-"count": 28,
-"samples": []
+"System.Perf.RegisterForDiagnosticInfoChanges": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnDiagnosticInfoChanged"
+]
+},
+"System.Perf.RegisterForStateChanges": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnStateChanged"
+]
+},
+"System.Perf.UpdateSettings": {
+"arities": [
+1
+],
+"count": 26,
+"samples": [
+"Pe.serializeBase64String()",
+"ke.serializeBase64String()",
+"pe.serializeBase64String()"
+]
 },
 "System.RebootToAlternateSystemPartition": {
 "arities": [
@@ -5336,10 +6018,32 @@
 "this.OnSettingsChanged"
 ]
 },
-"System.Report": {
-"arities": [],
-"count": 3,
-"samples": []
+"System.Report.GenerateSystemReport": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"System.Report.SaveToDesktop": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"I"
+]
+},
+"System.Report.Submit": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"I"
+]
 },
 "System.RestartPC": {
 "arities": [
@@ -5386,10 +6090,51 @@
 ""
 ]
 },
-"System.UI": {
-"arities": [],
-"count": 8,
-"samples": []
+"System.UI.CloseGameWindow": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"ot,Te"
+]
+},
+"System.UI.GetGameWindowsInfo": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"ot,Te"
+]
+},
+"System.UI.RegisterForFocusChangeEvents": {
+"arities": [
+1
+],
+"count": 3,
+"samples": [
+"this.OnFocusChangeEvent"
+]
+},
+"System.UI.RegisterForOverlayGameWindowFocusChanged": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnOverlayGameWindowFocusChanged"
+]
+},
+"System.UI.RegisterForSystemKeyEvents": {
+"arities": [
+1
+],
+"count": 2,
+"samples": [
+"this.HandleSystemKeyEvents",
+"this.HandleGamepadGuideButtonEvents"
+]
 },
 "System.UpdateSettings": {
 "arities": [
@@ -6891,16 +7636,20 @@
 "App",
 "Apps",
 "BIsModOrShortcut",
+"BIsOwned",
 "CancelGameAction",
 "CancelInstall",
 "CloseSideMenus",
 "ContinueGameAction",
 "ContinueInstall",
+"DisplayManager",
 "Downloads",
+"EnableAllDownloads",
 "GamepadUIMainWindowInstance",
 "GetActiveGameActions",
 "GetFocusedWindowInstance",
 "GetLaunchOptionsForApp",
+"GetState",
 "Installs",
 "LoadEula",
 "LocalDownloadOverview",
@@ -6910,13 +7659,20 @@
 "OpenInstallWizard",
 "OpenMainMenu",
 "OpenUninstallWizard",
+"RegisterForAppDetails",
 "RegisterForShowInstallWizard",
+"ResumeAppUpdate",
 "RunGame",
+"SetAppLaunchOptions",
+"SetAppResolutionOverride",
+"SetGamescopeInternalResolution",
 "SetInstallFolder",
 "SetShortcutName",
 "Settings",
 "SteamClient",
 "SteamUIStore",
+"System",
+"TerminateApp",
 "WindowStore",
 "allApps",
 "allAppsCollection",
@@ -6957,11 +7713,14 @@
 "strActionName",
 "strDescription",
 "strGameName",
+"strLaunchOptions",
 "strNumDone",
 "strNumTotal",
+"strResolutionOverride",
 "strSteamID",
 "strTaskDetails",
 "strTaskName",
+"toObject",
 "update_appid",
 "update_network_bytes_per_second",
 "update_state"

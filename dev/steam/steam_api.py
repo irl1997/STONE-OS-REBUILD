@@ -94,7 +94,7 @@ def current(dest):
 
 
 # ---- reading Steam's code -------------------------------------------------------------------
-CALL = re.compile(r"SteamClient\??\.([A-Z][A-Za-z0-9]*)\??\.([A-Z][A-Za-z0-9]*)\??\.?(\()?")
+CALL = re.compile(r"SteamClient\??\.([A-Z][A-Za-z0-9]*)\??\.([A-Z][A-Za-z0-9]*)(?:\??\.([A-Z][A-Za-z0-9]*))?\??\.?(\()?")
 ENUM = re.compile(r"\w\[\w\.(k_E[A-Za-z0-9_]+)=(-?\d+)\]=\"\1\"")
 STORE = re.compile(r"window\.([A-Za-z_][A-Za-z0-9_]*)\s*=\s*[A-Za-z_$]")
 
@@ -142,10 +142,10 @@ def index(zip_path):
                 continue
             t = z.read(info).decode("utf-8", "replace")
             for m in CALL.finditer(t):
-                key = f"{m.group(1)}.{m.group(2)}"
+                key = f"{m.group(1)}.{m.group(2)}" + (f".{m.group(3)}" if m.group(3) else "")   # System.DisplayManager.GetState
                 c = calls[key]
                 c["count"] += 1
-                if m.group(3):
+                if m.group(4):
                     a = _args(t, m.end() - 1)
                     c["arities"][_arity(a)] += 1
                     if a is not None and len(c["samples"]) < 3 and a not in c["samples"] and len(a) <= 90:
@@ -198,7 +198,18 @@ def stone_expressions():
           "launch": C.launch_expression(620), "launch_state": C.launch_state_expression(620),
           "launch_answer": C.launch_answer_expression(620, "ShowEula"), "owned": C.OWNED_EXPRESSION, "login": C.LOGIN_EXPRESSION,
           "dialog": C.DIALOG_EXPRESSION, "open_settings": C.open_settings_expression("Display"), "open_page": C.open_page_expression("Downloads"),
-          "add_shortcut": C.add_shortcut_expression("x", "/x", "/", "")}
+          "add_shortcut": C.add_shortcut_expression("x", "/x", "/", ""), "terminate": C.terminate_expression(620),
+          "download_pause": C.download_control_expression(620, "pause"), "download_resume": C.download_control_expression(620, "resume")}
+    for sub in ("modules/display", "modules/games"):
+        sys.path.insert(0, os.path.join(REPO, sub))
+    try:
+        from stone_display import steam as D
+        from stone_games import graphics as GR
+    except ImportError:                       # these modules need nothing more than the standard library
+        return ex
+    ex.update({"display_state": D.STATE_EXPRESSION, "display_native": D.ensure_native_expression([620]),
+               "display_default": D.restore_default_expression([620]), "display_size": D.set_default_expression(1920, 1080),
+               "graphics_get": GR.get_options_expression(620), "graphics_set": GR.set_options_expression(620, "%command%")})
     return ex
 
 
@@ -211,6 +222,9 @@ def stone_calls(expressions):
     calls, props, fields = collections.defaultdict(list), collections.defaultdict(set), collections.defaultdict(set)
     for name, js in expressions.items():
         aliases = {a: area for a, area in ALIAS.findall(js)}
+        for a, area, sub in re.findall(r"\b([A-Za-z_$][\w$]{0,2})\s*=\s*window\.SteamClient(?:\s*&&\s*SteamClient)?\.([A-Z]\w*)"
+                                       r"\s*&&\s*SteamClient\.\2\.([A-Z]\w*)", js):
+            aliases[a] = f"{area}.{sub}"
         pats = [(r"SteamClient\.([A-Z]\w*)\.([A-Z]\w*)", None)] + [(re.escape(a) + r"\.([A-Z]\w*)", area) for a, area in aliases.items()]
         for pat, area in pats:
             for m in re.finditer(r"(?<![\w$.])" + pat + r"(\()?", js):
@@ -241,7 +255,9 @@ def stone_calls(expressions):
 
 # Functions STONE calls that Steam's own interface does not, each with the reason it is allowed.
 OPTIONAL = {"Installs.GetInstallManagerInfo": "only when present (feature-tested): the steps come from RegisterForShowInstallWizard, "
-                                              "as in Steam's interface; this only finds a wizard left open before STONE asked"}
+                                              "as in Steam's interface; this only finds a wizard left open before STONE asked",
+            "Apps.GetResolutionOverrideForApp": "only when present and a game's details do not come: the resolution is read "
+                                                "from RegisterForAppDetails (strResolutionOverride), as in Steam's interface"}
 # Names in STONE's JavaScript that are the browser's or STONE's own, not Steam's
 OWN = {"__stoneGA", "addEventListener", "getBoundingClientRect", "innerText", "querySelector", "querySelectorAll", "toUpperCase",
        "unregister", "classList", "readyState"}

@@ -66,7 +66,9 @@ const Sys = {
   emuCheck: () => Bridge.call('emuCheck'), emuUpdate: k => Bridge.call('emuUpdate', k),
   /* 3.1.0-rc2: what Steam really did with an install, the downloads, updates on demand, Steam held during the setup */
   installCancel: () => Bridge.call('install.cancel'), installAcceptEula: appid => Bridge.call('install.acceptEula', appid), downloads: () => Bridge.call('downloads'),
-  updateNow: () => Bridge.call('update.now'), wantSteam: () => Bridge.call('session.wantSteam')
+  updateNow: () => Bridge.call('update.now'), wantSteam: () => Bridge.call('session.wantSteam'),
+  /* 3.1.0-rc5: Steam's own "Exit game" and the pause / resume of its downloads */
+  gameClose: appid => Bridge.call('game.close', appid), downloadsControl: (appid, a) => Bridge.call('downloads.control', appid, a)
 };
 async function sys(method, ...a) {
   try { return await Sys[method](...a); }

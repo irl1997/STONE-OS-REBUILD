@@ -283,6 +283,11 @@ def probe(port=PORT):
 # session) and collectionStore may not exist (rc1 on the board: games of the account missing from
 # the library). appStore also holds tools and DLC: games only. Returns null when Steam has no
 # store object yet (not answering), "[]" when it has them and they are empty (loading, signed out).
+# Installed means installed on THIS console: Steam keeps one entry per machine of the account in
+# per_client_data, "0" being the local one (its own getter local_per_client_data); its `installed` is
+# the most available machine's, which may be another PC (3.1.0-rc4: a game installed on the person's
+# PC was neither installed nor "in the account" here, so it vanished from the library). Apps the
+# account does not own (BIsOwned: visible_in_game_list && subscribed_to) are not listed, as in Steam.
 OWNED_EXPRESSION = (
     "(async()=>{const cs=window.collectionStore,A=window.appStore;if(!cs&&!A)return null;"
     "const lists=[];const add=f=>{try{const x=f();if(!x)return;"
@@ -294,9 +299,11 @@ OWNED_EXPRESSION = (
     "for(const src of lists)for(const a of src){if(!a||typeof a.appid!=='number'||seen.has(a.appid))continue;"
     "if(!(a.app_type===1||a.app_type===undefined))continue;"
     "try{if(a.BIsModOrShortcut&&a.BIsModOrShortcut())continue;}catch(e){}"
-    "seen.add(a.appid);const lp=a.local_per_client_data||(a.per_client_data&&a.per_client_data[0])||{};"
-    "o.push([a.appid,String(a.display_name||''),!!(a.installed!==undefined?a.installed:lp.installed),"
-    "a.minutes_playtime_forever||0,a.rt_last_time_played||0,Number(a.size_on_disk||lp.bytes_downloaded||0)]);}"
+    "try{if(a.BIsOwned&&!a.BIsOwned())continue;}catch(e){}"
+    "seen.add(a.appid);let lp=null;try{lp=a.local_per_client_data||null;}catch(e){}"
+    "if(!lp&&Array.isArray(a.per_client_data))lp=a.per_client_data.find(c=>c&&String(c.clientid)==='0')||null;"
+    "o.push([a.appid,String(a.display_name||''),!!(lp?lp.installed:(a.per_client_data?false:a.installed)),"
+    "a.minutes_playtime_forever||0,a.rt_last_time_played||0,Number(a.size_on_disk||(lp&&lp.bytes_downloaded)||0)]);}"
     "return JSON.stringify(o);})()")
 
 # Whether someone is signed in to Steam: "in", "out", or null when this Steam build does not say.
@@ -771,3 +778,43 @@ def add_shortcut(name, exe, start_dir, launch_options, port=PORT):
     if isinstance(v, str) and v.startswith("ok ") and v[3:].isdigit():
         return int(v[3:])
     return None
+
+
+# ---- Closing a game and pausing a download, as Steam's own buttons do ---------------------------
+# Steam's "Exit game" (its dialog "¿Salir del juego?" / "Los datos no guardados podrían perderse.",
+# and B on the running game's panel) calls SteamClient.Apps.TerminateApp(gameid, false). The actions
+# of a game in the library: pause is Downloads.EnableAllDownloads(false, client) (Steam pauses its
+# downloads, not one game), resume / update now is Downloads.ResumeAppUpdate(appid, client), and a
+# paused download list is let go again with EnableAllDownloads(true, client). Client "0": this console.
+# (Steam's code, client 1792618285: the app action switch and the exit-game dialog.)
+def terminate_expression(game_id):
+    g = _gid(game_id)
+    return ("(()=>{const A=window.SteamClient&&SteamClient.Apps;if(!A||!A.TerminateApp)return null;"
+            f"A.TerminateApp('{g}',false);return 'ok';}})()")
+
+
+def terminate(game_id, port=PORT):
+    """Close a running game the way Steam's "Exit game" does. True, or None if Steam does not answer."""
+    return True if ui_value(terminate_expression(game_id), port, timeout=6.0) == "ok" else None
+
+
+DOWNLOAD_ACTIONS = ("pause", "resume")
+
+
+def download_control_expression(appid, action):
+    a = _appid(appid)
+    if action not in DOWNLOAD_ACTIONS:
+        raise ValueError("download action")
+    c = LOCAL_CLIENT
+    if action == "pause":
+        body = f"D.EnableAllDownloads(false,'{c}');"
+    else:
+        body = (f"let o=null;try{{const S=window.downloadsStore;o=S&&(S.LocalDownloadOverview||(S.m_DownloadOverview&&S.m_DownloadOverview.get('{c}')));}}catch(e){{}}"
+                f"if(!o||o.paused)D.EnableAllDownloads(true,'{c}');D.ResumeAppUpdate({a},'{c}');")
+    return ("(()=>{const D=window.SteamClient&&SteamClient.Downloads;if(!D||!D.EnableAllDownloads||!D.ResumeAppUpdate)return null;"
+            + body + "return 'ok';})()")
+
+
+def download_control(appid, action, port=PORT):
+    """Pause Steam's downloads or let this game's download go on. True, or None if Steam does not answer."""
+    return True if ui_value(download_control_expression(appid, action), port, timeout=6.0) == "ok" else None

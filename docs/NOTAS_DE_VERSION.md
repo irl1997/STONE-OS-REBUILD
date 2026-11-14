@@ -1,3 +1,34 @@
+# STONE OS (rebuild) 3.1.0-rc5
+
+Revisión de todo lo que STONE le pide a Steam, **comprobado contra el código de la propia interfaz de Steam** (cliente 1792618285) y no deducido. Corrige tres fallos encontrados en esa revisión y añade dos cosas que faltaban para usar la consola sin entrar a Steam: **cerrar un juego** y **pausar una descarga**. Llega a la consola **por actualización en línea**. Decisión D-38.
+
+**Todo está probado en software (CODE TESTED): pruebas automáticas, el código que STONE ejecuta en Steam probado contra un Steam simulado, y la simulación de la interfaz. Nada de esta versión se ha observado todavía en la BC-250.** Pruebas de placa: T-LIB-14, T-STEAM-20, T-STEAM-21 y T-DISP-02 en `hardware/validation/matrix.yaml`.
+
+## Cerrar un juego
+
+Hasta ahora, si un juego se colgaba o no tenía un menú para salir, no había forma de cerrarlo desde STONE.
+
+- **Cerrar juego** está en el menú rápido (botón de menú mientras juegas) y en la ficha del juego abierto, donde ocupa el lugar de «Rendimiento», que solo se aplica al iniciar el juego.
+- Pregunta lo mismo que Steam: **«¿Salir del juego? Los datos no guardados podrían perderse.»**, con el foco en CANCELAR.
+- **SALIR DEL JUEGO** cierra el juego con la misma orden que el botón «Salir del juego» de Steam y vuelve al inicio. Si el juego no se cierra en 20 segundos (puede estar guardando), STONE lo avisa.
+
+## Pausar y reanudar descargas
+
+- En la ficha de un juego que se descarga, **A abre las opciones de la descarga**: **PAUSAR**, **REANUDAR** o, si está en cola, **DESCARGAR AHORA**.
+- Al pausar, Steam pausa todas sus descargas, igual que su propio botón de pausa. La ficha, la carátula y el indicador de arriba dicen «En pausa».
+
+## Fallos corregidos
+
+- **Juegos que desaparecían de la biblioteca.** Para decir si un juego está instalado, STONE leía un dato que en Steam corresponde al equipo de la cuenta que más tiene, que puede ser **otro PC**. Un juego instalado en tu PC no estaba ni instalado ni «en tu cuenta» en la consola, y no aparecía. Ahora STONE mira solo esta consola, y deja fuera lo que Steam conoce pero la cuenta no posee.
+- **Resolución por juego.** STONE leía la resolución de cada juego con una función que la interfaz de Steam no usa. Si esa función no existe, el ajuste fallaba sin avisar. Ahora la lee de los detalles del juego, como Steam.
+- **Ajustes y Descargas de Steam:** revisados, ya eran correctos. Las 11 secciones que abre STONE son rutas de Steam.
+
+## Cómo se comprueba ahora
+
+- `dev/steam/steam_api.py` descarga la interfaz que Valve publica con cada versión del cliente (comprobando su suma SHA-256; se lee, nunca se ejecuta) y compara **cada llamada, número de argumentos y dato** que STONE usa: 144 coincidencias y 2 funciones opcionales documentadas.
+- En cada compilación, una prueba repite esa comparación sin internet. Si un cambio de STONE le pidiera a Steam algo que Steam no hace, la compilación falla.
+- La guía `docs/steam/COMO_HABLA_STONE_CON_STEAM.md` explica cada caso y cómo hacer un arreglo cuando cambie Steam.
+
 # STONE OS (rebuild) 3.1.0-rc4
 
 Arregla lo que se vio en la consola con 3.1.0-rc3 (12 y 13-11-2026, fotos del propietario): **Batman: Arkham City no se abría** (se quedaba en «SIGUE CARGANDO»), **instalar un juego respondía «Steam no respondió»**, **las carátulas de los juegos sin instalar se transparentaban** y **los fondos se veían pixelados** en el televisor 4K. Añade la **barra de descarga e instalación**. Decisión D-37.

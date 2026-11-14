@@ -704,6 +704,41 @@ class Host:
             GLib.idle_add(lambda: (done({"ok": bool(ok)}), False)[1])
         threading.Thread(target=work, daemon=True).start()
 
+    def m_game_close(self, args, done):
+        """game.close(appid): close the running game as Steam's "Exit game" does (Apps.TerminateApp).
+        STONE Home asks first, as Steam does: what was not saved may be lost. {"ok": bool}."""
+        if len(args) != 1 or args[0] not in self.games:
+            return done(None, "InvalidValue", "unknown game")
+        gid = self.games[args[0]].rsplit("/", 1)[-1]
+        if not gid.isdigit():
+            return done(None, "InvalidValue", "unknown game")
+
+        def work():
+            try:
+                ok = self.steam_ui.terminate(int(gid)) if hasattr(self.steam_ui, "terminate") else None
+            except Exception:  # noqa: BLE001
+                ok = None
+            print(f"[stone] game {args[0]}: close -> {ok}", flush=True)
+            GLib.idle_add(lambda: (done({"ok": bool(ok)}), False)[1])
+        threading.Thread(target=work, daemon=True).start()
+
+    def m_downloads_control(self, args, done):
+        """downloads.control(appid, "pause" | "resume"): Steam's own pause and resume of a download
+        (steamcef.download_control). {"ok": bool}."""
+        if (len(args) != 2 or not isinstance(args[0], str) or not args[0].isdigit() or len(args[0]) > 10
+                or args[1] not in steamcef.DOWNLOAD_ACTIONS):
+            return done(None, "InvalidValue", "download")
+
+        def work():
+            try:
+                ok = self.steam_ui.download_control(int(args[0]), args[1]) if hasattr(self.steam_ui, "download_control") else None
+            except Exception:  # noqa: BLE001
+                ok = None
+            self._dl_live = None                      # the next downloads() reads Steam again
+            print(f"[stone] downloads {args[0]}: {args[1]} -> {ok}", flush=True)
+            GLib.idle_add(lambda: (done({"ok": bool(ok)}), False)[1])
+        threading.Thread(target=work, daemon=True).start()
+
     # ---- STONE OPTIMIZED API ---------------------------------------------------------------
     def _opt_call(self, done, fn):
         def work():

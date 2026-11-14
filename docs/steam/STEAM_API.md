@@ -9,15 +9,22 @@ Generado por `dev/steam/steam_api.py report` a partir del código que Valve publ
 - ✅ Apps.ContinueGameAction: as Steam (launch_answer)
 - ✅ Apps.GetActiveGameActions: as Steam (launch, launch_answer, launch_state)
 - ✅ Apps.GetLaunchOptionsForApp: as Steam (launch, launch_answer, launch_state)
+- ⚠️ Apps.GetResolutionOverrideForApp: Steam's interface never calls it; only when present and a game's details do not come: the resolution is read from RegisterForAppDetails (strResolutionOverride), as in Steam's interface (display_default, display_native)
 - ✅ Apps.LoadEula: as Steam (accept_eula, install, launch, launch_answer, launch_state)
 - ✅ Apps.MarkEulaAccepted: as Steam (accept_eula, launch_answer)
+- ✅ Apps.RegisterForAppDetails: as Steam (display_default, display_native, graphics_get)
 - ✅ Apps.RegisterForGameActionEnd: as Steam (launch, launch_answer, launch_state)
 - ✅ Apps.RegisterForGameActionShowError: as Steam (launch, launch_answer, launch_state)
 - ✅ Apps.RegisterForGameActionStart: as Steam (launch, launch_answer, launch_state)
 - ✅ Apps.RegisterForGameActionTaskChange: as Steam (launch, launch_answer, launch_state)
 - ✅ Apps.RegisterForGameActionUserRequest: as Steam (launch, launch_answer, launch_state)
 - ✅ Apps.RunGame: as Steam (launch, launch_answer, launch_state, run_game)
+- ✅ Apps.SetAppLaunchOptions: as Steam (graphics_set)
+- ✅ Apps.SetAppResolutionOverride: as Steam (display_default, display_native)
 - ✅ Apps.SetShortcutName: as Steam (add_shortcut)
+- ✅ Apps.TerminateApp: as Steam (terminate)
+- ✅ Downloads.EnableAllDownloads: as Steam (download_pause, download_resume)
+- ✅ Downloads.ResumeAppUpdate: as Steam (download_pause, download_resume)
 - ✅ Installs.CancelInstall: as Steam (accept_eula, cancel_install, install)
 - ✅ Installs.ContinueInstall: as Steam (accept_eula, install)
 - ⚠️ Installs.GetInstallManagerInfo: Steam's interface never calls it; only when present (feature-tested): the steps come from RegisterForShowInstallWizard, as in Steam's interface; this only finds a wizard left open before STONE asked (accept_eula, install)
@@ -25,20 +32,27 @@ Generado por `dev/steam/steam_api.py report` a partir del código que Valve publ
 - ✅ Installs.OpenUninstallWizard: as Steam (uninstall)
 - ✅ Installs.RegisterForShowInstallWizard: as Steam (accept_eula, install)
 - ✅ Installs.SetInstallFolder: as Steam (accept_eula, install)
+- ✅ System.DisplayManager: as Steam (display_size, display_state)
+- ✅ System.DisplayManager.GetState: as Steam (display_state)
+- ✅ System.DisplayManager.SetGamescopeInternalResolution: as Steam (display_size)
 - ✅ field AddShortcut: occurs in Steam's code
 - ✅ field App: occurs in Steam's code
 - ✅ field Apps: occurs in Steam's code
 - ✅ field BIsModOrShortcut: occurs in Steam's code
+- ✅ field BIsOwned: occurs in Steam's code
 - ✅ field CancelGameAction: occurs in Steam's code
 - ✅ field CancelInstall: occurs in Steam's code
 - ✅ field CloseSideMenus: occurs in Steam's code
 - ✅ field ContinueGameAction: occurs in Steam's code
 - ✅ field ContinueInstall: occurs in Steam's code
+- ✅ field DisplayManager: occurs in Steam's code
 - ✅ field Downloads: occurs in Steam's code
+- ✅ field EnableAllDownloads: occurs in Steam's code
 - ✅ field GamepadUIMainWindowInstance: occurs in Steam's code
 - ✅ field GetActiveGameActions: occurs in Steam's code
 - ✅ field GetFocusedWindowInstance: occurs in Steam's code
 - ✅ field GetLaunchOptionsForApp: occurs in Steam's code
+- ✅ field GetState: occurs in Steam's code
 - ✅ field Installs: occurs in Steam's code
 - ✅ field LoadEula: occurs in Steam's code
 - ✅ field LocalDownloadOverview: occurs in Steam's code
@@ -48,13 +62,20 @@ Generado por `dev/steam/steam_api.py report` a partir del código que Valve publ
 - ✅ field OpenInstallWizard: occurs in Steam's code
 - ✅ field OpenMainMenu: occurs in Steam's code
 - ✅ field OpenUninstallWizard: occurs in Steam's code
+- ✅ field RegisterForAppDetails: occurs in Steam's code
 - ✅ field RegisterForShowInstallWizard: occurs in Steam's code
+- ✅ field ResumeAppUpdate: occurs in Steam's code
 - ✅ field RunGame: occurs in Steam's code
+- ✅ field SetAppLaunchOptions: occurs in Steam's code
+- ✅ field SetAppResolutionOverride: occurs in Steam's code
+- ✅ field SetGamescopeInternalResolution: occurs in Steam's code
 - ✅ field SetInstallFolder: occurs in Steam's code
 - ✅ field SetShortcutName: occurs in Steam's code
 - ✅ field Settings: occurs in Steam's code
 - ✅ field SteamClient: occurs in Steam's code
 - ✅ field SteamUIStore: occurs in Steam's code
+- ✅ field System: occurs in Steam's code
+- ✅ field TerminateApp: occurs in Steam's code
 - ✅ field WindowStore: occurs in Steam's code
 - ✅ field allApps: occurs in Steam's code
 - ✅ field allAppsCollection: occurs in Steam's code
@@ -93,11 +114,14 @@ Generado por `dev/steam/steam_api.py report` a partir del código que Valve publ
 - ✅ field strActionName: occurs in Steam's code
 - ✅ field strDescription: occurs in Steam's code
 - ✅ field strGameName: occurs in Steam's code
+- ✅ field strLaunchOptions: occurs in Steam's code
 - ✅ field strNumDone: occurs in Steam's code
 - ✅ field strNumTotal: occurs in Steam's code
+- ✅ field strResolutionOverride: occurs in Steam's code
 - ✅ field strSteamID: occurs in Steam's code
 - ✅ field strTaskDetails: occurs in Steam's code
 - ✅ field strTaskName: occurs in Steam's code
+- ✅ field toObject: occurs in Steam's code
 - ✅ field update_appid: occurs in Steam's code
 - ✅ field update_network_bytes_per_second: occurs in Steam's code
 - ✅ field update_state: occurs in Steam's code
@@ -331,38 +355,85 @@ Generado por `dev/steam/steam_api.py report` a partir del código que Valve publ
 | `Storage.DeleteKey` | 2 | 1 | `(w)` · `(r)` |
 | `Storage.GetString` | 2 | 1 | `(w)` · `(r)` |
 | `Storage.SetString` | 3 | 2 | `(w,g)` · `(r,o)` |
-| `System.Audio` | 17 | — |  |
-| `System.AudioDevices` | 3 | — |  |
+| `System.Audio` | 1 | — |  |
+| `System.Audio.ClearDefaultDeviceOverride` | 1 | 1 | `(W)` |
+| `System.Audio.GetApps` | 1 | 0 | `()` |
+| `System.Audio.GetDevices` | 3 | 0 | `()` |
+| `System.Audio.RegisterForAppAdded` | 1 | 1 | `(this.OnAppAdded)` |
+| `System.Audio.RegisterForAppRemoved` | 1 | 1 | `(this.OnAppRemoved)` |
+| `System.Audio.RegisterForAppVolumeChanged` | 1 | 1 | `(this.OnAppVolumeChanged)` |
+| `System.Audio.RegisterForDeviceAdded` | 1 | 1 | `(this.OnAudioDeviceAdded)` |
+| `System.Audio.RegisterForDeviceRemoved` | 1 | 1 | `(this.OnAudioDeviceRemoved)` |
+| `System.Audio.RegisterForDeviceVolumeChanged` | 1 | 1 | `(this.OnAudioDeviceVolumeChanged)` |
+| `System.Audio.RegisterForServiceConnectionStateChanges` | 1 | 1 | `(this.OnServiceConnectionStateChanged)` |
+| `System.Audio.RegisterForVolumeButtonPressed` | 1 | 1 | `(this.OnVolumeButtonPressed)` |
+| `System.Audio.SetAppVolume` | 1 | 2 | `(this.id,W)` |
+| `System.Audio.SetDefaultDeviceOverride` | 1 | 2 | `(this.m_id,W)` |
+| `System.Audio.SetDeviceVolume` | 1 | 3 | `(this.m_id,W,Be)` |
+| `System.AudioDevices.RegisterForStateChanges` | 1 | 1 | `(this.OnStateChanged)` |
+| `System.AudioDevices.UpdateSomething` | 2 | 1 | `(wt.serializeBase64String())` · `(Et.serializeBase64String())` |
 | `System.CopyFile` | 2 | 2 | `(dr,Mr)` · `(se,Oe)` |
 | `System.CopyFilesToClipboard` | 4 | 1 | `(yt.filter(Boolean))` · `([xi.strExportPath])` |
 | `System.CreateTempPath` | 3 | 1 | `(cr)` · `(B)` |
-| `System.Devkit` | 3 | — |  |
-| `System.Display` | 9 | — |  |
-| `System.DisplayManager` | 8 | — |  |
-| `System.Dock` | 3 | — |  |
+| `System.Devkit.RegisterForPairingPrompt` | 1 | 1 | `(this.OnPairingPrompt)` |
+| `System.Devkit.RespondToPairingPrompt` | 1 | 2 | `(Et,wt)` |
+| `System.Devkit.SetPairing` | 1 | 1 | `(Et)` |
+| `System.Display.EnableUnderscan` | 4 | 1 | `(!Y)` · `(!K)` |
+| `System.Display.RegisterForBrightnessChanges` | 1 | 1 | `(this.OnDisplayBrightnessChanged)` |
+| `System.Display.SetBrightness` | 1 | 1 | `(k)` |
+| `System.Display.SetUnderscanLevel` | 3 | 1 | `(X)` · `(U)` |
+| `System.DisplayManager` | 1 | — |  |
+| `System.DisplayManager.ClearModeOverride` | 1 | 1 | `(k)` |
+| `System.DisplayManager.GetState` | 2 | 0 | `()` |
+| `System.DisplayManager.RegisterForStateChanges` | 1 | 1 | `(this.OnStateChanged)` |
+| `System.DisplayManager.SetCompatibilityMode` | 1 | 1 | `(k)` |
+| `System.DisplayManager.SetGamescopeInternalResolution` | 1 | 2 | `(A,U/K==1.6?A/1.6:M)` |
+| `System.DisplayManager.SetMode` | 1 | 1 | `(H.serializeBase64String())` |
+| `System.Dock.DisarmSafetyNet` | 1 | 0 | `()` |
+| `System.Dock.RegisterForStateChanges` | 1 | 1 | `(this.OnStateChanged)` |
+| `System.Dock.UpdateFirmware` | 1 | 1 | `(C.serializeBase64String())` |
 | `System.FormatStorage` | 1 | 1 | `(ze)` |
 | `System.GetOSType` | 2 | 0 | `()` |
 | `System.GetSystemInfo` | 2 | 0 | `()` |
 | `System.IsDeckFactoryImage` | 1 | 0 | `()` |
 | `System.IsSteamInTournamentMode` | 2 | 0 | `()` |
-| `System.Network` | 16 | — |  |
+| `System.Network.Device` | 5 | — |  |
+| `System.Network.ForceTestConnectivity` | 1 | 0 | `()` |
+| `System.Network.GetProxyInfo` | 1 | 0 | `()` |
+| `System.Network.RegisterForAppSummaryUpdate` | 1 | 1 | `(pt)` |
+| `System.Network.RegisterForConnectionStateUpdate` | 1 | 1 | `(Me)` |
+| `System.Network.RegisterForConnectivityTestChanges` | 1 | 1 | `(this.OnConnectivityTestStateChanged)` |
+| `System.Network.RegisterForDeviceChanges` | 1 | 1 | `(this.OnNetworkDevicesChanged)` |
+| `System.Network.SetFakeLocalSystemState` | 1 | 1 | `(ze)` |
+| `System.Network.SetProxyInfo` | 1 | 4 | `(ze.proxy_mode,ze.address??"",ze.port??0,ze.exclude_local??!0)` |
+| `System.Network.SetWifiEnabled` | 1 | 1 | `(ze)` |
+| `System.Network.StartScanningForNetworks` | 1 | 0 | `()` |
+| `System.Network.StopScanningForNetworks` | 1 | 0 | `()` |
 | `System.NotifyGameOverlayStateChanged` | 1 | 2 | `(B,E)` |
 | `System.OpenFileDialog` | 12 | 1 | `({strTitle:(0,s.we)("#AddNonSteam_PickAppTitle"),rgFilters:C(),strInitialFile:Q})` · `({strTitle:(0,c.we)("#MediaManager_SaveDialogTitle"),bChooseDirectory:!0})` |
 | `System.OpenInSystemBrowser` | 3 | 1 | `(I)` · `(dr)` |
 | `System.OpenLocalDirectoryInSystemExplorer` | 5 | 1 | `(kt.strShortcutStartDir)` · `(kt.strInstallFolder)` |
-| `System.Perf` | 28 | — |  |
+| `System.Perf.RegisterForDiagnosticInfoChanges` | 1 | 1 | `(this.OnDiagnosticInfoChanged)` |
+| `System.Perf.RegisterForStateChanges` | 1 | 1 | `(this.OnStateChanged)` |
+| `System.Perf.UpdateSettings` | 26 | 1 | `(Pe.serializeBase64String())` · `(ke.serializeBase64String())` |
 | `System.RebootToAlternateSystemPartition` | 2 | 0 | `()` |
 | `System.RegisterForAirplaneModeChanges` | 1 | 1 | `(this.OnAirplaneModeChanged)` |
 | `System.RegisterForBatteryStateChanges` | 1 | 1 | `(this.OnBatteryStateChanged)` |
 | `System.RegisterForFormatStorageProgress` | 1 | 1 | `(this.OnFormatStorageProgress)` |
 | `System.RegisterForSettingsChanges` | 1 | 1 | `(this.OnSettingsChanged)` |
-| `System.Report` | 3 | — |  |
+| `System.Report.GenerateSystemReport` | 1 | 0 | `()` |
+| `System.Report.SaveToDesktop` | 1 | 1 | `(I)` |
+| `System.Report.Submit` | 1 | 1 | `(I)` |
 | `System.RestartPC` | 8 | 0 | `()` |
 | `System.SetAirplaneMode` | 1 | 1 | `(k)` |
 | `System.ShutdownPC` | 1 | 0 | `()` |
 | `System.SteamRuntimeSystemInfo` | 1 | 0 | `()` |
 | `System.SuspendPC` | 1 | 0 | `()` |
-| `System.UI` | 8 | — |  |
+| `System.UI.CloseGameWindow` | 1 | 2 | `(ot,Te)` |
+| `System.UI.GetGameWindowsInfo` | 1 | 2 | `(ot,Te)` |
+| `System.UI.RegisterForFocusChangeEvents` | 3 | 1 | `(this.OnFocusChangeEvent)` |
+| `System.UI.RegisterForOverlayGameWindowFocusChanged` | 1 | 1 | `(this.OnOverlayGameWindowFocusChanged)` |
+| `System.UI.RegisterForSystemKeyEvents` | 2 | 1 | `(this.HandleSystemKeyEvents)` · `(this.HandleGamepadGuideButtonEvents)` |
 | `System.UpdateSettings` | 17 | 1 | `(A.serializeBase64String())` · `(k.serializeBase64String())` |
 | `System.VideoRecordingDriverCheck` | 1 | 0 | `()` |
 | `UI.EnsureMainWindowCreated` | 1 | 0 | `()` |

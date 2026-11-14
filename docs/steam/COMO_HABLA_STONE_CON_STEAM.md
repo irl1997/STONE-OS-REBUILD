@@ -61,10 +61,18 @@ python3 dev/steam/steam_api.py check --snapshot    # lo mismo sin internet, cont
 | Desinstalar | `Installs.OpenUninstallWizard([appid], "0", true)`. |
 | Descargas en vivo | `window.downloadsStore`: `LocalDownloadOverview` (o `m_DownloadOverview.get("0")`) con `update_appid`, `update_state` (`Downloading`, `Preallocating`, `Unpacking`, `None`), `progress[k_EAppUpdateProgress_*]` (bytes por etapa), `update_network_bytes_per_second`, `overall_estimated_time_remaining_sec`; la cola en `m_DownloadItems.get("0")`. |
 | Abrir un juego | `Apps.RunGame(gameid, "", -1, origen)`; los pasos por `Apps.RegisterForGameAction{Start,TaskChange,UserRequest,ShowError,End}` y `Apps.GetActiveGameActions()`; las respuestas con `Apps.ContinueGameAction(id, respuesta)` o `Apps.CancelGameAction(id)`. Respuestas de Steam: `ShowEula`, índice de opción de inicio, `KeepLocal`/`KeepRemote`/`IgnoreCloud`/`IgnorePendingCloudSessions`, `IgnoreInstallError`, `KickOtherSession`, `SkipShaders`. Errores: `AppError_N`, con los textos `Steam_AppUpdateError_N`. |
-| Juegos de la cuenta | `window.appStore` (`m_mapApps`, `allApps`) y `window.collectionStore` (`allGamesCollection.allApps`): `appid`, `display_name`, `app_type`, `minutes_playtime_forever`, `rt_last_time_played`, `size_on_disk`, `per_client_data`. |
+| Juegos de la cuenta | `window.appStore` (`m_mapApps`, `allApps`) y `window.collectionStore` (`allGamesCollection.allApps`): `appid`, `display_name`, `app_type`, `minutes_playtime_forever`, `rt_last_time_played`, `size_on_disk`. Instalado **en esta consola**: `local_per_client_data` (la entrada de `per_client_data` con `clientid` «0»); el `installed` de Steam es el del equipo de la cuenta que más tiene, que puede ser otro PC. Solo lo que la cuenta posee (`BIsOwned()`). |
+| Cerrar un juego | `Apps.TerminateApp(gameid, false)`, tras la pregunta de Steam «¿Salir del juego?» / «Los datos no guardados podrían perderse.» |
+| Pausar y reanudar descargas | Pausar: `Downloads.EnableAllDownloads(false, "0")` (Steam pausa sus descargas, no un juego). Reanudar o descargar ya uno en cola: `Downloads.ResumeAppUpdate(appid, "0")`, y antes `EnableAllDownloads(true, "0")` si estaban en pausa. |
+| Resolución por juego | Se lee de `Apps.RegisterForAppDetails(appid, cb)` → `strResolutionOverride` (si falta, «Default») y se cambia con `Apps.SetAppResolutionOverride(appid, valor)`. `GetResolutionOverrideForApp` solo de respaldo. |
 | Quién inició sesión | `window.App.m_CurrentUser.strSteamID`. |
 | Abrir los ajustes o las descargas de Steam | `window.SteamUIStore.GetFocusedWindowInstance()` (o `WindowStore.GamepadUIMainWindowInstance`) → `.Navigator`; `MenuStore.OpenMainMenu()` para traer la interfaz de Steam sobre STONE; `Navigator.Settings("System")`, que en el modo consola va a la ruta `Settings[sección]` (las secciones de STONE son claves de esa tabla de rutas, y `check` lo comprueba), o `Navigator.Downloads()`; después, `MenuStore.CloseSideMenus()`. |
 | Accesos directos | `Apps.AddShortcut(nombre, exe, carpeta, opciones)` y `Apps.SetShortcutName(id, nombre)`. |
 | Steam Play para juegos de Windows | `CompatToolMapping` «0» en `config/config.vdf` (lo que Steam escribe al activar «Steam Play para todos los títulos»), solo si no existe y con Steam cerrado. |
 
-La única función que STONE usa y la interfaz de Steam no es `Installs.GetInstallManagerInfo`. Se usa solo si existe, para encontrar un asistente de instalación que quedó abierto antes de que STONE pidiera otro. Los pasos los da el aviso, como en Steam.
+Hay dos funciones que STONE usa y la interfaz de Steam no. Las dos se usan solo si existen y como respaldo:
+
+- `Installs.GetInstallManagerInfo`: encuentra un asistente de instalación que quedó abierto antes de que STONE pidiera otro. Los pasos los da el aviso, como en Steam.
+- `Apps.GetResolutionOverrideForApp`: lee la resolución de un juego cuyos detalles no llegan.
+
+`check` también revisa el código de pantalla (`stone_display/steam.py`) y de gráficos (`stone_games/graphics.py`). Los ajustes de Steam (`steamsettings.py`) se descubren en cada versión, leyendo los nombres que ofrece `SteamClient`, y no se fijan de antemano.
