@@ -93,6 +93,7 @@ class Drop:
         self.on_event, self.base, self.clock = on_event, base, clock
         self.server = self.thread = None
         self.token, self.until, self.received = None, 0.0, []
+        self.offered = None                       # a file the phone may download (the diagnostic report)
 
     def start(self, host=None, port=0):
         if self.server:
@@ -129,10 +130,29 @@ class Drop:
                 p = self._ok_path()
                 if p is None:
                     return
+                if p[0] == ["informe"]:
+                    return self._file(drop.offered)
                 if p[0] not in ([], [""]):
                     return self._send(404, {"error": "no"})
                 opts = "".join(f'<option value="{k}">{v[1]}</option>' for k, v in roms.SYSTEMS.items())
                 self._send(200, PAGE.replace("__OPTIONS__", opts), "text/html")
+
+            def _file(self, path):
+                """The file STONE offers (only that one, chosen by STONE, never by the address)."""
+                try:
+                    size = os.path.getsize(path) if path else -1
+                except OSError:
+                    size = -1
+                if size < 0:
+                    return self._send(404, {"error": "No hay ningún informe que descargar"})
+                self.send_response(200)
+                self.send_header("Content-Type", "application/zip")
+                self.send_header("Content-Length", str(size))
+                self.send_header("Content-Disposition", f'attachment; filename="{os.path.basename(path)}"')
+                self.send_header("Cache-Control", "no-store")
+                self.end_headers()
+                with open(path, "rb") as f:
+                    shutil.copyfileobj(f, self.wfile, CHUNK)
 
             def do_PUT(self):
                 p = self._ok_path()
@@ -184,14 +204,20 @@ class Drop:
         self.ip = ip
         return self.info()
 
+    def offer(self, path):
+        """Let the phone download this one file at <url>informe while the session is open."""
+        self.offered = path
+        return self.info()
+
     def info(self):
         if not self.server:
             return {"open": False}
-        return {"open": True, "url": f"http://{self.ip}:{self.server.server_address[1]}/{self.token}/",
+        base = f"http://{self.ip}:{self.server.server_address[1]}/{self.token}/"
+        return {"open": True, "url": base, "download": base + "informe" if self.offered else None,
                 "seconds": max(0, int(self.until - self.clock())), "received": list(self.received)}
 
     def stop(self):
-        srv, self.server = self.server, None
+        srv, self.server, self.offered = self.server, None, None
         if srv:
             srv.shutdown()
             srv.server_close()

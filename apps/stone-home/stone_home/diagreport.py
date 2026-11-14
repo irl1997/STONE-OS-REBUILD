@@ -1,0 +1,200 @@
+"""STONE's diagnostic report (Ajustes → Salud → Informe de diagnóstico), 3.1.0-rc7.
+
+Until now a failure on the console reached the developer as a photo of the TV. The report gathers, in
+one .zip the person takes away with the phone (QR) or a USB drive:
+
+  resumen.txt          what STONE found: version, failed services, errors, Steam's interface, findings
+  release.txt          STONE OS and Bazzite versions, deployments (rpm-ostree status)
+  sistema.txt          kernel, uptime, memory, disks, failed units, the GPU
+  stone-home.txt       this boot's user journal (STONE Home, the session, Steam's output)
+  stoned.txt           stoned's journal
+  sistema-avisos.txt   this boot's system warnings and errors
+  arranque-anterior.txt  the errors of the previous boot (a hang, a crash)
+  steam-*.txt          the end of Steam's own logs (console, content, compat, bootstrap)
+  estado/*.json        STONE's own state and preferences (no passwords: STONE never keeps one)
+  vivo.json            what the host knows now: Steam's state, the functions of Steam's interface that
+                       STONE uses and whether this Steam has them, network, screen, health
+
+Privacy, before anything is written: e-mail addresses, Steam account ids (7656119…), the last part of
+IPv4 and MAC addresses are masked, and any line that names a password, token, secret, cookie or
+authorization is left out. Wi-Fi passwords are never read (NetworkManager does not print them). Nothing
+leaves the console unless the person takes the file: STONE does not send it anywhere.
+"""
+
+import io
+import json
+import os
+import re
+import subprocess
+import time
+import zipfile
+
+MAX_FILE = 2 * 2**20               # the end of each log: what matters is the latest
+MAX_STATE = 256 * 1024
+
+# Functions of Steam's interface that STONE relies on (steamcef.py, stone_display, stone_games):
+# checked against THIS console's Steam, so an update of Steam that removed one is seen at once.
+STEAM_NEEDS = ("Apps.RunGame", "Apps.TerminateApp", "Apps.GetActiveGameActions", "Apps.ContinueGameAction",
+               "Apps.CancelGameAction", "Apps.RegisterForGameActionUserRequest", "Apps.RegisterForGameActionTaskChange",
+               "Apps.RegisterForGameActionShowError", "Apps.LoadEula", "Apps.MarkEulaAccepted", "Apps.AddShortcut",
+               "Apps.SetShortcutLaunchOptions", "Apps.SetShortcutExe", "Apps.SetShortcutStartDir", "Apps.RemoveShortcut",
+               "Apps.RegisterForAppDetails", "Apps.SetAppLaunchOptions", "Apps.SetAppResolutionOverride",
+               "Apps.GetLaunchOptionsForApp", "Installs.OpenInstallWizard", "Installs.RegisterForShowInstallWizard",
+               "Installs.SetInstallFolder", "Installs.ContinueInstall", "Installs.CancelInstall", "Installs.OpenUninstallWizard",
+               "Downloads.EnableAllDownloads", "Downloads.ResumeAppUpdate")
+
+_SECRET_LINE = re.compile(r"password|passwd|passphrase|token|secret|authorization|cookie|psk=", re.I)
+_EMAIL = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}")
+_STEAMID = re.compile(r"\b7656119\d{10}\b")
+_IPV4 = re.compile(r"\b((?:25[0-5]|2[0-4]\d|1?\d?\d)\.(?:25[0-5]|2[0-4]\d|1?\d?\d)\.(?:25[0-5]|2[0-4]\d|1?\d?\d))\.(?:25[0-5]|2[0-4]\d|1?\d?\d)\b")
+_MAC = re.compile(r"\b((?:[0-9A-Fa-f]{2}:){3})(?:[0-9A-Fa-f]{2}:){2}[0-9A-Fa-f]{2}\b")
+_ERR = re.compile(r"Traceback|\bERROR\b|\berror:|\bFAILED\b|segfault|GPU reset|ring .* timeout|\bOops\b|Kernel panic", re.I)
+
+
+def redact(text):
+    """The text with nothing personal in it (see the module's docstring)."""
+    out = []
+    for line in text.splitlines():
+        if _SECRET_LINE.search(line):
+            out.append("[línea omitida: nombraba una contraseña o un token]")
+            continue
+        line = _EMAIL.sub("[correo]", line)
+        line = _STEAMID.sub("[cuenta de Steam]", line)
+        line = _IPV4.sub(r"\1.x", line)
+        line = _MAC.sub(r"\1xx:xx:xx", line)
+        out.append(line)
+    return "\n".join(out) + ("\n" if text.endswith("\n") else "")
+
+
+def _run(argv, timeout=20):
+    try:
+        r = subprocess.run(argv, capture_output=True, text=True, timeout=timeout)
+        return (r.stdout or "") + (f"\n[salida de error]\n{r.stderr}" if r.returncode != 0 and r.stderr else "")
+    except FileNotFoundError:
+        return f"[{argv[0]} no está instalado]\n"
+    except (OSError, subprocess.SubprocessError) as e:
+        return f"[no se pudo ejecutar {argv[0]}: {e}]\n"
+
+
+def _tail(path, limit=MAX_FILE):
+    try:
+        with open(path, "rb") as f:
+            f.seek(0, os.SEEK_END)
+            size = f.tell()
+            f.seek(max(0, size - limit))
+            data = f.read()
+        text = data.decode("utf-8", "replace")
+        return ("[…principio recortado]\n" + text.split("\n", 1)[-1]) if size > limit else text
+    except OSError as e:
+        return f"[no se pudo leer {os.path.basename(path)}: {e.strerror or e}]\n"
+
+
+def _cut(text, limit=MAX_FILE):
+    b = text.encode("utf-8", "replace")
+    return text if len(b) <= limit else "[…principio recortado]\n" + b[-limit:].decode("utf-8", "replace").split("\n", 1)[-1]
+
+
+def steam_functions(probe_rows):
+    """{"page", "missing": [...], "have": n} from steamcef.probe(): which of STEAM_NEEDS this Steam lacks."""
+    tree = next((r.get("tree") for r in probe_rows or [] if r.get("has_steamclient") and r.get("tree")), None)
+    if not tree:
+        return {"page": None, "missing": None, "have": 0, "note": "La interfaz de Steam no respondió"}
+    missing, have = [], 0
+    for name in STEAM_NEEDS:
+        area, fn = name.split(".")
+        node = tree.get(area) if isinstance(tree, dict) else None
+        if isinstance(node, dict) and isinstance(node.get(fn), str):
+            have += 1
+        else:
+            missing.append(name)
+    page = next((r.get("title") for r in probe_rows if r.get("tree") is tree), None)
+    return {"page": page, "missing": missing, "have": have}
+
+
+def _errors(text, n=8):
+    rows = [ln.strip() for ln in text.splitlines() if _ERR.search(ln)]
+    return len(rows), rows[-n:]
+
+
+def build(out_dir=None, live=None, run=_run, home=None, now=time.time):
+    """Write the report and return {"path", "name", "size", "summary": {...}}. live: what the host knows
+    (steam status, steam probe, net, display, health) as plain data."""
+    home = home or os.path.expanduser("~")
+    files = {}
+    files["release.txt"] = (_tail("/usr/lib/stone-release", 65536) + "\n" + _tail("/etc/os-release", 65536)
+                            + "\n== rpm-ostree status ==\n" + run(["rpm-ostree", "status"]))
+    files["sistema.txt"] = "\n".join(f"== {' '.join(a)} ==\n{run(a)}" for a in (
+        ["uname", "-a"], ["uptime"], ["free", "-m"], ["df", "-h", "/", "/var", "/var/home"],
+        ["systemctl", "--failed", "--no-pager"], ["systemctl", "--user", "--failed", "--no-pager"], ["lspci", "-nnk"],
+        ["nmcli", "-t", "general", "status"]))
+    files["stone-home.txt"] = _cut(run(["journalctl", "--user", "-b", "--no-pager", "-o", "short-iso", "-n", "6000"], 60))
+    files["stoned.txt"] = _cut(run(["journalctl", "-b", "-u", "stoned", "--no-pager", "-o", "short-iso", "-n", "2000"], 60))
+    files["sistema-avisos.txt"] = _cut(run(["journalctl", "-b", "-p", "warning", "--no-pager", "-o", "short-iso", "-n", "3000"], 60))
+    files["arranque-anterior.txt"] = _cut(run(["journalctl", "-b", "-1", "-p", "err", "--no-pager", "-o", "short-iso", "-n", "1500"], 60))
+    steam_logs = os.path.join(home, ".local", "share", "Steam", "logs")
+    for n in ("console_log.txt", "content_log.txt", "compat_log.txt", "bootstrap_log.txt", "stderr.txt"):
+        p = os.path.join(steam_logs, n)
+        if os.path.isfile(p):
+            files[f"steam-{n}"] = _tail(p)
+    for base, sub in ((os.path.join(home, ".local", "state", "stone"), "estado"), (os.path.join(home, ".config", "stone"), "preferencias")):
+        try:
+            names = sorted(os.listdir(base))
+        except OSError:
+            names = []
+        for n in names:
+            p = os.path.join(base, n)
+            if n.endswith(".json") and os.path.isfile(p) and os.path.getsize(p) <= MAX_STATE:
+                files[f"{sub}/{n}"] = _tail(p, MAX_STATE)
+    live = dict(live or {})
+    if "steam_probe" in live:
+        live["steam_functions"] = steam_functions(live.pop("steam_probe"))
+    files["vivo.json"] = json.dumps(live, indent=1, ensure_ascii=False, default=str)
+    files = {k: redact(v) for k, v in files.items()}
+
+    # what a person (and the developer) reads first
+    n_err, last = _errors(files["stone-home.txt"] + files["stoned.txt"])
+    n_prev, _ = _errors(files["arranque-anterior.txt"])
+    failed = [ln.split()[1] if ln.split()[0] in ("●", "*") else ln.split()[0]
+              for ln in files["sistema.txt"].splitlines() if ".service" in ln and ("failed" in ln or "fallid" in ln)][:10]
+    sf = live.get("steam_functions") or {}
+    findings = []
+    if failed:
+        findings.append(f"Servicios con fallo: {', '.join(failed)}")
+    if sf.get("missing"):
+        findings.append(f"Este Steam no tiene {len(sf['missing'])} funciones que STONE usa: {', '.join(sf['missing'][:5])}")
+    elif sf.get("missing") is None:
+        findings.append("La interfaz de Steam no respondió al hacer el informe")
+    if n_prev:
+        findings.append(f"El arranque anterior registró {n_prev} errores (¿se colgó o se apagó de golpe?)")
+    for c in (live.get("health") or []):
+        if isinstance(c, (list, tuple)) and len(c) >= 3 and c[0] == "fail":
+            findings.append(f"{c[1]}: {c[2]}")
+    summary = {"version": (re.search(r'STONE_VERSION="?([^"\n]+)', files["release.txt"]) or [None, "—"])[1],
+               "errors": n_err, "previous_boot_errors": n_prev, "failed_services": failed,
+               "steam_functions": sf, "findings": findings[:8], "last_errors": last}
+    files["resumen.txt"] = redact(
+        "INFORME DE DIAGNÓSTICO DE STONE OS\n"
+        f"Hecho: {time.strftime('%d-%m-%Y %H:%M', time.localtime(now()))}\nVersión: {summary['version']}\n"
+        f"Errores en los registros de este arranque: {n_err}\nErrores del arranque anterior: {n_prev}\n"
+        f"Funciones de Steam que STONE usa: {sf.get('have', 0)} de {len(STEAM_NEEDS)} presentes"
+        + (f" (faltan: {', '.join(sf['missing'])})" if sf.get("missing") else "") + "\n\nHALLAZGOS\n"
+        + ("\n".join(f"- {f}" for f in findings) or "- Nada fuera de lo normal") + "\n\nÚLTIMOS ERRORES\n"
+        + ("\n".join(last) or "(ninguno)") + "\n")
+
+    out_dir = out_dir or os.path.join(home, "STONE-informes")
+    os.makedirs(out_dir, exist_ok=True)
+    name = time.strftime("stone-informe-%Y%m%d-%H%M.zip", time.localtime(now()))
+    path = os.path.join(out_dir, name)
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
+        for k in ["resumen.txt"] + sorted(f for f in files if f != "resumen.txt"):
+            z.writestr(k, files[k])
+    with open(path + ".part", "wb") as f:
+        f.write(buf.getvalue())
+    os.replace(path + ".part", path)
+    for old in sorted(n for n in os.listdir(out_dir) if n.startswith("stone-informe-") and n.endswith(".zip"))[:-5]:
+        try:
+            os.remove(os.path.join(out_dir, old))      # the last five are kept
+        except OSError:
+            pass
+    return {"path": path, "name": name, "size": os.path.getsize(path), "summary": summary}
