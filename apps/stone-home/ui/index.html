@@ -830,7 +830,9 @@ body.dormant *,body.dormant *::before,body.dormant *::after{animation-play-state
 .srow .l b{font-weight:400;font-size:calc(24px * var(--ts));letter-spacing:.02em}
 .srow .l small{font-weight:400;font-size:calc(20px * var(--ts));letter-spacing:.01em}
 .srow .v{font-weight:400;font-size:20px;letter-spacing:.06em}
-#dlg .sres{font-weight:400;letter-spacing:.02em}
+#dlg .sres{font-weight:400;letter-spacing:.02em;align-items:baseline}
+/* the value of each row on the row's own line, readable from the sofa (rc6: it floated above, at 15 px) */
+#dlg .sres small{font-size:19px;color:var(--text-2);text-align:right}
 #store .scard .cap2 b{font-weight:400;letter-spacing:.02em}
 #store .scard .cap2 i{font-weight:400;letter-spacing:.08em}
 #library .filters,#store .filters{font-weight:400;letter-spacing:.06em}
@@ -2994,10 +2996,10 @@ const imgLabel = g => 'Imagen: ' + (g.img ? (imgSel(g) ? imgSel(g).label : 'STON
 /* STONE IMAGE (look.py): a look per game through vkBasalt; Original = none. */
 const lookLabel = g => 'Aspecto: ' + (g.look ? (g.look.chosen ? g.look.looks.find(l => l.key === g.look.chosen).label : 'Original') : '…');
 /* D-22 frame generation (framegen.py): EXPERIMENTAL, only with OptiScaler installed by STONE. */
-const fgLabel = g => 'Fotogramas: ' + (g.fg ? (g.fg.on ? 'generados (exp.)' : 'normales') : '…');
+const fgLabel = g => 'Fotogramas: ' + (g.fg ? (g.fg.on ? 'Generados (experimental)' : 'Normales') : '…');
 const optzLabel = g => 'Optimizar' + (g.opz ? ` (${g.opz.done}/${g.opz.total})` : '');
 const optLabel = g => g.img && g.img.by_stone ? 'Quitar FSR (OptiScaler)' : 'Instalar FSR (OptiScaler)';
-const preLabel = g => 'Calidad: ' + (g.img && g.img.preset ? PRESET_TXT[g.img.preset] || g.img.preset : 'según el juego');
+const preLabel = g => 'Ajuste de FSR: ' + (g.img && g.img.preset ? PRESET_TXT[g.img.preset] || g.img.preset : 'El del juego');
 function imgRefresh(g) {
   const d = $('#detail'); if (!d) return;
   const a = d.querySelector('[data-act="img"]'), b = d.querySelector('[data-act="pre"]');
@@ -3071,7 +3073,8 @@ async function experience(g, i) {
   const el = $('#dexp');
   if (!r || !el || curG !== i || S.screen !== 'detail') return;
   g.exp = r;
-  el.textContent = `${r.label} · ${r.summary} · ${r.status_text}`;
+  /* «STONE RECOMMENDED … Recomendado por STONE» said the same twice: the state only when it adds something */
+  el.textContent = [r.label, r.summary, r.label === 'STONE RECOMMENDED' && /^Recomendado/.test(r.status_text || '') ? null : r.status_text].filter(Boolean).join(' · ');
   el.title = r.settings || '';
 }
 function detailA(el) {
@@ -3840,7 +3843,8 @@ function catRows() {
 
 /* CPU cores the system sees (threads / 2: Zen 2 has 2 threads per core). Boards sold
    unlocked report 8; the BC-250's stock firmware 6. */
-function cores() { const t = navigator.hardwareConcurrency || 12; return Math.max(1, Math.round(t / 2)); }
+/* the cores stoned read from the console (its configuration), else the browser's count of threads, halved */
+function cores() { const d = S.caps && S.caps.configuration && S.caps.configuration.detected; if (d && d.cpu_cores) return d.cpu_cores; const t = navigator.hardwareConcurrency || 12; return Math.max(1, Math.round(t / 2)); }
 
 /* 40 CU (M04, D-31): switched from here with STONE's own confirmation; stone-cu40 does the work
    through pkexec (polkit allows these three command lines to the console administrator only). The
@@ -4651,7 +4655,8 @@ function frConfigText() {
   const d = (cfg && cfg.detected) || {}, r = (cfg && cfg.reference) || {};
   const row = (label, have, want, unit) => `<p>${label}: <b>${have === null || have === undefined ? 'no se pudo leer' : have + unit}</b>${want ? ` · referencia ${want}${unit}` : ''}</p>`;
   const ok = c.board && cfg && cfg.matches !== false;
-  return [`<p>Placa BC-250: <b>${c.board ? 'detectada' : 'no detectada'}</b></p>${row('Núcleos de CPU', d.cpu_cores, r.cpu_cores, '')}${row('GPU', d.gpu_cu, r.gpu_cu, ' CU')}
+  /* without stoned's reading of the configuration only the board is said (no rows of «no se pudo leer») */
+  return [`<p>Placa BC-250: <b>${c.board ? 'detectada' : 'no detectada'}</b></p>${cfg ? row('Núcleos de CPU', d.cpu_cores, r.cpu_cores, '') + row('GPU', d.gpu_cu, r.gpu_cu, ' CU') : ''}
     ${cfg && cfg.matches === false ? `<p>Esta configuración no es la de referencia (${esc(cfg.reasons.join('; '))}). Los perfiles de fábrica funcionan; CUSTOM, pruebas y calibración quedan bloqueados.</p>` : ''}
     ${S.safeMode ? '<p>STONE arrancó en Safe Mode: valores de fábrica.</p>' : ''}`, ok];
 }
@@ -4733,7 +4738,7 @@ const SU_FN = {
     let net = null, wifi = null, note = '';
     const draw = () => {
       const online = net && net.online, cable = net && net.devices.find(d => d.type === 'ethernet' && d.state === 'connected');
-      const rows = [{ l: 'Estado', v: !net ? 'leyendo…' : online ? (cable ? 'conectado por cable' : 'conectado') : 'sin conexión' }];
+      const rows = [{ l: 'Estado', v: !net ? 'leyendo…' : online ? (cable ? 'conectado por cable' : `conectado a ${net.ssid || 'una red Wi-Fi'} (Wi-Fi)`) + (net.internet === 'limited' || net.internet === 'portal' ? ' · sin internet' : '') : 'sin conexión' }];
       if (net && net.radio === false) rows.push({ l: 'Activar el Wi-Fi', v: 'está apagado', k: 'radio' });
       else {
         (wifi || []).slice(0, 6).forEach(w => rows.push({ l: w.ssid, v: w.active ? 'conectado' : `${w.known ? 'guardada' : w.secure ? 'con contraseña' : 'abierta'} · señal ${w.signal} %`, k: w.active ? null : 'wifi', w }));

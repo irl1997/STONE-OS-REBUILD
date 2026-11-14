@@ -4,6 +4,27 @@ Auditoría del sistema completo después de probar 3.1.0-rc5 en la consola (14-1
 
 **Todo está probado en software (CODE TESTED): pruebas automáticas y la simulación de la interfaz. Nada de esta versión se ha observado todavía en la BC-250.** Pruebas de placa: T-NET-01, T-NET-02, T-NET-03, T-STEAM-22, T-HOME-07, T-EMU-10, T-EMU-11, T-EMU-12, T-EMU-13 y T-EMU-14 en `hardware/validation/matrix.yaml`.
 
+## Depuración completa
+
+Antes de esta versión se revisó todo el sistema.
+
+**Análisis automático de todo el código:**
+- **La interfaz:** todo su JavaScript, unas 10 000 líneas, pasó por un analizador estático. No hay ninguna función ni variable usada sin definir.
+- **Python:** el host, los módulos de juegos y pantalla y el servicio de rendimiento pasaron por reglas estrictas. No hay nombres sin definir ni errores probables.
+- **Scripts de shell:** pasaron `shellcheck`.
+
+**Revisión a mano de los filtros de imagen y los reescaladores:**
+- Los filtros (NATURAL, CLARITY, CINEMA, VIVID, RETRO) son correctos.
+- FSR y OptiScaler se descargan solo de sus autores, con la suma comprobada, y nunca pisan tus archivos.
+- La generación de fotogramas es correcta.
+- Tus opciones de inicio en Steam se guardan antes de cambiarlas y se restauran incluso tras un cuelgue.
+
+**Arreglos de lo visto en pantalla:**
+- **Gráficos:** el valor de cada opción quedaba desalineado y en letra muy pequeña. Ahora va en su fila y se lee desde el sofá. «Calidad: Calidad» pasa a ser «Ajuste de FSR», y las mayúsculas son coherentes.
+- **Ficha del juego:** ya no repite «STONE RECOMMENDED … Recomendado por STONE».
+- **Primer encendido:** el paso Inicio ya no muestra dos filas de «no se pudo leer» si falta un dato, y el paso Internet dice a qué red estás conectado.
+- **Acerca de:** muestra los núcleos que lee la consola, no un cálculo del navegador.
+
 ## Emuladores: ahora se abren
 
 **La causa:** STONE creaba los accesos directos de Steam con los datos en un orden equivocado. La interfaz de Steam crea un acceso directo con (nombre, programa, **argumentos**, línea de comandos), y STONE pasaba (nombre, programa, **carpeta**, argumentos). Steam guardaba «/» como argumentos y cada emulador ejecutaba `flatpak /`, que no abre nada.

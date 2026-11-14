@@ -377,7 +377,9 @@
 .srow .l b{font-weight:400;font-size:calc(24px * var(--ts));letter-spacing:.02em}
 .srow .l small{font-weight:400;font-size:calc(20px * var(--ts));letter-spacing:.01em}
 .srow .v{font-weight:400;font-size:20px;letter-spacing:.06em}
-#dlg .sres{font-weight:400;letter-spacing:.02em}
+#dlg .sres{font-weight:400;letter-spacing:.02em;align-items:baseline}
+/* the value of each row on the row's own line, readable from the sofa (rc6: it floated above, at 15 px) */
+#dlg .sres small{font-size:19px;color:var(--text-2);text-align:right}
 #store .scard .cap2 b{font-weight:400;letter-spacing:.02em}
 #store .scard .cap2 i{font-weight:400;letter-spacing:.08em}
 #library .filters,#store .filters{font-weight:400;letter-spacing:.06em}

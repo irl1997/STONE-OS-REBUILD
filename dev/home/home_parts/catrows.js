@@ -370,7 +370,8 @@ function catRows() {
 
 /* CPU cores the system sees (threads / 2: Zen 2 has 2 threads per core). Boards sold
    unlocked report 8; the BC-250's stock firmware 6. */
-function cores() { const t = navigator.hardwareConcurrency || 12; return Math.max(1, Math.round(t / 2)); }
+/* the cores stoned read from the console (its configuration), else the browser's count of threads, halved */
+function cores() { const d = S.caps && S.caps.configuration && S.caps.configuration.detected; if (d && d.cpu_cores) return d.cpu_cores; const t = navigator.hardwareConcurrency || 12; return Math.max(1, Math.round(t / 2)); }
 
 /* 40 CU (M04, D-31): switched from here with STONE's own confirmation; stone-cu40 does the work
    through pkexec (polkit allows these three command lines to the console administrator only). The

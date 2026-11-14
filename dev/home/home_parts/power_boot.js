@@ -172,7 +172,8 @@ function frConfigText() {
   const d = (cfg && cfg.detected) || {}, r = (cfg && cfg.reference) || {};
   const row = (label, have, want, unit) => `<p>${label}: <b>${have === null || have === undefined ? 'no se pudo leer' : have + unit}</b>${want ? ` · referencia ${want}${unit}` : ''}</p>`;
   const ok = c.board && cfg && cfg.matches !== false;
-  return [`<p>Placa BC-250: <b>${c.board ? 'detectada' : 'no detectada'}</b></p>${row('Núcleos de CPU', d.cpu_cores, r.cpu_cores, '')}${row('GPU', d.gpu_cu, r.gpu_cu, ' CU')}
+  /* without stoned's reading of the configuration only the board is said (no rows of «no se pudo leer») */
+  return [`<p>Placa BC-250: <b>${c.board ? 'detectada' : 'no detectada'}</b></p>${cfg ? row('Núcleos de CPU', d.cpu_cores, r.cpu_cores, '') + row('GPU', d.gpu_cu, r.gpu_cu, ' CU') : ''}
     ${cfg && cfg.matches === false ? `<p>Esta configuración no es la de referencia (${esc(cfg.reasons.join('; '))}). Los perfiles de fábrica funcionan; CUSTOM, pruebas y calibración quedan bloqueados.</p>` : ''}
     ${S.safeMode ? '<p>STONE arrancó en Safe Mode: valores de fábrica.</p>' : ''}`, ok];
 }
@@ -254,7 +255,7 @@ const SU_FN = {
     let net = null, wifi = null, note = '';
     const draw = () => {
       const online = net && net.online, cable = net && net.devices.find(d => d.type === 'ethernet' && d.state === 'connected');
-      const rows = [{ l: 'Estado', v: !net ? 'leyendo…' : online ? (cable ? 'conectado por cable' : 'conectado') : 'sin conexión' }];
+      const rows = [{ l: 'Estado', v: !net ? 'leyendo…' : online ? (cable ? 'conectado por cable' : `conectado a ${net.ssid || 'una red Wi-Fi'} (Wi-Fi)`) + (net.internet === 'limited' || net.internet === 'portal' ? ' · sin internet' : '') : 'sin conexión' }];
       if (net && net.radio === false) rows.push({ l: 'Activar el Wi-Fi', v: 'está apagado', k: 'radio' });
       else {
         (wifi || []).slice(0, 6).forEach(w => rows.push({ l: w.ssid, v: w.active ? 'conectado' : `${w.known ? 'guardada' : w.secure ? 'con contraseña' : 'abierta'} · señal ${w.signal} %`, k: w.active ? null : 'wifi', w }));
