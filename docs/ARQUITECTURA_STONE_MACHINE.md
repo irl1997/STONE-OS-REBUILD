@@ -624,6 +624,7 @@ Reglas:
 
 | Versión | Fecha | Cambio |
 | --- | --- | --- |
+| 1.7 | 2026-11-14 | 3.1.0-rc5 (D-38): las llamadas a Steam se comprueban contra su código (`dev/steam/`); cerrar juego en M08 y en el menú rápido; pausar y reanudar descargas en M08; biblioteca con el estado de esta consola en M07 |
 | 1.6 | 2026-11-13 | 3.1.0-rc4 (D-37): instalación, contrato de licencia y descargas en vivo en M08 y M13; fondos `hero2x` y carátulas en M07 |
 | 1.5 | 2026-11-12 | 3.1.0-rc3 (D-36): instalación comprobada y preguntas de Steam en M08 y M13; Steam en espera durante el primer encendido (M22) y guardia de ventanas en M24; comprobación diaria y Buscar actualizaciones en M01 y M16 |
 | 1.4 | 2026-11-12 | 3.1.0-rc1 (D-35): capa visual Cristal en M07 (STONE Home); la preferencia «Efectos de cristal» en M16. Llega por el canal `rc` de M01 |

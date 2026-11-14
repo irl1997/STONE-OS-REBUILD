@@ -73,7 +73,7 @@ if $PY -c 'import sys; [compile(open(p, encoding="utf-8").read(), p, "exec") for
         modules/games/stone_games/*.py dev/home/*.py image/build_files/*.py image/build_files/cu40/*.py tests/*.py; then
     ok "python compiles"; else bad "python compile"; fi
 if have ruff; then
-    if ruff check system/usr/lib/stone services apps modules dev/home image/build_files tests; then ok "ruff"; else bad "ruff"; fi
+    if ruff check system/usr/lib/stone services apps modules dev/home dev/steam image/build_files tests; then ok "ruff"; else bad "ruff"; fi
 else skip "ruff"; fi
 
 # 6. TOML / YAML / JSON

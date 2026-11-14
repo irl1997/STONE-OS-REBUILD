@@ -2,7 +2,7 @@
 
 Reconstrucción integral de STONE OS para **STONE MACHINE**: AMD BC-250 con 8 núcleos de CPU y 40 CU de GPU.
 
-**Estado:** 3.1.0-rc4. STONE Home con el diseño Cristal; Steam funciona oculto y se muestra solo para iniciar sesión, pagar o cuando pregunta algo. Instalar comprueba lo que Steam hizo, y las actualizaciones se buscan cada día y a pedido. Probado en software (CODE TESTED); nada de 3.0 ni de 3.1 está observado todavía en la placa.
+**Estado:** 3.1.0-rc5. STONE Home con el diseño Cristal; Steam funciona oculto y se muestra solo para iniciar sesión, pagar o cuando pregunta algo. Todo lo que STONE le pide a Steam se comprueba contra el código de la propia interfaz de Steam (`docs/steam/`). Se puede instalar, pausar una descarga, abrir y cerrar juegos sin entrar a Steam. Probado en software (CODE TESTED); nada de 3.0 ni de 3.1 está observado todavía en la placa.
 
 | Documento | Contenido |
 | --- | --- |

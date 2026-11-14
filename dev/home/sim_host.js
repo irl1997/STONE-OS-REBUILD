@@ -33,9 +33,13 @@ const Bridge = (() => {
     { appid: '1086940', name: "Baldur's Gate 3", source: 'steam', installed: false, last: 0, min: 0, size: 150e9, kind: 'upscaler' },
     { appid: '620', name: 'Portal 2', source: 'steam', installed: false, last: now - DAY * 200, min: 600, size: 12e9, kind: 'plain' }
   ];
+  function simFinish(g) {
+    const left = Math.max(0, 24000 - (Date.now() - g.dl.at));
+    g.dl.timer = setTimeout(() => { g.updating = false; g.installed = true; g.dl = null; g.last = Date.now() / 1000; emit('library', { reason: 'changed' }); }, left);
+  }
   function simStart(g) {
     g.updating = true; g.dl = { at: Date.now(), total: Math.max(2 ** 30, g.size || 20e9) }; emit('library', { reason: 'changed' });
-    setTimeout(() => { g.updating = false; g.installed = true; g.dl = null; g.last = Date.now() / 1000; emit('library', { reason: 'changed' }); }, 24000);
+    simFinish(g);
     return { ok: true, state: 'queued', progress: 0 };
   }
   const gameOf = appid => GAMES.find(g => g.appid === appid) || bad('InvalidValue', 'unknown game');
@@ -219,9 +223,15 @@ const Bridge = (() => {
     },
     'install.acceptEula': async ([appid]) => { await wait(1200); return simStart(gameOf(appid)); },
     'install.cancel': () => ({ ok: true }),
+    /* Steam's "Exit game": the game ends; pause / resume of the download in progress */
+    'game.close': async ([appid]) => { await wait(800); SimStoned.sim.steamExit(appid); SimPanel.running = null; SimPanel.refresh && SimPanel.refresh(); return { ok: true }; },
+    'downloads.control': ([appid, a]) => { const g = GAMES.find(x => x.appid === appid); if (!g || !g.dl) return { ok: false };
+      if (a === 'pause' && !g.dl.paused) { g.dl.paused = Date.now(); clearTimeout(g.dl.timer); }
+      if (a === 'resume' && g.dl.paused) { g.dl.at += Date.now() - g.dl.paused; g.dl.paused = 0; simFinish(g); }
+      return { ok: true }; },
     downloads: () => ({ live: true, downloads: GAMES.filter(g => g.dl).map((g, k) => {
-      const t = (Date.now() - g.dl.at) / 24000, dl = Math.min(1, t / .75), total = g.dl.total;
-      const stage = k > 0 ? 'queued' : t < .75 ? 'download' : 'install';
+      const t = ((g.dl.paused || Date.now()) - g.dl.at) / 24000, dl = Math.min(1, t / .75), total = g.dl.total;
+      const stage = k > 0 ? 'queued' : g.dl.paused ? 'paused' : t < .75 ? 'download' : 'install';
       return { appid: g.appid, name: g.name, downloaded: Math.round(total * dl), total, progress: k > 0 ? 0 : Math.round(Math.min(.99, t) * 1000) / 1000,
         stage, rate: stage === 'download' ? 36.4 * 2 ** 20 : 0, eta: stage === 'download' ? Math.round((1 - t) * 1500) : null, installed: false }; }) }),
     'session.wantSteam': () => ({ ok: true }),
@@ -229,9 +239,9 @@ const Bridge = (() => {
     'update.now': () => { SIM.updUntil = Date.now() + 10000; return { ok: true, unit: 'uupd-manual.service', already: false }; },
     openSteam: async () => ({ ok: true }), openSteamSettings: async () => ({ ok: true }), restart: async () => ({ ok: true }),
     power: async ([a]) => { toast(`Simulación: «${a === 'off' ? 'Apagar' : 'Reiniciar'}» no hace nada aquí`, false); return { ok: true }; },
-    systemInfo: () => ({ session: 'stone', release: { STONE_VERSION: '3.1.0-rc4 (simulación)', STONE_BASE_IMAGE: 'bazzite-deck', STONE_KERNEL: 'simulado', STONE_MESA: 'simulado', STONE_GOVERNOR_VERSION: 'simulado' },
+    systemInfo: () => ({ session: 'stone', release: { STONE_VERSION: '3.1.0-rc5 (simulación)', STONE_BASE_IMAGE: 'bazzite-deck', STONE_KERNEL: 'simulado', STONE_MESA: 'simulado', STONE_GOVERNOR_VERSION: 'simulado' },
       boot_time: Math.round(now - 3600),
-      deployments: { booted: { image: 'simulación', version: '3.1.0-rc4', timestamp: now },
+      deployments: { booted: { image: 'simulación', version: '3.1.0-rc5', timestamp: now },
         staged: SIM.updUntil && Date.now() > SIM.updUntil ? { image: 'simulación', version: '3.1.0-rc5', timestamp: now } : null,
         rollback: { image: 'simulación', version: '3.0.0-rc1', timestamp: now - 86400 } },
       updates: { unit: 'uupd.timer', enabled: true, last: Math.round(now - 3600 * 15), next: Math.round(now + 3600 * 9) },

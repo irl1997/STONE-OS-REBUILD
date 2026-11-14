@@ -1,0 +1,7871 @@
+{
+"calls": {
+"Apps.AddShortcut": {
+"arities": [
+4
+],
+"count": 1,
+"samples": [
+"pe.strAppName,pe.strExePath,pe.strArguments,pe.strCmdline"
+]
+},
+"Apps.BackupFilesForApp": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"O,this.state.strFolder"
+]
+},
+"Apps.BrowseScreenshotForApp": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"v.strGameID,v.hHandle"
+]
+},
+"Apps.CancelBackup": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"Apps.CancelGameAction": {
+"arities": [
+1
+],
+"count": 6,
+"samples": [
+"this.m_nGameActionID",
+"U",
+"Xe.gameActionID"
+]
+},
+"Apps.CancelLaunch": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"kt.GetGameID()"
+]
+},
+"Apps.ClearCustomArtworkForApp": {
+"arities": [
+2
+],
+"count": 2,
+"samples": [
+"this.props.app.appid,this.props.eAssetType",
+"this.props.overview.appid,Xe"
+]
+},
+"Apps.ClearCustomLogoPositionForApp": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"A.appid"
+]
+},
+"Apps.ClearProton": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"w"
+]
+},
+"Apps.ContinueGameAction": {
+"arities": [
+2
+],
+"count": 6,
+"samples": [
+"this.m_nGameActionID,ze",
+" \"+this.m_nGameActionID+\", '\"+Ue+\"' ",
+"this.m_nGameActionID,Ue"
+]
+},
+"Apps.CreateDesktopShortcutForApp": {
+"arities": [
+1
+],
+"count": 2,
+"samples": [
+"qt",
+"kt.appid"
+]
+},
+"Apps.DownloadWorkshopItem": {
+"arities": [
+3
+],
+"count": 1,
+"samples": [
+"Y,J,!0"
+]
+},
+"Apps.GetAchievementsInTimeRange": {
+"arities": [
+3
+],
+"count": 1,
+"samples": [
+"E,v,B"
+]
+},
+"Apps.GetActiveGameActions": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"Apps.GetBackupsInFolder": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"b"
+]
+},
+"Apps.GetCachedAppDetails": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"l"
+]
+},
+"Apps.GetCloudPendingRemoteOperations": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"A.appid"
+]
+},
+"Apps.GetConflictingFileTimestamps": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"A.appid"
+]
+},
+"Apps.GetDetailsForScreenshotUpload": {
+"arities": [
+2
+],
+"count": 2,
+"samples": [
+"we.strGameID,we.local?.hHandle",
+"A.strGameID,A.hHandle"
+]
+},
+"Apps.GetDetailsForScreenshotUploads": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"tt,Ae[tt]"
+]
+},
+"Apps.GetDownloadedWorkshopItems": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"Y"
+]
+},
+"Apps.GetDurationControlInfo": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.appid"
+]
+},
+"Apps.GetFriendAchievementsForApp": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"A.toString(),H.ConvertTo64BitString()"
+]
+},
+"Apps.GetGameActionDetails": {
+"arities": [
+2
+],
+"count": 8,
+"samples": [
+"_e,mt=>Re(mt.nLaunchOption)",
+"this.m_nGameActionID,this.OnGetGameActionDetails",
+"this.m_nGameActionID,this.onGetGameActionDetails"
+]
+},
+"Apps.GetGameActionForApp": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"this.props.overview.GetGameID(),this.onGameActionStart"
+]
+},
+"Apps.GetIsSubscribedApp": {
+"arities": [
+1
+],
+"count": 2,
+"samples": [
+"this.props.unAppID",
+"this.props.group.id"
+]
+},
+"Apps.GetLaunchOptionsForApp": {
+"arities": [
+1
+],
+"count": 9,
+"samples": [
+"Ve",
+"xe.appid",
+"Fe"
+]
+},
+"Apps.GetMyAchievementsForApp": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"A.toString()"
+]
+},
+"Apps.GetPlaytime": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.appid"
+]
+},
+"Apps.GetPrePurchasedApps": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"v"
+]
+},
+"Apps.GetScreenshotsInTimeRange": {
+"arities": [
+3
+],
+"count": 2,
+"samples": [
+"E.m_unAppID,v,0",
+"I,0,0"
+]
+},
+"Apps.GetShortcutDataForPath": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"X"
+]
+},
+"Apps.GetSoundtrackDetails": {
+"arities": [
+1
+],
+"count": 2,
+"samples": [
+"p",
+"V.appid"
+]
+},
+"Apps.GetSubscribedWorkshopItemDetails": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"Y,R"
+]
+},
+"Apps.GetSubscribedWorkshopItems": {
+"arities": [
+1
+],
+"count": 2,
+"samples": [
+"Y"
+]
+},
+"Apps.InstallFlatpakAppAndCreateShortcut": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"Qe,It"
+]
+},
+"Apps.JoinAppContentBeta": {
+"arities": [
+2
+],
+"count": 2,
+"samples": [
+"Vr.unAppID,ci",
+"Vr.unAppID,Zt.strName"
+]
+},
+"Apps.JoinAppContentBetaByPassword": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"Sr,Vr"
+]
+},
+"Apps.LaunchNonSteamApp": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"gt.strCmdline"
+]
+},
+"Apps.ListFlatpakApps": {
+"arities": [
+0
+],
+"count": 2,
+"samples": [
+""
+]
+},
+"Apps.LoadEula": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.m_AppID"
+]
+},
+"Apps.MarkEulaAccepted": {
+"arities": [
+3
+],
+"count": 2,
+"samples": [
+"le,Ee,Xe",
+"Z,he,ae"
+]
+},
+"Apps.MoveWorkshopItemLoadOrder": {
+"arities": [
+3
+],
+"count": 1,
+"samples": [
+"Y,J,G"
+]
+},
+"Apps.OpenAppSettingsDialog": {
+"arities": [
+2
+],
+"count": 3,
+"samples": [
+"kt.appid,\"\"",
+"this.props.app.appid,\"updates\"",
+"Bi.appid,\"updates\""
+]
+},
+"Apps.RaiseWindowForGame": {
+"arities": [
+1
+],
+"count": 3,
+"samples": [
+"ge",
+"this.m_gameid",
+"Bt.gameid"
+]
+},
+"Apps.RegisterForAchievementChanges": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnAchievementChange"
+]
+},
+"Apps.RegisterForAppBackupStatus": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnAppBackupStatus"
+]
+},
+"Apps.RegisterForAppDetails": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"A,this.AppDetailsChanged"
+]
+},
+"Apps.RegisterForAppOverviewChanges": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"pe=>{this.UpdateAppOverview(pe)&&(this.m_bIsInitialized=!0,$&&$(),$=null)}"
+]
+},
+"Apps.RegisterForDRMFailureResponse": {
+"arities": [
+1
+],
+"count": 2,
+"samples": [
+"N",
+"y"
+]
+},
+"Apps.RegisterForGameActionEnd": {
+"arities": [
+1
+],
+"count": 2,
+"samples": [
+"this.OnGameActionEnd",
+"this.onGameActionEnd"
+]
+},
+"Apps.RegisterForGameActionShowError": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnGameActionShowError"
+]
+},
+"Apps.RegisterForGameActionShowUI": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnGameActionShowUI"
+]
+},
+"Apps.RegisterForGameActionStart": {
+"arities": [
+1
+],
+"count": 2,
+"samples": [
+"this.OnGameActionStart",
+"this.onGameActionStart"
+]
+},
+"Apps.RegisterForGameActionTaskChange": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnGameActionTaskChange"
+]
+},
+"Apps.RegisterForGameActionUserRequest": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnGameActionUserRequest"
+]
+},
+"Apps.RegisterForPrePurchasedAppChanges": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"()=>this.ScheduleUpdate(0)"
+]
+},
+"Apps.RegisterForShowMarketingMessageDialog": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"Qt"
+]
+},
+"Apps.RegisterForShowPendingGiftsDialog": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"Qt"
+]
+},
+"Apps.RegisterForWorkshopChanges": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.onWorkshopChanges"
+]
+},
+"Apps.RegisterForWorkshopItemDownloads": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"Y,this.onWorkshopDownload"
+]
+},
+"Apps.RegisterForWorkshopItemInstalled": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.onWorkshopItemInstalled"
+]
+},
+"Apps.RemoveShortcut": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"Bt"
+]
+},
+"Apps.ReportLibraryAssetCacheMiss": {
+"arities": [
+2
+],
+"count": 4,
+"samples": [
+"k,this.props.eAssetType",
+"b,u.uGW",
+"le,n.n4o"
+]
+},
+"Apps.ReportMarketingMessageDialogShown": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"Apps.ReportPendingGiftsDialogShown": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"Apps.RequestIconDataForApp": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"V.appid"
+]
+},
+"Apps.RequestLegacyCDKeysForApp": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"N.appid"
+]
+},
+"Apps.RunGame": {
+"arities": [
+4
+],
+"count": 2,
+"samples": [
+"H.GetGameID(),\"\",-1,d.s7X",
+"Bt.GetGameID(),\"\",-1,ct"
+]
+},
+"Apps.SaveAchievementProgressCache": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"JSON.stringify(this.m_achievementProgress,w)"
+]
+},
+"Apps.ScanForInstalledNonSteamApps": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"s"
+]
+},
+"Apps.SetAppAutoUpdateBehavior": {
+"arities": [
+2
+],
+"count": 2,
+"samples": [
+"Vr.unAppID,ki.data",
+"Bi.unAppID,us.data"
+]
+},
+"Apps.SetAppBackgroundDownloadsBehavior": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"Vr.unAppID,di.data"
+]
+},
+"Apps.SetAppCurrentLanguage": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"Vr.unAppID,nn.data"
+]
+},
+"Apps.SetAppLaunchOptions": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"Vr.unAppID,nn"
+]
+},
+"Apps.SetAppResolutionOverride": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"Vr.unAppID,ni.data"
+]
+},
+"Apps.SetCachedAppDetails": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"l,JSON.stringify(Array.from(f))"
+]
+},
+"Apps.SetControllerRumbleIntensity": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"Vr.unAppID,an.data"
+]
+},
+"Apps.SetCustomArtworkForApp": {
+"arities": [
+4
+],
+"count": 3,
+"samples": [
+"this.props.app.appid,Y,M,this.props.eAssetType",
+"Qe,vi,fr,It",
+"this.props.overview.appid,Ye,wt,Ee"
+]
+},
+"Apps.SetCustomLogoPositionForApp": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"A.appid,JSON.stringify(H)"
+]
+},
+"Apps.SetDLCEnabled": {
+"arities": [
+3
+],
+"count": 1,
+"samples": [
+"Vr,si.unAppID,nn"
+]
+},
+"Apps.SetFDMEnable": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"Vr.unAppID,Nt"
+]
+},
+"Apps.SetForceIdentAsSteamDeck": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"Vr.unAppID,ki"
+]
+},
+"Apps.SetLocalScreenshotCaption": {
+"arities": [
+3
+],
+"count": 2,
+"samples": [
+"Ne.local.strGameID,Ne.local.hHandle,le||\"\"",
+"A.strGameID,A.hHandle,M.strCaption"
+]
+},
+"Apps.SetLocalScreenshotPrivacy": {
+"arities": [
+3
+],
+"count": 1,
+"samples": [
+"Ne.local.strGameID,Ne.local.hHandle,Ee"
+]
+},
+"Apps.SetLocalScreenshotSpoiler": {
+"arities": [
+3
+],
+"count": 2,
+"samples": [
+"Ne.local.strGameID,Ne.local.hHandle,le",
+"A.strGameID,A.hHandle,M.bSpoiler"
+]
+},
+"Apps.SetRPOEnable": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"Vr.unAppID,Nt"
+]
+},
+"Apps.SetShortcutExe": {
+"arities": [
+2
+],
+"count": 2,
+"samples": [
+"Vr,(0,N.yd)(di)",
+"Vr,di"
+]
+},
+"Apps.SetShortcutIcon": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"Vr,Ji"
+]
+},
+"Apps.SetShortcutIsVR": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"Vr,!nn.bShortcutIsVR"
+]
+},
+"Apps.SetShortcutLaunchOptions": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"Vr,di"
+]
+},
+"Apps.SetShortcutName": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"Vr,di"
+]
+},
+"Apps.SetShortcutSortAs": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"V,ee"
+]
+},
+"Apps.SetShortcutStartDir": {
+"arities": [
+2
+],
+"count": 2,
+"samples": [
+"Vr,di"
+]
+},
+"Apps.SetStreamingClientForApp": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"this.props.overview.appid,Mt.clientid"
+]
+},
+"Apps.SetTSOEnable": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"Vr.unAppID,ni.data"
+]
+},
+"Apps.SetThirdPartyControllerConfiguration": {
+"arities": [
+2
+],
+"count": 2,
+"samples": [
+"er,Yr?Y.Dt:Y.pg",
+"Vr.unAppID,an"
+]
+},
+"Apps.SetWorkshopItemsDisabledLocally": {
+"arities": [
+3
+],
+"count": 2,
+"samples": [
+"Vr,[Ri],ln",
+"Vr.unAppID,Lr,!bt"
+]
+},
+"Apps.SetWorkshopItemsLoadOrder": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"Y,he"
+]
+},
+"Apps.ShowControllerConfigurator": {
+"arities": [
+1
+],
+"count": 12,
+"samples": [
+"x.qho",
+"l.mZ",
+"_t"
+]
+},
+"Apps.ShowStore": {
+"arities": [
+1
+],
+"count": 2,
+"samples": [
+"kt.appid",
+"Bt.appid"
+]
+},
+"Apps.SpecifyCompatExperiment": {
+"arities": [
+2
+],
+"count": 3,
+"samples": [
+"Vr.unAppID,Nt(Er)",
+"Vr.unAppID,\"\""
+]
+},
+"Apps.StreamGame": {
+"arities": [
+3
+],
+"count": 3,
+"samples": [
+"N.g5s,Ei.clientId,-1",
+"r.g5s,Z,-1",
+"kt.appid,qt.clientid,-1"
+]
+},
+"Apps.SubscribeWorkshopItem": {
+"arities": [
+3
+],
+"count": 3,
+"samples": [
+"Y,J,!0",
+"Y,J,!1",
+"Vr,Ri,!1"
+]
+},
+"Apps.TerminateApp": {
+"arities": [
+2
+],
+"count": 6,
+"samples": [
+"fr,!1",
+"G,!1",
+"Tt.gameid,!1"
+]
+},
+"Apps.ToggleAllowDesktopConfiguration": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"Vr.unAppID"
+]
+},
+"Apps.ToggleAppSteamCloudEnabled": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"Vr.unAppID"
+]
+},
+"Apps.ToggleAppSteamCloudSyncOnSuspendEnabled": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"Vr.unAppID"
+]
+},
+"Apps.ToggleEnableSteamOverlayForApp": {
+"arities": [
+1
+],
+"count": 2,
+"samples": [
+"Vr.unAppID",
+"nn.unAppID"
+]
+},
+"Apps.ToggleOverrideResolutionForInternalDisplay": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"Vr.unAppID"
+]
+},
+"Apps.VerifyApp": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"G"
+]
+},
+"Auth.ClearCachedSignInPin": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"Auth.CurrentUserHasCachedSignInPin": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"Auth.GetLocalHostname": {
+"arities": [
+0
+],
+"count": 3,
+"samples": [
+""
+]
+},
+"Auth.GetMachineID": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"Auth.GetRefreshInfo": {
+"arities": [
+0
+],
+"count": 2,
+"samples": [
+""
+]
+},
+"Auth.GetSteamGuardData": {
+"arities": [
+1
+],
+"count": 2,
+"samples": [
+"Ut",
+"Mr"
+]
+},
+"Auth.IsSecureComputer": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"Auth.SetCachedSignInPin": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"Rr"
+]
+},
+"Auth.SetLoginToken": {
+"arities": [
+2
+],
+"count": 2,
+"samples": [
+"me.strRefreshToken,me.strAccountName",
+"He.strRefreshToken,He.strAccountName"
+]
+},
+"Auth.SetSteamGuardData": {
+"arities": [
+2
+],
+"count": 2,
+"samples": [
+"me.strAccountName,et",
+"He.strAccountName,Ke"
+]
+},
+"Auth.StartSignInFromCache": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"qt"
+]
+},
+"Auth.ValidateCachedSignInPin": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"qt.strAccountName,gt"
+]
+},
+"Broadcast.ApproveViewerRequest": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"le.ConvertTo64BitString(),Number(Ne)"
+]
+},
+"Broadcast.InviteToWatch": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"Ne.ConvertTo64BitString()"
+]
+},
+"Broadcast.RegisterForBroadcastStatus": {
+"arities": [
+1
+],
+"count": 6,
+"samples": [
+"this.OnBroadcastStatus",
+"Wi",
+"on"
+]
+},
+"Broadcast.RegisterForViewerRequests": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnViewerRequest"
+]
+},
+"Broadcast.RejectViewerRequest": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"le.ConvertTo64BitString(),Number(Ne)"
+]
+},
+"Broadcast.StopBroadcasting": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"Browser.AddWordToDictionary": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"pe"
+]
+},
+"Browser.ClearAllBrowsingData": {
+"arities": [
+0
+],
+"count": 2,
+"samples": [
+""
+]
+},
+"Browser.GetBrowserID": {
+"arities": [
+0
+],
+"count": 9,
+"samples": [
+""
+]
+},
+"Browser.GetSpellingSuggestions": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"Browser.HideCursorUntilMouseEvent": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"Browser.InspectElement": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"X,$"
+]
+},
+"Browser.NotifyUserActivation": {
+"arities": [
+0
+],
+"count": 5,
+"samples": [
+""
+]
+},
+"Browser.OpenDevTools": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"Browser.Paste": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"Browser.RegisterForGestureEvents": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"Ni"
+]
+},
+"Browser.RemoveAllBackstackEntries": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"Browser.SetBackgroundThrottlingDisabled": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"Br"
+]
+},
+"Browser.SetPendingFilePath": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"P,x"
+]
+},
+"Browser.SetShouldExitSteamOnBrowserClosed": {
+"arities": [
+1
+],
+"count": 6,
+"samples": [
+"!1",
+"tr",
+"Re"
+]
+},
+"Browser.StartDownload": {
+"arities": [
+1
+],
+"count": 3,
+"samples": [
+"v",
+"_i",
+"ht.item.full_image_url"
+]
+},
+"BrowserView.Create": {
+"arities": [
+1
+],
+"count": 2,
+"samples": [
+"this.m_browserViewOptions"
+]
+},
+"BrowserView.CreatePopup": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"A"
+]
+},
+"BrowserView.Destroy": {
+"arities": [
+1
+],
+"count": 3,
+"samples": [
+"this.m_browserView",
+"j"
+]
+},
+"BrowserView.PostMessageToParent": {
+"arities": [
+2
+],
+"count": 3,
+"samples": [
+"\"UnlockH264Request\",\"CUnlockH264Helper\"",
+"r.T,he",
+"he.type,JSON.stringify(he)"
+]
+},
+"BrowserView.RegisterForMessageFromParent": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnMessage"
+]
+},
+"ClientNotifications.DisplayClientNotification": {
+"arities": [
+3
+],
+"count": 3,
+"samples": [
+"S.k_EClientUINotificationGroupChatMessage,yr,Zr",
+"S.k_EClientUINotificationFriendChatMessage,yr,Zr",
+"S.k_EClientUINotificationFriendPersonaState,yr,Zr"
+]
+},
+"Cloud.ResolveAppSyncConflict": {
+"arities": [
+2
+],
+"count": 2,
+"samples": [
+"Bt,!0",
+"Bt,!1"
+]
+},
+"Cloud.RetryAppSync": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"Bt"
+]
+},
+"CloudStorage.WriteKey": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"mt,ut"
+]
+},
+"CommunityItems.DownloadItemAsset": {
+"arities": [
+3
+],
+"count": 1,
+"samples": [
+"U.communityitemid,Q,U.movie_webm"
+]
+},
+"CommunityItems.GetItemAssetPath": {
+"arities": [
+3
+],
+"count": 1,
+"samples": [
+"V.communityitemid,Q,V.movie_webm"
+]
+},
+"CommunityItems.RemoveDownloadedItemAsset": {
+"arities": [
+3
+],
+"count": 1,
+"samples": [
+"U.communityitemid,Q,U.movie_webm"
+]
+},
+"Console.ExecCommand": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"D"
+]
+},
+"Console.GetAutocompleteSuggestions": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"H"
+]
+},
+"Console.RegisterForSpewOutput": {
+"arities": [
+1
+],
+"count": 2,
+"samples": [
+"this.OnSteamConsoleSpew"
+]
+},
+"Customization.GenerateLocalStartupMoviesThumbnails": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"2"
+]
+},
+"Customization.GetDownloadedStartupMovies": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"Q"
+]
+},
+"Customization.GetLocalStartupMovies": {
+"arities": [
+0
+],
+"count": 2,
+"samples": [
+""
+]
+},
+"Downloads.EnableAllDownloads": {
+"arities": [
+2
+],
+"count": 5,
+"samples": [
+"!1,qt.clientid",
+"ei,w.hj.CurrentViewingRemoteClientID",
+"!0,w.hj.CurrentViewingRemoteClientID"
+]
+},
+"Downloads.PauseAppUpdate": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"ce,w.hj.CurrentViewingRemoteClientID"
+]
+},
+"Downloads.QueueAppUpdate": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"me,w.hj.CurrentViewingRemoteClientID"
+]
+},
+"Downloads.RegisterForDownloadItems": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnDownloadItems"
+]
+},
+"Downloads.RegisterForDownloadOverview": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnDownloadOverview"
+]
+},
+"Downloads.RegisterForRemoteClientsConnected": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnRemoteClientsChanged"
+]
+},
+"Downloads.RemoveFromDownloadList": {
+"arities": [
+2
+],
+"count": 2,
+"samples": [
+"$e.appid,w.hj.CurrentViewingRemoteClientID"
+]
+},
+"Downloads.ResumeAppUpdate": {
+"arities": [
+2
+],
+"count": 3,
+"samples": [
+"kt.appid,qt.clientid",
+"ye.appid,i.Oy",
+"me,w.hj.CurrentViewingRemoteClientID"
+]
+},
+"Downloads.SetLaunchOnUpdateComplete": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"Yt.launch_on_completion?E.sc:Yt.appid"
+]
+},
+"Downloads.SetQueueIndex": {
+"arities": [
+3
+],
+"count": 1,
+"samples": [
+"ce,ct.destination.index,w.hj.CurrentViewingRemoteClientID"
+]
+},
+"Downloads.SuspendDownloadThrottling": {
+"arities": [
+2
+],
+"count": 1,
+"samples": []
+},
+"Downloads.SuspendLanPeerContent": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"!0,w.hj.CurrentViewingRemoteClientID"
+]
+},
+"FamilySharing.GetAvailableLenders": {
+"arities": [
+1
+],
+"count": 2,
+"samples": [
+"Pt",
+"Ne"
+]
+},
+"FamilySharing.RegisterForKickedBorrower": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"ar"
+]
+},
+"FamilySharing.SetPreferredLender": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"Ke,we"
+]
+},
+"FriendSettings.GetEnabledFeatures": {
+"arities": [
+0
+],
+"count": 2,
+"samples": [
+""
+]
+},
+"FriendSettings.RegisterForSettingsChanges": {
+"arities": [
+1
+],
+"count": 2,
+"samples": [
+"this.OnClientSettingsChange.bind(this)",
+"this.OnClientFriendsSettingsChange"
+]
+},
+"FriendSettings.SetFriendSettings": {
+"arities": [
+1
+],
+"count": 2,
+"samples": [
+"Ne",
+"JSON.stringify(De)"
+]
+},
+"Friends.GetCoplayData": {
+"arities": [
+0
+],
+"count": 3,
+"samples": [
+""
+]
+},
+"Friends.InviteUserToCurrentGame": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"S.ConvertTo64BitString(),b.steamidTarget"
+]
+},
+"Friends.InviteUserToGame": {
+"arities": [
+3
+],
+"count": 1,
+"samples": [
+"S.ConvertTo64BitString(),b.unRequestingAppID,b.strConnectString"
+]
+},
+"Friends.InviteUserToLobby": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"S.ConvertTo64BitString(),b.steamidTarget"
+]
+},
+"Friends.InviteUserToRemotePlayTogetherCurrentGame": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"S.ConvertTo64BitString()"
+]
+},
+"Friends.RegisterForMultiplayerSessionShareURLChanged": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"Pe,Re"
+]
+},
+"Friends.RegisterForVoiceChatStatus": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnVoiceChatStatusChanged"
+]
+},
+"Friends.ShowRemotePlayTogetherUI": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"GameNotes.DeleteImage": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"S"
+]
+},
+"GameNotes.GetNotes": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"this.FilenameForNotes(x),this.DirectoryForNoteImages(x)"
+]
+},
+"GameNotes.GetQuota": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"GameNotes.ResolveSyncConflicts": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"Ds"
+]
+},
+"GameNotes.SaveNotes": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"x,g"
+]
+},
+"GameNotes.SyncToClient": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"GameNotes.SyncToServer": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"GameRecording.RegisterForAudioSessionsChanged": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"ar=>{const wr=L.deserializeBinary(ar);return rr(wr.sessions()),re.R}"
+]
+},
+"GameRecording.SetAudioSessionCaptureState": {
+"arities": [
+3
+],
+"count": 1,
+"samples": [
+"Rt.id,Rt.name,ar"
+]
+},
+"GameSessions.RegisterForAchievementNotification": {
+"arities": [
+1
+],
+"count": 3,
+"samples": [
+"this.OnAchievementNotification"
+]
+},
+"GameSessions.RegisterForAppLifetimeNotifications": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnAppLifetimeNotification"
+]
+},
+"GameSessions.RegisterForScreenshotNotification": {
+"arities": [
+1
+],
+"count": 3,
+"samples": [
+"this.OnScreenshotNotification"
+]
+},
+"Input.CalibrateControllerIMU": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"b.nControllerIndex"
+]
+},
+"Input.CalibrateControllerJoystick": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"It"
+]
+},
+"Input.CalibrateControllerTrackpads": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"It"
+]
+},
+"Input.ClearSelectedConfigForApp": {
+"arities": [
+3
+],
+"count": 9,
+"samples": [
+"Ln,Wn,Fi.eSelectionType",
+"V,ee,De",
+"V,this.m_CurrentEditedConfigSelectedIdx,s.kD"
+]
+},
+"Input.ControllerKeyboardSendText": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"k"
+]
+},
+"Input.ControllerKeyboardSetKeyState": {
+"arities": [
+2
+],
+"count": 4,
+"samples": [
+"A,!0",
+"e.uw,!0",
+"e.uw,!1"
+]
+},
+"Input.DecrementCloudedControllerConfigsCounter": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"Input.DeletePersonalControllerConfiguration": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"Sn?.URL"
+]
+},
+"Input.DuplicateControllerConfigurationSourceMode": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"this.m_unControllerIndex,De"
+]
+},
+"Input.EnableControllerAnalogInputMessages": {
+"arities": [
+1
+],
+"count": 3,
+"samples": [
+"y",
+"!0",
+"!1"
+]
+},
+"Input.EndControllerDeviceSupportFlow": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"Input.ExportCurrentControllerConfiguration": {
+"arities": [
+6
+],
+"count": 1,
+"samples": [
+"this.m_unControllerIndex,this.m_appId,ee,De,Oe,fe??\"\""
+]
+},
+"Input.ForceConfiguratorFocus": {
+"arities": [
+1
+],
+"count": 3,
+"samples": [
+"Er",
+"!0",
+"!1"
+]
+},
+"Input.ForceSimpleHapticEvent": {
+"arities": [
+5
+],
+"count": 1,
+"samples": [
+"or,Ga?Ja.ek:Ja.SN,Ja.fT,0,So-5"
+]
+},
+"Input.FreeControllerConfig": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"V"
+]
+},
+"Input.GetConfigForAppAndController": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"V,ee"
+]
+},
+"Input.GetControllerMappingString": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"we"
+]
+},
+"Input.GetControllerPreviouslySeen": {
+"arities": [
+0
+],
+"count": 2,
+"samples": [
+""
+]
+},
+"Input.GetTouchMenuIconsForApp": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"h"
+]
+},
+"Input.GetXboxDriverInstallState": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"Input.IdentifyController": {
+"arities": [
+1
+],
+"count": 4,
+"samples": [
+"L.nControllerIndex",
+"Pt.nControllerIndex",
+"jr"
+]
+},
+"Input.InitControllerSounds": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"Input.InitializeControllerPersonalizationSettings": {
+"arities": [
+1
+],
+"count": 3,
+"samples": [
+"ae",
+"It",
+"or"
+]
+},
+"Input.ModalKeyboardDismissed": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"Input.OpenDesktopConfigurator": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"Dr"
+]
+},
+"Input.PreviewConfigForAppAndController": {
+"arities": [
+3
+],
+"count": 2,
+"samples": [
+"V,ee,De??\"\"",
+"x.qho,V,ee.URL??\"\""
+]
+},
+"Input.PreviewControllerLEDColor": {
+"arities": [
+3
+],
+"count": 1,
+"samples": [
+"S.flHue,S.flSaturation,S.flBrightness"
+]
+},
+"Input.QueryControllerConfigsForApp": {
+"arities": [
+3
+],
+"count": 2,
+"samples": [
+"Yr,Fi,!yn",
+"V,ee,this.m_bFilterOtherControllerTypes"
+]
+},
+"Input.RegisterForActiveConfigLoadedMessages": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnConfigLoaded"
+]
+},
+"Input.RegisterForConfigSelectionChanges": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnConfigSelectionChanged"
+]
+},
+"Input.RegisterForControllerAnalogInputMessages": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.HandleControllerInputMessages"
+]
+},
+"Input.RegisterForControllerCommandMessages": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnControllerCommandMessage"
+]
+},
+"Input.RegisterForControllerConfigCloudStateChanges": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.onControllerConfigCloudStateChange"
+]
+},
+"Input.RegisterForControllerConfigInfoMessages": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.onControllerConfigInfo"
+]
+},
+"Input.RegisterForControllerInputMessages": {
+"arities": [
+1
+],
+"count": 3,
+"samples": [
+"this.HandleControllerInputMessages",
+"pi",
+"Rn"
+]
+},
+"Input.RegisterForDualSenseUpdateNotification": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.ShowDualSenseUpdateNotice"
+]
+},
+"Input.RegisterForGameKeyboardMessages": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnGameKeyboardMessage"
+]
+},
+"Input.RegisterForKeyboardDeviceChanges": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnKeyboardDevicesChanged"
+]
+},
+"Input.RegisterForRemotePlayConfigChanges": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.onRemotePlayConfigChange"
+]
+},
+"Input.RegisterForShowControllerLayoutPreviewMessages": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnShowControllerLayoutPreviewMessage"
+]
+},
+"Input.RegisterForTouchMenuInputMessages": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.onTouchMenuInput"
+]
+},
+"Input.RegisterForTouchMenuMessages": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.onTouchMenuCreateDestroy"
+]
+},
+"Input.RegisterForUIVisualization": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"B"
+]
+},
+"Input.RegisterForUnboundControllerListChanges": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnUnboundControllerListChanged"
+]
+},
+"Input.RegisterForUserDismissKeyboardMessages": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnDismissKeyboardMessage"
+]
+},
+"Input.RegisterForUserKeyboardMessages": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnModalKeyboardMessage"
+]
+},
+"Input.RequestRemotePlayControllerConfigs": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"V"
+]
+},
+"Input.ResetControllerBindings": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"we"
+]
+},
+"Input.ResolveCloudedControllerConfigConflict": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"V"
+]
+},
+"Input.RestoreControllerPersonalizationSettings": {
+"arities": [
+1
+],
+"count": 2,
+"samples": [
+"ae"
+]
+},
+"Input.SaveControllerCalibration": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.m_controllerStateDeviceIdx"
+]
+},
+"Input.SaveControllerPersonalizationSettings": {
+"arities": [
+1
+],
+"count": 2,
+"samples": [
+"jt",
+"or"
+]
+},
+"Input.SaveEditingControllerConfiguration": {
+"arities": [
+3
+],
+"count": 1,
+"samples": [
+"this.m_unControllerIndex,this.m_eConfigSelectionType,ee??!1"
+]
+},
+"Input.SetControllerConfigurationModeShiftBinding": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"this.m_unControllerIndex,De"
+]
+},
+"Input.SetControllerHapticSetting": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"gt.nControllerIndex,me"
+]
+},
+"Input.SetControllerMappingString": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"we"
+]
+},
+"Input.SetControllerName": {
+"arities": [
+2
+],
+"count": 3,
+"samples": [
+"gr.controllerIndex,et",
+"gr.controllerIndex,$e"
+]
+},
+"Input.SetControllerPersonalizationSetting": {
+"arities": [
+2
+],
+"count": 20,
+"samples": [
+"\"nTritonGyroHWCalValue\",200",
+"\"nTritonGyroHWCalValue\",L.nTritonGyroHWCalValue",
+"\"nLStickDeadzone\",ro.nLStickDeadzone"
+]
+},
+"Input.SetControllerPersonalizationSettingFloat": {
+"arities": [
+2
+],
+"count": 2,
+"samples": [
+"\"flGyroStationaryTolerance\",v.flGyroStationaryTolerance",
+"\"flAccelerometerStationaryTolerance\",v.flAccelerometerStationaryTolerance"
+]
+},
+"Input.SetControllerRumbleSetting": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"gt.nControllerIndex,me"
+]
+},
+"Input.SetCursorActionset": {
+"arities": [
+1
+],
+"count": 2,
+"samples": [
+"!0",
+"!1"
+]
+},
+"Input.SetDualSenseUpdateNotification": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"!1"
+]
+},
+"Input.SetEditingControllerConfigurationActionSet": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"this.m_unControllerIndex,De"
+]
+},
+"Input.SetEditingControllerConfigurationInputActivator": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"this.m_unControllerIndex,De"
+]
+},
+"Input.SetEditingControllerConfigurationInputActivatorEnabled": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"this.m_unControllerIndex,De"
+]
+},
+"Input.SetEditingControllerConfigurationInputBinding": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"this.m_unControllerIndex,De"
+]
+},
+"Input.SetEditingControllerConfigurationMiscSetting": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"this.m_unControllerIndex,De"
+]
+},
+"Input.SetEditingControllerConfigurationSourceMode": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"this.m_unControllerIndex,De"
+]
+},
+"Input.SetEditingTritonCapSenseSettings": {
+"arities": [
+2
+],
+"count": 2,
+"samples": [
+"It.nControllerIndex,!0",
+"It.nControllerIndex,!1"
+]
+},
+"Input.SetGamepadKeyboardText": {
+"arities": [
+2
+],
+"count": 3,
+"samples": [
+"Fa,so",
+"!1,\"\""
+]
+},
+"Input.SetKeyboardActionset": {
+"arities": [
+2
+],
+"count": 8,
+"samples": [
+"!0,!0",
+"!1,!1",
+"!0,!1"
+]
+},
+"Input.SetMousePosition": {
+"arities": [
+3
+],
+"count": 2,
+"samples": [
+"Hs,0,0",
+"Hs,qe,_t"
+]
+},
+"Input.SetSelectedConfigForApp": {
+"arities": [
+5
+],
+"count": 1,
+"samples": [
+"V,ee,De,Oe,this.m_eConfigSelectionType"
+]
+},
+"Input.SetSteamControllerDonglePairingMode": {
+"arities": [
+2
+],
+"count": 2,
+"samples": [
+"!1,!et",
+"!gt,!1"
+]
+},
+"Input.SetVirtualMenuKeySelected": {
+"arities": [
+3
+],
+"count": 1,
+"samples": [
+"j.unControllerIndex,j.unMenuIndex,y"
+]
+},
+"Input.SetWebBrowserActionset": {
+"arities": [
+1
+],
+"count": 2,
+"samples": [
+"!0",
+"!1"
+]
+},
+"Input.SetXboxDriverInstallState": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"we"
+]
+},
+"Input.StandaloneKeyboardDismissed": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"Input.StartControllerDeviceSupportFlow": {
+"arities": [
+3
+],
+"count": 2,
+"samples": [
+"we,Ae,this.ProcessSupportFlowUpdates"
+]
+},
+"Input.StartEditingControllerConfigurationForAppIDAndControllerIndex": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"V,ee"
+]
+},
+"Input.StartUIVisualization": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"c.v3.EditingConfigurationControllerIndex,v"
+]
+},
+"Input.StopEditingControllerConfiguration": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"ee.nControllerIndex"
+]
+},
+"Input.StopUIVisualization": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"c.v3.EditingConfigurationControllerIndex"
+]
+},
+"Input.SwapControllerConfigurationSourceModes": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"this.m_unControllerIndex,De"
+]
+},
+"Input.SwapControllerModeInputBindings": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"this.m_unControllerIndex,De"
+]
+},
+"Input.SwapControllerOrder": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"L,E"
+]
+},
+"Input.SyncCloudedControllerConfigs": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"Input.TriggerHapticPulse": {
+"arities": [
+4
+],
+"count": 3,
+"samples": [
+"It.nControllerIndex,Ja.RJ,Rl,Rl",
+"It.nControllerIndex,Ja.M$,Rl,Rl",
+"d,h,360,0"
+]
+},
+"Input.TriggerSimpleHapticEvent": {
+"arities": [
+5
+],
+"count": 2,
+"samples": [
+"Q.nControllerIndex,r.t3,r.IP,r.bN,0",
+"d,h,c,f,p"
+]
+},
+"Input.TurnOffController": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"Se.sY.GetControllerPowerMenuIndex()"
+]
+},
+"Input.UploadChangesForCloudedControllerConfigs": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"InstallFolder.AddInstallFolder": {
+"arities": [
+1
+],
+"count": 2,
+"samples": [
+"rr",
+"Mr"
+]
+},
+"InstallFolder.BrowseFilesInFolder": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"tr.nFolderIndex"
+]
+},
+"InstallFolder.CancelMove": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"InstallFolder.GetInstallFolders": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"InstallFolder.GetPotentialFolders": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"InstallFolder.MoveInstallFolderForApp": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"S,this.state.toFolder"
+]
+},
+"InstallFolder.RefreshFolders": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"InstallFolder.RegisterForInstallFolderChanges": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnInstallFolderChanges"
+]
+},
+"InstallFolder.RegisterForMoveContentProgress": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnMoveContentProgress"
+]
+},
+"InstallFolder.RegisterForRepairFolderFinished": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnRepairFolderFinished"
+]
+},
+"InstallFolder.RemoveInstallFolder": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"tr.nFolderIndex"
+]
+},
+"InstallFolder.RepairInstallFolder": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.props.drive.nFolderIndex"
+]
+},
+"InstallFolder.SetDefaultInstallFolder": {
+"arities": [
+1
+],
+"count": 2,
+"samples": [
+"tr.nFolderIndex",
+"Mr.nFolderIndex"
+]
+},
+"InstallFolder.SetFolderLabel": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"this.props.drive.nFolderIndex,this.m_strLabelName"
+]
+},
+"Installs.CancelInstall": {
+"arities": [
+0
+],
+"count": 8,
+"samples": [
+""
+]
+},
+"Installs.ContinueInstall": {
+"arities": [
+0
+],
+"count": 4,
+"samples": [
+""
+]
+},
+"Installs.OpenInstallBackup": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.state.strFolder"
+]
+},
+"Installs.OpenInstallWizard": {
+"arities": [
+2
+],
+"count": 4,
+"samples": [
+"[Number(_e)],s.Oy",
+"[G],U",
+"Gt,P.Oy"
+]
+},
+"Installs.OpenUninstallWizard": {
+"arities": [
+3
+],
+"count": 2,
+"samples": [
+"[v.unAppID],a.Oy,!0",
+"C,D,!0"
+]
+},
+"Installs.RegisterForShowConfirmUninstall": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnShowConfirmUninstall"
+]
+},
+"Installs.RegisterForShowFailedUninstall": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnShowFailedUninstall"
+]
+},
+"Installs.RegisterForShowInstallWizard": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnShowInstallWizard"
+]
+},
+"Installs.SetCreateShortcuts": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"G,U"
+]
+},
+"Installs.SetInstallFolder": {
+"arities": [
+1
+],
+"count": 2,
+"samples": [
+"G"
+]
+},
+"MachineStorage.DeleteKey": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"r"
+]
+},
+"MachineStorage.GetString": {
+"arities": [
+1
+],
+"count": 2,
+"samples": [
+"r",
+"n"
+]
+},
+"MachineStorage.SetString": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"r,n"
+]
+},
+"Messaging.PostMessage": {
+"arities": [
+3
+],
+"count": 16,
+"samples": [
+"\"FriendsUI\",\"AcceptedRemotePlayInvite\",JSON.stringify({id:this.appID})",
+"\"FriendsUI\",\"AcceptedGameInvite\",JSON.stringify({id:this.appID})",
+"\"PersonaState\",\"PersonaUpdate\",JSON.stringify(Br)"
+]
+},
+"Messaging.RegisterForMessages": {
+"arities": [
+2
+],
+"count": 19,
+"samples": [
+"\"LibraryCommands\",this.HandleLibraryCommandMessage",
+"\"PersonaState\",this.HandlePersonaStateMessage",
+"\"FriendsUI\",Tt"
+]
+},
+"Music.PlayNext": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"Music.PlayPrevious": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"Music.RegisterForMusicPlaybackChanges": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"h=>{this.updatePlaybackState(h)}"
+]
+},
+"Music.RegisterForMusicPlaybackPosition": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"Z"
+]
+},
+"Music.SetPlaybackPosition": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"Math.round(ee)"
+]
+},
+"Music.SetPlayingRepeatStatus": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"De"
+]
+},
+"Music.SetPlayingShuffled": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"!R?.bShuffle"
+]
+},
+"Music.SetVolume": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"$"
+]
+},
+"Music.ToggleMuteVolume": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"Music.TogglePlayPause": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"Notifications.RegisterForNotifications": {
+"arities": [
+1
+],
+"count": 2,
+"samples": [
+"this.OnNotification"
+]
+},
+"OpenVR.Device.BIsConnected": {
+"arities": [
+1
+],
+"count": 2,
+"samples": [
+"Z",
+"R"
+]
+},
+"OpenVR.Device.RegisterForDeviceConnectivityChange": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"R,re"
+]
+},
+"OpenVR.Device.RegisterForVRDeviceSeenRecently": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnVRDeviceSeenRecentlyChanged"
+]
+},
+"OpenVR.DeviceProperties.GetBoolDeviceProperty": {
+"arities": [
+2
+],
+"count": 2,
+"samples": [
+"Z,s.fD.DeviceProvidesBatteryStatus_Bool",
+"he,ae"
+]
+},
+"OpenVR.DeviceProperties.GetDoubleDeviceProperty": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"he,ae"
+]
+},
+"OpenVR.DeviceProperties.GetFloatDeviceProperty": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"he,ae"
+]
+},
+"OpenVR.DeviceProperties.GetInt32DeviceProperty": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"he,ae"
+]
+},
+"OpenVR.DeviceProperties.GetStringDeviceProperty": {
+"arities": [
+2
+],
+"count": 2,
+"samples": [
+"he,ae",
+"\"/user/head\",i.fD.ActualTrackingSystemName_String"
+]
+},
+"OpenVR.DeviceProperties.RegisterForDevicePropertyChange": {
+"arities": [
+3
+],
+"count": 1,
+"samples": [
+"R,Z,V"
+]
+},
+"OpenVR.ExtendActivityTimeout": {
+"arities": [
+2
+],
+"count": 2,
+"samples": [
+"0,60",
+"0,0"
+]
+},
+"OpenVR.GetFrameHLAlyxPromoRegistration": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"OpenVR.GetMutualCapabilities": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"OpenVR.GetWebSecret": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"OpenVR.GetWebServerAddress": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"OpenVR.HideKeyboard": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"OpenVR.IgnoreFrameHLAlyxPromo": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"OpenVR.InstallVR": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"OpenVR.Keyboard.Hide": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"OpenVR.Keyboard.RegisterForStatus": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnKeyboardStatus"
+]
+},
+"OpenVR.Keyboard.SendDone": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"OpenVR.Keyboard.SendText": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"k"
+]
+},
+"OpenVR.Keyboard.Show": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"OpenVR.PathProperties.GetBoolPathProperty": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.m_strPath"
+]
+},
+"OpenVR.PathProperties.GetDoublePathProperty": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.m_strPath"
+]
+},
+"OpenVR.PathProperties.GetFloatPathProperty": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.m_strPath"
+]
+},
+"OpenVR.PathProperties.GetInt32PathProperty": {
+"arities": [
+1
+],
+"count": 2,
+"samples": [
+"this.m_strPath",
+"D"
+]
+},
+"OpenVR.PathProperties.GetStringPathProperty": {
+"arities": [
+1
+],
+"count": 2,
+"samples": [
+"this.m_strPath"
+]
+},
+"OpenVR.PathProperties.RegisterForPathPropertyChange": {
+"arities": [
+2
+],
+"count": 2,
+"samples": [
+"this.m_strPath,()=>this.UpdateValueInternal()",
+"D,z"
+]
+},
+"OpenVR.PathProperties.SetBoolPathProperty": {
+"arities": [
+2
+],
+"count": 6,
+"samples": [
+"am.k_strSceneAppInputPreferencePrefersSteamInputPath,he",
+"\"/steam/oobe\",!1",
+"\"/steam/streamingtodevice\",he"
+]
+},
+"OpenVR.PathProperties.SetInt32PathProperty": {
+"arities": [
+2
+],
+"count": 3,
+"samples": [
+"am.k_strSceneAppInputPreferenceAppIdPath,Z",
+"\"/steam/guidedtour\",C",
+"mm.k_strSceneAppInputPreferenceAppIdPath,C"
+]
+},
+"OpenVR.PathProperties.SetStringPathProperty": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"T,L"
+]
+},
+"OpenVR.QuitAllVR": {
+"arities": [
+0
+],
+"count": 4,
+"samples": [
+""
+]
+},
+"OpenVR.RegisterForHMDActivityLevelChanged": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnHMDActivityLevelChanged"
+]
+},
+"OpenVR.RegisterForHMDSerialDetails": {
+"arities": [
+1
+],
+"count": 2,
+"samples": [
+"this.OnHMDSerialDetailsChanged"
+]
+},
+"OpenVR.RegisterForInstallDialog": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"(F,ye)=>{Yt||$t.IN_VR||(sr(F),Bt(ye),F?.length>0&&$e(1))}"
+]
+},
+"OpenVR.RegisterForStartupErrors": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnStartupError"
+]
+},
+"OpenVR.RegisterForVRHardwareDetected": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnVRHardwareDetected"
+]
+},
+"OpenVR.RegisterForVRModeChange": {
+"arities": [
+1
+],
+"count": 5,
+"samples": [
+"this.OnVRModeChanged",
+"p=>{p||this.m_SteamVR_Client.CancelAllRequests()}",
+"N=>{N?this.Connect():this.Disconnect()}"
+]
+},
+"OpenVR.RegisterForVRSceneAppChange": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnSceneAppChanged"
+]
+},
+"OpenVR.RegisterForVRTrackedDevices": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnTrackedDevicesChanged"
+]
+},
+"OpenVR.SetOverlayInteractionAffordance": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"he,V"
+]
+},
+"OpenVR.SetRegisteredFrameHLAlyxPromo": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"d.iA.steamid,b"
+]
+},
+"OpenVR.ShowKeyboard": {
+"arities": [
+0
+],
+"count": 2,
+"samples": [
+""
+]
+},
+"OpenVR.StartVR": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"!0"
+]
+},
+"OpenVR.TriggerOverlayHapticEffect": {
+"arities": [
+2
+],
+"count": 5,
+"samples": [
+"s.en.ButtonEnter,0",
+"s.en.ButtonLeave,0",
+"lr,0"
+]
+},
+"OpenVR.VRNotifications.HideCustomNotification": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"Ft"
+]
+},
+"OpenVR.VRNotifications.RegisterForNotificationEvent": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnVRNotificationEvent"
+]
+},
+"OpenVR.VRNotifications.ShowCustomNotification": {
+"arities": [
+3
+],
+"count": 1,
+"samples": [
+"Ct.GetVROverlayKey(),Se.A0,zt"
+]
+},
+"OpenVR.VROverlay.HideDashboard": {
+"arities": [
+0
+],
+"count": 4,
+"samples": [
+""
+]
+},
+"OpenVR.VROverlay.RegisterForButtonPress": {
+"arities": [
+1
+],
+"count": 2,
+"samples": [
+"Oe=>{G.Info(`Button press for window ${re.name} button=${Oe}`),V(Oe)}"
+]
+},
+"OpenVR.VROverlay.RegisterForCursorMovement": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"(dr,cr,Mr,Ie)=>{dr===1&&Vt(cr,Mr,Ie,dr)}"
+]
+},
+"OpenVR.VROverlay.RegisterForOverlayMousePressEvents": {
+"arities": [
+1
+],
+"count": 1,
+"samples": []
+},
+"OpenVR.VROverlay.RegisterForThumbnailChanged": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"h"
+]
+},
+"OpenVR.VROverlay.RegisterForVisibilityChanged": {
+"arities": [
+1
+],
+"count": 2,
+"samples": [
+"c",
+"w"
+]
+},
+"OpenVR.VROverlay.ShowDashboard": {
+"arities": [
+1
+],
+"count": 2,
+"samples": [
+" \"${f}\" ",
+"f"
+]
+},
+"OpenVR.VROverlay.SwitchToDashboardOverlay": {
+"arities": [
+1
+],
+"count": 5,
+"samples": [
+"Jn",
+" \"${Xr.GetVROverlayKey()}\" ",
+"Xr.GetVROverlayKey()"
+]
+},
+"Overlay.DestroyGamePadUIDesktopConfiguratorWindow": {
+"arities": [
+0
+],
+"count": 5,
+"samples": [
+""
+]
+},
+"Overlay.GetOverlayBrowserInfo": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"Overlay.HandleGameWebCallback": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"w"
+]
+},
+"Overlay.HandleProtocolForOverlayBrowser": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"this.m_unAppID,w"
+]
+},
+"Overlay.RegisterForActivateOverlayRequests": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnGameOverlayActivateRequested"
+]
+},
+"Overlay.RegisterForMicroTxnAuth": {
+"arities": [
+1
+],
+"count": 2,
+"samples": [
+"this.OnMicroTxnAuth",
+"En"
+]
+},
+"Overlay.RegisterForMicroTxnAuthDismiss": {
+"arities": [
+1
+],
+"count": 2,
+"samples": [
+"this.OnMicroTxnAuthDismiss",
+"Yn"
+]
+},
+"Overlay.RegisterForNotificationPositionChanged": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OverlayNotificationPositionChanged"
+]
+},
+"Overlay.RegisterForOverlayActivated": {
+"arities": [
+1
+],
+"count": 2,
+"samples": [
+"P",
+"this.OnOverlayActivated"
+]
+},
+"Overlay.RegisterForOverlayBrowserProtocols": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnOverlayBrowserProtocol"
+]
+},
+"Overlay.RegisterOverlayBrowserInfoChanged": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnOverlayBrowserInfoChanged"
+]
+},
+"Overlay.SetOverlayState": {
+"arities": [
+2
+],
+"count": 15,
+"samples": [
+"M.gameid,k",
+"Nt.gameid,Re.I5.Overlay",
+"qe,i.I5.Hidden"
+]
+},
+"Overlay.SetWindowAlpha": {
+"arities": [
+1
+],
+"count": 2,
+"samples": [
+"Or",
+"1"
+]
+},
+"Overlay.SetWindowPinned": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"!br"
+]
+},
+"Parental.LockParentalLock": {
+"arities": [
+0
+],
+"count": 2,
+"samples": [
+""
+]
+},
+"Parental.RegisterForParentalPlaytimeWarnings": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"mn"
+]
+},
+"Parental.RegisterForParentalSettingsChanges": {
+"arities": [
+1
+],
+"count": 2,
+"samples": [
+"le=>this.UpdateParentalState(le)",
+"he=>{this.UpdateParentalState(he),Z&&Z(),Z=null}"
+]
+},
+"Parental.UnlockParentalLock": {
+"arities": [
+2
+],
+"count": 2,
+"samples": [
+"Ae,!1",
+"J,!0"
+]
+},
+"RemotePlay.BCanAcceptInviteForGame": {
+"arities": [
+2
+],
+"count": 2,
+"samples": [
+"D,z"
+]
+},
+"RemotePlay.BCanCreateInviteForGame": {
+"arities": [
+2
+],
+"count": 2,
+"samples": [
+"D,z"
+]
+},
+"RemotePlay.BRemotePlayTogetherGuestOnPhoneOrTablet": {
+"arities": [
+3
+],
+"count": 1,
+"samples": [
+"D.groupid,D.steamid,D.guestid"
+]
+},
+"RemotePlay.CancelInviteAndSession": {
+"arities": [
+3
+],
+"count": 3,
+"samples": [
+"this.m_unGroupID,z.ConvertTo64BitString(),0",
+"this.m_unGroupID,D,z",
+"this.m_unGroupID,D.playerID.steamid,D.playerID.guestid"
+]
+},
+"RemotePlay.CancelRemoteClientPairing": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"RemotePlay.CloseGroup": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.m_unGroupID"
+]
+},
+"RemotePlay.CreateInviteAndSession": {
+"arities": [
+3
+],
+"count": 2,
+"samples": [
+"this.m_unGroupID,S.ConvertTo64BitString(),!1",
+"this.m_unGroupID,z.ConvertTo64BitString(),!0"
+]
+},
+"RemotePlay.EnableWifiRadioSoftwareState": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"RemotePlay.GetClientID": {
+"arities": [
+0
+],
+"count": 3,
+"samples": [
+""
+]
+},
+"RemotePlay.GetClientStreamingBitrate": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.m_unGroupID"
+]
+},
+"RemotePlay.GetClientStreamingQuality": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.m_unGroupID"
+]
+},
+"RemotePlay.GetControllerType": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"this.m_unGroupID,D"
+]
+},
+"RemotePlay.GetGameSystemVolume": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.m_unGroupID"
+]
+},
+"RemotePlay.GetPerUserInputSettingsWithGuestID": {
+"arities": [
+3
+],
+"count": 1,
+"samples": [
+"D.groupid,D.steamid,D.guestid"
+]
+},
+"RemotePlay.GetRemotePlayTogetherGroupIDForOverlayPID": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"D"
+]
+},
+"RemotePlay.HasRemoteDevicePIN": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"RemotePlay.IdentifyController": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"this.m_unGroupID,D"
+]
+},
+"RemotePlay.InstallAudioDriver": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"RemotePlay.InstallInputDriver": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"RemotePlay.MoveControllerToSlot": {
+"arities": [
+3
+],
+"count": 1,
+"samples": [
+"this.m_unGroupID,D,z"
+]
+},
+"RemotePlay.PairViaWifiAP": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"Z"
+]
+},
+"RemotePlay.RegisterForAdditionalParentalBlocks": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnAdditionalParentalBlocks"
+]
+},
+"RemotePlay.RegisterForAudioDriverPrompt": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnAudioDriverPrompt"
+]
+},
+"RemotePlay.RegisterForControllersUpdated": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.HandleControllersUpdated"
+]
+},
+"RemotePlay.RegisterForDevicesChanges": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnDevicesChanged"
+]
+},
+"RemotePlay.RegisterForGroupCreated": {
+"arities": [
+1
+],
+"count": 2,
+"samples": [
+"this.RemotePlayGroupCreated",
+"this.HandleGroupCreated"
+]
+},
+"RemotePlay.RegisterForGroupDisbanded": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.HandleGroupDisbanded"
+]
+},
+"RemotePlay.RegisterForInputDriverPrompt": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnInputDriverPrompt"
+]
+},
+"RemotePlay.RegisterForInputDriverRestartNotice": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnInputDriverRestartNotice"
+]
+},
+"RemotePlay.RegisterForInputUsed": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.HandlePlayerUsedInput"
+]
+},
+"RemotePlay.RegisterForInviteResult": {
+"arities": [
+1
+],
+"count": 2,
+"samples": [
+"this.RemoteClientInviteResult",
+"this.HandleInviteResult"
+]
+},
+"RemotePlay.RegisterForNetworkUtilizationUpdate": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.HandleNetworkUtilizationUpdate"
+]
+},
+"RemotePlay.RegisterForPairWifiAPProgress": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnPairWifiAPProgress"
+]
+},
+"RemotePlay.RegisterForPairWifiAPResult": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnPairWifiAPResult"
+]
+},
+"RemotePlay.RegisterForPlaceholderStateChanged": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.HandlePlaceholderStateChanged"
+]
+},
+"RemotePlay.RegisterForPlayerInputSettingsChanged": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.HandlePlayerInputSettingsChanged"
+]
+},
+"RemotePlay.RegisterForQualityOverride": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.HandleQualityOverride"
+]
+},
+"RemotePlay.RegisterForRemoteClientLaunchFailed": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.RemoteClientLaunchFailed"
+]
+},
+"RemotePlay.RegisterForRemoteClientStarted": {
+"arities": [
+1
+],
+"count": 4,
+"samples": [
+"this.RemoteClientStarted",
+"this.OnRemoteClientStarted",
+"this.StreamingClientStarted"
+]
+},
+"RemotePlay.RegisterForRemoteClientStopped": {
+"arities": [
+1
+],
+"count": 3,
+"samples": [
+"this.HandleRemoteClientStopped",
+"this.OnRemoteClientStopped",
+"this.StreamingClientFinished"
+]
+},
+"RemotePlay.RegisterForRemoteDeviceAuthorizationCancelled": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnRemoteDeviceAuthorizationCancelled"
+]
+},
+"RemotePlay.RegisterForRemoteDeviceAuthorizationRequested": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnRemoteDeviceAuthorizationRequested"
+]
+},
+"RemotePlay.RegisterForRemoteDevicePairingPINChanged": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnRemoteDevicePairingPINChanged"
+]
+},
+"RemotePlay.RegisterForRemoteDeviceSpectatePermissionCanceled": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnRemoteDeviceSpectatePermissionCanceled"
+]
+},
+"RemotePlay.RegisterForRemoteDeviceSpectatePermissionRequested": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnRemoteDeviceSpectatePermissionRequested"
+]
+},
+"RemotePlay.RegisterForRestrictedSessionChanges": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnRestrictedSessionChanged"
+]
+},
+"RemotePlay.RegisterForSessionJoined": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.HandleSessionJoined"
+]
+},
+"RemotePlay.RegisterForSessionStarted": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.HandleSessionStarted"
+]
+},
+"RemotePlay.RegisterForSessionStopped": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.HandleSessionStopped"
+]
+},
+"RemotePlay.RegisterForSettingsChanges": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnSettingsChanged"
+]
+},
+"RemotePlay.RegisterForVRStreamingInvitation": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnVRStreamingInvitation"
+]
+},
+"RemotePlay.SetClientStreamingBitrate": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"this.m_unGroupID,D"
+]
+},
+"RemotePlay.SetClientStreamingQuality": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"this.m_unGroupID,D"
+]
+},
+"RemotePlay.SetGameSystemVolume": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"this.m_unGroupID,D"
+]
+},
+"RemotePlay.SetPerUserControllerInputEnabledWithGuestID": {
+"arities": [
+4
+],
+"count": 1,
+"samples": [
+"D.groupid,D.steamid,D.guestid,z"
+]
+},
+"RemotePlay.SetPerUserKeyboardInputEnabledWithGuestID": {
+"arities": [
+4
+],
+"count": 1,
+"samples": [
+"D.groupid,D.steamid,D.guestid,z"
+]
+},
+"RemotePlay.SetPerUserMouseInputEnabledWithGuestID": {
+"arities": [
+4
+],
+"count": 1,
+"samples": [
+"D.groupid,D.steamid,D.guestid,z"
+]
+},
+"RemotePlay.SetRemoteDeviceAuthorized": {
+"arities": [
+2
+],
+"count": 2,
+"samples": [
+"!1,\"\"",
+"!0,J"
+]
+},
+"RemotePlay.SetRemoteDevicePIN": {
+"arities": [
+1
+],
+"count": 2,
+"samples": [
+"k",
+"\"\""
+]
+},
+"RemotePlay.SetRemoteDeviceSpectateAllowed": {
+"arities": [
+2
+],
+"count": 2,
+"samples": [
+"!1,!1",
+"!0,!1"
+]
+},
+"RemotePlay.SetRemotePlayEnabled": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"ws"
+]
+},
+"RemotePlay.SetStreamingClientConfig": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"Z.serializeBase64String(),this.m_settings.unStreamingSessionID"
+]
+},
+"RemotePlay.SetStreamingClientConfigEnabled": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"ws,Cr.unStreamingSessionID"
+]
+},
+"RemotePlay.SetStreamingDesktopToRemotePlayTogetherEnabled": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"this.m_unGroupID,D"
+]
+},
+"RemotePlay.SetStreamingP2PScope": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"ws.data"
+]
+},
+"RemotePlay.SetStreamingServerConfig": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"Z.serializeBase64String()"
+]
+},
+"RemotePlay.SetStreamingServerConfigEnabled": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"ws"
+]
+},
+"RemotePlay.StartDesktopStream": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"Cr.clientId"
+]
+},
+"RemotePlay.StopRemoteClientStream": {
+"arities": [
+4
+],
+"count": 4,
+"samples": [
+"Xn?.m_unGroupID,Xn?.m_steamid,Xn?.m_gameid,Xn?.m_clientid",
+"as?.m_unGroupID,as?.m_steamid,as?.m_gameid,as?.m_clientid",
+"Lt.m_unGroupID,Lt.m_steamid,Lt.m_gameid,Lt.m_clientid"
+]
+},
+"RemotePlay.StopStreamingSession": {
+"arities": [
+1
+],
+"count": 2,
+"samples": [
+"gr.unStreamingSessionID",
+"Z.unStreamingSessionID"
+]
+},
+"RemotePlay.StopStreamingSessionAndSuspendDevice": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"gr.unStreamingSessionID"
+]
+},
+"RemotePlay.UnlockH264": {
+"arities": [
+0
+],
+"count": 2,
+"samples": [
+""
+]
+},
+"RemotePlay.UnpairLocalWifiAP": {
+"arities": [
+0
+],
+"count": 2,
+"samples": [
+""
+]
+},
+"RemotePlay.UnpairRemoteClient": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"Cr.clientId"
+]
+},
+"RemotePlay.UnpairRemoteDevice": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"Cr.deviceId"
+]
+},
+"RemotePlay.UnpairRemoteDevices": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"RoamingStorage.DeleteKey": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"o"
+]
+},
+"RoamingStorage.GetJSON": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"o"
+]
+},
+"RoamingStorage.GetString": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"o"
+]
+},
+"RoamingStorage.SetObject": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"o,u"
+]
+},
+"RoamingStorage.SetString": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"o,u"
+]
+},
+"Screenshots.DeleteLocalScreenshots": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"Ne"
+]
+},
+"Screenshots.GetAllAppsLocalScreenshotsCount": {
+"arities": [
+0
+],
+"count": 2,
+"samples": [
+""
+]
+},
+"Screenshots.GetAllAppsLocalScreenshotsRange": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"Ee,Xe"
+]
+},
+"Screenshots.GetLastScreenshotTaken": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"Screenshots.GetLocalScreenshotByHandle": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"Ne.strGameID,Ne.local.hHandle"
+]
+},
+"Screenshots.GetLocalScreenshotPath": {
+"arities": [
+2
+],
+"count": 4,
+"samples": [
+"et.local.strGameID,et.local.hHandle",
+"v.local.strGameID,v.local.hHandle",
+"M,H"
+]
+},
+"Screenshots.GetTotalDiskSpaceUsage": {
+"arities": [
+1
+],
+"count": 2,
+"samples": [
+"tr?.folder?.strFolderPath",
+"nr?.strFolderPath"
+]
+},
+"Screenshots.ShowScreenshotsOnDisk": {
+"arities": [
+1
+],
+"count": 2,
+"samples": [
+"Qt.strGameID",
+"Et.strGameID"
+]
+},
+"Screenshots.UploadLocalScreenshot": {
+"arities": [
+3
+],
+"count": 2,
+"samples": [
+"Ne.strGameID,Ne.local?.hHandle,Ee",
+"A.strGameID,A.hHandle,M.ePrivacy"
+]
+},
+"ServerBrowser.AddFavoriteServer": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"L(G)"
+]
+},
+"ServerBrowser.AddFavoriteServersByIP": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"R"
+]
+},
+"ServerBrowser.CancelServerQuery": {
+"arities": [
+2
+],
+"count": 6,
+"samples": [
+"this.m_dialogID,this.m_hQueryServer",
+"this.m_dialogID,this.m_hQueryPlayerList",
+"this.m_dialogID,this.m_hQueryServerFriendsList"
+]
+},
+"ServerBrowser.ConnectToServer": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"this.m_dialogID,this.m_strPassword"
+]
+},
+"ServerBrowser.CreateFriendGameInfoDialog": {
+"arities": [
+2
+],
+"count": 2,
+"samples": [
+"ue,this.props.friend.steamid64",
+"E,v.ConvertTo64BitString()"
+]
+},
+"ServerBrowser.CreateServerGameInfoDialog": {
+"arities": [
+5
+],
+"count": 1,
+"samples": [
+"E,B,k,A,M"
+]
+},
+"ServerBrowser.CreateServerListRequest": {
+"arities": [
+5
+],
+"count": 1,
+"samples": [
+"B,E.id,k,v,A"
+]
+},
+"ServerBrowser.DestroyGameInfoDialog": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.m_dialogID"
+]
+},
+"ServerBrowser.DestroyServerListRequest": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.nActiveServerListRequestID"
+]
+},
+"ServerBrowser.GetMultiplayerGames": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"ServerBrowser.GetServerListPreferences": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"ServerBrowser.PingServer": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.m_dialogID"
+]
+},
+"ServerBrowser.RegisterForFavorites": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"St"
+]
+},
+"ServerBrowser.RegisterForFriendGamePlayed": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"this.m_dialogID,this.OnFriendGamePlayed"
+]
+},
+"ServerBrowser.RegisterForGameInfoDialogs": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnGameInfoDialogs"
+]
+},
+"ServerBrowser.RegisterForPlayerDetails": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"this.m_dialogID,this.OnPlayerDetails"
+]
+},
+"ServerBrowser.RegisterForServerFriends": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"this.m_dialogID,this.OnServerFriends"
+]
+},
+"ServerBrowser.RegisterForServerInfo": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"this.m_dialogID,this.OnServerInfo"
+]
+},
+"ServerBrowser.RemoveFavoriteServer": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"L(R)"
+]
+},
+"ServerBrowser.RemoveHistoryServer": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"L(R)"
+]
+},
+"ServerBrowser.RequestPlayerDetails": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.m_dialogID"
+]
+},
+"ServerBrowser.RequestServerFriends": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.m_dialogID"
+]
+},
+"ServerBrowser.SetServerListPreferences": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"C"
+]
+},
+"Settings.AddClientBeta": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"Ct,be"
+]
+},
+"Settings.ClearAllHTTPCaches": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"Settings.ClearDownloadCache": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"Settings.GetAccountSettings": {
+"arities": [
+0
+],
+"count": 2,
+"samples": [
+""
+]
+},
+"Settings.GetAppUsesP2PVoice": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"us??0"
+]
+},
+"Settings.GetAvailableLanguages": {
+"arities": [
+0
+],
+"count": 2,
+"samples": [
+""
+]
+},
+"Settings.GetAvailableTimeZones": {
+"arities": [
+0
+],
+"count": 2,
+"samples": [
+""
+]
+},
+"Settings.GetCurrentLanguage": {
+"arities": [
+0
+],
+"count": 2,
+"samples": [
+""
+]
+},
+"Settings.GetMonitorInfo": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"Settings.GetRegisteredSteamDeck": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"Settings.GetTimeZone": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"Settings.GetWindowed": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"Settings.IgnoreSteamDeckRewards": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"Settings.OpenWindowsMicSettings": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"Settings.RegisterForAppsWithAutoUpdateOverrides": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"Ii=>Qr(Ii.map(Bi=>Bi.appid))"
+]
+},
+"Settings.RegisterForMicVolumeUpdates": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"Qr"
+]
+},
+"Settings.RegisterForSettingsArrayChanges": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnClientSettingsMsgChange"
+]
+},
+"Settings.RegisterForSettingsChanges": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnClientSettingsChange"
+]
+},
+"Settings.RegisterForTimeZoneChange": {
+"arities": [
+1
+],
+"count": 2,
+"samples": [
+"h",
+"this.OnTimeZoneChange"
+]
+},
+"Settings.ReinitMicSettings": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"Settings.RenderHotkey": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"re"
+]
+},
+"Settings.SelectClientBeta": {
+"arities": [
+1
+],
+"count": 6,
+"samples": [
+"m.nBetaID",
+"T.nBetaID",
+"b.E8"
+]
+},
+"Settings.SetCurrentLanguage": {
+"arities": [
+1
+],
+"count": 2,
+"samples": [
+"E.strShortName",
+"Me"
+]
+},
+"Settings.SetEnableSoftProcessKill": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"Lt"
+]
+},
+"Settings.SetHostname": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"We"
+]
+},
+"Settings.SetMicTestMode": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"Pr"
+]
+},
+"Settings.SetPreferredMonitor": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"De"
+]
+},
+"Settings.SetRegisteredSteamDeck": {
+"arities": [
+2
+],
+"count": 2,
+"samples": [
+"r.iA.steamid,U"
+]
+},
+"Settings.SetSaveAccountCredentials": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"!Ii"
+]
+},
+"Settings.SetSetting": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"X"
+]
+},
+"Settings.SetTimeZone": {
+"arities": [
+1
+],
+"count": 2,
+"samples": [
+"E",
+"S"
+]
+},
+"Settings.SetUseNintendoButtonLayout": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"jr.nControllerIndex,tr"
+]
+},
+"Settings.SetUseUniversalFaceButtonGlyphs": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"jr.nControllerIndex,me"
+]
+},
+"Settings.SetWindowed": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"De"
+]
+},
+"Settings.ToggleSteamInstall": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"SharedConnection.AllocateSharedConnection": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"SharedConnection.Close": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.m_hSharedConnection"
+]
+},
+"SharedConnection.RegisterOnBinaryMessageReceived": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"this.m_hSharedConnection,this.OnMsgRecvd.bind(this)"
+]
+},
+"SharedConnection.RegisterOnLogonInfoChanged": {
+"arities": [
+2
+],
+"count": 1,
+"samples": []
+},
+"SharedConnection.RegisterOnMessageReceived": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"this.m_hSharedConnection,u=>this.OnMsgRecvd(l.bg(u))"
+]
+},
+"SharedConnection.SendMsg": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"this.m_hSharedConnection,ce"
+]
+},
+"SharedConnection.SendMsgAndAwaitBinaryResponse": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"this.m_hSharedConnection,O"
+]
+},
+"SharedConnection.SendMsgAndAwaitResponse": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"this.m_hSharedConnection,O"
+]
+},
+"SharedConnection.SubscribeToClientServiceMethod": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"this.m_hSharedConnection,ne"
+]
+},
+"SharedConnection.SubscribeToEMsg": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"this.m_hSharedConnection,ne"
+]
+},
+"Stats.RecordActivationEvent": {
+"arities": [
+2
+],
+"count": 43,
+"samples": [
+"\"CloudStorage.Download\",Fe",
+"\"CloudStorage.Notification\",\"ignored\"",
+"\"CloudStorage.Notification\",\"useful\""
+]
+},
+"Stats.RecordDisplayEvent": {
+"arities": [
+3
+],
+"count": 1,
+"samples": [
+"!0,\"PlayNextShowcase_NumDisplayed\",Ns.length.toString()"
+]
+},
+"SteamChina.GetCustomLauncherAppID": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"Storage.DeleteKey": {
+"arities": [
+1
+],
+"count": 2,
+"samples": [
+"w",
+"r"
+]
+},
+"Storage.GetString": {
+"arities": [
+1
+],
+"count": 2,
+"samples": [
+"w",
+"r"
+]
+},
+"Storage.SetString": {
+"arities": [
+2
+],
+"count": 3,
+"samples": [
+"w,g",
+"r,o",
+"r,n"
+]
+},
+"Streaming.AcceptStreamingEULA": {
+"arities": [
+3
+],
+"count": 1,
+"samples": [
+"G,U,K"
+]
+},
+"Streaming.CancelStreamGame": {
+"arities": [
+0
+],
+"count": 5,
+"samples": [
+""
+]
+},
+"Streaming.RegisterForInstallAppComplete": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.InstallAppComplete"
+]
+},
+"Streaming.RegisterForStreamingClientFinished": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.StreamingClientFinished"
+]
+},
+"Streaming.RegisterForStreamingClientLaunchProgress": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.StreamingLaunchProgress"
+]
+},
+"Streaming.RegisterForStreamingClientStarted": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.StreamingClientStarted"
+]
+},
+"Streaming.RegisterForStreamingLaunchComplete": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.StreamingLaunchComplete"
+]
+},
+"Streaming.RegisterForStreamingPrelaunchCheck": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.StreamingPrelaunchCheck"
+]
+},
+"Streaming.RegisterForStreamingShowCloudConflict": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.StreamingShowCloudConflict"
+]
+},
+"Streaming.RegisterForStreamingShowEula": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.StreamingShowEula"
+]
+},
+"Streaming.RegisterForStreamingShowLaunchOptions": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.StreamingShowLaunchOptions"
+]
+},
+"Streaming.RegisterForStreamingStillDownloading": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.StreamingStillDownloading"
+]
+},
+"Streaming.StreamingContinueStreamGame": {
+"arities": [
+0
+],
+"count": 3,
+"samples": [
+""
+]
+},
+"Streaming.StreamingSetCloudConflictResolution": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"M,Z"
+]
+},
+"Streaming.StreamingSetLaunchOption": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"J"
+]
+},
+"System.Audio": {
+"arities": [],
+"count": 1,
+"samples": []
+},
+"System.Audio.ClearDefaultDeviceOverride": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"W"
+]
+},
+"System.Audio.GetApps": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"System.Audio.GetDevices": {
+"arities": [
+0
+],
+"count": 3,
+"samples": [
+""
+]
+},
+"System.Audio.RegisterForAppAdded": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnAppAdded"
+]
+},
+"System.Audio.RegisterForAppRemoved": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnAppRemoved"
+]
+},
+"System.Audio.RegisterForAppVolumeChanged": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnAppVolumeChanged"
+]
+},
+"System.Audio.RegisterForDeviceAdded": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnAudioDeviceAdded"
+]
+},
+"System.Audio.RegisterForDeviceRemoved": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnAudioDeviceRemoved"
+]
+},
+"System.Audio.RegisterForDeviceVolumeChanged": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnAudioDeviceVolumeChanged"
+]
+},
+"System.Audio.RegisterForServiceConnectionStateChanges": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnServiceConnectionStateChanged"
+]
+},
+"System.Audio.RegisterForVolumeButtonPressed": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnVolumeButtonPressed"
+]
+},
+"System.Audio.SetAppVolume": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"this.id,W"
+]
+},
+"System.Audio.SetDefaultDeviceOverride": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"this.m_id,W"
+]
+},
+"System.Audio.SetDeviceVolume": {
+"arities": [
+3
+],
+"count": 1,
+"samples": [
+"this.m_id,W,Be"
+]
+},
+"System.AudioDevices.RegisterForStateChanges": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnStateChanged"
+]
+},
+"System.AudioDevices.UpdateSomething": {
+"arities": [
+1
+],
+"count": 2,
+"samples": [
+"wt.serializeBase64String()",
+"Et.serializeBase64String()"
+]
+},
+"System.CopyFile": {
+"arities": [
+2
+],
+"count": 2,
+"samples": [
+"dr,Mr",
+"se,Oe"
+]
+},
+"System.CopyFilesToClipboard": {
+"arities": [
+1
+],
+"count": 4,
+"samples": [
+"yt.filter(Boolean)",
+"[xi.strExportPath]",
+"[B]"
+]
+},
+"System.CreateTempPath": {
+"arities": [
+1
+],
+"count": 3,
+"samples": [
+"cr",
+"B",
+"\"mp4\""
+]
+},
+"System.Devkit.RegisterForPairingPrompt": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnPairingPrompt"
+]
+},
+"System.Devkit.RespondToPairingPrompt": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"Et,wt"
+]
+},
+"System.Devkit.SetPairing": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"Et"
+]
+},
+"System.Display.EnableUnderscan": {
+"arities": [
+1
+],
+"count": 4,
+"samples": [
+"!Y",
+"!K",
+"!0"
+]
+},
+"System.Display.RegisterForBrightnessChanges": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnDisplayBrightnessChanged"
+]
+},
+"System.Display.SetBrightness": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"k"
+]
+},
+"System.Display.SetUnderscanLevel": {
+"arities": [
+1
+],
+"count": 3,
+"samples": [
+"X",
+"U"
+]
+},
+"System.DisplayManager": {
+"arities": [],
+"count": 1,
+"samples": []
+},
+"System.DisplayManager.ClearModeOverride": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"k"
+]
+},
+"System.DisplayManager.GetState": {
+"arities": [
+0
+],
+"count": 2,
+"samples": [
+""
+]
+},
+"System.DisplayManager.RegisterForStateChanges": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnStateChanged"
+]
+},
+"System.DisplayManager.SetCompatibilityMode": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"k"
+]
+},
+"System.DisplayManager.SetGamescopeInternalResolution": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"A,U/K==1.6?A/1.6:M"
+]
+},
+"System.DisplayManager.SetMode": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"H.serializeBase64String()"
+]
+},
+"System.Dock.DisarmSafetyNet": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"System.Dock.RegisterForStateChanges": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnStateChanged"
+]
+},
+"System.Dock.UpdateFirmware": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"C.serializeBase64String()"
+]
+},
+"System.FormatStorage": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"ze"
+]
+},
+"System.GetOSType": {
+"arities": [
+0
+],
+"count": 2,
+"samples": [
+""
+]
+},
+"System.GetSystemInfo": {
+"arities": [
+0
+],
+"count": 2,
+"samples": [
+""
+]
+},
+"System.IsDeckFactoryImage": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"System.IsSteamInTournamentMode": {
+"arities": [
+0
+],
+"count": 2,
+"samples": [
+""
+]
+},
+"System.Network.Device": {
+"arities": [],
+"count": 5,
+"samples": []
+},
+"System.Network.ForceTestConnectivity": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"System.Network.GetProxyInfo": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"System.Network.RegisterForAppSummaryUpdate": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"pt"
+]
+},
+"System.Network.RegisterForConnectionStateUpdate": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"Me"
+]
+},
+"System.Network.RegisterForConnectivityTestChanges": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnConnectivityTestStateChanged"
+]
+},
+"System.Network.RegisterForDeviceChanges": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnNetworkDevicesChanged"
+]
+},
+"System.Network.SetFakeLocalSystemState": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"ze"
+]
+},
+"System.Network.SetProxyInfo": {
+"arities": [
+4
+],
+"count": 1,
+"samples": [
+"ze.proxy_mode,ze.address??\"\",ze.port??0,ze.exclude_local??!0"
+]
+},
+"System.Network.SetWifiEnabled": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"ze"
+]
+},
+"System.Network.StartScanningForNetworks": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"System.Network.StopScanningForNetworks": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"System.NotifyGameOverlayStateChanged": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"B,E"
+]
+},
+"System.OpenFileDialog": {
+"arities": [
+1
+],
+"count": 12,
+"samples": [
+"{strTitle:(0,s.we)(\"#AddNonSteam_PickAppTitle\"),rgFilters:C(),strInitialFile:Q}",
+"{strTitle:(0,c.we)(\"#MediaManager_SaveDialogTitle\"),bChooseDirectory:!0}",
+"Lr"
+]
+},
+"System.OpenInSystemBrowser": {
+"arities": [
+1
+],
+"count": 3,
+"samples": [
+"I",
+"dr",
+"W"
+]
+},
+"System.OpenLocalDirectoryInSystemExplorer": {
+"arities": [
+1
+],
+"count": 5,
+"samples": [
+"kt.strShortcutStartDir",
+"kt.strInstallFolder",
+"Vr.strInstallFolder"
+]
+},
+"System.Perf.RegisterForDiagnosticInfoChanges": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnDiagnosticInfoChanged"
+]
+},
+"System.Perf.RegisterForStateChanges": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnStateChanged"
+]
+},
+"System.Perf.UpdateSettings": {
+"arities": [
+1
+],
+"count": 26,
+"samples": [
+"Pe.serializeBase64String()",
+"ke.serializeBase64String()",
+"pe.serializeBase64String()"
+]
+},
+"System.RebootToAlternateSystemPartition": {
+"arities": [
+0
+],
+"count": 2,
+"samples": [
+""
+]
+},
+"System.RegisterForAirplaneModeChanges": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnAirplaneModeChanged"
+]
+},
+"System.RegisterForBatteryStateChanges": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnBatteryStateChanged"
+]
+},
+"System.RegisterForFormatStorageProgress": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnFormatStorageProgress"
+]
+},
+"System.RegisterForSettingsChanges": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnSettingsChanged"
+]
+},
+"System.Report.GenerateSystemReport": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"System.Report.SaveToDesktop": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"I"
+]
+},
+"System.Report.Submit": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"I"
+]
+},
+"System.RestartPC": {
+"arities": [
+0
+],
+"count": 8,
+"samples": [
+""
+]
+},
+"System.SetAirplaneMode": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"k"
+]
+},
+"System.ShutdownPC": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"System.SteamRuntimeSystemInfo": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"System.SuspendPC": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"System.UI.CloseGameWindow": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"ot,Te"
+]
+},
+"System.UI.GetGameWindowsInfo": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"ot,Te"
+]
+},
+"System.UI.RegisterForFocusChangeEvents": {
+"arities": [
+1
+],
+"count": 3,
+"samples": [
+"this.OnFocusChangeEvent"
+]
+},
+"System.UI.RegisterForOverlayGameWindowFocusChanged": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnOverlayGameWindowFocusChanged"
+]
+},
+"System.UI.RegisterForSystemKeyEvents": {
+"arities": [
+1
+],
+"count": 2,
+"samples": [
+"this.HandleSystemKeyEvents",
+"this.HandleGamepadGuideButtonEvents"
+]
+},
+"System.UpdateSettings": {
+"arities": [
+1
+],
+"count": 17,
+"samples": [
+"A.serializeBase64String()",
+"k.serializeBase64String()",
+"M.serializeBase64String()"
+]
+},
+"System.VideoRecordingDriverCheck": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"UI.EnsureMainWindowCreated": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"UI.ExitBigPictureMode": {
+"arities": [
+0
+],
+"count": 3,
+"samples": [
+""
+]
+},
+"UI.GetDesiredSteamUIWindows": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"UI.GetOSEndOfLifeInfo": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"UI.GetUIMode": {
+"arities": [
+0
+],
+"count": 2,
+"samples": [
+""
+]
+},
+"UI.NotifyAppInitialized": {
+"arities": [
+0
+],
+"count": 2,
+"samples": [
+""
+]
+},
+"UI.NotifyMainWindowShown": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"UI.RegisterDesiredSteamUIWindowsChanged": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnDesiredSteamUIWindowsChanged"
+]
+},
+"UI.RegisterForClientConVar": {
+"arities": [
+2
+],
+"count": 1,
+"samples": []
+},
+"UI.RegisterForErrorCondition": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnErrorCondition"
+]
+},
+"UI.RegisterForKioskModeResetSignal": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnKioskModeReset"
+]
+},
+"UI.RegisterForStartupFinished": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"()=>{Y(),window.clearTimeout(G),U.unregister()}"
+]
+},
+"UI.RegisterForUIModeChanged": {
+"arities": [
+1
+],
+"count": 3,
+"samples": [
+"K=>{this.EnsureCurrentRouteAllowed()}",
+"this.OnUIModeChanged"
+]
+},
+"UI.RegisterMoveGamepadUIMainWindowToPrimaryDisplay": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnMoveGamepadUIMainWindowToPrimaryDisplay"
+]
+},
+"UI.ResetErrorCondition": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"UI.SetUIMode": {
+"arities": [
+1
+],
+"count": 4,
+"samples": [
+"a.$l2",
+"a.ogI",
+"P.$l2"
+]
+},
+"URL.ExecuteSteamURL": {
+"arities": [
+1
+],
+"count": 7,
+"samples": [
+"\"steam://open/settings/voice\"",
+"\"steam://open/settings/friends\"",
+"\"steam://open/settings/audio\""
+]
+},
+"URL.GetSteamURLList": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"[...c]"
+]
+},
+"URL.RegisterForRunSteamURL": {
+"arities": [
+2
+],
+"count": 3,
+"samples": [
+"f,p",
+"\"checkout_return/paypal_cancel\",Ci",
+"\"checkout_return/paypal_success\",Wi"
+]
+},
+"URL.RegisterForSteamURLChanges": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"()=>this.onURLChanges()"
+]
+},
+"Updates.ApplyUpdates": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"pe.serializeBase64String()"
+]
+},
+"Updates.CheckForUpdates": {
+"arities": [
+0
+],
+"count": 2,
+"samples": [
+""
+]
+},
+"Updates.GetCurrentOSBranch": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"Updates.GetOSBranchList": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"Updates.RegisterForUpdateStateChanges": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnUpdateStateChanged"
+]
+},
+"Updates.SelectOSBranch": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"$.serializeBase64String()"
+]
+},
+"User.AuthorizeMicrotxn": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.m_gidTransID"
+]
+},
+"User.CancelMicrotxn": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.m_gidTransID"
+]
+},
+"User.CancelShutdown": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"User.Connect": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"User.ForceShutdown": {
+"arities": [],
+"count": 1,
+"samples": []
+},
+"User.ForgetPassword": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"N"
+]
+},
+"User.GetLoginUsers": {
+"arities": [
+0
+],
+"count": 2,
+"samples": [
+""
+]
+},
+"User.GetStartupUserChooserState": {
+"arities": [
+0
+],
+"count": 2,
+"samples": [
+""
+]
+},
+"User.GoOffline": {
+"arities": [
+0
+],
+"count": 2,
+"samples": [
+""
+]
+},
+"User.GoOnline": {
+"arities": [
+0
+],
+"count": 2,
+"samples": [
+""
+]
+},
+"User.OnCloseSaveHardwareDialog": {
+"arities": [
+0
+],
+"count": 2,
+"samples": [
+""
+]
+},
+"User.OptOutOfSurvey": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"User.PrepareForSystemSuspend": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"User.Reconnect": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"User.RegisterForConnectionAttemptsThrottled": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnConnectionAttemptThrottled"
+]
+},
+"User.RegisterForCurrentUserChanges": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnCurrentUserChanges"
+]
+},
+"User.RegisterForLoginStateChange": {
+"arities": [
+1
+],
+"count": 3,
+"samples": [
+"this.OnLoginStateChange"
+]
+},
+"User.RegisterForLoginUsersChanged": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnLoginUsersChanged"
+]
+},
+"User.RegisterForPrepareForSystemSuspendProgress": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnPrepareForSuspendProgress"
+]
+},
+"User.RegisterForResumeSuspendedGamesProgress": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnResumeSuspendedGamesProgress"
+]
+},
+"User.RegisterForShowHardwareSurvey": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"k"
+]
+},
+"User.RegisterForShutdownDone": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnShutdownDone"
+]
+},
+"User.RegisterForShutdownFailed": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnShutdownFailed"
+]
+},
+"User.RegisterForShutdownStart": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnShutdownStart"
+]
+},
+"User.RegisterForShutdownState": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnShutdownState"
+]
+},
+"User.RegisterShowSaveHardwareDialog": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"re"
+]
+},
+"User.RemoveAllUsers": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"User.RemoveUser": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"w"
+]
+},
+"User.RequestSupportSystemReport": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"Q"
+]
+},
+"User.RestartAsUser": {
+"arities": [
+1
+],
+"count": 2,
+"samples": [
+"N",
+"S"
+]
+},
+"User.RestartToLoginScreen": {
+"arities": [
+0
+],
+"count": 2,
+"samples": [
+""
+]
+},
+"User.RestartToUserChooser": {
+"arities": [
+0
+],
+"count": 2,
+"samples": [
+""
+]
+},
+"User.ResumeSuspendedGames": {
+"arities": [
+1
+],
+"count": 2,
+"samples": [
+"!1",
+"!0"
+]
+},
+"User.RunSurvey": {
+"arities": [
+1
+],
+"count": 3,
+"samples": [
+"E",
+"k",
+"cr"
+]
+},
+"User.SendSurvey": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"User.SetAsyncNotificationEnabled": {
+"arities": [
+2
+],
+"count": 2,
+"samples": [
+"Ve.request.appid,!0",
+"Ve.request.appid,!1"
+]
+},
+"User.SetCheckForUpdatesOnRestart": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"!0"
+]
+},
+"User.SetLoginCredentials": {
+"arities": [
+3
+],
+"count": 1,
+"samples": [
+"Bt,$e,Yt"
+]
+},
+"User.ShowSaveHardwareDialog": {
+"arities": [
+0
+],
+"count": 2,
+"samples": [
+""
+]
+},
+"User.SignOutAndRestart": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"User.StartLogin": {
+"arities": [
+0
+],
+"count": 2,
+"samples": [
+""
+]
+},
+"User.StartOffline": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"!0"
+]
+},
+"User.StartRestart": {
+"arities": [
+1
+],
+"count": 14,
+"samples": [
+"!1",
+"!0"
+]
+},
+"User.StartShutdown": {
+"arities": [
+1
+],
+"count": 8,
+"samples": [
+"!0"
+]
+},
+"WebChat.BSuppressPopupsInRestore": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"WebChat.GetLocalAvatarBase64": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"WebChat.GetOverlayChatBrowserInfo": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"WebChat.GetPrivateConnectString": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"ue"
+]
+},
+"WebChat.GetPushToTalkEnabled": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"WebChat.GetSignIntoFriendsOnStart": {
+"arities": [
+0
+],
+"count": 2,
+"samples": [
+""
+]
+},
+"WebChat.OnGroupChatUserStateChange": {
+"arities": [
+3
+],
+"count": 2,
+"samples": [
+"pe,ke.accountid(),Pe",
+"Pe,e.iA.accountid,ke"
+]
+},
+"WebChat.OnNewGroupChatMsgAdded": {
+"arities": [
+6
+],
+"count": 1,
+"samples": [
+"this.m_ulGroupID,this.m_ulChatID,T,L,Q,E"
+]
+},
+"WebChat.OpenURLInClient": {
+"arities": [
+3
+],
+"count": 7,
+"samples": [
+"Zr,bi.m_unPID,!1",
+"bi,yr.m_unPID,!1",
+"Br,Zr.m_unPID,!1"
+]
+},
+"WebChat.RegisterForComputerActiveStateChange": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnComputerActiveStateChange"
+]
+},
+"WebChat.RegisterForFriendPostMessage": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.HandlePostMessage"
+]
+},
+"WebChat.RegisterForMouseXButtonDown": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnXButtonDown"
+]
+},
+"WebChat.RegisterForPushToTalkStateChange": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnPushToTalkStateChange"
+]
+},
+"WebChat.RegisterForUIModeChange": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.HandleUIModeChange"
+]
+},
+"WebChat.RegisterOverlayChatBrowserInfoChanged": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnOverlayChatBrowserInfoChanged"
+]
+},
+"WebChat.SetActiveClanChatIDs": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"Oe"
+]
+},
+"WebChat.SetNumChatsWithUnreadPriorityMessages": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"Bt"
+]
+},
+"WebChat.SetPersonaName": {
+"arities": [
+1
+],
+"count": 2,
+"samples": [
+"this.state.strCurrentNameEntry"
+]
+},
+"WebChat.SetPushToMuteEnabled": {
+"arities": [
+1
+],
+"count": 2,
+"samples": [
+"!0"
+]
+},
+"WebChat.SetPushToTalkEnabled": {
+"arities": [
+1
+],
+"count": 3,
+"samples": [
+"!M",
+"H",
+"Bi==1"
+]
+},
+"WebChat.SetPushToTalkHotKey": {
+"arities": [
+1
+],
+"count": 5,
+"samples": [
+"0",
+"M.keyCode",
+"us"
+]
+},
+"WebChat.SetPushToTalkMouseButton": {
+"arities": [
+1
+],
+"count": 3,
+"samples": [
+"M",
+"M.button",
+"us"
+]
+},
+"WebChat.SetVoiceChatActive": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"Ie"
+]
+},
+"WebChat.SetVoiceChatStatus": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"Ie,yt"
+]
+},
+"WebChat.UnregisterForMouseXButtonDown": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"WebUITransport.GetTransportInfo": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"WebUITransport.NotifyTransportFailure": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"y.serializeBase64String()"
+]
+},
+"Window.BringToFront": {
+"arities": [
+0,
+1
+],
+"count": 32,
+"samples": [
+"",
+"k",
+"v"
+]
+},
+"Window.Close": {
+"arities": [
+0
+],
+"count": 3,
+"samples": [
+""
+]
+},
+"Window.DefaultMonitorHasFullscreenWindow": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"Window.GetDefaultMonitorDimensions": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"Window.GetMousePositionDetails": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"Window.GetWindowDetails": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"Window.GetWindowDimensions": {
+"arities": [
+0
+],
+"count": 3,
+"samples": [
+""
+]
+},
+"Window.GetWindowRestoreDetails": {
+"arities": [
+0
+],
+"count": 7,
+"samples": [
+""
+]
+},
+"Window.HideWindow": {
+"arities": [
+0
+],
+"count": 13,
+"samples": [
+""
+]
+},
+"Window.IsWindowMaximized": {
+"arities": [
+0
+],
+"count": 2,
+"samples": [
+""
+]
+},
+"Window.IsWindowMinimized": {
+"arities": [
+0
+],
+"count": 2,
+"samples": [
+""
+]
+},
+"Window.MarkLastFocused": {
+"arities": [
+0
+],
+"count": 2,
+"samples": [
+""
+]
+},
+"Window.Minimize": {
+"arities": [
+0
+],
+"count": 4,
+"samples": [
+""
+]
+},
+"Window.MoveTo": {
+"arities": [
+3
+],
+"count": 7,
+"samples": [
+"this.state.menuLeft,this.state.menuTop,ee??!0",
+"0,0,!1",
+"Math.ceil(Math.max(0,Se/2-mt.width/2)),Math.ceil(Math.max(0,Ve/2-mt.height/2)),!1"
+]
+},
+"Window.MoveToLocation": {
+"arities": [
+1,
+2,
+3
+],
+"count": 3,
+"samples": [
+"this.KeyboardLocation,this.k_nKeyboardWindowOffset",
+"\"upper-left\",0,Gt.strMonitorDeviceName",
+"\"center\""
+]
+},
+"Window.PositionWindowRelative": {
+"arities": [
+5
+],
+"count": 5,
+"samples": [
+"A,k.left,k.top,k.width,k.height",
+"b,O,m,this.state.width,this.state.height",
+"ee,De,Oe,this.state.menuWidth,this.state.menuHeight"
+]
+},
+"Window.ProcessShuttingDown": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+},
+"Window.ResizeTo": {
+"arities": [
+3
+],
+"count": 12,
+"samples": [
+"1280,Li.innerHeight,!1",
+"Xs.UIDisplayPrefs.nFriendsListSingleWindowWidthPx,Li.innerHeight,!1",
+"this.state.menuWidth,this.state.menuHeight,ee??!0"
+]
+},
+"Window.RestoreWindowSizeAndPosition": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"cr.strRestoreDetails"
+]
+},
+"Window.SetComposition": {
+"arities": [
+3
+],
+"count": 1,
+"samples": [
+"k,A,H"
+]
+},
+"Window.SetGamepadUIAutoDisplayScale": {
+"arities": [
+1
+],
+"count": 2,
+"samples": [
+"J",
+"!0"
+]
+},
+"Window.SetGamepadUIManualDisplayScaleFactor": {
+"arities": [
+1
+],
+"count": 3,
+"samples": [
+"ae",
+"J"
+]
+},
+"Window.SetHideOnClose": {
+"arities": [
+1
+],
+"count": 5,
+"samples": [
+"!1",
+"!!w.bHideOnClose"
+]
+},
+"Window.SetKeyFocus": {
+"arities": [
+1
+],
+"count": 4,
+"samples": [
+" true ",
+"!0",
+" false "
+]
+},
+"Window.SetMinSize": {
+"arities": [
+2
+],
+"count": 9,
+"samples": [
+"Ln.KO,Ln.rS",
+"Ln.Y$,Ln.rS",
+"Qt,Kt"
+]
+},
+"Window.SetModal": {
+"arities": [
+1
+],
+"count": 2,
+"samples": [
+"!0",
+"!1"
+]
+},
+"Window.SetResizeGrip": {
+"arities": [
+2
+],
+"count": 2,
+"samples": [
+"w,j",
+"0,0"
+]
+},
+"Window.SetWindowFlashing": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"Br"
+]
+},
+"Window.SetWindowIcon": {
+"arities": [
+1
+],
+"count": 7,
+"samples": [
+"\"voice\"",
+"\"messages\"",
+"\"steam\""
+]
+},
+"Window.ShowWindow": {
+"arities": [
+0
+],
+"count": 14,
+"samples": [
+""
+]
+},
+"Window.ToggleFullScreen": {
+"arities": [
+1
+],
+"count": 3,
+"samples": [
+"!De",
+"!0",
+"!1"
+]
+},
+"Window.ToggleMaximize": {
+"arities": [
+0
+],
+"count": 1,
+"samples": [
+""
+]
+}
+},
+"enums": {
+"k_EAccepted": 1,
+"k_EAccountFlagAdmin": 16,
+"k_EAccountFlagAppEditor": 64,
+"k_EAccountFlagBannedFromWebAPI": 33554432,
+"k_EAccountFlagDebug": 1024,
+"k_EAccountFlagDisabled": 2048,
+"k_EAccountFlagEmailValidated": 16384,
+"k_EAccountFlagForcePasswordChange": 131072,
+"k_EAccountFlagGlobalModerator": 134217728,
+"k_EAccountFlagHWIDSet": 128,
+"k_EAccountFlagLimitedUser": 4096,
+"k_EAccountFlagLimitedUserForce": 8192,
+"k_EAccountFlagLockdown": 8388608,
+"k_EAccountFlagLogonExtraSecurity": 524288,
+"k_EAccountFlagLogonExtraSecurityDisabled": 1048576,
+"k_EAccountFlagMasterAppEditor": 16777216,
+"k_EAccountFlagNeedLogs": 4194304,
+"k_EAccountFlagNeedsSSANextSteamLogon": 1073741824,
+"k_EAccountFlagNormalUser": 0,
+"k_EAccountFlagParentalSettings": 268435456,
+"k_EAccountFlagPartnerMember": 67108864,
+"k_EAccountFlagPasswordSet": 4,
+"k_EAccountFlagPersonaNameSet": 1,
+"k_EAccountFlagSteam2MigrationComplete": 2097152,
+"k_EAccountFlagSupervisor": 32,
+"k_EAccountFlagSupport": 8,
+"k_EAccountFlagThirdPartySupport": 536870912,
+"k_EAccountFlagUnbannable": 2,
+"k_EAccountFlagVacBeta": 512,
+"k_EAccountFlagValveEmail": 32768,
+"k_EActivateGameOverlayToWebPageMode_Default": 0,
+"k_EActivateGameOverlayToWebPageMode_Modal": 1,
+"k_EAppReleaseState_Disabled": 5,
+"k_EAppReleaseState_PreloadOnly": 3,
+"k_EAppReleaseState_Prerelease": 2,
+"k_EAppReleaseState_Released": 4,
+"k_EAppReleaseState_Unavailable": 1,
+"k_EAppReleaseState_Unknown": 0,
+"k_EAppUpdateContentType_Content": 0,
+"k_EAppUpdateContentType_Max": 3,
+"k_EAppUpdateContentType_Shader": 2,
+"k_EAppUpdateContentType_Workshop": 1,
+"k_EAppUpdateProgress_Committing": 6,
+"k_EAppUpdateProgress_Copying": 5,
+"k_EAppUpdateProgress_Download": 2,
+"k_EAppUpdateProgress_Max": 7,
+"k_EAppUpdateProgress_Preallocating": 1,
+"k_EAppUpdateProgress_Staging": 3,
+"k_EAppUpdateProgress_VerifyingInstalledFiles": 0,
+"k_EAppUpdateProgress_VerifyingStagedFiles": 4,
+"k_EButton_A": 7,
+"k_EButton_ApplicationMenu": 1,
+"k_EButton_Axis0": 32,
+"k_EButton_Axis1": 33,
+"k_EButton_Axis2": 34,
+"k_EButton_Axis3": 35,
+"k_EButton_Axis4": 36,
+"k_EButton_DPad_Down": 6,
+"k_EButton_DPad_Left": 3,
+"k_EButton_DPad_Right": 5,
+"k_EButton_DPad_Up": 4,
+"k_EButton_Dashboard_Back": 2,
+"k_EButton_Grip": 2,
+"k_EButton_IndexController_A": 2,
+"k_EButton_IndexController_B": 1,
+"k_EButton_IndexController_JoyStick": 35,
+"k_EButton_Max": 64,
+"k_EButton_ProximitySensor": 31,
+"k_EButton_Reserved0": 50,
+"k_EButton_Reserved1": 51,
+"k_EButton_SteamVR_Touchpad": 32,
+"k_EButton_SteamVR_Trigger": 33,
+"k_EButton_System": 0,
+"k_EChatFontSizeDefault": 2,
+"k_EChatFontSizeLarge": 3,
+"k_EChatFontSizeSmall": 1,
+"k_EClientUsedInputTypeController": 2,
+"k_EClientUsedInputTypeKeyboard": 0,
+"k_EClientUsedInputTypeMax": 3,
+"k_EClientUsedInputTypeMouse": 1,
+"k_EComputerActiveStateActive": 1,
+"k_EComputerActiveStateIdle": 2,
+"k_EComputerActiveStateInvalid": 0,
+"k_EConnectivityTestResult_CaptivePortal": 2,
+"k_EConnectivityTestResult_Connected": 1,
+"k_EConnectivityTestResult_Failed": 4,
+"k_EConnectivityTestResult_NoLAN": 6,
+"k_EConnectivityTestResult_TimedOut": 3,
+"k_EConnectivityTestResult_Unknown": 0,
+"k_EConnectivityTestResult_WifiDisabled": 5,
+"k_ECuratorFollow": 1,
+"k_ECuratorIgnore": 3,
+"k_ECuratorUnfollow": 2,
+"k_ECuratorUnignore": 4,
+"k_EFloatingGamepadTextInputModeModeEmail": 2,
+"k_EFloatingGamepadTextInputModeModeMultipleLines": 1,
+"k_EFloatingGamepadTextInputModeModeNumeric": 3,
+"k_EFloatingGamepadTextInputModeModeSingleLine": 0,
+"k_EGameIDTypeApp": 0,
+"k_EGameIDTypeGameMod": 1,
+"k_EGameIDTypeShortcut": 2,
+"k_EHTTPProxyMode_Automatic": 3,
+"k_EHTTPProxyMode_Invalid": 0,
+"k_EHTTPProxyMode_Manual": 2,
+"k_EHTTPProxyMode_None": 1,
+"k_EInstallMgrStateCanceled": 16,
+"k_EInstallMgrStateComplete": 14,
+"k_EInstallMgrStateCreateApps": 9,
+"k_EInstallMgrStateFailed": 15,
+"k_EInstallMgrStateFreeLicense": 3,
+"k_EInstallMgrStateNone": 0,
+"k_EInstallMgrStateReadFromMedia": 10,
+"k_EInstallMgrStateSetup": 1,
+"k_EInstallMgrStateShowCDKey": 4,
+"k_EInstallMgrStateShowChangeMedia": 11,
+"k_EInstallMgrStateShowConfig": 7,
+"k_EInstallMgrStateShowEULAs": 8,
+"k_EInstallMgrStateShowPassword": 6,
+"k_EInstallMgrStateShowSignup": 13,
+"k_EInstallMgrStateWaitAppInfo": 5,
+"k_EInstallMgrStateWaitLegacyCDKeys": 12,
+"k_EInstallMgrStateWaitLicense": 2,
+"k_ELaunchOptionType_Benchmark": 9,
+"k_ELaunchOptionType_Config": 4,
+"k_ELaunchOptionType_Default": 1,
+"k_ELaunchOptionType_Editor": 7,
+"k_ELaunchOptionType_Manual": 8,
+"k_ELaunchOptionType_Multiplayer": 3,
+"k_ELaunchOptionType_None": 0,
+"k_ELaunchOptionType_OSVR": 15,
+"k_ELaunchOptionType_OculusVR": 13,
+"k_ELaunchOptionType_OpenVR": 5,
+"k_ELaunchOptionType_OpenVROverlay": 14,
+"k_ELaunchOptionType_OpenXR": 16,
+"k_ELaunchOptionType_Option1": 10,
+"k_ELaunchOptionType_Option2": 11,
+"k_ELaunchOptionType_Option3": 12,
+"k_ELaunchOptionType_SafeMode": 2,
+"k_ELaunchOptionType_Server": 6,
+"k_ENetFakeLocalSystemState_CaptivePortal_InPlace": 3,
+"k_ENetFakeLocalSystemState_CaptivePortal_Redirected": 2,
+"k_ENetFakeLocalSystemState_NoInternet": 4,
+"k_ENetFakeLocalSystemState_NoLAN": 1,
+"k_ENetFakeLocalSystemState_NoSteam": 5,
+"k_ENetFakeLocalSystemState_Normal": 0,
+"k_ENoiseGateLevel_High": 3,
+"k_ENoiseGateLevel_Low": 1,
+"k_ENoiseGateLevel_Medium": 2,
+"k_ENoiseGateLevel_Off": 0,
+"k_ENotifyFlagByEmail": 1,
+"k_ENotifyFlagByPush": 2,
+"k_ENotifyFlagNone": 0,
+"k_EOverlayToStoreFlag_AddToCart": 1,
+"k_EOverlayToStoreFlag_AddToCartAndShow": 2,
+"k_EOverlayToStoreFlag_None": 0,
+"k_EPFAuditAction_AddedAcceptedForUseFlag": 9,
+"k_EPFAuditAction_AddedContentDescriptor": 25,
+"k_EPFAuditAction_AddedForceAppropriateFlag": 7,
+"k_EPFAuditAction_AddedForceInappropriateFlag": 5,
+"k_EPFAuditAction_AddedIgnoreTextContentCheckFlag": 19,
+"k_EPFAuditAction_AddedIncompatibleFlag": 3,
+"k_EPFAuditAction_AddedRestrictedCountry": 27,
+"k_EPFAuditAction_ApprovedByModerator": 15,
+"k_EPFAuditAction_ApprovedForSteamChina": 17,
+"k_EPFAuditAction_Banned": 1,
+"k_EPFAuditAction_ClearedReports": 11,
+"k_EPFAuditAction_ClearedVoteBannedUsers": 22,
+"k_EPFAuditAction_Deleted": 23,
+"k_EPFAuditAction_PermanentlyDeleted": 24,
+"k_EPFAuditAction_RejectedByModerator": 16,
+"k_EPFAuditAction_RejectedForSteamChina": 18,
+"k_EPFAuditAction_RemovedAcceptedForUseFlag": 10,
+"k_EPFAuditAction_RemovedContentDescriptor": 26,
+"k_EPFAuditAction_RemovedForceAppropriateFlag": 8,
+"k_EPFAuditAction_RemovedForceInappropriateFlag": 6,
+"k_EPFAuditAction_RemovedIgnoreTextContentCheckFlag": 20,
+"k_EPFAuditAction_RemovedIncompatibleFlag": 4,
+"k_EPFAuditAction_RemovedRestrictedCountry": 28,
+"k_EPFAuditAction_RequireVerification": 12,
+"k_EPFAuditAction_ResendVerificationEmail": 13,
+"k_EPFAuditAction_SubmissionVerified": 14,
+"k_EPFAuditAction_TransferredOwnership": 29,
+"k_EPFAuditAction_UnBanned": 2,
+"k_EPFAuditAction_VoteBannedUsers": 21,
+"k_EPFSplitType_GreenlightItem": 2,
+"k_EPFSplitType_MicrotransactionItem": 0,
+"k_EPFSplitType_SharedFile": 3,
+"k_EPFSplitType_WorkshopItem": 1,
+"k_EPagedSettingsInitialFocus_Default": 0,
+"k_EPagedSettingsInitialFocus_PageContent": 2,
+"k_EPagedSettingsInitialFocus_PageList": 1,
+"k_EPending": 0,
+"k_EPositionBottomLeft": 2,
+"k_EPositionBottomRight": 3,
+"k_EPositionInvalid": -1,
+"k_EPositionTopLeft": 0,
+"k_EPositionTopRight": 1,
+"k_ERaiseGameWindowResult_Failure": 3,
+"k_ERaiseGameWindowResult_NotRunning": 1,
+"k_ERaiseGameWindowResult_Success": 2,
+"k_ERejected": 2,
+"k_ERemoteClientInstallAccessDenied": 9,
+"k_ERemoteClientInstallAlreadyInstalled": 7,
+"k_ERemoteClientInstallDownloadFiltered": 4,
+"k_ERemoteClientInstallFail": 2,
+"k_ERemoteClientInstallNetworkError": 10,
+"k_ERemoteClientInstallNoSpace": 3,
+"k_ERemoteClientInstallOK": 1,
+"k_ERemoteClientInstallRequiresEULA": 6,
+"k_ERemoteClientInstallRequiresUI": 5,
+"k_ERemoteClientInstallTimeout": 8,
+"k_ERemoteClientLaunchAccessDenied": 14,
+"k_ERemoteClientLaunchBroadcasting": 22,
+"k_ERemoteClientLaunchBusy": 23,
+"k_ERemoteClientLaunchCanceled": 26,
+"k_ERemoteClientLaunchCaptureBusy": 30,
+"k_ERemoteClientLaunchDisabledLocal": 20,
+"k_ERemoteClientLaunchDisabledRemote": 21,
+"k_ERemoteClientLaunchDownloadFiltered": 12,
+"k_ERemoteClientLaunchDownloadNoSpace": 11,
+"k_ERemoteClientLaunchDownloadRequiresUI": 13,
+"k_ERemoteClientLaunchDownloadStarted": 10,
+"k_ERemoteClientLaunchDriversNotInstalled": 24,
+"k_ERemoteClientLaunchFail": 2,
+"k_ERemoteClientLaunchInvisible": 27,
+"k_ERemoteClientLaunchNetworkError": 15,
+"k_ERemoteClientLaunchOK": 1,
+"k_ERemoteClientLaunchOtherGameRunning": 9,
+"k_ERemoteClientLaunchParentalUnlockFailed": 17,
+"k_ERemoteClientLaunchProgress": 16,
+"k_ERemoteClientLaunchRequiresCloudConflictResolution": 31,
+"k_ERemoteClientLaunchRequiresEULA": 5,
+"k_ERemoteClientLaunchRequiresLaunchOption": 4,
+"k_ERemoteClientLaunchRequiresUI": 3,
+"k_ERemoteClientLaunchRestrictedCountry": 28,
+"k_ERemoteClientLaunchScreenLocked": 18,
+"k_ERemoteClientLaunchStreamClientFail": 8,
+"k_ERemoteClientLaunchStreamTimeout": 7,
+"k_ERemoteClientLaunchTimeout": 6,
+"k_ERemoteClientLaunchTransportUnavailable": 25,
+"k_ERemoteClientLaunchUnauthorized": 29,
+"k_ERemoteClientLaunchUnsupported": 19,
+"k_ESteamRealmChina": 2,
+"k_ESteamRealmGlobal": 1,
+"k_ESteamRealmUnknown": 0,
+"k_ESuspendResumeProgressState_CloudSync": 2,
+"k_ESuspendResumeProgressState_Complete": 1,
+"k_ESuspendResumeProgressState_Invalid": 0,
+"k_ESuspendResumeProgressState_LoggingIn": 3,
+"k_ESuspendResumeProgressState_WaitingForApp": 4,
+"k_ESuspendResumeProgressState_Working": 5,
+"k_ETrailerGrowAmount_Implicit": 1,
+"k_ETrailerGrowAmount_Medium": 2,
+"k_ETrailerGrowAmount_None": 0,
+"k_ETwoFactorTokenSteamguardScheme_Email": 1,
+"k_ETwoFactorTokenSteamguardScheme_None": 0,
+"k_ETwoFactorTokenSteamguardScheme_TwoFactor": 2,
+"k_EVRError_ComponentBusy": 3,
+"k_EVRError_ComponentNotInstalled": 2,
+"k_EVRError_CrashProtection": 4,
+"k_EVRError_HmdError": 5,
+"k_EVRError_None": 0,
+"k_EVRError_PathChanged": 6,
+"k_EVRError_VRSkipParam": 1,
+"k_EWindowBringToFrontAndForceOS": 1,
+"k_EWindowBringToFrontInvalid": 0,
+"k_EWindowBringToFrontUsingExistingOSState": 3,
+"k_EWindowBringToFrontWithoutForcingOS": 2
+},
+"gamepad_settings": true,
+"names_seen": [
+"AddShortcut",
+"App",
+"Apps",
+"BIsModOrShortcut",
+"BIsOwned",
+"CancelGameAction",
+"CancelInstall",
+"CloseSideMenus",
+"ContinueGameAction",
+"ContinueInstall",
+"DisplayManager",
+"Downloads",
+"EnableAllDownloads",
+"GamepadUIMainWindowInstance",
+"GetActiveGameActions",
+"GetFocusedWindowInstance",
+"GetLaunchOptionsForApp",
+"GetState",
+"Installs",
+"LoadEula",
+"LocalDownloadOverview",
+"MarkEulaAccepted",
+"MenuStore",
+"Navigator",
+"OpenInstallWizard",
+"OpenMainMenu",
+"OpenUninstallWizard",
+"RegisterForAppDetails",
+"RegisterForShowInstallWizard",
+"ResumeAppUpdate",
+"RunGame",
+"SetAppLaunchOptions",
+"SetAppResolutionOverride",
+"SetGamescopeInternalResolution",
+"SetInstallFolder",
+"SetShortcutName",
+"Settings",
+"SteamClient",
+"SteamUIStore",
+"System",
+"TerminateApp",
+"WindowStore",
+"allApps",
+"allAppsCollection",
+"allGamesCollection",
+"appStore",
+"app_type",
+"bWaitingForUI",
+"bytes_downloaded",
+"bytes_in_progress",
+"bytes_total",
+"display_name",
+"eAppError",
+"eInstallState",
+"get",
+"getBoundingClientRect",
+"iInstallFolder",
+"isArray",
+"local_per_client_data",
+"m_CurrentUser",
+"m_DownloadItems",
+"m_DownloadOverview",
+"m_Navigator",
+"m_mapApps",
+"minutes_playtime_forever",
+"nAppID",
+"nDiskSpaceAvailable",
+"nDiskSpaceRequired",
+"nGameActionID",
+"nIndex",
+"overall_estimated_time_remaining_sec",
+"overall_percent_complete",
+"per_client_data",
+"queue_index",
+"rgAppIDs",
+"rgApps",
+"rt_last_time_played",
+"size_on_disk",
+"strActionName",
+"strDescription",
+"strGameName",
+"strLaunchOptions",
+"strNumDone",
+"strNumTotal",
+"strResolutionOverride",
+"strSteamID",
+"strTaskDetails",
+"strTaskName",
+"toObject",
+"update_appid",
+"update_network_bytes_per_second",
+"update_state"
+],
+"navigator_pages": [
+"Home",
+"App",
+"MyAchievements",
+"FriendAchievements",
+"GlobalAchievements",
+"AllCollections",
+"Collection",
+"Downloads",
+"AppProperties",
+"Console"
+],
+"settings_routes": [
+"Root",
+"General",
+"Display",
+"Power",
+"Internet",
+"Notifications",
+"Bluetooth",
+"Audio",
+"Storage",
+"System",
+"Security",
+"Internal",
+"Developer",
+"Controller",
+"Keyboard",
+"Customization",
+"Friends",
+"Downloads",
+"Cloud",
+"RemotePlay",
+"Library",
+"Family",
+"Home",
+"Account",
+"InGame",
+"Compatibility",
+"Interface",
+"Music",
+"Broadcast",
+"Voice",
+"InGameVoice",
+"DesktopSecurity",
+"GameRecording",
+"Accessibility",
+"Store"
+],
+"stores": [
+"App",
+"BrowserAndBackstackInstances",
+"ControllerStore",
+"DEBUG_GetDesiredSteamUIWindows",
+"DEBUG_SuppressWindowType",
+"FocusNavController",
+"FocusedAppWindowStore",
+"LocalizationManager",
+"MainWindowBrowserManager",
+"NotificationStore",
+"RemotePlayStore_SteamUI",
+"ResetNewContentRollup",
+"SetHoverPresentation",
+"SetVoiceAutoShowVideoStream",
+"SetVoiceEchoLocalMic",
+"SetVoiceForceConnectingStatus",
+"SetVoiceForceReconnectingStatus",
+"SetVoiceLogDetails",
+"ShowVROverlay",
+"SteamUIStore",
+"SuspendResumeStore",
+"SystemAudioDevicesStore",
+"SystemDevkitStore",
+"SystemDisplayManagerStore",
+"SystemDockStore",
+"SystemNetworkStore",
+"SystemPerfStore",
+"SystemPowerStore",
+"SystemReportStore",
+"SystemStoragStore",
+"UpdateStore",
+"VRPathProperties",
+"appAchievementProgressCache",
+"appActivityStore",
+"appDetailsCache",
+"appDetailsStore",
+"appInfoStore",
+"appReviewStore",
+"appSpotlightStore",
+"appStore",
+"badgeStore",
+"cloudStorage",
+"cloudStorageInternalState",
+"cm",
+"collectionStore",
+"communityStore",
+"consoleStore",
+"controllerConfiguratorStore",
+"downloadsStore",
+"dragStore",
+"friendStore",
+"g_FriendsUIApp",
+"g_GRS",
+"g_LogManager",
+"g_PopupManager",
+"g_SubscriptionStore",
+"g_WindowFocusCoordinator",
+"gameReleaseStore",
+"hardwarePromoStore",
+"installFolderStore",
+"jsonit",
+"libraryEventStore",
+"loginStore",
+"multiSelectStore",
+"onYouTubeIframeAPIReady",
+"overlayStore",
+"partnerEventStore",
+"playNextStore",
+"protoPathProperties",
+"screenshotStore",
+"searchstore",
+"securitystore",
+"serverBrowserStore",
+"settingsStore",
+"settingsZooStore",
+"showcaseStore",
+"steamAjaxRequest",
+"streamingStore",
+"subscriberAgreementStore",
+"tempNavStore",
+"toJS",
+"trendingStore",
+"uiBroadcastWatchStore",
+"uiStore",
+"urlStore",
+"userProfileStore",
+"vrAudioSettingsStore",
+"vrFrameStore",
+"vrGamepadInput",
+"vrPooledPopupStore",
+"workshopStore"
+],
+"version": "1792618285"
+}

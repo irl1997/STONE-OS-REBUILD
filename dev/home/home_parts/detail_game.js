@@ -8,6 +8,7 @@ function enterDetail(i, opts = {}) {
   /* Five actions at most on one line (they always fit the 1920 stage); the image options live in GRÁFICOS. */
   const sec = [[g.fav ? 'Quitar de favoritos' : 'Favorito', 'fav'], [`Rendimiento: ${g.perf ? profOf(g.perf).n : 'Global'}`, 'perf'], ['Propiedades', 'opt']];
   if (g.src === 'steam' && g.inst) sec.splice(2, 0, ['Gráficos', 'gfx'], ['Experiencia', 'xp']);
+  if (running) sec[1] = ['Cerrar juego', 'close'];          /* the profile applies at start; while playing it is in the quick menu */
   $('#detail').innerHTML = `
     <div class="col"><div class="origin">${esc(g.o)}</div><h1${g.n.length > 22 ? ' class="long"' : ''}>${esc(g.n)}</h1>
       <div class="stats">${playText(g)} · Última sesión: ${running ? 'ahora' : g.last}</div>
@@ -26,7 +27,7 @@ function enterDetail(i, opts = {}) {
   });
   NAV.id = 'detail';
   requestAnimationFrame(() => applyFocus());
-  hints([['A', prim.charAt(0) + prim.slice(1).toLowerCase()], ['B', 'Volver']]);
+  hints([['A', DL.at[g.appid] && !canPlay ? 'Opciones de la descarga' : prim.charAt(0) + prim.slice(1).toLowerCase()], ['B', 'Volver']]);
   if (g.src === 'steam' && g.inst) { experience(g, i); imgLoad(g, i); }
   if (g.src === 'steam' && !g.art.hero) Sys.artWant(g.appid).catch(() => {});      /* its big picture, if Steam had not cached it */
 }
@@ -124,13 +125,14 @@ function detailA(el) {
     play('select');
     if (S.running === g.i) return resumeGame();
     if (!g.inst && g.src !== 'shortcut') {
-      if (g.upd || DL.at[g.appid]) { play('error'); return toast(`${g.n} ya se está instalando: el avance se ve en esta pantalla`, false); }
+      if (g.upd || DL.at[g.appid]) return downloadDlg(g);
       const pe = $('#dprim'); if (pe) pe.textContent = 'PIDIENDO A STEAM';
       return installGame(g.appid, g.n).then(ok => { const e2 = $('#dprim'); if (e2 && G[curG] === g && /^PIDIENDO/.test(e2.textContent)) e2.textContent = ok ? 'INSTALANDO' : 'INSTALAR'; if (S.screen === 'detail') dlShow(); });
     }
     return launch(g);
   }
   if (a === 'opt') { play('select'); return propsDlg(g); }
+  if (a === 'close') { play('select'); return closeGameAsk('detail'); }
   if (a === 'fav') {
     play('select'); g.fav = !g.fav; if (g.fav) favs.add(g.appid); else favs.delete(g.appid); savePrefs();
     enterDetail(curG, { r: 1, c: 0 }); return toast(g.fav ? 'Añadido a favoritos' : 'Quitado de favoritos', false);

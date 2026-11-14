@@ -57,7 +57,7 @@ def test_no_store_object_is_not_answering_and_empty_stores_are_an_empty_account(
 def test_hidden_steam_has_only_appstore_and_tools_and_shortcuts_are_left_out():
     raw, games = _owned("""
         window.appStore={m_mapApps:new Map([
-          [620, app(620,'Portal 2',{per_client_data:[{installed:true,bytes_downloaded:123}],minutes_playtime_forever:600,rt_last_time_played:1700000000})],
+          [620, app(620,'Portal 2',{per_client_data:[{clientid:'0',installed:true,bytes_downloaded:123}],minutes_playtime_forever:600,rt_last_time_played:1700000000})],
           [35140, app(35140,'Batman: Arkham Asylum',{installed:false,size_on_disk:'0'})],
           [228980, app(228980,'Steamworks Common Redistributables',{app_type:4})],
           [1493710, app(1493710,'Proton Experimental',{app_type:4})],
@@ -66,6 +66,20 @@ def test_hidden_steam_has_only_appstore_and_tools_and_shortcuts_are_left_out():
           [1245620, app(1245620,'Sin tipo',{app_type:undefined})]])};""")
     assert games == [(620, "Portal 2", True, 600, 1700000000, 123), (35140, "Batman: Arkham Asylum", False, 0, 0, 0),
                      (1245620, "Sin tipo", False, 0, 0, 0)], raw
+
+
+def test_installed_means_on_this_console_and_games_not_owned_are_left_out():
+    # Steam's entry per machine of the account: clientid "0" is this console; `installed` is the most
+    # available machine's (the person's PC). Seen in Steam's code (SteamAppOverview, client 1792618285).
+    _raw, games = _owned("""
+        window.appStore={m_mapApps:new Map([
+          [1174180, app(1174180,'Red Dead Redemption 2',{installed:true,
+                    per_client_data:[{clientid:'0',installed:false},{clientid:'7656',installed:true,bytes_downloaded:9}]})],
+          [570, app(570,'Dota 2',{per_client_data:[{clientid:'0',installed:true}],local_per_client_data:{clientid:'0',installed:true}})],
+          [730, app(730,'Visto en la tienda',{BIsOwned:()=>false})],
+          [1091500, app(1091500,'Cyberpunk 2077',{BIsOwned:()=>true,installed:true})]])};""")
+    assert games == [(1174180, "Red Dead Redemption 2", False, 0, 0, 0), (570, "Dota 2", True, 0, 0, 0),
+                     (1091500, "Cyberpunk 2077", True, 0, 0, 0)], games
 
 
 def test_every_source_is_joined_without_repeating_a_game():
@@ -95,6 +109,43 @@ def test_who_is_signed_in():
     assert _run("window.App={m_CurrentUser:{strSteamID:''}};", CEF.LOGIN_EXPRESSION) == "out"
     assert _run("window.App={m_CurrentUser:{strSteamID:'76561198000000001'}};", CEF.LOGIN_EXPRESSION) == "in"
     assert _run("window.App={get m_CurrentUser(){throw new Error('x');}};", CEF.LOGIN_EXPRESSION) is None
+
+
+STEAM_APPS = """
+const calls=[];const det={620:{strResolutionOverride:'Default'},730:{strResolutionOverride:'1280x800'},570:{},440:null};
+window.SteamClient={Apps:{
+  RegisterForAppDetails:(id,cb)=>{calls.push(['details',id]);if(det[id]!==null)setTimeout(()=>cb(det[id]),5);return {unregister(){calls.push(['unregister',id]);}};},
+  SetAppResolutionOverride:(id,v)=>calls.push(['set',id,v]),
+  TerminateApp:(g,b)=>calls.push(['terminate',g,b])},
+ Downloads:{EnableAllDownloads:(on,c)=>calls.push(['all',on,c]),ResumeAppUpdate:(id,c)=>calls.push(['resume',id,c])}};
+window.calls=calls;"""
+
+
+def test_game_resolution_is_read_from_the_games_details_as_steam_does():
+    sys.path.insert(0, os.path.join(REPO, "modules", "display"))
+    from stone_display import steam as D
+    # Steam's interface reads strResolutionOverride from RegisterForAppDetails (absent: "Default");
+    # 3.1.0-rc4 called GetResolutionOverrideForApp, which Steam's interface never calls.
+    out = json.loads(_run(STEAM_APPS, D.ensure_native_expression([620, 730, 570, 440]).replace(
+        "return JSON.stringify({changed:ch,kept:kept});", "return JSON.stringify({changed:ch,kept:kept,calls});")))
+    assert out["changed"] == [570, 620] and out["kept"] == {"730": "1280x800"}, out          # 440: no details, left alone
+    assert ["set", 620, "Native"] in out["calls"] and not [c for c in out["calls"] if c[0] == "set" and c[1] in (730, 440)]
+
+
+def test_closing_a_game_and_pausing_downloads_use_steams_own_calls():
+    js = STEAM_APPS + "window.downloadsStore={LocalDownloadOverview:{update_appid:620,paused:true}};"
+    assert _run(js, CEF.terminate_expression(620) + "&&JSON.stringify(calls)") == '[["terminate","620",false]]'
+    assert _run(js, CEF.download_control_expression(620, "pause") + "&&JSON.stringify(calls)") == '[["all",false,"0"]]'
+    assert _run(js, CEF.download_control_expression(620, "resume") + "&&JSON.stringify(calls)") == '[["all",true,"0"],["resume",620,"0"]]'
+    running = STEAM_APPS + "window.downloadsStore={LocalDownloadOverview:{update_appid:570,paused:false}};"
+    assert _run(running, CEF.download_control_expression(620, "resume") + "&&JSON.stringify(calls)") == '[["resume",620,"0"]]'
+    assert _run("", CEF.terminate_expression(620)) is None                          # Steam's interface not loaded
+    for bad in (0, -1, 2**64):
+        try:
+            CEF.terminate_expression(bad)
+            raise AssertionError(bad)
+        except ValueError:
+            pass
 
 
 if __name__ == "__main__":
