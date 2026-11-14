@@ -60,6 +60,11 @@
 #hdr .brand{font-size:30px;letter-spacing:.5em;text-shadow:0 2px 18px rgba(0,0,0,.35)}
 #status{padding:12px 22px;border-radius:999px;gap:22px;color:var(--warm)}
 #status svg{stroke:var(--warm)}
+#neticon{position:relative;display:inline-flex;width:28px;height:28px}
+#neticon svg{stroke:var(--warm)}
+#neticon.n-none,#neticon.n-off{opacity:.75}
+#neticon .nwarn{position:absolute;right:-7px;top:-5px;min-width:15px;height:15px;border-radius:50%;background:#e8b04a;color:#1a1408;
+  font:700 11px/15px var(--f-text);text-align:center;text-shadow:none}
 #tabs{left:50%;top:42px;transform:translateX(-50%);display:flex;gap:4px;padding:6px;border-radius:999px;
   font-family:var(--f-text);font-weight:400;font-size:19px;letter-spacing:.01em}
 #tabs span{padding:12px 26px;border-radius:999px;color:var(--text-2);transition:background var(--d-step) var(--e-step),color var(--d-step) var(--e-step)}

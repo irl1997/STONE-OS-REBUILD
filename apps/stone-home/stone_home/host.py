@@ -47,7 +47,9 @@ FRONT_URL_SETTLE_S = 1.5     # ... or this long after Big Picture is on screen
 FRONT_HOLD_S = 600           # Steam not up yet (its first start updates itself): waited for this long ...
 FRONT_HOLD_CHECK_S = 2       # ... asking its interface this often; then its window is asked for anyway
 STORE_FRESH_S = 600          # the shop window is read from Steam again after this long
-SHOW_WHAT = ("login", "store", "app", "install")
+SHOW_WHAT = ("login", "store", "app", "install", "settings", "downloads")
+FRONT_WATCH_S = 1.2          # Steam's settings or downloads in front: how often its page is read
+FRONT_NAV_TRIES = 8          # ... and how many times STONE asks it to open that page
 INSTALL_CONFIRM_S = 20       # Steam said it started an install: its appmanifest must appear within this
 INSTALL_DOUBT_S = 8          # Steam's wizard gave no clear answer: its files are still looked at this long
 DOWNLOADS_LIVE_S = 1.0       # Steam's live downloads are asked for at most this often
@@ -1043,16 +1045,21 @@ class Host:
         a game starting): a "steam" event says when. Passwords and payments are typed into Steam,
         never into STONE."""
         what = args[0] if args else None
-        if what not in SHOW_WHAT or len(args) not in ((2,) if what == "app" else (1, 2) if what == "install" else (1,)) or \
-                (len(args) == 2 and not library.valid_appid(args[1])):
+        if what not in SHOW_WHAT or len(args) not in ((2,) if what in ("app", "settings") else (1, 2) if what == "install" else (1,)) or \
+                (len(args) == 2 and what != "settings" and not library.valid_appid(args[1])) or \
+                (what == "settings" and args[1] not in steamcef.SETTINGS_SECTIONS):
             return done(None, "InvalidValue", "what to show")
         # "install" with a game: Steam's own install dialog is opened first, so there is a window to
         # show (board, 3.1.0-rc3: "Ver en Steam" after a failed install had nothing to show)
-        url = None if what == "login" else system.STEAM_URLS["store"] if what == "store" else \
+        url = None if what in ("login", "settings") else system.STEAM_URLS["store"] if what == "store" else \
+            system.STEAM_URLS["downloads"] if what == "downloads" else \
             f"steam://store/{args[1]}" if what == "app" else f"steam://install/{args[1]}" if len(args) == 2 else None
         _want_steam()
         if os.environ.get("STONE_SESSION") != "stone":
             # Inside Steam's own Game Mode (or in development) Steam shows its pages by itself.
+            if what == "settings":
+                return self._in_steam_ui(lambda: self.steam_ui.open_settings(args[1]), None,
+                                         lambda res=None, code=None, msg="": done({"managed": False, "sent": bool(res and res.get("ok"))}))
             if url:
                 self._steam_url(url)
             return done({"managed": False, "sent": bool(url)})
@@ -1064,7 +1071,13 @@ class Host:
         now = time.monotonic()
         self.front = {"what": what, "url": url, "since": now, "sent": url is None, "shown": None, "big": False,
                       "had_account": library.account_id(self.root()) is not None, "signed": None,
-                      "hold": now, "checking": False, "checked": 0.0, "ready": False, "cancel": False}
+                      "hold": now, "checking": False, "checked": 0.0, "ready": False, "cancel": False,
+                      # Steam's settings or downloads: the page STONE opens, then follows (B leaves it: STONE is back)
+                      "nav": args[1] if what == "settings" else "Downloads" if what == "downloads" else None,
+                      "nav_state": None, "nav_tries": 0, "watch_busy": False, "watch_t": 0.0, "in_page": False,
+                      "out_n": 0, "leave": False}
+        if what == "downloads":
+            self.front["sent"] = True                     # the page is opened by navigating, not by its URL
         print(f"[stone] steam: its own window wanted in front ({what})", flush=True)
         if self.front_timer is None:
             self.front_timer = GLib.timeout_add(FRONT_POLL_MS, self._front_tick)
@@ -1084,7 +1097,7 @@ class Host:
         if fr["what"] == "install" and fr["url"] and not fr["sent"]:
             fr["sent"] = True
             self._steam_url(fr["url"])                           # its dialog is the window to show
-        if fr["what"] in ("store", "app"):
+        if fr["what"] in ("store", "app", "settings", "downloads"):
             fr["big"] = True
             self._steam_url(system.FRONT_URLS["bigpicture"])     # the interface made for a controller
         print(f"[stone] steam: its own window asked in front ({fr['what']})", flush=True)
@@ -1169,6 +1182,14 @@ class Host:
                                or now - fr["since"] >= FRONT_URL_WAIT_S):
             fr["sent"] = True
             self._steam_url(fr["url"])
+        if fr["nav"]:
+            if fr["leave"]:
+                try:
+                    self.session_focus.set_steam_value(0)
+                except Exception:  # noqa: BLE001
+                    pass
+                return self._front_end("back")
+            self._front_nav(fr, now)
         if fr["what"] == "login" and not fr["had_account"]:
             # The sign-in is done when the account's folder exists: STONE takes the screen back by
             # itself (Steam may open its main window then, which is not for a controller).
@@ -1181,6 +1202,45 @@ class Host:
                     pass
                 return self._front_end("signed")
         return True
+
+    def _front_nav(self, fr, now):
+        """Steam's settings or downloads in front: STONE opens that page in Steam's interface (as its
+        own navigator does) and then follows it. When the person leaves it (B, as anywhere in SteamOS)
+        STONE takes the screen back; the guide button does too, as always (supervisor)."""
+        if fr["shown"] is None:
+            return
+        if fr["nav_state"] is None and now - fr["shown"] >= FRONT_URL_SETTLE_S:
+            fr["nav_state"] = "busy"
+
+            def go():
+                try:
+                    r = self.steam_ui.open_settings(fr["nav"]) if fr["what"] == "settings" else self.steam_ui.open_page(fr["nav"])
+                except Exception as e:  # noqa: BLE001
+                    r = f"error {e!r}"
+                ok = isinstance(r, str) and r.endswith(": ok")
+                fr["nav_tries"] += 1
+                fr["nav_state"] = "done" if ok else None if fr["nav_tries"] < FRONT_NAV_TRIES else "failed"
+                fr["watch_t"] = time.monotonic()
+                print(f"[stone] steam: {fr['what']} {fr['nav']} opened in its interface: {r}", flush=True)
+            threading.Thread(target=go, daemon=True).start()
+        if fr["nav_state"] == "done" and not fr["watch_busy"] and now - fr["watch_t"] >= FRONT_WATCH_S:
+            fr["watch_busy"] = True
+
+            def watch():
+                try:
+                    path = self.steam_ui.location()
+                except Exception:  # noqa: BLE001
+                    path = None
+                want = steamcef.FRONT_PAGES.get(fr["what"], "")
+                if path and want in path:
+                    fr["in_page"], fr["out_n"] = True, 0
+                elif fr["in_page"] and steamcef.left_page(path, fr["what"]):
+                    fr["out_n"] += 1
+                    if fr["out_n"] >= 2:
+                        print(f"[stone] steam: the person left its {fr['what']} ({path}); STONE takes the screen back", flush=True)
+                        fr["leave"] = True
+                fr["watch_busy"], fr["watch_t"] = False, time.monotonic()
+            threading.Thread(target=watch, daemon=True).start()
 
     def _front_end(self, why):
         fr, self.front, self.front_timer = self.front, None, None
@@ -1318,6 +1378,8 @@ class Host:
         "net.wifiList": (lambda: connect.wifi_list(), 0),
         "net.wifiConnect": (lambda ssid, pw: connect.wifi_connect(ssid, pw), 2),
         "net.wifiDisconnect": (lambda dev: connect.wifi_disconnect(dev), 1),
+        "net.wifiForget": (lambda ssid: connect.wifi_forget(ssid), 1),
+        "net.wifiRadio": (lambda on: connect.wifi_radio(on), 1),
     }
 
     def _connect(self, name, args, done):

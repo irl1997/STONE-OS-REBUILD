@@ -1122,6 +1122,49 @@ def H15_steam_in_front_for_the_sign_in_and_the_store_and_plan_b():
 
 
 @test
+def H15b_steams_settings_in_front_and_b_out_of_them_gives_the_screen_back():
+    """3.1.0-rc6 (board, 14-11-2026: «Abrir en Steam» had no way back): Steam's settings come in front
+    like its store (Big Picture), STONE opens the section in its interface, and when the person leaves
+    the settings (B, as anywhere in SteamOS) STONE takes the screen back."""
+    with Tmp() as d:
+        root = FX.build(os.path.join(d, "Steam"))
+        seen, events = [], []
+        h = host_mod.Host(lambda n, data: events.append((n, data)), stoned=FakeStoned(), sysapi=system.System(spawn=seen.append), steam_root=root)
+        for bad in (["settings"], ["settings", "Wallet"], ["settings", 620], ["downloads", "620"]):
+            assert run_host(h, {"method": "steam.show", "args": bad})[1] == "InvalidValue", bad
+        os.environ["STONE_SESSION"] = "stone"
+        try:
+            f = h.session_focus = FakeFront()
+            ui = h.steam_ui = FakeSteamUI(ok=True)
+            ui.reachable = lambda: True
+            where = {"path": "/library/home"}
+            ui.location = lambda: where["path"]
+            assert run_host(h, {"method": "steam.show", "args": ["settings", "Display"]})[0] == {"managed": True}
+            assert wait_for(lambda: f.value == 3) and seen == ["steam://open/bigpicture"]
+            f.window = 0x600030                                                    # Big Picture on screen
+            assert wait_for(lambda: ("settings", "Display") in ui.calls, timeout=6), ui.calls
+            where["path"] = "/settings/display"
+            spin(2.0)
+            assert h.front is not None and h.front["in_page"] and f.value == 3     # still in Steam's settings
+            where["path"] = "/library/home"                                        # B out of the settings
+            assert wait_for(lambda: h.front is None, timeout=8), "STONE did not take the screen back"
+            assert f.value == 0 and events[-1] == ("steam", {"front": False, "why": "back", "what": "settings"})
+            assert seen == ["steam://open/bigpicture", "steam://close/bigpicture"]     # no page URL: it is navigated to
+            # Steam's downloads: the same way; its page is opened in its interface, never by a blind URL
+            del seen[:], events[:], ui.calls[:]
+            f.window = 0
+            assert run_host(h, {"method": "steam.show", "args": ["downloads"]})[0] == {"managed": True}
+            assert wait_for(lambda: f.value == 3)
+            f.window = 0x600031
+            assert wait_for(lambda: ("page", "Downloads") in ui.calls, timeout=6)
+            f.value = 0                                                            # guide button (supervisor)
+            assert wait_for(lambda: h.front is None) and events[-1][1]["why"] == "closed"
+            assert seen == ["steam://open/bigpicture", "steam://close/bigpicture"]
+        finally:
+            del os.environ["STONE_SESSION"]
+
+
+@test
 def H16_store_pages_through_the_host_and_artwork_from_stones_own_cache():
     with Tmp() as d:
         os.environ["XDG_CACHE_HOME"] = os.path.join(d, "cache")

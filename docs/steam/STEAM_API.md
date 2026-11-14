@@ -56,6 +56,7 @@ Generado por `dev/steam/steam_api.py report` a partir del código que Valve publ
 - ✅ field Installs: occurs in Steam's code
 - ✅ field LoadEula: occurs in Steam's code
 - ✅ field LocalDownloadOverview: occurs in Steam's code
+- ✅ field LocationPathName: occurs in Steam's code
 - ✅ field MarkEulaAccepted: occurs in Steam's code
 - ✅ field MenuStore: occurs in Steam's code
 - ✅ field Navigator: occurs in Steam's code

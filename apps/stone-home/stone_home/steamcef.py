@@ -818,3 +818,26 @@ def download_control_expression(appid, action):
 def download_control(appid, action, port=PORT):
     """Pause Steam's downloads or let this game's download go on. True, or None if Steam does not answer."""
     return True if ui_value(download_control_expression(appid, action), port, timeout=6.0) == "ok" else None
+
+
+# ---- Where Steam's own interface is (its page), to give the screen back to STONE ---------------
+# Steam's Game Mode interface keeps its page in the main window's LocationPathName ("/settings/...",
+# "/library/downloads", "/library/home"): its code, client 1792618285, routes Settings.Root ->
+# "/settings" and Downloads -> "<library>/downloads". When STONE opened Steam's settings and the person
+# leaves them (B, as anywhere in SteamOS), STONE takes the screen back.
+LOCATION_EXPRESSION = (
+    "(()=>{const S=window.SteamUIStore;const w=S&&S.WindowStore&&S.WindowStore.GamepadUIMainWindowInstance;"
+    "if(!w)return null;try{return String(w.LocationPathName||'');}catch(e){return null;}})()")
+FRONT_PAGES = {"settings": "/settings", "downloads": "/downloads"}
+
+
+def location(port=PORT):
+    """The page Steam's Game Mode interface shows ("/settings/display"...), or None."""
+    v = ui_value(LOCATION_EXPRESSION, port, timeout=4.0)
+    return v[:200] if isinstance(v, str) else None
+
+
+def left_page(path, what):
+    """True when Steam's interface shows a page outside the one STONE opened for `what`."""
+    want = FRONT_PAGES.get(what)
+    return bool(want and isinstance(path, str) and path and want not in path)

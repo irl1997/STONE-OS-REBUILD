@@ -91,8 +91,44 @@ def test_network_status_wifi_list_and_connect():
     assert ["nmcli", "device", "wifi", "connect", "Casa", "password", "secreta123"] in run.calls
     assert "error" in C.wifi_connect("Casa", "corta", run) and "error" in C.wifi_connect("x" * 40, None, run)
     bad_pw = fake({("nmcli", "device", "wifi", "connect"): (4, "", "Error: Connection activation failed: Secrets were required, but not provided.")})
-    assert C.wifi_connect("Casa", "incorrecta1", bad_pw) == {"error": "Contraseña incorrecta"}
+    assert C.wifi_connect("Casa", "incorrecta1", bad_pw) == {"error": "Contraseña incorrecta", "needs_password": True}
     assert C.wifi_disconnect("wlan0", run) == {"ok": True} and "error" in C.wifi_disconnect("wlan0; reboot", run)
+
+
+SAVED = {("nmcli", "-t", "-f", "NAME,TYPE", "connection", "show"): (0, "Casa:802-11-wireless\nWired connection 1:802-3-ethernet\n", ""),
+         ("nmcli", "-g", "802-11-wireless.ssid", "connection", "show", "Casa"): (0, "Casa\n", "")}
+
+
+def test_after_disconnecting_the_network_can_be_joined_again_without_its_password():
+    # 3.1.0-rc5 on the board: after DESCONECTAR the list still said "Conectada" and offered nothing
+    run = fake({**SAVED, ("nmcli", "-t", "-f", "IN-USE,SSID,SIGNAL,SECURITY"): (0, ":Casa:82:WPA2\n:Vecino:70:WPA2\n", ""),
+                ("nmcli", "connection", "up", "id", "Casa"): (0, "Connection successfully activated", "")})
+    nets = C.wifi_list(run)["networks"]
+    assert [(n["ssid"], n["known"], n["active"]) for n in nets] == [("Casa", True, False), ("Vecino", False, False)]
+    assert C.wifi_connect("Casa", None, run) == {"ok": True}                      # what NetworkManager kept
+    assert ["nmcli", "connection", "up", "id", "Casa"] in run.calls and not [c for c in run.calls if "password" in c]
+    asks = fake({**SAVED, ("nmcli", "device", "wifi", "connect"): (4, "", "Error: Connection activation failed: Secrets were required, but not provided.")})
+    assert C.wifi_connect("Vecino", None, asks) == {"error": "Esta red pide contraseña", "needs_password": True}
+    gone = fake({("nmcli", "device", "wifi", "connect"): (10, "", "Error: No network with SSID 'Bar' found.")})
+    assert C.wifi_connect("Bar", None, gone) == {"error": "La red Bar ya no está al alcance"}
+
+
+def test_forget_turn_wifi_on_and_off_and_the_status_icon_facts():
+    run = fake({**SAVED, ("nmcli", "connection", "delete"): (0, "", ""), ("nmcli", "radio", "wifi"): (0, "", "")})
+    assert C.wifi_forget("Casa", run) == {"ok": True} and ["nmcli", "connection", "delete", "id", "Casa"] in run.calls
+    assert C.wifi_forget("Otra", run) == {"ok": True}                              # nothing kept: nothing to do
+    assert C.wifi_radio(False, run) == {"ok": True} and ["nmcli", "radio", "wifi", "off"] in run.calls
+    assert "error" in C.wifi_radio("on", run) and "error" in C.wifi_forget("x" * 40, run)
+    wifi = fake({("nmcli", "-t", "-f", "DEVICE,TYPE,STATE,CONNECTION"): (0, "wlan0:wifi:connected:Casa\n", ""),
+                 ("nmcli", "-t", "-f", "WIFI", "radio"): (0, "enabled\n", ""),
+                 ("nmcli", "-t", "-f", "IN-USE,SSID,SIGNAL"): (0, " :Vecino:70\n*:Casa:64\n", ""),
+                 ("nmcli", "networking", "connectivity"): (0, "limited\n", "")})
+    s = C.net_status(wifi)
+    assert (s["online"], s["radio"], s["ssid"], s["signal"], s["internet"]) == (True, True, "Casa", 64, "limited")
+    off = fake({("nmcli", "-t", "-f", "DEVICE,TYPE,STATE,CONNECTION"): (0, "wlan0:wifi:unavailable:\n", ""),
+                ("nmcli", "-t", "-f", "WIFI", "radio"): (0, "disabled\n", "")})
+    s = C.net_status(off)
+    assert (s["online"], s["radio"], s["signal"], s["internet"]) == (False, False, None, "none")
 
 
 if __name__ == "__main__":

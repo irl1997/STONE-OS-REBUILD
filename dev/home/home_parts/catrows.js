@@ -1,6 +1,9 @@
 /* Steam's own settings section for each STONE category (opened in Steam's interface). */
 const STEAM_SEC = { 'Sistema': 'System', 'Pantalla': 'Display', 'Audio': 'Audio', 'Mandos': 'Controller', 'Red': 'Internet',
   'Bluetooth': 'Bluetooth', 'Almacenamiento': 'Storage', 'Energía': 'Power', 'Actualizaciones': 'System', 'Accesibilidad': 'Accessibility' };
+/* What each category Steam handles holds, in Steam's own settings (its sections, client 1792618285). */
+const STEAM_WHAT = { 'Sistema': ['El idioma, la fecha y hora, el nombre de la consola y la información del sistema', 'Idioma, fecha y hora, nombre de la consola'],
+  'Mandos': ['La configuración de los mandos, sus botones y la vibración', 'Botones, vibración y distribución de cada mando'] };
 /* How STONE draws inside Game Mode (read at start by /usr/libexec/stone-home). GPU: Chromium,
    at the screen's own resolution (4K on a 4K TV), the same engine as Steam's interface. Sin GPU:
    the WebKit shell drawing in software, the fallback (smooth only at low resolutions). */
@@ -54,7 +57,7 @@ function displayRows() {
       v: resTxt(D.output), act: 'info', where: D.native && D.output && D.output.w < D.native.w
         ? 'El cable o el adaptador no llevan la nativa: «Conexión» dice lo máximo que llevan' : 'La consola envía esta resolución al televisor' },
     ...linkRows(D),
-    { l: 'Encuadre', s: 'Si los bordes se cortan en tu televisor, reduce la imagen hasta ver las esquinas', v: `${FRAME} %`, key: 'frame' },
+    { l: 'Encuadre', s: 'Si las cuatro esquinas marcadas no se ven completas en tu televisor, usa ← → hasta verlas', v: `${FRAME} %`, key: 'frame' },
     { l: 'Juegos ven', s: D.policy === 'native' ? 'La resolución del televisor; cada juego decide cómo dibujar' : 'Lo que Steam da por defecto',
       v: D.policy === 'native' ? `Televisor · ${games}` : `Steam · ${games}`, key: 'gameres' }];
 }
@@ -67,12 +70,14 @@ function loadSteamSet(refresh) {
     if (S.screen === 'settings' && CATS[cat] === 'Steam') enterSettings({ pane: !!NAV.pane, ri: NAV.pane ? NAV.c : 0 });
   });
 }
+/* a level from 0 to 1 (volumes) as a percentage, as Steam shows it; anything else as Steam gives it */
+const ssValue = v => typeof v === 'number' && v >= 0 && v <= 1 && !Number.isInteger(v) ? `${Math.round(v * 100)} %` : String(v);
 function steamSetRows() {
   const ss = S.ss;
   if (!ss) { if (!S.ssLoading) loadSteamSet(); return [{ l: 'Leyendo…', s: 'Preguntando a Steam qué ajustes ofrece', v: '', ro: true }]; }
   const head = { l: 'Actualizar la lista', s: ss.available ? `${ss.settings.length} ajustes leídos de este Steam` : (ss.error || 'Steam no respondió'), v: 'Actualizar', act: 'sset', refresh: true };
   const rows = (ss.settings || []).slice().sort((a, b) => a.area.localeCompare(b.area) || a.label.localeCompare(b.label)).map(x => ({
-    l: x.label, s: x.area, v: x.type === 'bool' ? (x.value ? 'Sí' : 'No') : String(x.value),
+    l: x.label, s: x.area, v: x.type === 'bool' ? (x.value ? 'Sí' : 'No') : ssValue(x.value),
     act: x.writable ? 'sset' : 'info', sset: x, where: `${x.area}: ${x.label} = ${x.value}${x.writable ? '' : ' (solo lectura)'}` }));
   if (S.steamAcct === undefined) { S.steamAcct = null; Sys.firstrunStatus().then(f => { S.steamAcct = !!f.steam_account; }, () => { S.steamAcct = false; }).then(() => { if (S.screen === 'settings' && CATS[cat] === 'Steam') enterSettings({ pane: !!NAV.pane, ri: NAV.pane ? NAV.c : 0 }); }); }
   /* signed in: Steam says so (S.libLogged), or at least an account has signed in on this console */
@@ -194,9 +199,12 @@ function measureSmoothness() {
   }, 450);
 }
 /* Opens the matching section of Steam's settings over STONE; if Steam cannot be reached, says where it is. */
+/* 3.1.0-rc6: through the same way as the sign-in and the store (steamOpen): Steam's window in front,
+   B out of its settings or the guide button gives the screen back to STONE (rc5: Steam was asked to
+   navigate, but its window was not brought in front and there was no way back). */
 function openSteamSettings(r) {
   if (!r.sec) return toast(r.where, false);
-  return Sys.openSteamSettings(r.sec).then(res => { if (!res || !res.ok) toast(r.where, false); }, () => toast(r.where, false));
+  return steamOpen('settings', r.sec);
 }
 /* A new drawing mode applies when STONE Home starts: save, say so, restart. */
 function applyRender() {
@@ -219,6 +227,7 @@ function updRow() {
   return { l: 'Buscar actualizaciones', s: u.result && u.result !== 'success' ? 'La última búsqueda no terminó bien: vuelve a intentarlo' : 'Busca una versión nueva de STONE OS y la descarga ahora', v: 'Buscar', act: 'updnow' };
 }
 function updateNow(ri) {
+  if (!needNet('buscar actualizaciones')) return;
   play('select');
   Sys.updateNow().then(() => { S.updAsked = Date.now(); toast('Buscando una versión nueva de STONE OS…', false); enterSettings({ pane: true, ri }); updPoll(ri); },
     e => { play('error'); toast(e && e.code === 'Unsupported' ? 'Esta imagen no tiene servicio de actualización' : 'No se pudo empezar a buscar', false); });
@@ -273,7 +282,6 @@ function catRows() {
   switch (CATS[cat]) {
     case 'Pantalla': return { d: 'Ajusta cómo se ve STONE en tu televisor.', rows: [
       ...displayRows(),
-      { l: 'Área segura', s: 'Usa ← → hasta que las cuatro esquinas se vean completas', v: `${S.safe} %`, key: 'safe' },
       steam('Resolución y frecuencia', 'Las fija Steam para todo el sistema', 'Botón STEAM → Ajustes → Pantalla'),
       steam('HDR', 'Según el televisor y el juego', 'Botón STEAM → Ajustes → Pantalla'),
       { l: 'Tamaño del texto', s: 'Se aplica a STONE Home', v: SIZES[S.ts], key: 'ts' },
@@ -316,14 +324,20 @@ function catRows() {
       { l: 'Sistema base', s: rel.STONE_BASE_IMAGE ? `Bazzite · ${rel.STONE_BASE_IMAGE}${rel.STONE_BASE_DIGEST ? ' @ ' + rel.STONE_BASE_DIGEST.slice(7, 19) : ''}` : 'Bazzite (imagen derivada de bazzite-deck)', v: '' },
       { l: 'Componentes', s: [rel.STONE_KERNEL && `kernel ${rel.STONE_KERNEL}`, rel.STONE_MESA && `Mesa ${rel.STONE_MESA}`, rel.STONE_GOVERNOR_VERSION && `regulador ${rel.STONE_GOVERNOR_VERSION}`].filter(Boolean).join(' · ') || '—', v: '' },
       { l: 'Modo escritorio', s: 'Avanzado: el escritorio de Linux, fuera de la experiencia de consola', v: 'Abrir', act: 'desktop' },
-      { l: 'NEURAL RENDER', s: 'Experimental: sin backends; ninguno funciona hoy de forma medible en la GPU de la BC-250', v: 'Sin backend' }] };
+      /* a feature that does not work today is not put in front of the person: only in technical mode */
+      ...(S.tech ? [{ l: 'NEURAL RENDER', s: 'Experimental: sin backends; ninguno funciona hoy de forma medible en la GPU de la BC-250', v: 'Sin backend' }] : [])] };
     case 'Actualizaciones': return { d: 'Las actualizaciones llegan como una imagen completa y se aplican al reiniciar. Si una falla, la anterior sigue disponible.', rows: [
       { l: 'Estado', s: !dep ? 'No se pudo leer el estado del sistema' : dep.staged ? `Actualización lista: ${dep.staged.version || 'nueva versión'}. Se aplica al reiniciar` : `Instalada: ${(dep.booted && dep.booted.version) || rel.STONE_VERSION || '—'}`, v: '' },
       ...(dep && dep.staged ? [{ l: 'Reiniciar y actualizar', s: 'La consola se reinicia con la versión nueva', v: 'Reiniciar', act: 'reboot' }] : []),
       ...(dep && dep.staged ? [] : [updRow()]),
       { l: 'Comprobación automática', s: updTimerText(S.info && S.info.updates), v: '' },
       { l: 'Volver a la versión anterior', s: dep && dep.rollback ? `Guardada: ${dep.rollback.version || 'versión anterior'}` : 'No hay una versión anterior guardada todavía', v: 'Cómo', act: 'info', where: 'Reinicia y, en el menú de arranque, elige la segunda entrada. STONE OS arranca con la versión anterior' }] };
-    default: return { d: `${CATS[cat]}: lo gestiona Steam.`, rows: [steam(`Abrir ${CATS[cat].toLowerCase()}`, 'Panel nativo de Steam', `Botón STEAM → Ajustes → ${CATS[cat]}`)] };
+    default: {
+      /* what lives in Steam's own settings, said plainly; B out of them comes back here */
+      const what = STEAM_WHAT[CATS[cat]] || ['Ajustes de Steam', 'Se abren los ajustes de Steam'];
+      return { d: `${what[0]} están en los ajustes de Steam. Se abren aquí mismo; para volver, B o el botón guía.`,
+        rows: [steam(`Abrir ${CATS[cat].toLowerCase()} en Steam`, what[1], `Botón STEAM → Ajustes → ${CATS[cat]}`)] };
+    }
   }
 }
 

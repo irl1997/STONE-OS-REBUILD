@@ -177,6 +177,7 @@
 /* Steam's own window is coming in front (D-34) */
 #sfront{position:absolute;inset:0;z-index:44;background:#0a0a0b;visibility:hidden;opacity:0;transition:opacity var(--d-enter) var(--e-light),visibility 0s linear var(--d-enter)}
 #sfront.on{visibility:visible;opacity:1;transition:opacity var(--d-enter) var(--e-light),visibility 0s}
+#sfront.slow{transition:opacity .8s var(--e-light),visibility 0s linear .8s}
 #sfront .sf-box{position:absolute;left:96px;top:300px;width:1100px;display:flex;flex-direction:column;gap:26px;border-top:3px solid var(--vein);padding-top:40px}
 #sfront .st-cap{font-family:var(--f-mono);font-size:16px;letter-spacing:.2em;color:var(--vein)}
 #sfront h2{margin:0;font-family:var(--f-display);font-weight:200;font-size:64px;line-height:76px;letter-spacing:.2em;color:var(--warm)}

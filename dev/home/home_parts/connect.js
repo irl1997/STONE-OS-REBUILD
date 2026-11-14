@@ -26,19 +26,60 @@ function setSysVol(d, ri) {
   Bridge.call('audio.volume', v).catch(() => toast('No se pudo cambiar el volumen', false));
   enterSettings({ pane: true, ri });
 }
+/* Ajustes → Red, as SteamOS has it: Wi-Fi on or off, the network in use (DESCONECTAR / OLVIDAR),
+   networks joined before join again without their password, whether there is internet. 3.1.0-rc5 on
+   the board: after DESCONECTAR the old list still said "Conectada" and offered no way back. */
+const NET_INTERNET = { full: ['Hay conexión a internet', 'Sí'], limited: ['La red no tiene salida a internet: revisa el router', 'No'],
+  portal: ['La red pide iniciar sesión en una página web (hoteles, cafeterías): no se puede desde la consola', 'No'],
+  none: ['Sin conexión', 'No'], unknown: ['Conectado; NetworkManager no comprobó internet', '—'] };
 function netRows() {
   const N = CX.net, W = CX.wifi;
   if (!N) { cxLoad('net', () => Bridge.call('net.status'), 'Red'); return [{ l: 'Leyendo…', s: 'Cable y Wi-Fi', v: '' }]; }
   if (N.error) return [{ l: 'Red no disponible', s: N.error, v: '' }];
-  const rows = N.devices.map(d => ({ l: d.type === 'wifi' ? 'Wi-Fi' : 'Cable', s: d.state === 'connected' ? `Conectado${d.connection ? ' · ' + d.connection : ''}` : d.state === 'unavailable' ? 'Sin cable o apagado' : 'Sin conectar',
-    v: d.state === 'connected' ? 'Conectado' : '—', act: d.type === 'wifi' && d.state === 'connected' ? 'wifi-off' : 'info', dev: d.device, where: d.type === 'wifi' ? 'Elige una red de la lista' : 'Conecta un cable de red: se configura solo' }));
-  if (N.devices.some(d => d.type === 'wifi')) {
+  const wifi = N.devices.find(d => d.type === 'wifi'), cable = N.devices.find(d => d.type === 'ethernet'), rows = [];
+  if (wifi) {
+    const on = N.radio !== false && wifi.state !== 'unavailable';
+    rows.push({ l: 'Wi-Fi', s: wifi.state === 'connected' ? `Conectado a ${N.ssid || wifi.connection || 'una red'}${N.signal != null ? ` · señal ${N.signal} %` : ''}`
+      : on ? (wifi.state === 'connecting' ? 'Conectando…' : 'Sin conectar: elige una red de la lista') : 'Apagado', v: on ? 'Activado' : 'Desactivado', act: 'wifi-radio', on });
+  }
+  if (cable) rows.push({ l: 'Cable de red', s: cable.state === 'connected' ? 'Conectado: se configura solo' : 'Sin cable conectado', v: cable.state === 'connected' ? 'Conectado' : '—', act: 'info', where: 'Conecta un cable de red: se configura solo' });
+  const it = NET_INTERNET[N.online ? N.internet || 'unknown' : 'none'] || NET_INTERNET.unknown;
+  rows.push({ l: 'Internet', s: it[0], v: it[1], act: 'info', where: it[0] });
+  if (wifi && N.radio !== false && wifi.state !== 'unavailable') {
     if (!W) { cxLoad('wifi', () => Bridge.call('net.wifiList'), 'Red'); rows.push({ l: 'Buscando redes Wi-Fi…', s: '', v: '' }); }
-    else if (W.error) rows.push({ l: 'Wi-Fi', s: W.error, v: '' });
-    else W.networks.slice(0, 12).forEach(n => rows.push({ l: n.ssid, s: `${n.secure ? 'Con contraseña' : 'Abierta'} · señal ${n.signal} %`, v: n.active ? 'Conectada' : 'Conectar', act: n.active ? 'info' : 'wifi', ssid: n.ssid, secure: n.secure, where: 'Ya conectada' }));
+    else if (W.error) rows.push({ l: 'Redes Wi-Fi', s: W.error, v: '' });
+    else {
+      if (!W.networks.length) rows.push({ l: 'Ninguna red a la vista', s: 'Acerca la consola al router o busca de nuevo', v: '' });
+      W.networks.slice(0, 12).forEach(n => rows.push({ l: n.ssid, s: `${n.active ? 'En uso' : n.known ? 'Guardada' : n.secure ? 'Con contraseña' : 'Abierta'} · señal ${n.signal} %`,
+        v: n.active ? 'Conectada' : 'Conectar', act: n.active ? 'wifi-net' : 'wifi', ssid: n.ssid, secure: n.secure, known: n.known, dev: wifi.device }));
+    }
     rows.push({ l: 'Buscar de nuevo', s: 'Actualiza la lista de redes', v: '', act: 'wifi-scan' });
   }
   return rows;
+}
+/* Every network change: the status, the list and the status icon are read again. */
+function netRun(method, args, ok, ri, onError) {
+  toast('Un momento…', false);
+  return Bridge.call(method, ...args).then(() => { if (ok) toast(ok, false); return true; },
+    e => { const m = (e && e.message) || 'No se pudo'; if (onError && onError(m)) return false; play('error'); toast(m, false); return false; })
+    .then(r => { delete CX.net; delete CX.wifi; netIconKick(); if (S.screen !== 'game' && S.screen !== 'off' && !$('#dlg').classList.contains('on')) enterSettings({ pane: true, ri }); return r; });
+}
+function wifiJoin(r, ri) {
+  const ask = () => osk(`CONTRASEÑA DE ${r.ssid}`, pw => pw === null ? enterSettings({ pane: true, ri }) : netRun('net.wifiConnect', [r.ssid, pw], `Conectado a ${r.ssid}`, ri), true);
+  if (r.secure && !r.known) return ask();
+  /* open networks and networks joined before: no password; if it is asked after all, the keyboard */
+  return netRun('net.wifiConnect', [r.ssid, null], `Conectado a ${r.ssid}`, ri, m => /contraseña/i.test(m) ? (ask(), true) : false);
+}
+function wifiNetDlg(r, ri) {
+  const back = () => { closeDlg(); play('back'); enterSettings({ pane: true, ri }); };
+  openDlg(`<span class="st-cap">WI-FI</span><h2>${esc(r.ssid)}</h2><p>Conectada · ${esc(r.s.split(' · ').pop())}</p><p>«Olvidar» borra también la contraseña guardada.</p>
+    <div class="btns"><span class="txt-f" data-f data-b="no">VOLVER</span><span class="txt-f" data-f data-b="off">DESCONECTAR</span><span class="txt-f" data-f data-b="forget">OLVIDAR</span></div>`, {
+    onA: el => {
+      const b = el.dataset.b; if (b === 'no') return back();
+      closeDlg(); play('select');
+      if (b === 'off') return netRun('net.wifiDisconnect', [r.dev], 'Wi-Fi desconectado. Elige una red para volver a conectar', ri);
+      return netRun('net.wifiDisconnect', [r.dev], null, ri).then(() => netRun('net.wifiForget', [r.ssid], `${r.ssid}: olvidada`, ri));
+    }, onB: back });
 }
 function btRows() {
   const B = CX.bt;
@@ -54,13 +95,9 @@ async function cxAct(r, ri) {
     return Bridge.call(method, ...args).then(() => { if (ok) toast(ok, false); cxReset(key, catName, ri); }, e => { play('error'); toast((e && e.message) || 'No se pudo', false); cxReset(key, catName, ri); }); };
   if (r.act === 'audio-out') { play('select'); return run('audio.default', [r.id], `Sonido por: ${r.l}`, 'audio', 'Audio'); }
   if (r.act === 'wifi-scan') { play('select'); delete CX.wifi; return enterSettings({ pane: true, ri }); }
-  if (r.act === 'wifi-off') { play('select'); return run('net.wifiDisconnect', [r.dev], 'Wi-Fi desconectado', 'net', 'Red'); }
-  if (r.act === 'wifi') {
-    play('select');
-    if (!r.secure) return run('net.wifiConnect', [r.ssid, null], `Conectado a ${r.ssid}`, 'net', 'Red').then(() => { delete CX.wifi; });
-    return osk(`CONTRASEÑA DE ${r.ssid}`, pw => pw === null ? enterSettings({ pane: true, ri })
-      : run('net.wifiConnect', [r.ssid, pw], `Conectado a ${r.ssid}`, 'net', 'Red').then(() => { delete CX.wifi; }), true);
-  }
+  if (r.act === 'wifi-radio') { play('select'); return netRun('net.wifiRadio', [!r.on], r.on ? 'Wi-Fi desactivado' : 'Wi-Fi activado: buscando redes…', ri); }
+  if (r.act === 'wifi-net') { play('select'); return wifiNetDlg(r, ri); }
+  if (r.act === 'wifi') { play('select'); return wifiJoin(r, ri); }
   if (r.act === 'bt-scan') {
     play('select'); CX.btScanning = true; enterSettings({ pane: true, ri });
     return Bridge.call('bt.scan').then(x => { CX.bt = x; }, e => { toast((e && e.message) || 'No se pudo buscar', false); }).then(() => { CX.btScanning = false; if (S.screen === 'settings') enterSettings({ pane: true, ri }); });
@@ -106,15 +143,21 @@ function storageRows() {
   const T = CX.storage;
   if (!T) { cxLoad('storage', () => Bridge.call('storage.status'), 'Almacenamiento'); return [{ l: 'Leyendo…', s: 'Discos, juegos y descargas', v: '' }]; }
   if (T.error) return [{ l: 'No se pudo leer el almacenamiento', s: T.error, v: '' }];
-  const rows = T.libraries.map(l => ({ l: l.path, s: `${GB(l.free)} libres de ${GB(l.total)}${l.low ? ' · queda poco espacio' : ''}`, v: l.low ? 'Aviso' : 'Bien', act: 'info', where: 'Biblioteca de Steam en este disco' }));
-  T.downloads.forEach(d => rows.push({ l: `Descargando · ${d.name}`, s: d.progress == null ? 'En cola o preparando' : `${GB(d.downloaded)} de ${GB(d.total)}`, v: d.progress == null ? '—' : `${Math.round(d.progress * 100)} %`, act: 'steam-dl' }));
+  /* the disk by what it is for the person (the console's own disk, a card, an external disk), not by its Linux path */
+  const disk = (l, k) => /\/run\/media\/|\/media\//.test(l.path) ? `Disco externo ${T.libraries.length > 2 ? k : ''}`.trim() : /\/mnt\//.test(l.path) ? 'Otro disco' : 'Disco de la consola';
+  const rows = T.libraries.map((l, k) => ({ l: disk(l, k), s: `${GB(l.free)} libres de ${GB(l.total)}${l.low ? ' · queda poco espacio: borra algún juego que no uses' : ''}`, v: l.low ? 'Poco espacio' : 'Bien', act: 'info', where: `Biblioteca de Steam en ${l.path}` }));
+  T.downloads.forEach(d => rows.push({ l: `Descargando · ${d.name}`, s: d.progress == null ? 'En cola o preparando' : `${GB(d.downloaded)} de ${GB(d.total)}`, v: d.progress == null ? '—' : `${Math.round(d.progress * 100)} %`, act: 'steam-dl', appid: d.appid }));
   T.games.slice(0, 20).forEach(g => rows.push({ l: g.name, s: `Juego ${GB(g.size)} · caché de sombreadores ${GB(g.shader_cache)} · Proton ${GB(g.prefix)}`, v: GB((g.size || 0) + (g.shader_cache || 0) + (g.prefix || 0)), act: 'game-store', game: g }));
   rows.push({ l: 'Volver a leer', s: 'Actualiza tamaños y descargas', v: '', act: 'storage-again' });
   return rows;
 }
 function storeAct(r, ri) {
   if (r.act === 'storage-again') { play('select'); return cxReset('storage', 'Almacenamiento', ri); }
-  if (r.act === 'steam-dl') { play('select'); return toast('La descarga sigue sola, también con la consola en reposo. Al terminar, el juego aparece listo para jugar', false); }
+  if (r.act === 'steam-dl') {
+    /* the game's page: its bar, PAUSAR / REANUDAR (rc5 said "también con la consola en reposo": this console has no standby) */
+    play('select'); const i = G.findIndex(g => g.appid === String(r.appid));
+    return i >= 0 ? enterDetail(i) : toast('La descarga sigue mientras la consola esté encendida. Al terminar, el juego aparece listo para jugar', false);
+  }
   const g = r.game, back = () => { closeDlg(); play('back'); enterSettings({ pane: true, ri }); };
   play('select');
   openDlg(`<h2>${esc(g.name)}</h2><p>Juego: <b>${GB(g.size)}</b> · caché de sombreadores: <b>${GB(g.shader_cache)}</b> · datos de Proton: <b>${GB(g.prefix)}</b></p>

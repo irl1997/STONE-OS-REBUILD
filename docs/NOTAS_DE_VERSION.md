@@ -1,3 +1,57 @@
+# STONE OS (rebuild) 3.1.0-rc6
+
+Auditoría del sistema completo después de probar 3.1.0-rc5 en la consola (14-11-2026). La regla: **llegar y jugar, como en SteamOS**. Lo que la pantalla dice tiene que ser verdad y de Steam siempre se vuelve a STONE. Llega a la consola **por actualización en línea**. Decisión D-39.
+
+**Todo está probado en software (CODE TESTED): pruebas automáticas y la simulación de la interfaz. Nada de esta versión se ha observado todavía en la BC-250.** Pruebas de placa: T-NET-01, T-NET-02, T-NET-03, T-STEAM-22 y T-HOME-07 en `hardware/validation/matrix.yaml`.
+
+## Wi-Fi: siempre se puede volver a conectar
+
+En la consola, después de DESCONECTAR el Wi-Fi no había forma de volver a conectarlo. STONE volvía a leer el estado de la red, pero conservaba la lista anterior de redes, donde tu red seguía diciendo «Conectada». Al elegirla respondía «Ya conectada».
+
+Ajustes → Red funciona ahora como en SteamOS:
+
+- **Wi-Fi activado / desactivado**, con A.
+- **La red en uso** abre sus opciones: **DESCONECTAR**, **OLVIDAR** (borra también la contraseña guardada) o VOLVER.
+- **Las redes guardadas** se vuelven a conectar **sin escribir la contraseña**. Si la red la pide de nuevo, aparece el teclado.
+- **Internet:** dice si hay salida a internet, si la red no la tiene o si pide iniciar sesión en una página web, como en hoteles y cafeterías.
+- Después de cada cambio se vuelve a leer todo: la lista, el estado y el icono.
+- El primer encendido también permite activar el Wi-Fi si está apagado, y se conecta a redes guardadas sin pedir la contraseña.
+
+## El icono de red dice la verdad
+
+El icono de arriba a la derecha era un dibujo fijo de Wi-Fi con señal completa: se veía igual sin red. Ahora es real y se actualiza cada 15 segundos:
+
+- **Cable** si estás conectado por cable.
+- **Wi-Fi con 1, 2 o 3 barras** según la señal.
+- **Un «!»** si la red no tiene internet.
+- **Tachado** si no hay conexión o el Wi-Fi está apagado.
+
+Cuando se pierde internet, STONE lo avisa una vez, y otra vez cuando vuelve. Lo que necesita internet (descargar un juego, la tienda, iniciar sesión, buscar actualizaciones) lo dice antes de intentarlo, en lugar de terminar en «Steam no respondió».
+
+## Abrir en Steam y volver a STONE
+
+«Abrir en Steam» en Ajustes pedía a Steam que mostrara sus ajustes, pero su ventana no pasaba al frente y no había un camino de vuelta. Ahora funciona igual que la tienda y el inicio de sesión:
+
+- **Una transición suave:** STONE se cubre primero con su cortina oscura y entonces aparece Steam. Al volver, STONE reaparece con un fundido, sin cortes.
+- Steam abre **sus ajustes en la sección pedida** (Pantalla, Red, Audio…).
+- **Para volver a STONE, sal de los ajustes con B**, como en cualquier pantalla de SteamOS. También funciona el botón guía del mando.
+- Lo mismo vale para la pantalla de Descargas de Steam.
+
+## Menú rápido durante el juego
+
+En la sesión STONE, Steam funciona sin su propia interfaz de consola, así que el menú rápido de Steam (botón ···) puede no responder. El menú de STONE (botón ☰ durante el juego) tiene ahora:
+
+- **Volumen**, que se cambia con ← →.
+- **El estado de la red.**
+
+## Coherencia de las pantallas
+
+- **Pantalla:** «Encuadre» y «Área segura» hacían lo mismo. Queda solo **Encuadre**, que es el que ajusta la imagen, y las esquinas de ajuste aparecen al elegirlo. Antes aparecían sobre la fila «Televisor».
+- **Almacenamiento:** los discos se llaman «Disco de la consola» o «Disco externo» en lugar de su ruta de Linux. Una descarga abre la ficha del juego, donde se puede pausar. Antes decía que seguía «con la consola en reposo», y esta consola no tiene modo reposo.
+- **Sistema y Mandos** dicen qué hay en los ajustes de Steam (idioma, fecha y hora, botones, vibración…), en lugar de «Panel nativo de Steam».
+- **Ajustes → Steam:** los niveles se muestran en porcentaje («70 %» y no «0.7»). Ya no aparecen el brillo de pantalla, que es de la Steam Deck, ni el modo desarrollador.
+- **Acerca de:** NEURAL RENDER, que hoy no funciona, solo aparece en el modo técnico.
+
 # STONE OS (rebuild) 3.1.0-rc5
 
 Revisión de todo lo que STONE le pide a Steam, **comprobado contra el código de la propia interfaz de Steam** (cliente 1792618285) y no deducido. Corrige tres fallos encontrados en esa revisión y añade dos cosas que faltaban para usar la consola sin entrar a Steam: **cerrar un juego** y **pausar una descarga**. Llega a la consola **por actualización en línea**. Decisión D-38.

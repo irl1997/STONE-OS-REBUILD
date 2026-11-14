@@ -23,7 +23,9 @@ from . import steamcef
 DENY = re.compile(r"(account|login|logon|logout|password|token|purchase|payment|wallet|billing|email|auth|"
                   r"friend|chat|cloud|install|uninstall|delete|remove|reset|shutdown|reboot|restart|suspend|"
                   r"update|download|cookie|session|steamid|secret|cert|factory|format|wipe|clear|crash|"
-                  r"debug|developer|beta|branch|login|signin|signout|gift|market|inventory|key)", re.I)
+                  r"debug|developer|devmode|beta|branch|login|signin|signout|gift|market|inventory|key|"
+                  # a TV console has no built-in screen: its brightness is the Steam Deck's, not this console's
+                  r"brightness)", re.I)
 IDENT = re.compile(r"^[A-Za-z0-9_]+$")
 MAX_ITEMS = 160
 CACHE_S = 600
