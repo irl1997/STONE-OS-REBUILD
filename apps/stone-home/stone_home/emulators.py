@@ -51,9 +51,8 @@ CATALOG = {
 # or sources that start very few games).
 NOT_YET = {
     "switch2": ("Nintendo Switch 2",
-                "Todavía no hay un emulador de Switch 2 que se pueda instalar en esta consola. Los proyectos que existen "
-                "son experimentales: no están publicados en Flathub y arrancan muy pocos juegos. Cuando haya uno publicado, "
-                "llegará a esta lista con una actualización de STONE OS."),
+                "No hay un emulador de Switch 2 en Flathub. Los proyectos que existen son experimentales: en «Switch 2», "
+                "en esta misma pantalla, STONE instala los ports de juegos y el emulador que sus proyectos publican para Linux."),
 }
 
 PENDING = "pending-shortcuts.json"

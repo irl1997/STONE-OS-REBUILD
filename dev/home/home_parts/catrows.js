@@ -132,23 +132,50 @@ Bridge.on('emulator', d => {
   const was = EMU_STATE[d.key] && EMU_STATE[d.key].state;
   EMU_STATE[d.key] = d;
   toast(d.text, false);
+  if (String(d.key).startsWith('port:')) { if (d.state !== 'installing') { S.ports = null; reloadLibrary(); } return emuRedraw(); }
   if (d.state === 'done') { EMU_UPD.keys.delete(d.key); loadEmulators(); if (was !== 'updating') reloadLibrary(); }
   else emuRedraw();
 });
+/* Switch 2 (ports.py): ports of single games (recompilations that need the person's own copy) and the
+   experimental emulator, installed from each project's own GitHub releases. 3.1.0-rc6. */
+function portRows() {
+  if (!S.ports) { if (!S.portsLoading) { S.portsLoading = true; Bridge.call('ports.list').then(r => { S.ports = r.ports; }, () => { S.ports = []; }).then(() => { S.portsLoading = false; emuRedraw(); }); }
+    return [{ l: 'Switch 2', s: 'Leyendo…', v: '', ro: true }]; }
+  return S.ports.map(p => {
+    const st = EMU_STATE['port:' + p.key], busy = st && st.state === 'installing';
+    return { l: p.kind === 'port' ? `${p.name} · port de Switch 2` : `${p.name} · emulador de Switch 2`,
+      s: busy ? st.text : p.installed ? `Instalado · ${p.project} ${p.tag || ''} · necesita tu copia del juego` : `${p.project} · experimental · necesita tu copia del juego`,
+      v: busy ? 'Instalando…' : p.installed ? 'Actualizar' : 'Instalar', act: 'emu', port: p };
+  });
+}
+function portDlg(p) {
+  const back = dlgOver();
+  play('select');
+  openDlg(`<span class="st-cap">${p.kind === 'port' ? 'PORT DE SWITCH 2' : 'EMULADOR DE SWITCH 2'}</span><h2>${esc(p.name.toUpperCase())}</h2>
+    <p>${p.kind === 'port' ? `Un port es el juego convertido en un programa para PC por el proyecto ${esc(p.project)} (licencia ${esc(p.license)}). STONE lo descarga de su página en GitHub y comprueba la descarga.` : `${esc(p.project)} (licencia ${esc(p.license)}), desde su página en GitHub.`}</p>
+    <p><b>Necesitas:</b> ${esc(p.needs)} Tus archivos llegan desde un USB o desde el móvil.</p><p class="tech">${esc(p.note)}</p>
+    <div class="btns"><span class="txt-f" data-f data-b="go">${p.installed ? 'ACTUALIZAR' : 'INSTALAR'}</span><span class="txt-f" data-f data-b="no">VOLVER</span></div>`, {
+    onA: el => { back(); if (el.dataset.b !== 'go') return play('back');
+      if (!needNet('instalar un port')) return;
+      EMU_STATE['port:' + p.key] = { state: 'installing', text: 'Empezando…' }; emuRedraw();
+      Bridge.call('ports.install', p.key).catch(e => { EMU_STATE['port:' + p.key] = null; play('error'); toast((e && e.message) || 'No se pudo', false); emuRedraw(); }); },
+    onB: () => { play('back'); back(); } });
+}
 function emuRows() {
   const have = S.emu.filter(e => e.installed);
   /* asked once by itself when the list is opened with emulators installed */
   if (have.length && !EMU_UPD.checked && !EMU_UPD.busy) setTimeout(() => { if (!EMU_UPD.checked) emuCheck(true); }, 0);
   const head = have.length ? [{ l: 'Buscar actualizaciones', s: emuUpdText(), v: EMU_UPD.busy ? 'Buscando…' : 'Buscar', act: 'emu', check: true },
     ...(EMU_UPD.keys.size ? [{ l: 'Actualizar todos', s: 'Cada emulador con versión nueva se actualiza desde Flathub', v: 'Actualizar', act: 'emu', all: true }] : [])] : [];
-  return head.concat(S.emu.map(e => {
+  return head.concat(S.emu.filter(e => !e.not_yet).map(e => {
     if (e.not_yet) return { l: e.name, s: 'Todavía no hay un emulador que instalar. Pulsa A para saber por qué', v: 'No disponible', act: 'emu', emu: e };
     const st = EMU_STATE[e.key], busy = emuBusy(e.key), upd = e.installed && EMU_UPD.keys.has(e.key);
     return { l: e.name, s: busy ? st.text : e.plays + (e.installed && e.version ? ` · versión ${e.version}` : '') + (upd ? ' · hay una versión nueva' : ''),
       v: busy ? (st.state === 'updating' ? 'Actualizando…' : 'Instalando…') : upd ? 'Actualizar' : e.installed ? 'Instalado' : 'Instalar', act: 'emu', emu: e };
-  }));
+  })).concat(portRows());
 }
 function emuA(r) {
+  if (r.port) return portDlg(r.port);
   if (r.check) { play('select'); return emuCheck(false); }
   if (r.all) {
     play('select');
@@ -303,8 +330,8 @@ function catRows() {
     case 'Steam': return { d: 'Tu cuenta, la tienda y los ajustes de Steam, con el aspecto de STONE. Los ajustes de sí/no se cambian con A.', rows: steamSetRows() };
     case 'Emuladores': {
       if (!S.emu) { if (!S.emuLoading) loadEmulators(); return { d: 'Emuladores de otras consolas, desde Flathub.', rows: [{ l: 'Leyendo…', s: 'Buscando qué emuladores están instalados', v: '', ro: true }] }; }
-      return { d: 'Se instalan desde Flathub y aparecen en tu biblioteca como accesos directos. Pulsa A sobre uno instalado para actualizarlo. Los juegos, las BIOS y las claves de cada consola los pones tú.',
-        rows: emuRows().concat(romRows()) };
+      return { d: 'Tus juegos de otras consolas: tráelos de un USB o del móvil y aparecen en tu biblioteca. Debajo, los emuladores (desde Flathub). Las BIOS y las claves de cada consola las pones tú.',
+        rows: romRows().concat(emuRows()) };
     }
     case 'Rendimiento': return { d: `Perfil activo: ${profOf(S.prof).n}. Elige entre silencio y rendimiento, o ajusta tu propio perfil.`, rows: [
       { l: 'Performance Center', s: 'SILENT, BALANCED, PERFORMANCE y CUSTOM', v: 'Abrir', act: 'perf' },

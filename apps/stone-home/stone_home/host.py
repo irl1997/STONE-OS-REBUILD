@@ -275,6 +275,7 @@ class Host:
             art["header"] = kept["header"] and not art["capsule"]
             if not art["capsule"]:
                 self.art.want(g["appid"], ("capsule",))
+        self._romart_want(root, [g for g in res["games"] if g.get("source") == "shortcut" and not (g.get("art") or {}).get("capsule")])
         res["owned_known"] = live
         res["owned_cached"] = cached
         res["logged"] = logged
@@ -349,6 +350,31 @@ class Host:
             print(f"[stone] library: changed ({len(res['games'])} games, account "
                   f"{'live' if res['owned_known'] else 'kept' if res['owned_cached'] else 'unknown'}, signed {res['logged']})", flush=True)
             self.emit("library", {"reason": "changed"})
+
+    def _romart_want(self, root, games):
+        """Emulator games without a cover: their box art from libretro, once per game and session, in
+        one background thread (romart.py). STONE Home redraws them when it arrives (the "art" event)."""
+        from . import romart
+        tried = self.__dict__.setdefault("_romart_tried", set())
+        todo = [(g["appid"], g["name"]) for g in games if g["appid"] not in tried and romart.system_of(g.get("name"))]
+        if not todo:
+            return
+        tried.update(a for a, _n in todo)
+
+        def work():
+            news = {}
+            for appid, name in todo:
+                try:
+                    got = romart.fetch(root, appid, name)
+                except Exception as e:  # noqa: BLE001  (no internet, the server changed: STONE's own cover stays)
+                    print(f"[stone] cover for {name}: not fetched ({e!r})", flush=True)
+                    got = None
+                if got:
+                    news[appid] = {"capsule": True}
+                    print(f"[stone] cover for {name}: {got}", flush=True)
+            if news:
+                self._art_news(news)
+        threading.Thread(target=work, daemon=True).start()
 
     def _art_news(self, news):
         """Artwork fetched by STONE (artcache worker thread): STONE Home redraws those games."""
@@ -560,6 +586,36 @@ class Host:
                 emulators.install(key, progress, steam_ui=self.steam_ui)
             finally:
                 self.emu_busy.discard(key)
+        threading.Thread(target=work, daemon=True).start()
+        done({"ok": True})
+
+    # ---- Ports of Switch 2 games (ports.py, 3.1.0-rc6) -----------------------------------------
+    def m_ports_list(self, args, done):
+        from . import ports
+        self._bg(done, lambda: {"ports": ports.catalog()}, "ports")
+
+    def m_ports_install(self, args, done):
+        """ports.install(key): download the project's Linux build (checked against GitHub's SHA-256),
+        unpack it and add it to the library. Progress as "emulator" events, like the emulators."""
+        from . import ports
+        if len(args) != 1 or args[0] not in ports.CATALOG:
+            return done(None, "InvalidValue", "unknown port")
+        key = "port:" + args[0]
+        if key in self.emu_busy:
+            return done({"ok": True, "already": True})
+        self.emu_busy.add(key)
+
+        def progress(state, text):
+            GLib.idle_add(lambda: (self.emit("emulator", {"key": key, "state": state, "text": text}), False)[1])
+
+        def work():
+            try:
+                ports.install(args[0], progress, steam_ui=self.steam_ui)
+            except Exception as e:  # noqa: BLE001
+                progress("error", f"No se pudo instalar: {e!r}")
+            finally:
+                self.emu_busy.discard(key)
+                GLib.idle_add(lambda: (self._lib_kick(), False)[1])
         threading.Thread(target=work, daemon=True).start()
         done({"ok": True})
 
@@ -1441,6 +1497,87 @@ class Host:
 
     def m_roms_add(self, args, done):
         self._bg(done, lambda: roms.add_to_library(steam_ui=self.steam_ui), "roms")
+
+    # ---- Games from a USB drive (usbgames.py, 3.1.0-rc6) ----------------------------------------
+    def m_usb_scan(self, args, done):
+        """usb.scan(): the drives with games on them, mounting removable drives nobody mounted.
+        {"drives": [{"path", "label", "count", "bytes", "systems": {name: count}, "new", "new_bytes"}],
+        "busy": bool}."""
+        from . import usbgames
+
+        def scan():
+            out = []
+            for v in usbgames.scan():
+                todo, need = usbgames.plan(v)
+                systems = {}
+                for g in v["games"]:
+                    systems[g["system_name"]] = systems.get(g["system_name"], 0) + 1
+                out.append({"path": v["path"], "label": v["label"], "count": len(v["games"]), "bytes": v["bytes"],
+                            "systems": systems, "new": len(todo), "new_bytes": need})
+            return {"drives": out, "busy": bool(self.__dict__.get("_usb_busy"))}
+        self._bg(done, scan, "usb")
+
+    def m_usb_copy(self, args, done):
+        """usb.copy(path): copy that drive's games to the console, then add them to the library.
+        Progress and the end come as "usb" events: {"state": "copying", "done", "total", "name"} and
+        {"state": "done", "copied", "skipped", "error", "added"}."""
+        from . import usbgames
+        if len(args) != 1 or not isinstance(args[0], str) or args[0] not in usbgames.volumes():
+            return done(None, "InvalidValue", "drive")
+        if self.__dict__.get("_usb_busy"):
+            return done(None, "Unsupported", "Ya se están copiando juegos")
+        self._usb_busy, self._usb_cancel = True, False
+        path = args[0]
+        last = {"t": 0.0}
+
+        def progress(n, total, name):
+            now = time.monotonic()
+            if now - last["t"] >= 0.5:
+                last["t"] = now
+                GLib.idle_add(lambda: (self.emit("usb", {"state": "copying", "done": n, "total": total, "name": name}), False)[1])
+
+        def work():
+            try:
+                r = usbgames.copy(usbgames.scan_volume(path), progress, cancel=lambda: self._usb_cancel)
+                if r["copied"] and not r["error"]:
+                    try:
+                        r["added"] = roms.add_to_library(steam_ui=self.steam_ui)
+                    except Exception as e:  # noqa: BLE001
+                        r["added"] = {"error": repr(e)}
+                r["canceled"] = bool(self._usb_cancel)
+            except Exception as e:  # noqa: BLE001
+                r = {"copied": 0, "skipped": 0, "error": f"No se pudo copiar: {e!r}"}
+            self._usb_busy = False
+            print(f"[stone] usb: {path}: {r}", flush=True)
+            GLib.idle_add(lambda: (self.emit("usb", dict(r, state="done")), self._lib_kick(), False)[2])
+        threading.Thread(target=work, daemon=True).start()
+        done({"ok": True})
+
+    def m_usb_cancel(self, args, done):
+        self._usb_cancel = True
+        done({"ok": True})
+
+    # ---- Games sent from the phone (phonedrop.py, 3.1.0-rc6) ------------------------------------
+    def m_drop_start(self, args, done):
+        """drop.start(): open «Juegos desde el móvil» for 30 minutes: {"url", "seconds", "received"}.
+        What arrives comes as "drop" events."""
+        from . import phonedrop
+        if self.__dict__.get("_drop") is None:
+            self._drop = phonedrop.Drop(lambda n, d: GLib.idle_add(lambda: (self.emit(n, d), False)[1]))
+        try:
+            done(self._drop.start())
+        except OSError as e:
+            done(None, "Unsupported", str(e))
+
+    def m_drop_stop(self, args, done):
+        """drop.stop(): close it; the games received are added to the library."""
+        d = self.__dict__.get("_drop")
+        out = d.stop() if d else {"received": []}
+        if out["received"]:
+            self._bg(lambda res=None, code=None, msg="": (self._lib_kick(), done(dict(out, added=res)))[1],
+                     lambda: roms.add_to_library(steam_ui=self.steam_ui), "drop")
+        else:
+            done(out)
 
     # ---- Steam's store read by STONE (M13, D-34): search, the shop window, a game's page ---------
     def _store_row(self, row):

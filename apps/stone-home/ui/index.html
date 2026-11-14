@@ -730,6 +730,12 @@ body.dormant *,body.dormant *::before,body.dormant *::after{animation-play-state
   background:linear-gradient(158deg,rgba(255,255,255,.15) 0%,rgba(255,255,255,.03) 30%,rgba(255,255,255,0) 30.5%),
     linear-gradient(180deg,rgba(0,0,0,0) 35.5%,rgba(0,0,0,.45) 35.5% 36.5%,rgba(0,0,0,0) 36.5% 63.5%,rgba(0,0,0,.45) 63.5% 64.5%,rgba(0,0,0,0) 64.5%),
     var(--roca) 0 36% / 100% 28% no-repeat,linear-gradient(180deg,#202125 0%,#0b0b0d 100%)}
+.card .ph .pht{position:absolute;left:12%;right:9%;top:68%;bottom:19%;display:flex;flex-direction:column;justify-content:flex-start;gap:6px;overflow:hidden}
+.card .ph .pht b{font:500 12px/1.2 var(--f-mono);letter-spacing:.16em;color:var(--vein);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card .ph .pht em{font:400 19px/1.18 var(--f-text);font-style:normal;color:var(--warm);display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;overflow-wrap:anywhere}
+.card.hero .ph .pht{top:66%}
+.card.hero .ph .pht b{font-size:15px}
+.card.hero .ph .pht em{font-size:30px}
 .card .ph::after{content:"";position:absolute;left:12%;bottom:13%;width:42%;height:3px;border-radius:2px;background:#fff;
   box-shadow:0 0 8px rgba(255,255,255,.9),0 0 22px rgba(255,255,255,.4)}
 /* the primary button: obsidian at rest, the white panel when chosen */
@@ -1239,7 +1245,21 @@ const heroUrl = g => g.art.hero || g.art.capsule || g.art.header ? Bridge.artUrl
 const bgUrl = g => g.art.hero2x ? Bridge.artUrl(g.appid, 'hero2x') : heroUrl(g);
 /* A cover without art: the machine itself in miniature (black gloss, the stone band, the light line); the
    name is never written on a cover, it shows under the row (Home) or at the foot of the grid (Library). */
-const nameTag = () => '<span class="ph"></span>';
+/* A game without artwork wears STONE's own cover (the stone band and the light line) with what it is
+   written on it: its console and its name for emulator games ("Juego (PlayStation 2)"), "EMULADOR" for
+   the emulators, the origin for the rest. Until 3.1.0-rc6 it was blank (board, 14-11-2026). */
+const EMU_NAMES = new Set(['RetroDECK', 'RetroArch', 'Dolphin', 'PCSX2', 'PPSSPP', 'RPCS3', 'Cemu', 'Azahar', 'melonDS', 'mGBA', 'Flycast', 'xemu', 'Eden', 'Ryujinx (Ryubing)']);
+const ROM_SYS = ['GameCube', 'Wii', 'PlayStation 2', 'PlayStation Portable', 'PlayStation 3', 'Wii U', 'Nintendo 3DS', 'Nintendo DS', 'Game Boy Advance', 'Dreamcast', 'Xbox', 'Nintendo Switch'];
+function coverText(g) {
+  if (!g || !g.n) return null;
+  if (EMU_NAMES.has(g.n)) return ['EMULADOR', g.n];
+  const m = /^(.*) \(([^()]+)\)$/.exec(g.n);
+  if (m && ROM_SYS.includes(m[2])) return [m[2].toUpperCase(), m[1]];
+  if (m && m[2] === 'Switch 2') return ['SWITCH 2 · PORT', m[1]];
+  if (m && m[2] === 'emulador de Switch 2') return ['EMULADOR', m[1]];
+  return [(g.src === 'shortcut' ? 'ACCESO DIRECTO' : g.o || 'STEAM').toUpperCase(), g.n];
+}
+const nameTag = g => { const t = coverText(g); return `<span class="ph">${t ? `<span class="pht"><b>${esc(t[0])}</b><em>${esc(t[1])}</em></span>` : ''}</span>`; };
 /* Background blur from a 64×36 copy of the hero: one tiny image scaled up, no live blur filter.
    A small LRU keeps the last ones; game mode empties it. */
 const BLUR = new Map(), BLUR_MAX = 24;
@@ -2769,6 +2789,98 @@ async function netIconTick() {
   NETI.t = setTimeout(netIconTick, 15000);
 }
 netIconKick(1500);
+/* ---------- GAMES FOR THE EMULATORS: FROM A USB DRIVE OR FROM THE PHONE (3.1.0-rc6) ----------
+   The owner, 14-11-2026: games on a pendrive, or in iCloud or another cloud. A USB drive with games is
+   noticed when it is plugged in and its games are copied to the console (usbgames.py): like installing
+   from a disc, they keep working without the drive. The cloud is reached through the phone, already
+   signed in: a QR code opens a page served by the console on the home Wi-Fi and the phone's own picker
+   (on an iPhone «Archivos», with iCloud Drive) sends the files (phonedrop.py). Both add the games to
+   the library by themselves. */
+const EG = { usb: null, seen: new Set(), copy: null, t: 0, drop: null };
+const egGB = b => b >= 2 ** 30 ? `${(b / 2 ** 30).toFixed(1).replace('.', ',')} GB` : `${Math.max(1, Math.round(b / 2 ** 20))} MB`;
+const egSys = d => Object.entries(d.systems).map(([k, n]) => `${n} de ${k}`).join(', ');
+function egRows() {
+  const rows = [];
+  if (EG.copy) rows.push({ l: `Copiando juegos del USB · ${EG.copy.total ? Math.floor(EG.copy.done * 100 / EG.copy.total) : 0} %`, s: EG.copy.name || 'Preparando…', v: 'Cancelar', act: 'usb-cancel' });
+  else if (EG.usb && EG.usb.length) EG.usb.forEach(d => rows.push({ l: `USB «${d.label}»: ${d.count} juego${d.count === 1 ? '' : 's'}`, s: d.new ? `${d.new} nuevo${d.new === 1 ? '' : 's'} · ${egGB(d.new_bytes)} · ${egSys(d)}` : 'Ya están todos en la consola',
+    v: d.new ? 'Copiar' : 'Listo', act: d.new ? 'usb' : 'info', drive: d, where: 'Ya están todos en la consola' }));
+  else rows.push({ l: 'Juegos desde un USB', s: 'Conecta un pendrive con carpetas por consola (ps2, gba, switch…): STONE copia los juegos y los añade', v: EG.usb === null ? '…' : 'Buscar', act: 'usb-scan' });
+  rows.push({ l: 'Juegos desde el móvil', s: 'iCloud Drive, Google Drive o el móvil: escanea un código y elige los archivos', v: 'Abrir', act: 'drop' });
+  return rows;
+}
+async function egScan(quiet) {
+  const r = await Bridge.call('usb.scan').catch(() => null);
+  if (!r) return;
+  EG.usb = r.drives || [];
+  if (S.screen === 'settings' && CATS[cat] === 'Emuladores') enterSettings({ pane: !!(NAV && NAV.pane), ri: NAV && NAV.pane ? NAV.c : 0 });
+  /* a drive that just appeared with new games: STONE offers to copy them, as a console offers a disc */
+  const fresh = EG.usb.filter(d => d.new && !EG.seen.has(d.path));
+  EG.usb.forEach(d => EG.seen.add(d.path));
+  if (quiet !== true && fresh.length && !EG.copy && ['home', 'library', 'settings'].includes(S.screen)) egAsk(fresh[0]);
+}
+function egAsk(d) {
+  const back = dlgOver();
+  play('notify');
+  openDlg(`<span class="st-cap">USB</span><h2>JUEGOS EN «${esc(d.label.toUpperCase())}»</h2><p>${d.new} juego${d.new === 1 ? '' : 's'} nuevo${d.new === 1 ? '' : 's'}: ${esc(egSys(d))}. Ocupan ${egGB(d.new_bytes)}.</p>
+    <p>STONE los copia a la consola y los añade a tu biblioteca: después siguen funcionando sin el USB.</p>
+    <div class="btns"><span class="txt-f" data-f data-b="go">COPIAR A LA CONSOLA</span><span class="txt-f" data-f data-b="no">AHORA NO</span></div>`, {
+    onA: el => { back(); if (el.dataset.b === 'go') egCopy(d); else play('back'); }, onB: () => { play('back'); back(); } });
+}
+function egCopy(d) {
+  play('select');
+  Bridge.call('usb.copy', d.path).then(() => { EG.copy = { done: 0, total: d.new_bytes, name: '' }; toast(`Copiando ${d.new} juegos del USB…`, false); egRefresh(); },
+    e => { play('error'); toast((e && e.message) || 'No se pudo copiar', false); });
+}
+const egRefresh = () => { if (S.screen === 'settings' && CATS[cat] === 'Emuladores') enterSettings({ pane: !!(NAV && NAV.pane), ri: NAV && NAV.pane ? NAV.c : 0 }); };
+Bridge.on('usb', d => {
+  if (!d) return;
+  if (d.state === 'copying') { EG.copy = d; return egRefresh(); }
+  if (d.state !== 'done') return;
+  EG.copy = null; delete CX.roms;
+  if (d.error) { play('error'); toast(d.error, false); }
+  else if (d.canceled) toast(`Copia cancelada: ${d.copied} juego${d.copied === 1 ? '' : 's'} copiado${d.copied === 1 ? '' : 's'}`, false);
+  else { play('notify'); longToast(`${d.copied} juego${d.copied === 1 ? '' : 's'} copiado${d.copied === 1 ? '' : 's'} y añadido${d.copied === 1 ? '' : 's'} a tu biblioteca. Ya puedes quitar el USB`, 7000); }
+  egScan(true); reloadLibrary();
+});
+/* «Juegos desde el móvil»: the QR code, what arrives, CERRAR adds them to the library */
+async function egDrop() {
+  play('select');
+  let r = null;
+  try { r = await Bridge.call('drop.start'); } catch (e) { play('error'); return toast((e && e.message) || 'No se pudo abrir', false); }
+  EG.drop = { got: [], now: null };
+  const back = dlgOver();
+  openDlg(`<span class="st-cap">DESDE EL MÓVIL</span><h2>ENVÍA TUS JUEGOS</h2>
+    <div class="qrrow">${qrSvg(r.url, 240)}<div><p>Escanea el código con el móvil, conectado al mismo Wi-Fi, y elige los juegos. En iPhone, «Archivos» incluye iCloud Drive.</p><p class="url">${esc(r.url.replace(/^http:\/\//, ''))}</p></div></div>
+    <p id="egdrop" class="tech">Esperando archivos… (abierto 30 minutos)</p>
+    <div class="btns"><span class="txt-f" data-f data-b="end">TERMINAR</span></div>`, {
+    onA: () => egDropEnd(back), onB: () => egDropEnd(back) });
+}
+function egDropLine() {
+  const e = $('#egdrop'); if (!e || !EG.drop) return;
+  const n = EG.drop.now, got = EG.drop.got;
+  e.textContent = (n ? `Recibiendo ${n.name} · ${n.total ? Math.floor(n.done * 100 / n.total) : 0} %` : 'Esperando archivos…')
+    + (got.length ? ` · Recibidos: ${got.map(g => `${g.name} (${g.system})`).slice(-4).join(', ')}${got.length > 4 ? ` y ${got.length - 4} más` : ''}` : '');
+}
+Bridge.on('drop', d => {
+  if (!d || !EG.drop) return;
+  if (d.state === 'receiving') EG.drop.now = d;
+  if (d.state === 'received') { EG.drop.now = null; EG.drop.got.push(d); play('notify'); }
+  egDropLine();
+});
+function egDropEnd(back) {
+  play('back'); back();
+  const n = EG.drop ? EG.drop.got.length : 0; EG.drop = null;
+  Bridge.call('drop.stop').then(() => { delete CX.roms; egRefresh(); if (n) { longToast(`${n} juego${n === 1 ? '' : 's'} recibido${n === 1 ? '' : 's'} y añadido${n === 1 ? '' : 's'} a tu biblioteca`, 6000); reloadLibrary(); } }, () => {});
+}
+function egAct(r, ri) {
+  if (r.act === 'usb') { egAsk(r.drive); return; }
+  if (r.act === 'usb-scan') { play('select'); toast('Buscando juegos en los USB conectados…', false); EG.seen.clear(); return egScan(); }
+  if (r.act === 'usb-cancel') { play('select'); return Bridge.call('usb.cancel').catch(() => {}); }
+  if (r.act === 'drop') return egDrop();
+}
+/* a drive plugged in is noticed within 10 s, outside games */
+setInterval(() => { if (['home', 'library', 'settings'].includes(S.screen) && !S.steamFront) egScan(); }, 10000);
+setTimeout(() => egScan(true), 4000);
 
 /* ---------- LIBRARY ---------- */
 const FILTERS = ['Todos', 'Steam', 'Accesos directos', 'Favoritos', 'Por instalar', 'Sorpréndeme'];
@@ -3490,23 +3602,50 @@ Bridge.on('emulator', d => {
   const was = EMU_STATE[d.key] && EMU_STATE[d.key].state;
   EMU_STATE[d.key] = d;
   toast(d.text, false);
+  if (String(d.key).startsWith('port:')) { if (d.state !== 'installing') { S.ports = null; reloadLibrary(); } return emuRedraw(); }
   if (d.state === 'done') { EMU_UPD.keys.delete(d.key); loadEmulators(); if (was !== 'updating') reloadLibrary(); }
   else emuRedraw();
 });
+/* Switch 2 (ports.py): ports of single games (recompilations that need the person's own copy) and the
+   experimental emulator, installed from each project's own GitHub releases. 3.1.0-rc6. */
+function portRows() {
+  if (!S.ports) { if (!S.portsLoading) { S.portsLoading = true; Bridge.call('ports.list').then(r => { S.ports = r.ports; }, () => { S.ports = []; }).then(() => { S.portsLoading = false; emuRedraw(); }); }
+    return [{ l: 'Switch 2', s: 'Leyendo…', v: '', ro: true }]; }
+  return S.ports.map(p => {
+    const st = EMU_STATE['port:' + p.key], busy = st && st.state === 'installing';
+    return { l: p.kind === 'port' ? `${p.name} · port de Switch 2` : `${p.name} · emulador de Switch 2`,
+      s: busy ? st.text : p.installed ? `Instalado · ${p.project} ${p.tag || ''} · necesita tu copia del juego` : `${p.project} · experimental · necesita tu copia del juego`,
+      v: busy ? 'Instalando…' : p.installed ? 'Actualizar' : 'Instalar', act: 'emu', port: p };
+  });
+}
+function portDlg(p) {
+  const back = dlgOver();
+  play('select');
+  openDlg(`<span class="st-cap">${p.kind === 'port' ? 'PORT DE SWITCH 2' : 'EMULADOR DE SWITCH 2'}</span><h2>${esc(p.name.toUpperCase())}</h2>
+    <p>${p.kind === 'port' ? `Un port es el juego convertido en un programa para PC por el proyecto ${esc(p.project)} (licencia ${esc(p.license)}). STONE lo descarga de su página en GitHub y comprueba la descarga.` : `${esc(p.project)} (licencia ${esc(p.license)}), desde su página en GitHub.`}</p>
+    <p><b>Necesitas:</b> ${esc(p.needs)} Tus archivos llegan desde un USB o desde el móvil.</p><p class="tech">${esc(p.note)}</p>
+    <div class="btns"><span class="txt-f" data-f data-b="go">${p.installed ? 'ACTUALIZAR' : 'INSTALAR'}</span><span class="txt-f" data-f data-b="no">VOLVER</span></div>`, {
+    onA: el => { back(); if (el.dataset.b !== 'go') return play('back');
+      if (!needNet('instalar un port')) return;
+      EMU_STATE['port:' + p.key] = { state: 'installing', text: 'Empezando…' }; emuRedraw();
+      Bridge.call('ports.install', p.key).catch(e => { EMU_STATE['port:' + p.key] = null; play('error'); toast((e && e.message) || 'No se pudo', false); emuRedraw(); }); },
+    onB: () => { play('back'); back(); } });
+}
 function emuRows() {
   const have = S.emu.filter(e => e.installed);
   /* asked once by itself when the list is opened with emulators installed */
   if (have.length && !EMU_UPD.checked && !EMU_UPD.busy) setTimeout(() => { if (!EMU_UPD.checked) emuCheck(true); }, 0);
   const head = have.length ? [{ l: 'Buscar actualizaciones', s: emuUpdText(), v: EMU_UPD.busy ? 'Buscando…' : 'Buscar', act: 'emu', check: true },
     ...(EMU_UPD.keys.size ? [{ l: 'Actualizar todos', s: 'Cada emulador con versión nueva se actualiza desde Flathub', v: 'Actualizar', act: 'emu', all: true }] : [])] : [];
-  return head.concat(S.emu.map(e => {
+  return head.concat(S.emu.filter(e => !e.not_yet).map(e => {
     if (e.not_yet) return { l: e.name, s: 'Todavía no hay un emulador que instalar. Pulsa A para saber por qué', v: 'No disponible', act: 'emu', emu: e };
     const st = EMU_STATE[e.key], busy = emuBusy(e.key), upd = e.installed && EMU_UPD.keys.has(e.key);
     return { l: e.name, s: busy ? st.text : e.plays + (e.installed && e.version ? ` · versión ${e.version}` : '') + (upd ? ' · hay una versión nueva' : ''),
       v: busy ? (st.state === 'updating' ? 'Actualizando…' : 'Instalando…') : upd ? 'Actualizar' : e.installed ? 'Instalado' : 'Instalar', act: 'emu', emu: e };
-  }));
+  })).concat(portRows());
 }
 function emuA(r) {
+  if (r.port) return portDlg(r.port);
   if (r.check) { play('select'); return emuCheck(false); }
   if (r.all) {
     play('select');
@@ -3661,8 +3800,8 @@ function catRows() {
     case 'Steam': return { d: 'Tu cuenta, la tienda y los ajustes de Steam, con el aspecto de STONE. Los ajustes de sí/no se cambian con A.', rows: steamSetRows() };
     case 'Emuladores': {
       if (!S.emu) { if (!S.emuLoading) loadEmulators(); return { d: 'Emuladores de otras consolas, desde Flathub.', rows: [{ l: 'Leyendo…', s: 'Buscando qué emuladores están instalados', v: '', ro: true }] }; }
-      return { d: 'Se instalan desde Flathub y aparecen en tu biblioteca como accesos directos. Pulsa A sobre uno instalado para actualizarlo. Los juegos, las BIOS y las claves de cada consola los pones tú.',
-        rows: emuRows().concat(romRows()) };
+      return { d: 'Tus juegos de otras consolas: tráelos de un USB o del móvil y aparecen en tu biblioteca. Debajo, los emuladores (desde Flathub). Las BIOS y las claves de cada consola las pones tú.',
+        rows: romRows().concat(emuRows()) };
     }
     case 'Rendimiento': return { d: `Perfil activo: ${profOf(S.prof).n}. Elige entre silencio y rendimiento, o ajusta tu propio perfil.`, rows: [
       { l: 'Performance Center', s: 'SILENT, BALANCED, PERFORMANCE y CUSTOM', v: 'Abrir', act: 'perf' },
@@ -3929,10 +4068,10 @@ function romRows() {
   if (!R) { cxLoad('roms', () => Bridge.call('roms.scan'), 'Emuladores'); return [{ l: 'Buscando tus juegos…', s: '~/Emulation/roms', v: '' }]; }
   if (R.error) return [{ l: 'Tus juegos', s: R.error, v: '' }];
   const found = R.systems.filter(s => s.games.length);
-  const rows = [{ l: 'Carpeta de tus juegos', s: `${R.base}/roms/<consola> · BIOS en ${R.base}/bios`, v: 'Preparar', act: 'roms-folders' }];
+  const rows = egRows();
   found.forEach(s => rows.push({ l: `${s.name}: ${s.games.length} juego${s.games.length === 1 ? '' : 's'}`, s: s.installed ? `Se abren con ${s.emulator}` : `Falta instalar ${s.emulator} (arriba)`, v: s.installed ? 'Listo' : 'Falta emulador', act: 'info', where: s.games.slice(0, 5).map(g => g.name).join(', ') }));
   if (found.length) rows.push({ l: 'Añadir juegos a la biblioteca', s: 'Los juegos con su emulador instalado aparecen en STONE como cualquier juego', v: 'Añadir', act: 'roms-add' });
-  else rows.push({ l: 'Todavía no hay juegos', s: 'Copia tus juegos en las carpetas de cada consola (por ejemplo desde el escritorio con un pendrive)', v: '', act: 'info', where: `${R.base}/roms/ps2, ${R.base}/roms/gc…` });
+  rows.push({ l: 'Carpeta de tus juegos', s: `${R.base}/roms/<consola> · BIOS en ${R.base}/bios`, v: 'Preparar', act: 'roms-folders' });
   return rows;
 }
 function romAct(r, ri) {
@@ -4024,6 +4163,7 @@ function settingsA(el) {
   if (['audio-out', 'wifi', 'wifi-scan', 'wifi-radio', 'wifi-net', 'bt', 'bt-scan'].includes(r.act)) return cxAct(r, NAV.c);
   if (['storage-again', 'steam-dl', 'game-store'].includes(r.act)) return storeAct(r, NAV.c);
   if (['roms-folders', 'roms-add'].includes(r.act)) return romAct(r, NAV.c);
+  if (['usb', 'usb-scan', 'usb-cancel', 'drop'].includes(r.act)) return egAct(r, NAV.c);
   if (r.act === 'cu40') { play('select'); return cu40Dlg(NAV.c); }
   if (r.act === 'health') { play('select'); S.health = null; return enterSettings({ pane: true, ri: NAV.c }); }
   if (r.act === 'reboot') { play('select'); return shutdown(true); }

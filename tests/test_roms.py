@@ -45,7 +45,7 @@ class FakeUI:
         self.ok, self.calls = ok, []
 
     def add_shortcut(self, name, exe, start, opts):
-        if '"' in opts:
+        if "\n" in opts:
             raise ValueError("unsafe shortcut field")       # as steamcef does
         self.calls.append((name, exe, opts))
         return 2000000000 + len(self.calls) if self.ok else None
@@ -173,15 +173,34 @@ def test_add_to_library_live_queued_and_never_twice():
             f.write("x")
         acct = os.path.join(b.steam, "userdata", "12345678")
         os.makedirs(os.path.join(acct, "config"))
-        ui = FakeUI()
+        assert R.add_to_library(steam_ui=FakeUI(), installed={"ppsspp"}) == {"found": 1, "new": 1, "added": 1, "queued": 0}   # live, quoted path too
+        ui = FakeUI(ok=False)                                                # Steam's interface not answering
         r = R.add_to_library(steam_ui=ui, installed={"ppsspp"})
-        assert r == {"found": 1, "new": 1, "added": 0, "queued": 1}      # quoted path: through the file
+        assert r == {"found": 1, "new": 1, "added": 0, "queued": 1}      # through the file at the session start
         # the session start writes it (Steam closed), then it is never added again
         out = SC.prepare_session(proc=os.path.join(b.t, "noproc"))
         assert out["shortcuts_added"] == ["Viaje (PlayStation Portable)"], out
         assert R.add_to_library(steam_ui=ui, installed={"ppsspp"})["new"] == 0
         data = vdf.binary_loads(open(os.path.join(acct, "config", "shortcuts.vdf"), "rb").read())
         assert [v["AppName"] for v in data["shortcuts"].values()] == ["Viaje (PlayStation Portable)"]
+
+
+def test_emulator_shortcuts_made_with_the_wrong_order_are_repaired_at_the_session_start():
+    # 3.1.0-rc5 on the board: emulators installed while Steam ran had "/" as launch options (flatpak /)
+    with Box() as b:
+        acct = os.path.join(b.steam, "userdata", "12345678", "config")
+        os.makedirs(acct)
+        bad = {"shortcuts": {"0": {"appid": 2200000001, "AppName": "Dolphin", "Exe": '"/usr/bin/flatpak"', "StartDir": "", "LaunchOptions": "/"},
+                             "1": {"appid": 2200000002, "AppName": "Mi programa", "Exe": '"/usr/bin/flatpak"', "StartDir": '"/"', "LaunchOptions": "/"},
+                             "2": {"appid": 2200000003, "AppName": "PCSX2", "Exe": '"/usr/bin/flatpak"', "StartDir": '"/"', "LaunchOptions": "run net.pcsx2.PCSX2"}}}
+        with open(os.path.join(acct, "shortcuts.vdf"), "wb") as f:
+            f.write(vdf.binary_dumps(bad))
+        out = SC.prepare_session(proc=os.path.join(b.t, "noproc"))
+        assert out["shortcuts_repaired"] == ["Dolphin"], out
+        items = vdf.binary_loads(open(os.path.join(acct, "shortcuts.vdf"), "rb").read())["shortcuts"]
+        assert items["0"]["LaunchOptions"] == "run org.DolphinEmu.dolphin-emu" and items["0"]["StartDir"] == '"/"'
+        assert items["1"]["LaunchOptions"] == "/" and items["2"]["LaunchOptions"] == "run net.pcsx2.PCSX2"   # only STONE's own
+        assert "shortcuts_repaired" not in SC.prepare_session(proc=os.path.join(b.t, "noproc"))        # once
 
 
 def test_prepare_session_flags_steam_and_waits_for_the_first_sign_in():

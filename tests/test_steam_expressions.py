@@ -148,5 +148,22 @@ def test_closing_a_game_and_pausing_downloads_use_steams_own_calls():
             pass
 
 
+def test_a_shortcut_is_made_the_way_steams_own_add_dialog_makes_it():
+    # Steam's code: AddShortcut(strAppName, strExePath, strArguments, strCmdline), then the shortcut's
+    # properties. 3.1.0-rc5 passed the start folder third: Steam kept "/" as the launch options and
+    # every emulator ran `flatpak /` (board, 14-11-2026).
+    js = """const calls=[];window.SteamClient={Apps:{AddShortcut:async(...a)=>{calls.push(['add',...a]);return 2147483650;},
+      SetShortcutName:(...a)=>calls.push(['name',...a]),SetShortcutExe:(...a)=>calls.push(['exe',...a]),
+      SetShortcutStartDir:(...a)=>calls.push(['dir',...a]),SetShortcutLaunchOptions:(...a)=>calls.push(['opts',...a])}};window.calls=calls;"""
+    opts = 'run net.pcsx2.PCSX2 -batch -fullscreen -- "/home/stone/Emulation/roms/ps2/Juego \\"Uno\\".iso"'
+    expr = CEF.add_shortcut_expression("Juego \"Uno\" (PlayStation 2)", '"/usr/bin/flatpak"', '"/"', opts)
+    out = json.loads(_run(js, "(async()=>{const r=await " + expr + ";return JSON.stringify([r,calls]);})()"))
+    assert out[0] == "ok 2147483650"
+    assert out[1][0] == ["add", 'Juego "Uno" (PlayStation 2)', "/usr/bin/flatpak", opts, '"/usr/bin/flatpak" ' + opts]
+    assert ["exe", 2147483650, '"/usr/bin/flatpak"'] in out[1] and ["dir", 2147483650, "/"] in out[1]
+    assert ["opts", 2147483650, opts] in out[1] and ["name", 2147483650, 'Juego "Uno" (PlayStation 2)'] in out[1]
+    assert _run("", CEF.add_shortcut_expression("x", "/x", "/", "")) == "no SteamClient"
+
+
 if __name__ == "__main__":
     sys.exit(run_module(globals()))

@@ -762,14 +762,40 @@ def reachable(port=PORT):
         return False
 
 
+# A non-Steam shortcut, the way Steam's own interface makes one (its code, client 1792618285: the
+# "Add a non-Steam game" dialog calls AddShortcut(strAppName, strExePath, strArguments, strCmdline),
+# and the shortcut's properties use SetShortcutName / SetShortcutExe (the path quoted, "<path>") /
+# SetShortcutStartDir / SetShortcutLaunchOptions). Until 3.1.0-rc6 STONE called it as
+# AddShortcut(name, exe, start_dir, options), Decky's old order: Steam kept "/" as the launch options
+# and every emulator ran `flatpak /` (board, 14-11-2026: emulators that never opened).
+def _js(v):
+    if not isinstance(v, str) or len(v) > 4000 or any(c in v for c in "\n\r\x00"):
+        raise ValueError("unsafe shortcut field")
+    return json.dumps(v)                   # ASCII-only JSON string: a safe JavaScript literal
+
+
 def add_shortcut_expression(name, exe, start_dir, launch_options):
-    for v in (name, exe, start_dir, launch_options):
-        if not isinstance(v, str) or any(c in v for c in "'\\\n\r\"`$"):
-            raise ValueError("unsafe shortcut field")
-    return ("(async()=>{if(!window.SteamClient||!SteamClient.Apps||!SteamClient.Apps.AddShortcut)return 'no SteamClient';"
-            f"const id=await SteamClient.Apps.AddShortcut('{name}','{exe}','{start_dir}','{launch_options}');"
-            f"try{{SteamClient.Apps.SetShortcutName(id,'{name}');}}catch(e){{}}"
+    n, e, d, o = _js(name), _js(exe.strip('"')), _js(start_dir.strip('"')), _js(launch_options)
+    q = _js('"' + exe.strip('"') + '"')
+    cmd = _js('"' + exe.strip('"') + '"' + (" " + launch_options if launch_options else ""))
+    return ("(async()=>{const A=window.SteamClient&&SteamClient.Apps;if(!A||!A.AddShortcut)return 'no SteamClient';"
+            f"const id=await A.AddShortcut({n},{e},{o},{cmd});if(!id)return 'no id';"
+            f"try{{A.SetShortcutName(id,{n});}}catch(x){{}}try{{A.SetShortcutExe(id,{q});}}catch(x){{}}"
+            f"try{{A.SetShortcutStartDir(id,{d});}}catch(x){{}}try{{A.SetShortcutLaunchOptions(id,{o});}}catch(x){{}}"
             "return 'ok '+id;})()")
+
+
+def remove_shortcut_expression(appid):
+    a = int(appid)
+    if not 0 < a < 2**32:
+        raise ValueError("shortcut id")
+    return ("(()=>{const A=window.SteamClient&&SteamClient.Apps;if(!A||!A.RemoveShortcut)return null;"
+            f"A.RemoveShortcut({a});return 'ok';}})()")
+
+
+def remove_shortcut(appid, port=PORT):
+    """Remove a non-Steam shortcut (Steam's own RemoveShortcut). True, or None if Steam does not answer."""
+    return True if ui_value(remove_shortcut_expression(appid), port) == "ok" else None
 
 
 def add_shortcut(name, exe, start_dir, launch_options, port=PORT):

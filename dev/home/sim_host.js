@@ -192,7 +192,7 @@ const Bridge = (() => {
       return { root_found: true, owned_known: live, owned_cached: false, logged: live ? 'in' : null, account: true,
         games: list.slice().sort((x, y) => y.installed - x.installed || y.last - x.last).map(g => ({
           appid: g.appid, name: g.name, source: g.source, installed: g.installed, updating: !!g.updating, playtime_min: g.min, last_played: g.last,
-          size_bytes: g.size, art: g.installed || SIM.art || !/noart/.test(location.search) ? { capsule: !g.wide, hero: !g.wide, header: !!g.wide, hero2x: !!(SIM.big && SIM.big[g.appid]) } : { capsule: false, hero: false, header: false },
+          size_bytes: g.size, art: g.source === 'shortcut' && /^3/.test(g.appid) ? { capsule: false, hero: false, header: false } : g.installed || SIM.art || !/noart/.test(location.search) ? { capsule: !g.wide, hero: !g.wide, header: !!g.wide, hero2x: !!(SIM.big && SIM.big[g.appid]) } : { capsule: false, hero: false, header: false },
           launch: g.installed ? 'steam://rungameid/' + g.appid : null })) };
     },
     /* starting (Steam's steps): ?askcloud / ?askopt / ?launcherr make Steam ask about the cloud, a launch option, or fail */
@@ -274,6 +274,31 @@ const Bridge = (() => {
       if (pw && pw.length < 8) bad('Unsupported', 'Contraseña incorrecta');
       N.active = ssid; N.known.add(ssid); return { ok: true }; },
     'net.wifiDisconnect': () => { SIM.net.active = null; return { ok: true }; },
+    /* games from a USB drive (?usb = a drive with games is plugged in) and from the phone */
+    'usb.scan': () => ({ busy: false, drives: /usb/.test(location.search) && !SIM.usbDone ? [{ path: '/run/media/stone/JUEGOS', label: 'JUEGOS', count: 3, bytes: 5.2 * 2 ** 30,
+      systems: { 'PlayStation 2': 2, 'Game Boy Advance': 1 }, new: 3, new_bytes: 5.2 * 2 ** 30 }] : [] }),
+    'usb.copy': () => { const total = 5.2 * 2 ** 30, t0 = Date.now(); const names = ['Shadow of the Colossus.iso', 'God of War II.iso', 'Metroid Fusion.gba'];
+      const tick = () => { const f = Math.min(1, (Date.now() - t0) / 9000);
+        if (f < 1) { emit('usb', { state: 'copying', done: f * total, total, name: names[Math.min(2, Math.floor(f * 3))] }); setTimeout(tick, 500); }
+        else { SIM.usbDone = true; ['Shadow of the Colossus (PlayStation 2)', 'God of War II (PlayStation 2)', 'Metroid Fusion (Game Boy Advance)'].forEach((n, k) => GAMES.push({ appid: String(3100000000 + k), name: n, source: 'shortcut', installed: true, last: 0, min: 0, size: 0, kind: 'plain', wide: false }));
+          emit('usb', { state: 'done', copied: 3, skipped: 0, error: null }); emit('library', { reason: 'changed' }); } };
+      setTimeout(tick, 300); return { ok: true }; },
+    'usb.cancel': () => ({ ok: true }),
+    'ports.list': () => ({ ports: [
+      { key: 'mkw', name: 'Mario Kart World', project: 'mkw-recomp', kind: 'port', license: 'MIT', installed: !!SIM.mkw, tag: SIM.mkw ? 'v0.1.11' : null,
+        needs: 'Tu copia de Mario Kart World 1.0.0 o 1.8.0 volcada de tu Switch 2 (carpetas exefs y romfs, o un archivo .nup o .nx). La primera vez, su pantalla de inicio la prepara: unos 30 GB.',
+        note: 'Experimental: algunos menús aún fallan y en algunas GPU AMD la imagen puede colgarse. Sin juego en línea.' },
+      { key: 'eglantine', name: 'Eglantine', project: 'Eglantine', kind: 'emulator', license: 'GPL-3.0', installed: false, tag: null,
+        needs: 'Tus juegos de Switch 2 y las claves de tu propia consola, que se indican dentro del emulador.', note: 'Emulador de Switch 2 muy experimental: pocos juegos arrancan y con fallos.' }] }),
+    'ports.install': ([k]) => { const key = 'port:' + k;
+      setTimeout(() => emit('emulator', { key, state: 'installing', text: 'Descargando mkw-recomp v0.1.11 (147 MB)…' }), 400);
+      setTimeout(() => { SIM.mkw = true; GAMES.push({ appid: '3200000001', name: 'Mario Kart World (Switch 2)', source: 'shortcut', installed: true, last: 0, min: 0, size: 0, kind: 'plain' });
+        emit('emulator', { key, state: 'done', text: 'Mario Kart World instalado. Ya está en tu biblioteca' }); emit('library', { reason: 'changed' }); }, 4000);
+      return { ok: true }; },
+    'drop.start': () => { setTimeout(() => emit('drop', { state: 'receiving', name: 'Mario Kart Wii.rvz', done: 1.1e9, total: 2.9e9 }), 2500);
+      setTimeout(() => emit('drop', { state: 'received', name: 'Mario Kart Wii.rvz', system: 'Wii', size: 2.9e9 }), 5000);
+      return { open: true, url: 'http://192.168.1.40:41817/kD9x2mQe7LwP4sZa/', seconds: 1800, received: [] }; },
+    'drop.stop': () => ({ received: [{ name: 'Mario Kart Wii.rvz', system: 'Wii', size: 2.9e9 }] }),
     'net.wifiForget': ([ssid]) => { SIM.net.known.delete(ssid); return { ok: true }; },
     'net.wifiRadio': ([on]) => { SIM.net.radio = on; if (!on) SIM.net.active = null; return { ok: true }; },
     'bt.devices': () => ({ devices: [{ mac: 'AA:BB:CC:DD:EE:01', name: 'Mando inalámbrico', icon: 'input-gaming', paired: true, connected: true, battery: 80 }] }),

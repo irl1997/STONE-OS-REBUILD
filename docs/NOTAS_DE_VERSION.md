@@ -1,8 +1,47 @@
 # STONE OS (rebuild) 3.1.0-rc6
 
-Auditoría del sistema completo después de probar 3.1.0-rc5 en la consola (14-11-2026). La regla: **llegar y jugar, como en SteamOS**. Lo que la pantalla dice tiene que ser verdad y de Steam siempre se vuelve a STONE. Llega a la consola **por actualización en línea**. Decisión D-39.
+Auditoría del sistema completo después de probar 3.1.0-rc5 en la consola (14-11-2026), con los emuladores que no se abrían y sin carátulas, juegos desde un USB o desde el móvil (iCloud y otras nubes) y los ports de Switch 2. La regla: **llegar y jugar, como en SteamOS**. Lo que la pantalla dice tiene que ser verdad y de Steam siempre se vuelve a STONE. Llega a la consola **por actualización en línea**. Decisiones D-39 y D-40.
 
-**Todo está probado en software (CODE TESTED): pruebas automáticas y la simulación de la interfaz. Nada de esta versión se ha observado todavía en la BC-250.** Pruebas de placa: T-NET-01, T-NET-02, T-NET-03, T-STEAM-22 y T-HOME-07 en `hardware/validation/matrix.yaml`.
+**Todo está probado en software (CODE TESTED): pruebas automáticas y la simulación de la interfaz. Nada de esta versión se ha observado todavía en la BC-250.** Pruebas de placa: T-NET-01, T-NET-02, T-NET-03, T-STEAM-22, T-HOME-07, T-EMU-10, T-EMU-11, T-EMU-12, T-EMU-13 y T-EMU-14 en `hardware/validation/matrix.yaml`.
+
+## Emuladores: ahora se abren
+
+**La causa:** STONE creaba los accesos directos de Steam con los datos en un orden equivocado. La interfaz de Steam crea un acceso directo con (nombre, programa, **argumentos**, línea de comandos), y STONE pasaba (nombre, programa, **carpeta**, argumentos). Steam guardaba «/» como argumentos y cada emulador ejecutaba `flatpak /`, que no abre nada.
+
+- Los accesos directos se crean ahora como los crea Steam, con el nombre, el programa, la carpeta y las opciones en su sitio.
+- **Los emuladores que ya instalaste se reparan solos** al arrancar la sesión, antes de que se abra Steam.
+- Los nombres con comillas u otros símbolos ya no impiden añadir un juego al momento.
+
+## Carátulas para los juegos de los emuladores
+
+- **La carátula real** de cada juego se descarga de la colección pública de libretro, la que usan RetroArch y otros. STONE busca el nombre del juego aunque el archivo no se llame exactamente igual (sin región, versión ni signos, y con o sin tildes). La guarda donde Steam guarda las imágenes de los accesos directos, así que se ve en STONE y en Steam.
+- **Si no hay carátula**, por ejemplo con Switch, o mientras se descarga, el juego lleva la portada de STONE con su consola y su nombre, en lugar de un hueco vacío. Los emuladores llevan «EMULADOR».
+
+## Tus juegos desde un USB
+
+- Conecta un pendrive con carpetas por consola (`ps2`, `gba`, `switch`, `PlayStation 2`…). Valen también las carpetas `roms/` y `Emulation/roms/` de EmuDeck y RetroDECK.
+- **STONE lo detecta en unos segundos y ofrece copiar los juegos**, como una consola que instala desde un disco. Después siguen funcionando sin el USB.
+- La copia muestra su avance y se puede cancelar. Deja siempre 2 GB libres, no copia dos veces el mismo juego y añade los juegos a la biblioteca al terminar.
+- Si nadie montó el USB, STONE lo monta. Solo se permiten unidades extraíbles.
+
+## Tus juegos desde el móvil: iCloud, Google Drive y otras nubes
+
+STONE nunca inicia sesión con tu contraseña. Por eso la nube se alcanza a través del móvil, que ya tiene tu sesión:
+
+- Ajustes → Emuladores → **Juegos desde el móvil** muestra un código QR.
+- El móvil, conectado al mismo Wi-Fi, abre una página de la consola. Ahí eliges los juegos con el selector de archivos del móvil (en iPhone, «Archivos» incluye iCloud Drive).
+- Cada juego va directo a la carpeta de su consola. Al terminar, se añaden a la biblioteca.
+- Seguridad: la página solo existe mientras esa pantalla está abierta, con 30 minutos como máximo. Lleva una clave al azar, solo acepta archivos de juegos y nunca ejecuta nada.
+
+## Switch 2: ports y emulador experimental
+
+STONE no hace ports: un port es el trabajo de meses de un proyecto, para un juego concreto. Lo que STONE hace es **instalar los ports que esos proyectos publican para Linux**, desde su propia página en GitHub, comprobando cada descarga con la suma que publica GitHub, y añadirlos a la biblioteca.
+
+- **Mario Kart World** (mkw-recomp, licencia MIT).
+- **Eglantine**, un emulador de Switch 2 muy experimental (GPL-3.0).
+- Los dos necesitan **tu propia copia** del juego, volcada de tu consola. STONE no descarga juegos, claves ni herramientas para volcarlos.
+- Todo es experimental: los proyectos tienen días o semanas.
+- Se revisaron otros. El de Star Fox solo tiene versión para Windows y el de Pokémon Pokopia no tiene aún un paquete que STONE pueda comprobar, así que se añadirán cuando los tengan.
 
 ## Wi-Fi: siempre se puede volver a conectar
 

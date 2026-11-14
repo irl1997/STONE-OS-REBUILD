@@ -50,7 +50,21 @@ const heroUrl = g => g.art.hero || g.art.capsule || g.art.header ? Bridge.artUrl
 const bgUrl = g => g.art.hero2x ? Bridge.artUrl(g.appid, 'hero2x') : heroUrl(g);
 /* A cover without art: the machine itself in miniature (black gloss, the stone band, the light line); the
    name is never written on a cover, it shows under the row (Home) or at the foot of the grid (Library). */
-const nameTag = () => '<span class="ph"></span>';
+/* A game without artwork wears STONE's own cover (the stone band and the light line) with what it is
+   written on it: its console and its name for emulator games ("Juego (PlayStation 2)"), "EMULADOR" for
+   the emulators, the origin for the rest. Until 3.1.0-rc6 it was blank (board, 14-11-2026). */
+const EMU_NAMES = new Set(['RetroDECK', 'RetroArch', 'Dolphin', 'PCSX2', 'PPSSPP', 'RPCS3', 'Cemu', 'Azahar', 'melonDS', 'mGBA', 'Flycast', 'xemu', 'Eden', 'Ryujinx (Ryubing)']);
+const ROM_SYS = ['GameCube', 'Wii', 'PlayStation 2', 'PlayStation Portable', 'PlayStation 3', 'Wii U', 'Nintendo 3DS', 'Nintendo DS', 'Game Boy Advance', 'Dreamcast', 'Xbox', 'Nintendo Switch'];
+function coverText(g) {
+  if (!g || !g.n) return null;
+  if (EMU_NAMES.has(g.n)) return ['EMULADOR', g.n];
+  const m = /^(.*) \(([^()]+)\)$/.exec(g.n);
+  if (m && ROM_SYS.includes(m[2])) return [m[2].toUpperCase(), m[1]];
+  if (m && m[2] === 'Switch 2') return ['SWITCH 2 · PORT', m[1]];
+  if (m && m[2] === 'emulador de Switch 2') return ['EMULADOR', m[1]];
+  return [(g.src === 'shortcut' ? 'ACCESO DIRECTO' : g.o || 'STEAM').toUpperCase(), g.n];
+}
+const nameTag = g => { const t = coverText(g); return `<span class="ph">${t ? `<span class="pht"><b>${esc(t[0])}</b><em>${esc(t[1])}</em></span>` : ''}</span>`; };
 /* Background blur from a 64×36 copy of the hero: one tiny image scaled up, no live blur filter.
    A small LRU keeps the last ones; game mode empties it. */
 const BLUR = new Map(), BLUR_MAX = 24;

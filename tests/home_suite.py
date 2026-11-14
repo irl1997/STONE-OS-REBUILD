@@ -1321,8 +1321,10 @@ def E01_emulators_fixed_catalog_install_and_shortcut_now_or_at_next_start():
         assert run_host(h, {"method": "emuUpdate", "args": bad})[1] == "InvalidValue", bad
     assert run_host(h, {"method": "emuInstall", "args": ["switch2"]})[1] == "InvalidValue"     # nothing to install for Switch 2
     from stone_home import steamcef
+    js = steamcef.add_shortcut_expression("x'); evil('", "/usr/bin/flatpak", "/", "run a")
+    assert "AddShortcut(\"x'); evil('\",\"/usr/bin/flatpak\",\"run a\"," in js          # a JSON string: never code
     try:
-        steamcef.add_shortcut_expression("x'); evil('", "/usr/bin/flatpak", "/", "run a")
+        steamcef.add_shortcut_expression("x\nevil", "/usr/bin/flatpak", "/", "run a")
         raise AssertionError("unsafe shortcut accepted")
     except ValueError:
         pass

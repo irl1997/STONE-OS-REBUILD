@@ -18,10 +18,14 @@ Generado por `dev/steam/steam_api.py report` a partir del código que Valve publ
 - ✅ Apps.RegisterForGameActionStart: as Steam (launch, launch_answer, launch_state)
 - ✅ Apps.RegisterForGameActionTaskChange: as Steam (launch, launch_answer, launch_state)
 - ✅ Apps.RegisterForGameActionUserRequest: as Steam (launch, launch_answer, launch_state)
+- ✅ Apps.RemoveShortcut: as Steam (remove_shortcut)
 - ✅ Apps.RunGame: as Steam (launch, launch_answer, launch_state, run_game)
 - ✅ Apps.SetAppLaunchOptions: as Steam (graphics_set)
 - ✅ Apps.SetAppResolutionOverride: as Steam (display_default, display_native)
+- ✅ Apps.SetShortcutExe: as Steam (add_shortcut)
+- ✅ Apps.SetShortcutLaunchOptions: as Steam (add_shortcut)
 - ✅ Apps.SetShortcutName: as Steam (add_shortcut)
+- ✅ Apps.SetShortcutStartDir: as Steam (add_shortcut)
 - ✅ Apps.TerminateApp: as Steam (terminate)
 - ✅ Downloads.EnableAllDownloads: as Steam (download_pause, download_resume)
 - ✅ Downloads.ResumeAppUpdate: as Steam (download_pause, download_resume)
@@ -65,13 +69,17 @@ Generado por `dev/steam/steam_api.py report` a partir del código que Valve publ
 - ✅ field OpenUninstallWizard: occurs in Steam's code
 - ✅ field RegisterForAppDetails: occurs in Steam's code
 - ✅ field RegisterForShowInstallWizard: occurs in Steam's code
+- ✅ field RemoveShortcut: occurs in Steam's code
 - ✅ field ResumeAppUpdate: occurs in Steam's code
 - ✅ field RunGame: occurs in Steam's code
 - ✅ field SetAppLaunchOptions: occurs in Steam's code
 - ✅ field SetAppResolutionOverride: occurs in Steam's code
 - ✅ field SetGamescopeInternalResolution: occurs in Steam's code
 - ✅ field SetInstallFolder: occurs in Steam's code
+- ✅ field SetShortcutExe: occurs in Steam's code
+- ✅ field SetShortcutLaunchOptions: occurs in Steam's code
 - ✅ field SetShortcutName: occurs in Steam's code
+- ✅ field SetShortcutStartDir: occurs in Steam's code
 - ✅ field Settings: occurs in Steam's code
 - ✅ field SteamClient: occurs in Steam's code
 - ✅ field SteamUIStore: occurs in Steam's code
