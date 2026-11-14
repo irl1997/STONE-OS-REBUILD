@@ -1,3 +1,26 @@
+# STONE OS (rebuild) 3.1.0-rc7
+
+## Informe de diagnóstico
+
+Hasta ahora, cuando algo fallaba en la consola, lo único que llegaba era una foto de la tele. Ahora, en **Ajustes → Salud → Informe de diagnóstico**, STONE reúne en un archivo todo lo necesario para encontrar la causa:
+
+- **Los registros de este arranque:** STONE Home y la sesión, el servicio de rendimiento (`stoned`) y los avisos del sistema.
+- **Los errores del arranque anterior**, por si la consola se colgó o se apagó de golpe.
+- **Los registros de Steam:** consola, descargas, compatibilidad.
+- **El estado de STONE:** sus ajustes, las opciones de inicio que cambió, la red y la Salud.
+- **Una comprobación en vivo** de que el Steam de la consola tiene las 27 funciones que STONE usa. Así se ve al momento si una actualización de Steam rompió algo.
+
+En la tele aparece un resumen: la versión, los errores, las funciones de Steam y los hallazgos. El archivo se lleva **al móvil** con un código QR, por el mismo Wi-Fi, o **a un USB**.
+
+**Sin datos personales.** Antes de escribir nada se borran:
+- Los correos y los identificadores de cuenta de Steam.
+- La parte final de las direcciones IP y MAC.
+- Cualquier línea que nombre una contraseña, un token o una cookie.
+
+Las contraseñas de Wi-Fi nunca se leen. STONE no envía el informe a ningún sitio: el archivo solo sale si tú te lo llevas.
+
+**Todo está probado en software (CODE TESTED). Nada de esta versión se ha observado todavía en la BC-250.** Prueba de placa: T-HEALTH-05.
+
 # STONE OS (rebuild) 3.1.0-rc6
 
 Auditoría del sistema completo después de probar 3.1.0-rc5 en la consola (14-11-2026), con los emuladores que no se abrían y sin carátulas, juegos desde un USB o desde el móvil (iCloud y otras nubes) y los ports de Switch 2. La regla: **llegar y jugar, como en SteamOS**. Lo que la pantalla dice tiene que ser verdad y de Steam siempre se vuelve a STONE. Llega a la consola **por actualización en línea**. Decisiones D-39 y D-40.

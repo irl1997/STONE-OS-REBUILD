@@ -6,6 +6,7 @@ done(result) or done(None, code, message), with the same error codes as stoned.
 """
 
 import os
+import shutil
 import subprocess
 import threading
 import time
@@ -1705,6 +1706,88 @@ class Host:
         threading.Thread(target=work, daemon=True).start()
 
     # ---- STONE HEALTH (M19) ---------------------------------------------------------------
+    # ---- Informe de diagnóstico (diagreport.py, 3.1.0-rc7) ---------------------------------------
+    def m_diag_build(self, args, done):
+        """diag.build(): write the report (a few seconds) and return its summary."""
+        from . import diagreport
+
+        def live():
+            out = {"session": os.environ.get("STONE_SESSION") or "other", "time": time.strftime("%Y-%m-%d %H:%M:%S")}
+            try:
+                out["steam_reachable"] = bool(self.steam_ui.reachable())
+                out["steam_probe"] = self.steam_ui.probe() if out["steam_reachable"] else []
+            except Exception as e:  # noqa: BLE001
+                out["steam_error"] = repr(e)
+            try:
+                out["steam_login"] = self.steam_ui.login_state()
+            except Exception:  # noqa: BLE001
+                pass
+            try:
+                out["net"] = connect.net_status()
+            except Exception as e:  # noqa: BLE001
+                out["net"] = {"error": repr(e)}
+            try:
+                out["health"] = [list(c) for c in health.doctor(health.snapshot())]
+            except Exception as e:  # noqa: BLE001
+                out["health_error"] = repr(e)
+            last = self.lib_last[1] if getattr(self, "lib_last", None) else {}
+            out["library"] = {"games": len(last.get("games") or []), "owned_known": last.get("owned_known"),
+                              "logged": last.get("logged"), "account": last.get("account")}
+            out["front"] = {k: v for k, v in (self.front or {}).items() if isinstance(v, (str, int, float, bool, type(None)))}
+            return out
+
+        def work():
+            r = diagreport.build(live=live())
+            self._diag = r["path"]
+            print(f"[stone] diagnostic report: {r['path']} ({r['size']} bytes) {r['summary']['findings']}", flush=True)
+            return {"name": r["name"], "size": r["size"], "summary": r["summary"]}
+        self._bg(done, work, "diag")
+
+    def m_diag_phone(self, args, done):
+        """diag.phone(): the last report, to download on the phone: {"download"} (a QR in the page)."""
+        from . import phonedrop
+        path = self.__dict__.get("_diag")
+        if not path or not os.path.isfile(path):
+            return done(None, "InvalidValue", "Primero hay que hacer el informe")
+        if self.__dict__.get("_drop") is None:
+            self._drop = phonedrop.Drop(lambda n, d: GLib.idle_add(lambda: (self.emit(n, d), False)[1]))
+        try:
+            self._drop.start()
+        except OSError as e:
+            return done(None, "Unsupported", str(e))
+        done(self._drop.offer(path))
+
+    def m_diag_usb(self, args, done):
+        """diag.usb(): copy the last report to the first USB drive plugged in: {"drive", "path"}."""
+        from . import usbgames
+        path = self.__dict__.get("_diag")
+        if not path or not os.path.isfile(path):
+            return done(None, "InvalidValue", "Primero hay que hacer el informe")
+
+        def work():
+            usbgames.mount_removable()
+            vols = usbgames.volumes()
+            if not vols:
+                raise OSError("No hay ningún USB conectado")
+            dst = os.path.join(vols[0], os.path.basename(path))
+            shutil.copyfile(path, dst + ".part")
+            os.replace(dst + ".part", dst)
+            os.sync()
+            return {"drive": os.path.basename(vols[0]), "path": dst}
+
+        def wrap():
+            try:
+                return work()
+            except OSError as e:
+                return {"error": str(e)}
+        self._bg(done, wrap, "diag")
+
+    def m_diag_close(self, args, done):
+        d = self.__dict__.get("_drop")
+        if d is not None and d.offered:
+            d.stop()
+        done({"ok": True})
+
     def m_health_status(self, args, done):
         def work():
             try:
