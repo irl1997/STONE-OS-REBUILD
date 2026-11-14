@@ -854,7 +854,11 @@ def download_control(appid, action, port=PORT):
 LOCATION_EXPRESSION = (
     "(()=>{const S=window.SteamUIStore;const w=S&&S.WindowStore&&S.WindowStore.GamepadUIMainWindowInstance;"
     "if(!w)return null;try{return String(w.LocationPathName||'');}catch(e){return null;}})()")
-FRONT_PAGES = {"settings": "/settings", "downloads": "/downloads"}
+# What counts as still being on the page STONE opened. The store goes on through its web pages and the
+# payment's confirmation (Steam's routes /store, /steamweb, /externalweb, /microtxnauth): STONE never
+# takes the screen back in the middle of a purchase.
+_STORE = ("/store", "/steamweb", "/externalweb", "/microtxnauth", "/browser")
+FRONT_PAGES = {"settings": ("/settings",), "downloads": ("/downloads",), "store": _STORE, "app": _STORE}
 
 
 def location(port=PORT):
@@ -866,4 +870,10 @@ def location(port=PORT):
 def left_page(path, what):
     """True when Steam's interface shows a page outside the one STONE opened for `what`."""
     want = FRONT_PAGES.get(what)
-    return bool(want and isinstance(path, str) and path and want not in path)
+    return bool(want and isinstance(path, str) and path and not any(w in path for w in want))
+
+
+def on_page(path, what):
+    """True when Steam's interface shows the page STONE opened for `what` (or one that belongs to it)."""
+    want = FRONT_PAGES.get(what)
+    return bool(want and isinstance(path, str) and any(w in path for w in want))

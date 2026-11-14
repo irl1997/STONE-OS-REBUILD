@@ -1,6 +1,12 @@
 function act(a) {
   /* Steam's own window is in front (D-34): the controller is Steam's; only the guide button is STONE's */
-  if (S.steamFront) { if (a === 'home' && !S.steamFront.full) Sys.steamHide().catch(() => {}); return; }
+  /* Steam's own window is in front (D-34): the controller is Steam's. A press that reaches STONE means
+     STONE is the one on screen (Steam still starting, its window not up yet): B or the guide button
+     give up waiting, as the curtain says (3.1.0-rc6; before, only the guide button did, unsaid). */
+  if (S.steamFront) {
+    if ((a === 'home' || a === 'b') && !S.steamFront.full && !S.steamFront.opening) { play('back'); Sys.steamHide().catch(() => sfEnd('closed')); }
+    return;
+  }
   if (S.screen === 'transition') return;
   if (S.screen === 'store') { showHints(); return storeInput(a); }
   if (S.screen === 'spage') { showHints(); return storePageInput(a); }

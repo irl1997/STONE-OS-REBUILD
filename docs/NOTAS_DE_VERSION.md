@@ -4,6 +4,16 @@ Auditoría del sistema completo después de probar 3.1.0-rc5 en la consola (14-1
 
 **Todo está probado en software (CODE TESTED): pruebas automáticas y la simulación de la interfaz. Nada de esta versión se ha observado todavía en la BC-250.** Pruebas de placa: T-NET-01, T-NET-02, T-NET-03, T-STEAM-22, T-HOME-07, T-EMU-10, T-EMU-11, T-EMU-12, T-EMU-13 y T-EMU-14 en `hardware/validation/matrix.yaml`.
 
+## Steam desde STONE: siempre se vuelve
+
+Se revisaron todas las formas de llegar a Steam desde STONE: iniciar sesión, la tienda, comprar un juego, el diálogo de instalación, los ajustes, las descargas y «Steam completo».
+
+- **Mientras Steam arranca**, la cortina «PREPARANDO STEAM» puede durar minutos en una consola nueva. Antes solo el botón guía cancelaba la espera, y la pantalla no lo decía. Ahora **B vuelve a STONE sin esperar**, y la cortina lo dice.
+- **Tienda y compra:** al salir de la tienda con B, STONE vuelve sola, como con los ajustes. STONE sigue la página de Steam y trata la tienda, sus páginas web y la **confirmación del pago** como una sola, así que nunca te saca a mitad de una compra.
+- **Si Steam no consigue abrir sus ajustes**, STONE recupera la pantalla y lo dice, en lugar de dejarte en el inicio de Steam.
+- Si cancelas antes de que Steam se abra, el aviso dice «Steam no llegó a abrirse», y no «lo que hayas comprado aparece en tu biblioteca».
+- El botón guía vuelve a STONE desde **cualquier** pantalla de Steam. «Steam completo» se deja con el botón guía mantenido 3 segundos, al cerrar Steam o al reiniciar la consola.
+
 ## Depuración completa
 
 Antes de esta versión se revisó todo el sistema.

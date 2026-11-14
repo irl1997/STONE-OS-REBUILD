@@ -1160,6 +1160,29 @@ def H15b_steams_settings_in_front_and_b_out_of_them_gives_the_screen_back():
             f.value = 0                                                            # guide button (supervisor)
             assert wait_for(lambda: h.front is None) and events[-1][1]["why"] == "closed"
             assert seen == ["steam://open/bigpicture", "steam://close/bigpicture"]
+            # the store: followed the same way, and never left in the middle of a purchase
+            del seen[:], events[:]
+            f.window = 0
+            where["path"] = "/library/home"
+            assert run_host(h, {"method": "steam.show", "args": ["store"]})[0] == {"managed": True}
+            assert wait_for(lambda: f.value == 3)
+            f.window = 0x600032
+            assert wait_for(lambda: "steam://url/StoreFrontPage" in seen, timeout=6)
+            where["path"] = "/store"
+            spin(1.6)
+            where["path"] = "/microtxnauth"                                        # the payment's confirmation
+            spin(3.0)
+            assert h.front is not None and f.value == 3, "STONE took the screen back during a purchase"
+            where["path"] = "/library/home"                                        # B out of the store
+            assert wait_for(lambda: h.front is None, timeout=8) and events[-1][1]["why"] == "back"
+            # Steam never opens the page: the person is not left on Steam's home
+            del events[:]
+            ui.open_settings = lambda sec: "cef unavailable (URLError)"
+            f.window = 0
+            assert run_host(h, {"method": "steam.show", "args": ["settings", "Audio"]})[0] == {"managed": True}
+            assert wait_for(lambda: f.value == 3)
+            f.window = 0x600033
+            assert wait_for(lambda: h.front is None, timeout=20) and events[-1][1]["why"] == "navfail" and f.value == 0
         finally:
             del os.environ["STONE_SESSION"]
 

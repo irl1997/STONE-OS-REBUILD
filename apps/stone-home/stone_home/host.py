@@ -1238,13 +1238,14 @@ class Host:
                                or now - fr["since"] >= FRONT_URL_WAIT_S):
             fr["sent"] = True
             self._steam_url(fr["url"])
-        if fr["nav"]:
-            if fr["leave"]:
+        if fr["nav"] or fr["what"] in ("store", "app"):
+            if fr["leave"] or fr["nav_state"] == "failed":
+                # left with B; or Steam never opened the page: the person is not left on Steam's home
                 try:
                     self.session_focus.set_steam_value(0)
                 except Exception:  # noqa: BLE001
                     pass
-                return self._front_end("back")
+                return self._front_end("back" if fr["leave"] else "navfail")
             self._front_nav(fr, now)
         if fr["what"] == "login" and not fr["had_account"]:
             # The sign-in is done when the account's folder exists: STONE takes the screen back by
@@ -1265,7 +1266,10 @@ class Host:
         STONE takes the screen back; the guide button does too, as always (supervisor)."""
         if fr["shown"] is None:
             return
-        if fr["nav_state"] is None and now - fr["shown"] >= FRONT_URL_SETTLE_S:
+        if not fr["nav"]:                         # the store: opened by its URL, then followed the same way
+            if fr["sent"] and fr["nav_state"] is None:
+                fr["nav_state"], fr["watch_t"] = "done", now
+        elif fr["nav_state"] is None and now - fr["shown"] >= FRONT_URL_SETTLE_S:
             fr["nav_state"] = "busy"
 
             def go():
@@ -1287,8 +1291,7 @@ class Host:
                     path = self.steam_ui.location()
                 except Exception:  # noqa: BLE001
                     path = None
-                want = steamcef.FRONT_PAGES.get(fr["what"], "")
-                if path and want in path:
+                if steamcef.on_page(path, fr["what"]):
                     fr["in_page"], fr["out_n"] = True, 0
                 elif fr["in_page"] and steamcef.left_page(path, fr["what"]):
                     fr["out_n"] += 1

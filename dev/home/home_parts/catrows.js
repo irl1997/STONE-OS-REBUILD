@@ -85,7 +85,7 @@ function steamSetRows() {
   const acct = { l: 'Cuenta de Steam', s: inn ? 'Conectada en esta consola' : S.steamAcct === null && S.libLogged !== 'out' ? 'Leyendo…' : 'Sin iniciar sesión: Steam muestra su ventana, con un código QR para la app de Steam del móvil',
     v: inn ? 'Conectada' : 'Iniciar sesión', act: 'sset', login: !inn };
   const more = [
-    { l: 'Tienda de Steam', s: 'La tienda propia de Steam, en pantalla: para comprar con tu cuenta. El botón guía vuelve a STONE', v: 'Abrir', act: 'sset', front: 'store' },
+    { l: 'Tienda de Steam', s: 'La tienda propia de Steam, para comprar con tu cuenta. Sal de ella con B para volver a STONE', v: 'Abrir', act: 'sset', front: 'store' },
     { l: 'Steam completo', s: 'Steam ocupa la pantalla con su propia interfaz; STONE vuelve después', v: 'Abrir', act: 'sset', full: true },
     { l: 'Estado de Steam', s: 'Lo que STONE sabe de Steam ahora: cuenta, sesión y biblioteca', v: 'Ver', act: 'sset', status: true }];
   return [acct, ...more, head, ...rows];
