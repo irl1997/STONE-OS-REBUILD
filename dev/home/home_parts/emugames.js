@@ -88,5 +88,5 @@ function egAct(r, ri) {
   if (r.act === 'drop') return egDrop();
 }
 /* a drive plugged in is noticed within 10 s, outside games */
-setInterval(() => { if (['home', 'library', 'settings'].includes(S.screen) && !S.steamFront) egScan(); }, 10000);
+setInterval(() => { if (['home', 'library', 'settings'].includes(S.screen) && !S.steamFront && !S.dormant) egScan(); }, 10000);
 setTimeout(() => egScan(true), 4000);

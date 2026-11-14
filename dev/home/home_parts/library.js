@@ -64,7 +64,7 @@ function coverText(g) {
   if (m && m[2] === 'emulador de Switch 2') return ['EMULADOR', m[1]];
   return [(g.src === 'shortcut' ? 'ACCESO DIRECTO' : g.o || 'STEAM').toUpperCase(), g.n];
 }
-const nameTag = g => { const t = coverText(g); return `<span class="ph">${t ? `<span class="pht"><b>${esc(t[0])}</b><em>${esc(t[1])}</em></span>` : ''}</span>`; };
+const nameTag = g => { const t = coverText(g); return `<span class="ph">${t ? `<span class="pht"><span class="lbl">${esc(t[0])}</span><em>${esc(t[1])}</em></span>` : ''}</span>`; };
 /* Background blur from a 64×36 copy of the hero: one tiny image scaled up, no live blur filter.
    A small LRU keeps the last ones; game mode empties it. */
 const BLUR = new Map(), BLUR_MAX = 24;
