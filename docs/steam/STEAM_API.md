@@ -54,6 +54,7 @@ Generado por `dev/steam/steam_api.py report` a partir del código que Valve publ
 - ✅ field EnableAllDownloads: occurs in Steam's code
 - ✅ field GamepadUIMainWindowInstance: occurs in Steam's code
 - ✅ field GetActiveGameActions: occurs in Steam's code
+- ✅ field GetClientSetting: occurs in Steam's code
 - ✅ field GetFocusedWindowInstance: occurs in Steam's code
 - ✅ field GetLaunchOptionsForApp: occurs in Steam's code
 - ✅ field GetState: occurs in Steam's code
@@ -147,6 +148,8 @@ Generado por `dev/steam/steam_api.py report` a partir del código que Valve publ
 - ✅ downloadsStore.get: occurs in Steam's code
 - ✅ downloadsStore.m_DownloadItems: occurs in Steam's code
 - ✅ downloadsStore.m_DownloadOverview: occurs in Steam's code
+- ✅ settingsStore.GetClientSetting: occurs in Steam's code
+- ✅ settingsStore.clientSettings: occurs in Steam's code
 - ✅ Navigator.Settings('Display'): a settings route of Steam's
 - ✅ Navigator.Settings('Audio'): a settings route of Steam's
 - ✅ Navigator.Settings('Controller'): a settings route of Steam's

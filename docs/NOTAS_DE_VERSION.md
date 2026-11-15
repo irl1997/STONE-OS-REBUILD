@@ -1,3 +1,29 @@
+# STONE OS (rebuild) 3.1.0-rc8
+
+Arreglos sacados del **primer informe de diagnóstico de la consola** (14-11-2026, 21:44). Es la primera versión hecha con los registros reales de la BC-250 en lugar de una foto. Decisión D-42.
+
+## Steam ya no recibe llamadas a ciegas
+
+El informe mostró a Steam lanzando errores del tipo «requires 2 arguments; only 1 given»: **121 en un minuto**, todos causados por STONE. La pantalla Ajustes → Steam armaba su lista llamando a todas las funciones de Steam que empiezan por `Get…`, sin argumentos: capturas, Remote Play, almacenamiento, VR, notas… Muchas necesitan datos, y algunas leen cosas que STONE no tiene por qué leer.
+
+Ahora STONE lee los ajustes **como los lee la propia interfaz de Steam**:
+- Los lee de su almacén de ajustes (`settingsStore.clientSettings`), **sin llamar a ninguna función**.
+- Los cambia con la función de Steam que guarda cada ajuste.
+- Muestra solo una lista cuidada, con nombre en español: soporte para mandos Xbox, PlayStation y Nintendo; superposición en el juego; sombreadores precompilados; descargar mientras se juega; Steam Cloud; avisos; capturas; y reducir movimiento.
+
+## Sin falsas alarmas en Salud y en el informe
+
+- **«20 errores de amdgpu»:** son mensajes que el kernel escribe en **cada arranque** de la BC-250 (`dal_irq_service_dummy`, `Unsupported clock type`, `Failed to clear hpd(rx) … on init`). No afectan al juego y ya no cuentan como errores. Un error real, como un cuelgue de la GPU, se sigue mostrando.
+- **«Disco /: 0 GB libres de 0 GB»:** en esta imagen, `/` es el sistema de solo lectura y no tiene tamaño propio. Ya no aparece.
+- **«El arranque anterior registró 147 errores (¿se colgó?)»:** eran los mismos mensajes normales del arranque, y la caja negra decía que había terminado bien. Ahora el informe solo habla de cuelgue si hay una señal real: reinicio de la GPU, una tarea colgada, falta de memoria o un error del kernel.
+- **El informe cuenta solo los errores de STONE** y los graves. Los avisos propios de Steam, gamescope o el sistema base siguen dentro del archivo, pero no se suman. Con tus datos, el recuento pasa de 121 a 1.
+
+## El informe trae el registro de STONE Home
+
+STONE Home escribe sus propios mensajes en `~/.local/state/stone/home.log`, y el informe no los incluía. Ahora sí, el de este arranque y el anterior. Además, los archivos de estado se guardan con una clave por línea, para que una palabra como «token» borre solo esa línea y no el archivo entero.
+
+**Todo está probado en software (CODE TESTED). La comprobación se hizo con los registros reales del informe, pero nada de esta versión se ha observado todavía en la BC-250.** Pruebas de placa: T-STEAM-24 y T-HEALTH-06.
+
 # STONE OS (rebuild) 3.1.0-rc7
 
 ## Informe de diagnóstico

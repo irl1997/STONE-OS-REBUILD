@@ -49,6 +49,15 @@ _STEAMID = re.compile(r"\b7656119\d{10}\b")
 _IPV4 = re.compile(r"\b((?:25[0-5]|2[0-4]\d|1?\d?\d)\.(?:25[0-5]|2[0-4]\d|1?\d?\d)\.(?:25[0-5]|2[0-4]\d|1?\d?\d))\.(?:25[0-5]|2[0-4]\d|1?\d?\d)\b")
 _MAC = re.compile(r"\b((?:[0-9A-Fa-f]{2}:){3})(?:[0-9A-Fa-f]{2}:){2}[0-9A-Fa-f]{2}\b")
 _ERR = re.compile(r"Traceback|\bERROR\b|\berror:|\bFAILED\b|segfault|GPU reset|ring .* timeout|\bOops\b|Kernel panic", re.I)
+# Written at every start of a BC-250 and meaning nothing for play (amdgpu's display block, the CPU's RDSEED,
+# ACPI names of the original board): not counted (the console's first report, 14-11-2026, said "147 errors"
+# for a boot that ended well).
+_BENIGN = re.compile(r"dal_irq_service_dummy_(set|ack)|Unsupported clock type|Failed to clear hpd\(rx\) source=\d+ on init|"
+                     r"RDSEED is not reliable|ACPI Error: AE_NOT_FOUND|"
+                     r"ACPI Error: Aborting method|Failed to subscribe to NameOwnerChanged|Activation request for '[^']+' failed", re.I)
+# What really means a previous boot ended badly
+_SERIOUS = re.compile(r"GPU reset|ring \S+ timeout|page fault|\bOops\b|Kernel panic|hung_task|blocked for more than|watchdog: BUG|"
+                      r"Out of memory|segfault", re.I)
 
 
 def redact(text):
@@ -111,8 +120,15 @@ def steam_functions(probe_rows):
     return {"page": page, "missing": missing, "have": have}
 
 
+# Lines that are STONE's (its host and page, the session, stoned) or that STONE caused in Steam (a call
+# Steam refused): what a fix of STONE needs. Steam's, gamescope's and the base image's own warnings stay
+# in the files but are not counted (the first report counted 159, most of them not STONE's).
+_STONE_LINE = re.compile(r"\[stone\]|stone-session|stone-home|stoned|RaiseJSException|stone_home|Traceback")
+
+
 def _errors(text, n=8):
-    rows = [ln.strip() for ln in text.splitlines() if _ERR.search(ln)]
+    rows = [ln.strip() for ln in text.splitlines()
+            if _ERR.search(ln) and not _BENIGN.search(ln) and (_STONE_LINE.search(ln) or _SERIOUS.search(ln))]
     return len(rows), rows[-n:]
 
 
@@ -127,6 +143,11 @@ def build(out_dir=None, live=None, run=_run, home=None, now=time.time):
         ["uname", "-a"], ["uptime"], ["free", "-m"], ["df", "-h", "/", "/var", "/var/home"],
         ["systemctl", "--failed", "--no-pager"], ["systemctl", "--user", "--failed", "--no-pager"], ["lspci", "-nnk"],
         ["nmcli", "-t", "general", "status"]))
+    # STONE Home's own log (the host and the page: [stone] lines), this start and the one before
+    state = os.path.join(home, ".local", "state", "stone")
+    for n, out in (("home.log", "stone-home-app.txt"), ("home.log.1", "stone-home-app-anterior.txt")):
+        if os.path.isfile(os.path.join(state, n)):
+            files[out] = _tail(os.path.join(state, n))
     files["stone-home.txt"] = _cut(run(["journalctl", "--user", "-b", "--no-pager", "-o", "short-iso", "-n", "6000"], 60))
     files["stoned.txt"] = _cut(run(["journalctl", "-b", "-u", "stoned", "--no-pager", "-o", "short-iso", "-n", "2000"], 60))
     files["sistema-avisos.txt"] = _cut(run(["journalctl", "-b", "-p", "warning", "--no-pager", "-o", "short-iso", "-n", "3000"], 60))
@@ -144,7 +165,12 @@ def build(out_dir=None, live=None, run=_run, home=None, now=time.time):
         for n in names:
             p = os.path.join(base, n)
             if n.endswith(".json") and os.path.isfile(p) and os.path.getsize(p) <= MAX_STATE:
-                files[f"{sub}/{n}"] = _tail(p, MAX_STATE)
+                text = _tail(p, MAX_STATE)
+                try:                                     # one key per line: a key that names a token goes, not the file
+                    text = json.dumps(json.loads(text), indent=1, ensure_ascii=False) + "\n"
+                except ValueError:
+                    pass
+                files[f"{sub}/{n}"] = text
     live = dict(live or {})
     if "steam_probe" in live:
         live["steam_functions"] = steam_functions(live.pop("steam_probe"))
@@ -152,8 +178,9 @@ def build(out_dir=None, live=None, run=_run, home=None, now=time.time):
     files = {k: redact(v) for k, v in files.items()}
 
     # what a person (and the developer) reads first
-    n_err, last = _errors(files["stone-home.txt"] + files["stoned.txt"])
+    n_err, last = _errors(files["stone-home.txt"] + files["stoned.txt"] + files.get("stone-home-app.txt", ""))
     n_prev, _ = _errors(files["arranque-anterior.txt"])
+    serious_prev = [ln.strip() for ln in files["arranque-anterior.txt"].splitlines() if _SERIOUS.search(ln)]
     failed = [ln.split()[1] if ln.split()[0] in ("●", "*") else ln.split()[0]
               for ln in files["sistema.txt"].splitlines() if ".service" in ln and ("failed" in ln or "fallid" in ln)][:10]
     sf = live.get("steam_functions") or {}
@@ -164,18 +191,18 @@ def build(out_dir=None, live=None, run=_run, home=None, now=time.time):
         findings.append(f"Este Steam no tiene {len(sf['missing'])} funciones que STONE usa: {', '.join(sf['missing'][:5])}")
     elif sf.get("missing") is None:
         findings.append("La interfaz de Steam no respondió al hacer el informe")
-    if n_prev:
-        findings.append(f"El arranque anterior registró {n_prev} errores (¿se colgó o se apagó de golpe?)")
+    if serious_prev:
+        findings.append(f"El arranque anterior terminó con fallos graves ({len(serious_prev)}): {serious_prev[-1][-120:]}")
     for c in (live.get("health") or []):
         if isinstance(c, (list, tuple)) and len(c) >= 3 and c[0] == "fail":
             findings.append(f"{c[1]}: {c[2]}")
     summary = {"version": (re.search(r'STONE_VERSION="?([^"\n]+)', files["release.txt"]) or [None, "—"])[1],
-               "errors": n_err, "previous_boot_errors": n_prev, "failed_services": failed,
+               "errors": n_err, "previous_boot_errors": n_prev, "previous_boot_serious": len(serious_prev), "failed_services": failed,
                "steam_functions": sf, "findings": findings[:8], "last_errors": last}
     files["resumen.txt"] = redact(
         "INFORME DE DIAGNÓSTICO DE STONE OS\n"
         f"Hecho: {time.strftime('%d-%m-%Y %H:%M', time.localtime(now()))}\nVersión: {summary['version']}\n"
-        f"Errores en los registros de este arranque: {n_err}\nErrores del arranque anterior: {n_prev}\n"
+        f"Errores de STONE en este arranque: {n_err}\nErrores de STONE o graves en el arranque anterior: {n_prev}\n"
         f"Funciones de Steam que STONE usa: {sf.get('have', 0)} de {len(STEAM_NEEDS)} presentes"
         + (f" (faltan: {', '.join(sf['missing'])})" if sf.get("missing") else "") + "\n\nHALLAZGOS\n"
         + ("\n".join(f"- {f}" for f in findings) or "- Nada fuera de lo normal") + "\n\nÚLTIMOS ERRORES\n"

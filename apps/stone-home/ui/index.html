@@ -2905,7 +2905,7 @@ function diagShow(r, ri, back) {
   play(f.length ? 'notify' : 'select');
   openDlg(`<span class="st-cap">SALUD</span><h2>INFORME LISTO</h2>
     <div class="slist"><span class="sres">Versión<small>${esc(s.version || '—')}</small></span>
-      <span class="sres">Errores en este arranque<small>${s.errors || 0}</small></span>
+      <span class="sres">Errores de STONE en este arranque<small>${s.errors || 0}</small></span>
       <span class="sres">Funciones de Steam que STONE usa<small>${sf.missing === null || sf.missing === undefined ? 'Steam no respondió' : sf.missing.length ? `faltan ${sf.missing.length}` : 'todas presentes'}</small></span>
       <span class="sres">Hallazgos<small>${f.length ? f.length : 'ninguno'}</small></span></div>
     ${f.length ? `<p class="tech">${f.slice(0, 4).map(esc).join('<br>')}</p>` : ''}

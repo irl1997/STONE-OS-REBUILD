@@ -192,13 +192,14 @@ def _object_keys(t, start):
 def stone_expressions():
     """Every piece of JavaScript STONE runs in Steam's page, built with sample arguments."""
     sys.path.insert(0, os.path.join(REPO, "apps", "stone-home"))
-    from stone_home import steamcef as C
+    from stone_home import steamcef as C, steamsettings as S
     ex = {"run_game": C.run_game_expression(620), "install": C.install_expression(620), "accept_eula": C.accept_eula_expression(620),
           "uninstall": C.uninstall_expression(620), "cancel_install": C.CANCEL_INSTALL_EXPRESSION, "downloads": C.DOWNLOADS_EXPRESSION,
           "launch": C.launch_expression(620), "launch_state": C.launch_state_expression(620),
           "launch_answer": C.launch_answer_expression(620, "ShowEula"), "owned": C.OWNED_EXPRESSION, "login": C.LOGIN_EXPRESSION,
           "dialog": C.DIALOG_EXPRESSION, "open_settings": C.open_settings_expression("Display"), "open_page": C.open_page_expression("Downloads"),
           "add_shortcut": C.add_shortcut_expression("x", "/x", "/", ""), "terminate": C.terminate_expression(620), "location": C.LOCATION_EXPRESSION, "remove_shortcut": C.remove_shortcut_expression(2147483650),
+          "steam_settings_read": S.READ_EXPRESSION, "steam_settings_write": S.write_expression("enable_overlay", True),
           "download_pause": C.download_control_expression(620, "pause"), "download_resume": C.download_control_expression(620, "resume")}
     for sub in ("modules/display", "modules/games"):
         sys.path.insert(0, os.path.join(REPO, sub))
@@ -214,7 +215,7 @@ def stone_expressions():
 
 
 ALIAS = re.compile(r"\b(?:const|let|var)?\s*([A-Za-z_$][\w$]{0,2})\s*=\s*(?:window\.)?SteamClient(?:\s*&&\s*SteamClient)?\.([A-Z]\w*)")
-PROP = re.compile(r"\b(?:window\.)?(collectionStore|appStore|downloadsStore|SteamUIStore|App)\b((?:\.[A-Za-z_]\w*)+)")
+PROP = re.compile(r"\b(?:window\.)?(collectionStore|appStore|downloadsStore|settingsStore|SteamUIStore|App)\b((?:\.[A-Za-z_]\w*)+)")
 
 
 def stone_calls(expressions):

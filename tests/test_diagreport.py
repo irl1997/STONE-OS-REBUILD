@@ -58,6 +58,8 @@ def test_the_report_gathers_logs_and_says_what_it_found():
             f.write("[2026-11-14] Startup - updater built\nSteam account 76561198012345678 ana.perez@gmail.com\n")
         st = os.path.join(home, ".local", "state", "stone")
         os.makedirs(st)
+        with open(os.path.join(st, "home.log"), "w") as f:
+            f.write("[stone] steam: its own window wanted in front (store)\n[stone] launch 620: error AppError_51\n")
         with open(os.path.join(st, "game-graphics.json"), "w") as f:
             json.dump({"620": {"original": "", "applied": "X=1 %command%"}}, f)
         tree = {"Apps": {n.split(".")[1]: "f1" for n in D.STEAM_NEEDS if n.startswith("Apps.") and n != "Apps.TerminateApp"},
@@ -73,6 +75,7 @@ def test_the_report_gathers_logs_and_says_what_it_found():
         with zipfile.ZipFile(r["path"]) as z:
             names = z.namelist()
             assert names[0] == "resumen.txt" and "stone-home.txt" in names and "steam-console_log.txt" in names
+            assert "stone-home-app.txt" in names                                     # STONE Home's own log (home.log)
             assert "estado/game-graphics.json" in names and "vivo.json" in names and "arranque-anterior.txt" in names
             everything = "".join(z.read(n).decode("utf-8") for n in names)
         for p in PRIVATE:
@@ -82,6 +85,20 @@ def test_the_report_gathers_logs_and_says_what_it_found():
         assert D.steam_functions([])["missing"] is None                                   # Steam not answering
     finally:
         shutil.rmtree(t, ignore_errors=True)
+
+
+def test_the_bc250s_start_up_messages_and_others_warnings_are_not_counted():
+    # the first report from the console counted 159 errors (121 were STONE's blind calls to Steam, the
+    # rest Steam's and the base image's own) and 147 for a previous boot that ended well
+    text = ("kernel: amdgpu 0000:01:00.0: [drm] *ERROR* dal_irq_service_dummy_ack: called for non-implemented irq source\n"
+            "kernel: RDSEED is not reliable on this platform; disabling.\n"
+            "steam[1]: [1114/214329.332883:ERROR:context.cc(107)] The browser_subprocess_path directory is not absolute\n"
+            "steamos-manager[2]: WARN Failed to load orca configuration\n"
+            "stone-session: gamescope focus: ERROR window gone\n"
+            "steam[1]: RaiseJSException: Method call failed: Storage.GetJSON requires 2 arguments; only 1 given\n"
+            "kernel: amdgpu: GPU reset begin!\n")
+    n, rows = D._errors(text)
+    assert n == 3 and any("stone-session" in r for r in rows) and any("RaiseJSException" in r for r in rows) and any("GPU reset" in r for r in rows), rows
 
 
 def test_the_phone_downloads_only_the_report_offered():
