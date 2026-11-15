@@ -222,3 +222,24 @@ class Focus:
     def shown(self):
         """What the root properties say now: (app id list, window id), to see if someone rewrote them."""
         return self.get(self.root, "GAMESCOPECTRL_BASELAYER_APPID"), (self.get(self.root, "GAMESCOPECTRL_BASELAYER_WINDOW") or [0])[0]
+
+
+def root_properties(prefixes=("GAMESCOPE", "STEAM_", "STONE_"), display_name=None):
+    """{name: value} of the root window's properties that gamescope, Steam and STONE write (the
+    diagnostic report: HDR state, focus). Read-only; values cut short."""
+    from Xlib import X, display as xdisplay
+    d = xdisplay.Display(display_name)
+    try:
+        root, out = d.screen().root, {}
+        for atom in root.list_properties() or []:
+            name = d.get_atom_name(atom)
+            if not name.startswith(prefixes):
+                continue
+            p = root.get_full_property(atom, X.AnyPropertyType)
+            if p is None:
+                continue
+            v = p.value
+            out[name] = (v.decode("utf-8", "replace") if isinstance(v, bytes) else str(v))[:80] if isinstance(v, (bytes, str)) else list(v)[:8]
+        return out
+    finally:
+        d.close()

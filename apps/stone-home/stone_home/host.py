@@ -24,6 +24,7 @@ from . import bootmetrics
 from . import connect
 from . import bridge
 from . import emulators
+from . import events
 from . import firstrun
 from . import health
 from . import library
@@ -146,7 +147,8 @@ class Host:
         self.game_env = stone_display.GameEnvironment(cef=cef)
         # STONE OPTIMIZED: game profiles, graphics paths, measured optimization (stone_games/).
         self.optimized = games_opt.Engine(root=self.root, cef=cef, display=lambda: self.display.status(fresh=True),
-                                          perf=PerfAsync(self.stoned), log=lambda m: print(m, flush=True))
+                                          perf=PerfAsync(self.stoned), log=lambda m: print(m, flush=True),
+                                          events=events.record)
         self._opt_busy = False
         GLib.timeout_add_seconds(3, self._opt_monitor)
         GLib.timeout_add_seconds(LIB_FAST_S, self._lib_tick)
@@ -891,7 +893,12 @@ class Host:
         if len(args) != 2 or not (args[1] is None or isinstance(args[1], str)):
             return done(None, "InvalidValue", "arguments")
         appid, _ = self._game_args(args[:1], 1, 1)
-        self._opt_call(done, lambda: self.optimized.set_look(appid, args[1]))
+
+        def setlook():
+            r = self.optimized.set_look(appid, args[1])
+            events.record("look_set", appid=appid, look=args[1], ok=bool(isinstance(r, dict) and r.get("ok")))
+            return r
+        self._opt_call(done, setlook)
 
     def m_components(self, args, done):
         """components(kind?): without kind, what is downloaded; with kind, download the newest official release."""
@@ -1308,6 +1315,8 @@ class Host:
             self._steam_url(system.FRONT_URLS["bigpicture_close"])   # Steam back to a hidden component
         self._lib_kick()                                              # a purchase or a sign-in shows up soon
         print(f"[stone] steam: its own window left the front ({why})", flush=True)
+        events.record("steam_front", page=fr["what"], why=why,
+                      state="navfail" if fr.get("nav_state") == "failed" else "not shown" if fr.get("shown") is None else "ok")
         self.emit("steam", {"front": False, "why": why, "what": fr["what"]})
         return False
 
@@ -1708,8 +1717,10 @@ class Host:
     # ---- STONE HEALTH (M19) ---------------------------------------------------------------
     # ---- Informe de diagnóstico (diagreport.py, 3.1.0-rc7) ---------------------------------------
     def m_diag_build(self, args, done):
-        """diag.build(): write the report (a few seconds) and return its summary."""
-        from . import diagreport
+        """diag.build(symptoms?): write the report (a few seconds) and return its summary. symptoms:
+        what the person ticked in «¿Qué no funciona?» (diagchecks.SYMPTOMS keys)."""
+        from . import diagchecks, diagreport
+        symptoms = [x for x in (args[0] if args and isinstance(args[0], list) else []) if x in diagchecks.SYMPTOMS]
 
         def live():
             out = {"session": os.environ.get("STONE_SESSION") or "other", "time": time.strftime("%Y-%m-%d %H:%M:%S")}
@@ -1734,10 +1745,32 @@ class Host:
             out["library"] = {"games": len(last.get("games") or []), "owned_known": last.get("owned_known"),
                               "logged": last.get("logged"), "account": last.get("account")}
             out["front"] = {k: v for k, v in (self.front or {}).items() if isinstance(v, (str, int, float, bool, type(None)))}
+            out["names"] = {str(g.get("appid")): g.get("name") for g in (last.get("games") or [])
+                            if isinstance(g, dict) and g.get("appid") and g.get("name")}
+            try:                                   # Steam's own HDR switch (Ajustes de Steam → Pantalla)
+                out["steam_display"] = steamsettings.read_display(self.steam_ui) if out.get("steam_reachable") else None
+            except Exception as e:  # noqa: BLE001
+                out["steam_display"] = {"error": repr(e)}
+            try:                                   # what gamescope says on its root window (HDR, focus)
+                from . import gamescope_x11
+                out["gamescope_atoms"] = gamescope_x11.root_properties()
+            except Exception as e:  # noqa: BLE001
+                out["gamescope_atoms_error"] = repr(e)[:200]
+            try:
+                p = (self.display.status() or {}).get("primary") or {}
+                out["display"] = {"summary": f"{p.get('display_name') or '?'} por {p.get('connection_type') or '?'}, "
+                                             f"HDR admitido: {p.get('hdr_supported')}", "hdr_supported": p.get("hdr_supported")}
+            except Exception as e:  # noqa: BLE001
+                out["display"] = {"error": repr(e)}
+            try:
+                ids = emulators.installed_ids()
+                out["emulators"] = sorted(n for _k, (fid, n, _p) in emulators.CATALOG.items() if fid in ids)
+            except Exception:  # noqa: BLE001
+                pass
             return out
 
         def work():
-            r = diagreport.build(live=live())
+            r = diagreport.build(live=live(), symptoms=symptoms)
             self._diag = r["path"]
             print(f"[stone] diagnostic report: {r['path']} ({r['size']} bytes) {r['summary']['findings']}", flush=True)
             return {"name": r["name"], "size": r["size"], "summary": r["summary"]}

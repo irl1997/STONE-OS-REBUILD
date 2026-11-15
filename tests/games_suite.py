@@ -844,6 +844,88 @@ def G22_guided_optimization_counts_the_matrix_and_grows_with_installed_paths():
         assert w2.e.optimize_status(CP)["total"] > o["total"]
 
 
+@test
+def G23_look_effects_probe_events_and_healing_only_after_real_crashes():
+    """3.1.0-rc8: the look is not turned off by a short session; two early ends in a row do, and
+    say so; the effects probe looks inside the game's processes; every step is an event."""
+    with World() as w:
+        old = {k: os.environ.get(k) for k in ("XDG_CONFIG_HOME", "STONE_VKBASALT_LAYER")}
+        os.environ["XDG_CONFIG_HOME"] = os.path.join(w.d, "config")
+        layer = os.path.join(w.d, "vkBasalt.json")
+        with open(layer, "w") as f:
+            f.write("{}")
+        os.environ["STONE_VKBASALT_LAYER"] = layer
+        try:
+            from stone_games import look
+            rows = []
+            w.e.events = lambda kind, **d: rows.append(dict(d, kind=kind))
+            w.e.probe = lambda appid: {"processes": 3, "env": {"ENABLE_VKBASALT": "1"}, "vkbasalt_loaded": True,
+                                       "vulkan_loaded": True, "wine": True, "names": ["Cyberpunk2077.exe"]}
+            look.set_look(CP, "vivid")
+            r = w.e.launch(CP)
+            assert r["ok"] and "ENABLE_VKBASALT=1" in w.options[CP] and "VKBASALT_LOG_FILE=" in w.options[CP]
+            res = w.play(CP, 45)                             # left after 45 s: abnormal for metrics, not a look crash
+            assert res["abnormal"] and "healed" not in res and look.load_prefs().get(CP) == "vivid"
+            w.e.launch(CP)
+            assert w.play(CP, 8).get("look_crashes") == 1 and look.load_prefs().get(CP) == "vivid"   # one crash: kept
+            w.e.launch(CP)
+            w.play(CP, 1800)                                 # a clean run forgets it
+            w.e.launch(CP)
+            w.play(CP, 8)
+            w.e.launch(CP)
+            res = w.play(CP, 6)                              # the second early end in a row: off, and said
+            assert res["healed"] == "look vivid turned off" and look.load_prefs().get(CP) is None
+            kinds = [e["kind"] for e in rows]
+            assert kinds.count("game_prepare") == 5 and kinds.count("game_started") == 5 and kinds.count("game_end") == 5
+            assert rows[0]["look"] == "vivid" and rows[0]["graphics_applied"] is True
+            assert [e for e in rows if e["kind"] == "game_end"][-1]["healed"] == "look vivid turned off"
+            # EFFECTS PROBE: once, PROBE_AFTER_S after the game appeared
+            look.set_look(CP, "natural")
+            w.e.launch(CP)
+            w.running_set.add(CP)
+            w.now += 5
+            assert w.e.tick() == "started"
+            w.now += optimizer.PROBE_AFTER_S + 1
+            assert w.e.tick() is None and w.e.tick() is None
+            eff = [e for e in rows if e["kind"] == "game_effects"]
+            assert len(eff) == 1 and eff[0]["vkbasalt_loaded"] is True and eff[0]["look"] == "natural"
+            w.running_set.discard(CP)
+            end = w.e.tick()
+            assert end["reason"] == "exit" and [e for e in rows if e["kind"] == "game_end"][-1]["probed"] is True
+        finally:
+            for k, v in old.items():
+                if v is None:
+                    os.environ.pop(k, None)
+                else:
+                    os.environ[k] = v
+
+
+@test
+def G24_effects_probe_reads_the_games_processes():
+    d = tempfile.mkdtemp(prefix="stone-proc-")
+    try:
+        def proc(pid, env, maps, comm):
+            p = os.path.join(d, "proc", str(pid))
+            os.makedirs(p)
+            with open(os.path.join(p, "environ"), "wb") as f:
+                f.write(b"\0".join(f"{k}={v}".encode() for k, v in env.items()) + b"\0")
+            with open(os.path.join(p, "maps"), "w") as f:
+                f.write(maps)
+            with open(os.path.join(p, "comm"), "w") as f:
+                f.write(comm + "\n")
+        proc(100, {"SteamAppId": "620", "ENABLE_VKBASALT": "1", "VKBASALT_CONFIG_FILE": "/home/x/.local/state/stone/looks/vivid.conf",
+                   "HOME": "/home/ana"}, "7f00 r-xp /usr/lib/libvulkan.so.1\n7f01 r-xp /run/host/usr/lib64/libvkbasalt.so\n", "portal2_linux")
+        proc(101, {"SteamAppId": "999"}, "7f00 r-xp /usr/lib/libvkbasalt.so\n", "other")
+        proc(102, {"SteamGameId": "620"}, "7f00 r-xp /usr/lib/wine/x86_64-unix/ntdll.so\n", "wineserver")
+        r = optimizer.effects_probe("620", sysroot=d)
+        assert r["processes"] == 2 and r["vkbasalt_loaded"] and r["vulkan_loaded"] and r["wine"]
+        assert r["env"] == {"ENABLE_VKBASALT": "1", "VKBASALT_CONFIG_FILE": "set"}          # names, never other paths
+        assert "HOME" not in json.dumps(r) and set(r["names"]) == {"portal2_linux", "wineserver"}
+        assert optimizer.effects_probe("4242", sysroot=d)["processes"] == 0
+    finally:
+        shutil.rmtree(d, ignore_errors=True)
+
+
 def main():
     only = sys.argv[1:]
     failed = 0

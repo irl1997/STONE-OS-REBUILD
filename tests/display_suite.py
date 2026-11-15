@@ -596,66 +596,47 @@ def D22_set_output_only_reachable_modes_and_reset_removes_it():
 
 
 @test
-def D23_steam_settings_are_built_from_what_steam_offers_and_stay_safe():
+def D23_steam_settings_are_read_from_steams_own_store_and_nothing_is_called():
+    """3.1.0-rc7 (the console's diagnostic report, 14-11-2026): STONE used to call every Get…() of
+    SteamClient with no arguments and Steam raised an exception for dozens of them. Now the values come
+    from Steam's settingsStore.clientSettings and only the curated settings are shown."""
     from stone_home import steamsettings as SS
-    tree = {"System": {"Display": {"GetBrightness": "f0", "SetBrightness": "f1", "GetHdrEnabled": "f0", "SetHdrEnabled": "f1"},
-                       "Audio": {"GetMute": "f0", "SetMute": "f1", "GetVolume": "f0", "SetVolume": "f1"}, "Account": {"GetEmail": "f0", "SetEmail": "f1"},
-                       "GetShutdownDelay": "f0", "GetNoArgsOnly": "f2"},
-            "Apps": {"GetAppOverview": "f1", "GetLanguage": "f0"}}
-    ids = {c["id"]: c for c in SS.catalog(tree)}
-    # no Brightness: a TV console has no built-in screen (3.1.0-rc6; it is the Steam Deck's)
-    assert set(ids) == {"System.Display.HdrEnabled", "System.Audio.Mute", "System.Audio.Volume", "Apps.Language"}, set(ids)
-    assert ids["System.Audio.Mute"]["set_path"] == ["System", "Audio", "SetMute"] and ids["Apps.Language"]["set_path"] is None
-    assert ids["System.Display.HdrEnabled"]["label"] == "Hdr Enabled" and ids["System.Display.HdrEnabled"]["area"] == "Display"
-    assert SS.catalog({"A": {"Get$x": "f0"}}) == [] and SS.catalog({"System": {"GetOk;x": "f0"}}) == []
+    assert "GetClientSetting" not in SS.READ_EXPRESSION and "SteamClient" not in SS.READ_EXPRESSION   # reading calls nothing
 
     class Cef:
-        def __init__(self):
-            self.written = []
-
-        def probe(self):
-            return [{"title": "x", "has_steamclient": False, "tree": {}}, {"title": "SharedJSContext", "has_steamclient": True, "tree": tree}]
+        def __init__(self, vals):
+            self.vals, self.written = vals, []
 
         def ui_value(self, expr):
-            if "setTimeout" in expr:                                   # the batched read
-                return json.dumps({"System.Audio.Volume": 70, "System.Display.HdrEnabled": True,
-                                   "System.Audio.Mute": False, "Apps.Language": "spanish"})
+            if expr == SS.READ_EXPRESSION:
+                return None if self.vals is None else json.dumps(self.vals)
             self.written.append(expr)
             return "ok"
-    home = tempfile.mkdtemp()
-    old = os.environ.get("XDG_STATE_HOME")
-    os.environ["XDG_STATE_HOME"] = home
-    try:
-        cef = Cef()
-        ss = SS.SteamSettings(cef)
-        r = ss.read()
-        by = {x["id"]: x for x in r["settings"]}
-        assert r["available"] and by["System.Audio.Mute"]["writable"] and by["System.Audio.Mute"]["type"] == "bool"
-        assert not by["System.Audio.Volume"]["writable"]                  # numbers are shown, not changed
-        assert not by["Apps.Language"]["writable"] and by["Apps.Language"]["type"] == "text"
-        assert os.path.isfile(SS.state_path())                             # the list of functions is kept
-        assert ss.set_bool("System.Audio.Mute", True)["ok"] and "SetMute" in cef.written[-1] and "true" in cef.written[-1]
-        for bad in (("System.Audio.Volume", True), ("Account.Email", True), ("../x", True), ("System.Audio.Mute", 1)):
-            try:
-                ss.set_bool(*bad)
-                raise AssertionError(bad)
-            except ValueError:
-                pass
-        os.remove(SS.state_path())
-        assert SS.SteamSettings(type("E", (), {"probe": lambda self: [], "ui_value": lambda self, e: None})()).read()["available"] is False
-    finally:
-        if old is None:
-            os.environ.pop("XDG_STATE_HOME", None)
-        else:
-            os.environ["XDG_STATE_HOME"] = old
-        shutil.rmtree(home, ignore_errors=True)
+    cef = Cef({"controller_xbox_support": True, "controller_power_off_timeout": 15, "enable_overlay": False,
+               "library_display_size": 2, "steamos_manual_gpu_clock_enabled": True})
+    ss = SS.SteamSettings(cef)
+    r = ss.read()
+    by = {x["id"]: x for x in r["settings"]}
+    assert r["available"] and set(by) == {"controller_xbox_support", "controller_power_off_timeout", "enable_overlay"}, set(by)
+    assert by["controller_xbox_support"]["label"] == "Soporte para mandos Xbox" and by["controller_xbox_support"]["area"] == "Mandos"
+    assert by["enable_overlay"]["writable"] and not by["controller_power_off_timeout"]["writable"]     # numbers are shown, not changed
+    assert ss.set_bool("enable_overlay", True)["ok"] and "GetClientSetting(\"enable_overlay\")" in cef.written[-1] and "r[1](true)" in cef.written[-1]
+    for bad in (("controller_power_off_timeout", True), ("steamos_manual_gpu_clock_enabled", True), ("../x", True), ("enable_overlay", 1)):
+        try:
+            ss.set_bool(*bad)
+            raise AssertionError(bad)
+        except ValueError:
+            pass
+    assert SS.SteamSettings(Cef(None)).read()["available"] is False                 # Steam's interface not answering
 
 
 @test
-def D24_steam_settings_are_shown_in_spanish_only_where_known():
+def D24_every_steam_setting_shown_has_a_spanish_name_and_an_area():
     from stone_home import steamsettings as SS
-    assert SS.spanish("Enable Hdr", "Display") == ("Activar HDR", "Pantalla")
-    assert SS.spanish("Some Unknown Thing", "Weird › Audio") == ("Some Unknown Thing", "Weird › Audio")
+    for name, (label, area) in SS.CURATED.items():
+        assert name == name.lower() and label.strip() and area.strip(), name
+        assert "developer" not in name and "gpu_clock" not in name and "password" not in name
+
 
 
 def main():

@@ -241,10 +241,10 @@ const Bridge = (() => {
     'update.now': () => { SIM.updUntil = Date.now() + 10000; return { ok: true, unit: 'uupd-manual.service', already: false }; },
     openSteam: async () => ({ ok: true }), openSteamSettings: async () => ({ ok: true }), restart: async () => ({ ok: true }),
     power: async ([a]) => { toast(`Simulación: «${a === 'off' ? 'Apagar' : 'Reiniciar'}» no hace nada aquí`, false); return { ok: true }; },
-    systemInfo: () => ({ session: 'stone', release: { STONE_VERSION: '3.1.0-rc7 (simulación)', STONE_BASE_IMAGE: 'bazzite-deck', STONE_KERNEL: 'simulado', STONE_MESA: 'simulado', STONE_GOVERNOR_VERSION: 'simulado' },
+    systemInfo: () => ({ session: 'stone', release: { STONE_VERSION: '3.1.0-rc8 (simulación)', STONE_BASE_IMAGE: 'bazzite-deck', STONE_KERNEL: 'simulado', STONE_MESA: 'simulado', STONE_GOVERNOR_VERSION: 'simulado' },
       boot_time: Math.round(now - 3600),
-      deployments: { booted: { image: 'simulación', version: '3.1.0-rc7', timestamp: now },
-        staged: SIM.updUntil && Date.now() > SIM.updUntil ? { image: 'simulación', version: '3.1.0-rc7', timestamp: now } : null,
+      deployments: { booted: { image: 'simulación', version: '3.1.0-rc8', timestamp: now },
+        staged: SIM.updUntil && Date.now() > SIM.updUntil ? { image: 'simulación', version: '3.1.0-rc8', timestamp: now } : null,
         rollback: { image: 'simulación', version: '3.0.0-rc1', timestamp: now - 86400 } },
       updates: { unit: 'uupd.timer', enabled: true, last: Math.round(now - 3600 * 15), next: Math.round(now + 3600 * 9) },
       updating: { unit: 'uupd-manual.service', running: !!SIM.updUntil && Date.now() < SIM.updUntil, result: 'success' } }),
@@ -284,8 +284,23 @@ const Bridge = (() => {
           emit('usb', { state: 'done', copied: 3, skipped: 0, error: null }); emit('library', { reason: 'changed' }); } };
       setTimeout(tick, 300); return { ok: true }; },
     'usb.cancel': () => ({ ok: true }),
-    'diag.build': async () => { await wait(2500); return { name: 'stone-informe-20261114-1830.zip', size: 412000, summary: { version: '3.1.0-rc7 (simulación)', errors: 3,
-      previous_boot_errors: 0, failed_services: [], steam_functions: { have: 27, missing: [] }, findings: ['Wi-Fi: la red no tiene salida a internet'], last_errors: [] } }; },
+    'diag.build': async (symptoms = []) => {
+      await wait(2500);
+      const sym = { filters: 'Los filtros de imagen (Aspecto) no cambian nada', colors: 'Los colores se ven desvaídos o cambian solos' };
+      const tie = id => (symptoms || []).filter(k => (k === 'filters' && id === 'filters') || (k === 'colors' && id === 'display')).map(k => sym[k]);
+      const checks = [
+        { id: 'filters', name: 'Filtros de imagen (Aspecto, vkBasalt)', status: 'fail', detail: 'STONE apagó aspectos tras cerrarse los juegos: por eso no se notan. Vuelve a elegirlos.' },
+        { id: 'display', name: 'Colores de la pantalla (HDR / SDR)', status: 'warn', detail: 'La salida de vídeo pasó a HDR a los 6 s de empezar la sesión, cuando Steam arrancó con «Activar HDR».' },
+        { id: 'games', name: 'Abrir juegos (JUGAR)', status: 'ok', detail: '2 juegos abiertos sin fallo desde que se registra.' },
+        { id: 'steam', name: 'Steam (su interfaz, la tienda y volver a STONE)', status: 'ok', detail: 'Steam responde.' },
+        { id: 'sound', name: 'Sonido', status: 'ok', detail: 'Salida de sonido al 70 %.' },
+        { id: 'controllers', name: 'Mandos', status: 'ok', detail: '1 mando conectado.' },
+        { id: 'network', name: 'Wi-Fi e internet', status: 'ok', detail: 'Conectado y con internet.' },
+        { id: 'emulators', name: 'Emuladores', status: 'nodata', detail: 'No hay emuladores instalados.' }].map(c => ({ ...c, symptom: tie(c.id) }));
+      return { name: 'stone-informe-20261114-1830.zip', size: 412000, summary: { version: '3.1.0-rc8 (simulación)', errors: 3,
+        previous_boot_errors: 0, failed_services: [], steam_functions: { have: 27, missing: [] }, findings: [], last_errors: [], checks,
+        symptoms: (symptoms || []).map(k => sym[k] || k), failing: 1 } };
+    },
     'diag.phone': () => ({ open: true, url: 'http://192.168.1.40:41817/kD9x2mQe7LwP4sZa/', download: 'http://192.168.1.40:41817/kD9x2mQe7LwP4sZa/informe', seconds: 1800, received: [] }),
     'diag.usb': async () => { await wait(900); return /usb/.test(location.search) ? { drive: 'JUEGOS', path: '/run/media/stone/JUEGOS/stone-informe.zip' } : { error: 'No hay ningún USB conectado' }; },
     'diag.close': () => ({ ok: true }),

@@ -1,3 +1,53 @@
+# STONE OS (rebuild) 3.1.0-rc8
+
+Arreglos sacados del **primer informe de diagnóstico de la consola** (14-11-2026, 21:44). Es la primera versión hecha con los registros reales de la BC-250 en lugar de una foto. Decisión D-42.
+
+## Steam ya no recibe llamadas a ciegas
+
+El informe mostró a Steam lanzando errores del tipo «requires 2 arguments; only 1 given»: **121 en un minuto**, todos causados por STONE. La pantalla Ajustes → Steam armaba su lista llamando a todas las funciones de Steam que empiezan por `Get…`, sin argumentos: capturas, Remote Play, almacenamiento, VR, notas… Muchas necesitan datos, y algunas leen cosas que STONE no tiene por qué leer.
+
+Ahora STONE lee los ajustes **como los lee la propia interfaz de Steam**:
+- Los lee de su almacén de ajustes (`settingsStore.clientSettings`), **sin llamar a ninguna función**.
+- Los cambia con la función de Steam que guarda cada ajuste.
+- Muestra solo una lista cuidada, con nombre en español: soporte para mandos Xbox, PlayStation y Nintendo; superposición en el juego; sombreadores precompilados; descargar mientras se juega; Steam Cloud; avisos; capturas; y reducir movimiento.
+
+## Sin falsas alarmas en Salud y en el informe
+
+- **«20 errores de amdgpu»:** son mensajes que el kernel escribe en **cada arranque** de la BC-250 (`dal_irq_service_dummy`, `Unsupported clock type`, `Failed to clear hpd(rx) … on init`). No afectan al juego y ya no cuentan como errores. Un error real, como un cuelgue de la GPU, se sigue mostrando.
+- **«Disco /: 0 GB libres de 0 GB»:** en esta imagen, `/` es el sistema de solo lectura y no tiene tamaño propio. Ya no aparece.
+- **«El arranque anterior registró 147 errores (¿se colgó?)»:** eran los mismos mensajes normales del arranque, y la caja negra decía que había terminado bien. Ahora el informe solo habla de cuelgue si hay una señal real: reinicio de la GPU, una tarea colgada, falta de memoria o un error del kernel.
+- **El informe cuenta solo los errores de STONE** y los graves. Los avisos propios de Steam, gamescope o el sistema base siguen dentro del archivo, pero no se suman. Con tus datos, el recuento pasa de 121 a 1.
+
+## El informe trae el registro de STONE Home
+
+STONE Home escribe sus propios mensajes en `~/.local/state/stone/home.log`, y el informe no los incluía. Ahora sí, el de este arranque y el anterior. Además, los archivos de estado se guardan con una clave por línea, para que una palabra como «token» borre solo esa línea y no el archivo entero.
+
+## El informe dice qué funciona y qué no
+
+El primer informe traía todos los registros, pero no decía lo que viste: **los filtros de imagen no cambian nada** y **los colores del inicio se destiñen a los pocos segundos**. Ahora el informe comprueba cada función y la marca como **FUNCIONA**, **FALLA**, **ATENCIÓN** o **SIN DATOS**, con el motivo y las pruebas. Decisión D-43.
+
+- **Primero preguntas tú.** Al pulsar *Informe de diagnóstico* aparece **«¿Qué no funciona?»**. Puedes marcar filtros de imagen, colores, un juego que no abre, descargas, sonido, mando, Wi-Fi, Steam, emuladores u otra cosa. Lo que marcas va primero en el informe, junto a la comprobación que puede explicarlo.
+- **Filtros de imagen (Aspecto).** Con el juego abierto, STONE mira dentro de sus procesos si le llegó el aspecto y si vkBasalt se cargó de verdad. Así distingue entre:
+  - el aspecto no llegó al juego;
+  - el juego no usa Vulkan;
+  - vkBasalt no se cargó;
+  - STONE lo apagó.
+
+  vkBasalt deja además su propio registro de cada juego dentro del informe.
+- **Colores (HDR).** El informe muestra en qué segundo la salida de vídeo pasó a HDR y si el ajuste **«Activar HDR»** de Steam está encendido. También guarda lo que gamescope tiene configurado en pantalla. Tu informe del 14-11 ya lo mostraba: la salida pasó a HDR **6 s** después de arrancar gamescope, justo cuando arrancó Steam. Es la causa probable de los colores desvaídos, porque la pantalla de inicio de STONE está hecha en SDR.
+- **Además:** abrir juegos, Steam (incluye las llamadas que rechazó y si su ventana se abrió y dejó volver), sonido, mandos, Wi-Fi, disco y emuladores.
+- **Registro de eventos** (`eventos.jsonl`). STONE apunta qué hizo y qué resultado tuvo: cada JUGAR con su aspecto, cuándo arrancó y terminó cada juego, y cada vez que Steam se puso delante. Los registros de texto no permitían contar estas cosas.
+
+## Los aspectos ya no se apagan solos sin avisar
+
+Hasta ahora, si un juego se cerraba antes de 60 s con un aspecto puesto, STONE apagaba el aspecto **sin decir nada**. Bastaba con abrir un juego para ver el aspecto y salir enseguida. En tu informe, `looks.json` estaba vacío. Ahora solo se apaga si el juego se cierra **dos veces seguidas en los primeros 20 s**, y STONE avisa en pantalla. Una partida normal pone el contador a cero.
+
+## HDR desde STONE
+
+En **Ajustes → Steam** aparece **«HDR en la salida de vídeo»**. Es el ajuste «Activar HDR» de Steam, que se lee y se cambia con el mismo mecanismo que usa Steam. Sirve para comprobar si los colores dejan de desteñirse.
+
+**Todo está probado en software (CODE TESTED). La comprobación se hizo con los registros reales del informe, pero nada de esta versión se ha observado todavía en la BC-250.** Pruebas de placa: T-STEAM-24, T-HEALTH-06, T-HEALTH-07 y T-LOOK-03.
+
 # STONE OS (rebuild) 3.1.0-rc7
 
 ## Informe de diagnóstico

@@ -66,6 +66,24 @@ def test_doctor_marks_missing_required_services_as_failures():
     assert H.gpu_errors(fake_run({}, rc=None)) is None
 
 
+def test_the_bc250s_own_start_messages_and_a_read_only_root_are_not_alarms():
+    # the console's diagnostic report (14-11-2026): "20 errores de amdgpu" and "Disco / 0 GB de 0 GB" on a
+    # boot that ended well: amdgpu's start-up messages of this board, and the read-only "/" of a bootc image
+    kernel = ("amdgpu 0000:01:00.0: [drm] *ERROR* dal_irq_service_dummy_set: called for non-implemented irq source, src_id=0\n"
+              "amdgpu 0000:01:00.0: [drm] *ERROR* Failed to clear hpd(rx) source=3 on init\n"
+              "amdgpu 0000:01:00.0: Unsupported clock type\n"
+              "amdgpu 0000:01:00.0: ring gfx_0.0.0 timeout, signaled seq=1, emitted seq=3\n")
+    assert H.gpu_errors(fake_run({}, journal=kernel)) == ["amdgpu 0000:01:00.0: ring gfx_0.0.0 timeout, signaled seq=1, emitted seq=3"]
+    assert H.gpu_errors(fake_run({}, journal=kernel.rsplit("amdgpu 0000:01:00.0: ring", 1)[0])) == []
+    old = H.os.statvfs
+    H.os.statvfs = lambda p: type("V", (), {"f_blocks": 0 if p == "/" else 1000, "f_frsize": 4096, "f_bavail": 500})()
+    try:
+        paths = [s["path"] for s in H.storage(("/", tempfile.gettempdir()))]
+        assert "/" not in paths and paths == [tempfile.gettempdir()]
+    finally:
+        H.os.statvfs = old
+
+
 def test_stone_doctor_exit_code_and_json():
     real = H.snapshot
     H.snapshot = lambda run=None: {"cpu": {"threads": 16}, "memory": None, "storage": [], "services": [], "gpu_errors": [], "blackbox": []}

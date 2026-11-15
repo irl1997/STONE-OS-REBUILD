@@ -22,6 +22,10 @@ SERVICES = (("stoned.service", "Servicio de rendimiento (stoned)", True),
             ("stone-blackbox.service", "Caja negra", False))
 BLACKBOX = os.environ.get("STONE_BLACKBOX_DIR", "/var/lib/stone/blackbox")
 MIN_FREE_GB = 20
+# What amdgpu writes at every start of a BC-250 and means nothing for play (its display block has no
+# interrupt for every source; one clock type is not there): not errors to show the person. Seen in the
+# console's diagnostic report of 14-11-2026, boots that ended well (the black box) with 20 of these.
+BENIGN_GPU = re.compile(r"dal_irq_service_dummy_(set|ack)|Unsupported clock type|Failed to clear hpd\(rx\) source=\d+ on init", re.I)
 
 
 def _read(path):
@@ -80,7 +84,7 @@ def storage(paths=("/", "/var/home")):
             dev = os.stat(p).st_dev
         except OSError:
             continue
-        if dev in seen:
+        if dev in seen or st.f_blocks == 0:          # "/" of a bootc image is the read-only system: no size of its own
             continue
         seen.add(dev)
         out.append({"path": p, "total": st.f_blocks * st.f_frsize, "free": st.f_bavail * st.f_frsize})
@@ -101,7 +105,7 @@ def gpu_errors(run=_run):
     rc, txt = run(["journalctl", "-k", "-b", "-p", "err", "--no-pager", "-q", "-o", "cat"], timeout=15)
     if rc is None or rc not in (0, 1):
         return None
-    return [ln for ln in txt.splitlines() if "amdgpu" in ln.lower()][:20]
+    return [ln for ln in txt.splitlines() if "amdgpu" in ln.lower() and not BENIGN_GPU.search(ln)][:20]
 
 
 def blackbox(directory=BLACKBOX):

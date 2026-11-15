@@ -64,6 +64,7 @@
 #dlg .okbox{font-family:var(--f-mono);font-size:28px;color:var(--warm);border-bottom:2px solid var(--vein);padding-bottom:8px;min-height:40px;word-break:break-all}
 /* Search results (home.js searchResults) */
 #dlg .slist{display:flex;flex-direction:column;gap:6px;max-height:520px;overflow:hidden}
+#dlg .slist.two{display:grid;grid-template-columns:1fr 1fr;column-gap:40px}
 #dlg .sres{display:flex;justify-content:space-between;gap:24px;font-size:22px;padding:6px 0}
 #dlg .sres small{font-family:var(--f-mono);font-size:15px;letter-spacing:.08em;color:var(--text-2)}
 #dlg .st-cap{font-family:var(--f-mono);font-size:14px;letter-spacing:.16em;color:var(--vein);margin-top:10px}

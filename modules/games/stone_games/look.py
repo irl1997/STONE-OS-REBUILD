@@ -155,4 +155,11 @@ def env_for_game(appid, facts, game, measuring=False):
     look = load_prefs().get(str(appid))
     if not look or measuring or not options(appid, facts, game)["available"]:
         return {}
-    return {"ENABLE_VKBASALT": "1", "VKBASALT_CONFIG_FILE": write(look), "STONE_LOOK": look}
+    # vkBasalt's own log (its README: VKBASALT_LOG_FILE / VKBASALT_LOG_LEVEL), one file per game, so the
+    # diagnostic report can say whether the layer started in the game and which effects it loaded.
+    return {"ENABLE_VKBASALT": "1", "VKBASALT_CONFIG_FILE": write(look), "STONE_LOOK": look,
+            "VKBASALT_LOG_LEVEL": "info", "VKBASALT_LOG_FILE": log_path(appid)}
+
+
+def log_path(appid):
+    return os.path.join(state_dir(), f"vkbasalt-{int(appid)}.log")
