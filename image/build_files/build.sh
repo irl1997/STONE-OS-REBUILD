@@ -116,6 +116,13 @@ dnf5 -y install webkitgtk6.0 gtk4 gobject-introspection chromium   # cairo-1.0 t
 ## "no disponible" and nothing else changes, so a missing package is a warning, not a failure.
 dnf5 -y install --skip-unavailable vkBasalt
 compgen -G "/usr/share/vulkan/implicit_layer.d/*[Bb]asalt*" || echo "WARNING: vkBasalt layer not installed; STONE IMAGE looks unavailable"
+## OptiScaler publishes its releases as .7z (stone_games/install.py unpacks them with bsdtar or 7-Zip).
+## Without one, "Instalar OptiScaler" cannot work, so the build stops (image smoke checks it too).
+## bsdtar (libarchive, Fedora's "bsdtar" package) is the one relied on; 7-Zip only as a second way.
+command -v bsdtar || dnf5 -y install bsdtar
+command -v 7z || command -v 7zz || dnf5 -y install --skip-unavailable 7zip || true
+command -v bsdtar || command -v 7z || command -v 7za || command -v 7zz \
+    || { echo "ERROR: no .7z unpacker (bsdtar / 7-Zip): OptiScaler cannot be installed"; exit 1; }
 python3 -c "import gi; gi.require_version('Gtk', '4.0'); gi.require_version('WebKit', '6.0'); from gi.repository import Gtk, WebKit" \
     || { echo "ERROR: WebKitGTK 6 / GTK 4 bindings missing; STONE Home fallback cannot run"; exit 1; }
 CHROMIUM_BIN=""

@@ -4,7 +4,7 @@
 Valve publishes the Steam client's interface (a web app: steamui/*.js) with every client version, in
 the public update files that every Steam client downloads:
 
-    https://client-update.steamstatic.com/steam_client_ubuntu12      the manifest (version, files, sha2)
+    https://client-update.steamstatic.com/steam_client_steamrt64     the manifest (version, files, sha2)
     https://client-update.steamstatic.com/<file of steamui_websrc_all> the interface, a zip
 
 STONE talks to that interface (stone_home/steamcef.py: JavaScript run in Steam's own page). Instead of
@@ -30,7 +30,10 @@ import sys
 import urllib.request
 import zipfile
 
-MANIFEST_URL = "https://client-update.steamstatic.com/steam_client_ubuntu12"
+# The console runs Steam's 64-bit client (its bootstrap log, 15-11-2026: steamrt64/steam, manifest
+# steam_client_steamrt64, client 1794536281). Until then this read the 32-bit one (steam_client_ubuntu12),
+# which Valve still publishes but which stayed on an older version (1792618285).
+MANIFEST_URL = "https://client-update.steamstatic.com/steam_client_steamrt64"
 FILE_BASE = "https://client-update.steamstatic.com/"
 PACKAGE = "steamui_websrc_all"
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -324,7 +327,7 @@ AREAS = ("Apps", "Installs", "Downloads", "Settings", "User", "System", "UI", "W
 def report(idx, version, problems):
     lines = [f"# La interfaz de Steam (cliente {version})", "",
              "Generado por `dev/steam/steam_api.py report` a partir del código que Valve publica con el cliente "
-             "(`steam_client_ubuntu12` → `steamui_websrc_all`). Es la referencia de lo que STONE puede pedirle a Steam: "
+             "(`steam_client_steamrt64` → `steamui_websrc_all`, el cliente de 64 bits que usa la consola). Es la referencia de lo que STONE puede pedirle a Steam: "
              "las funciones que la propia interfaz de Steam llama, cuántas veces y con qué argumentos.", "",
              "## STONE frente a Steam", ""]
     for level, msg in problems:

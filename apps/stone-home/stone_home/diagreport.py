@@ -104,6 +104,21 @@ def _tail(path, limit=MAX_FILE):
         return f"[no se pudo leer {os.path.basename(path)}: {e.strerror or e}]\n"
 
 
+def _read_proc(path, limit=131072):
+    """/proc files have no size: seeking from their end fails (EINVAL), so they are read from the start."""
+    try:
+        with open(path, "rb") as f:
+            return f.read(limit).decode("utf-8", "replace")
+    except OSError as e:
+        return f"[no se pudo leer {os.path.basename(path)}: {e.strerror or e}]\n"
+
+
+def steam_since_start(text):
+    """The part of Steam's console log written since its last start ("Client version:")."""
+    i = text.rfind("Client version:")
+    return text[text.rfind("\n", 0, i) + 1:] if i >= 0 else text
+
+
 def _cut(text, limit=MAX_FILE):
     b = text.encode("utf-8", "replace")
     return text if len(b) <= limit else "[…principio recortado]\n" + b[-limit:].decode("utf-8", "replace").split("\n", 1)[-1]
@@ -187,7 +202,7 @@ def build(out_dir=None, live=None, run=_run, home=None, now=time.time, symptoms=
         vk = []
     for n in vk[-8:]:
         files[f"juegos/{n[:-4]}.txt"] = _tail(os.path.join(looks_dir, n), 256 * 1024)
-    files["dispositivos.txt"] = ("== /proc/bus/input/devices ==\n" + _tail(os.path.join(root, "proc/bus/input/devices"), 131072)
+    files["dispositivos.txt"] = ("== /proc/bus/input/devices ==\n" + _read_proc(os.path.join(root, "proc/bus/input/devices"))
                                  + "\n== wpctl status ==\n" + run(["wpctl", "status"], 10)
                                  + "\n== nmcli device status ==\n" + run(["nmcli", "-t", "device", "status"], 10))
     live = dict(live or {})
@@ -198,7 +213,10 @@ def build(out_dir=None, live=None, run=_run, home=None, now=time.time, symptoms=
         files["pantalla/gamescope.json"] = json.dumps(live["gamescope_atoms"], indent=1, ensure_ascii=False, default=str)
     ev = events_rows if events_rows is not None else E.read(file=os.path.join(state, "events.jsonl"))
     files["eventos.jsonl"] = "\n".join(json.dumps(e, ensure_ascii=False) for e in ev[-1500:]) + "\n"
-    logs = "\n".join(files.get(k, "") for k in ("stone-home.txt", "stone-home-app.txt", "stoned.txt", "steam-console_log.txt"))
+    # Steam's console log keeps days: only what this Steam has said since it started counts (the second
+    # report, 15-11-2026, counted 184 rejected calls of which none were from the running rc8)
+    logs = "\n".join([files.get(k, "") for k in ("stone-home.txt", "stone-home-app.txt", "stoned.txt")]
+                      + [steam_since_start(files.get("steam-console_log.txt", ""))])
     checks = diagchecks.run_checks(live, files["stone-home.txt"], logs, home, run, symptoms, ev, root, names)
     symptoms = [x for x in symptoms if x in diagchecks.SYMPTOMS]
     files["comprobaciones.txt"] = diagchecks.text(checks, symptoms)

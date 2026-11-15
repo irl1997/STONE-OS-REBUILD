@@ -51,6 +51,8 @@ tests:
   - {id: "T-CONN-02", title: "Steam Input sigue funcionando", phase: F6, kind: P, status: NOT TESTED, runs: [], observed: []}
   - {id: "T-CONN-03", title: "Sin adaptador Bluetooth, no disponible", phase: F6, kind: S+V, status: NOT TESTED, runs: [], observed: []}
   - {id: "T-DL-01", title: "Instalar y desinstalar un juego de Steam desde STONE", phase: F7, kind: P, status: NOT TESTED, runs: [], observed: []}
+  - {id: "T-DL-04", title: "Descargar OptiScaler desde la pagina del juego (version 0.9.x, .7z) y luego Instalar: sin error, winmm.dll y OptiScaler.ini en la carpeta del ejecutable, sin setup_linux.sh", phase: F7, kind: P, status: NOT TESTED, runs: [], observed: ["3.1.0-rc8 (15-11-2026): No se pudo: OptiScaler (FSR 3.1): the latest release has no file I recognise (v0.9.4) (owner, photo)"]}
+  - {id: "T-HEALTH-08", title: "Informe sin falsas alarmas: filtros sin «biblioteca no existe», Steam sin llamadas de dias anteriores, sin fila Disco /, y Mandos lista el mando encendido", phase: F9, kind: P, status: NOT TESTED, runs: [], observed: ["3.1.0-rc8 (15-11-2026): $LIB library, 184 old Steam rejections, Disco / 0 GB, /proc/bus/input/devices unreadable (diagnostic report)"]}
   - {id: "T-DL-02", title: "Instalar y quitar OptiScaler deja la carpeta identica", phase: F7, kind: P, status: NOT TESTED, runs: [], observed: []}
   - {id: "T-EMU-01", title: "Emulador desde STONE con vuelta a Home y al perfil global", phase: F8, kind: P, status: NOT TESTED, runs: [], observed: []}
   - {id: "T-DESK-01", title: "Ida y vuelta al escritorio x5", phase: F9, kind: P, status: NOT TESTED, runs: [], observed: []}

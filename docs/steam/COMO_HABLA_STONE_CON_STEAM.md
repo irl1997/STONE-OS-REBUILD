@@ -15,7 +15,7 @@ Valve publica los archivos de actualización del cliente en un servidor público
 
 | Qué | Dónde |
 | --- | --- |
-| Manifiesto (versión, archivos, sumas SHA-256) | `https://client-update.steamstatic.com/steam_client_ubuntu12` |
+| Manifiesto (versión, archivos, sumas SHA-256) | `https://client-update.steamstatic.com/steam_client_steamrt64` (cliente de 64 bits, el de la consola desde noviembre de 2026) |
 | Interfaz de Steam (una aplicación web en JavaScript) | el archivo del paquete `steamui_websrc_all` que nombra el manifiesto |
 
 Dentro del paquete, `steamui/sp.js` y `steamui/library.js` contienen lo que importa: cada llamada `SteamClient.<Área>.<Función>(…)`, los avisos a los que se suscribe la interfaz, los almacenes que guarda en `window` (`appStore`, `downloadsStore`, `collectionStore`…) y las enumeraciones con sus números (`k_EInstallMgrState…`, `k_EAppUpdateProgress…`). Los textos en español de Steam están en `steamui/localization/steamui_spanish-json.js`.

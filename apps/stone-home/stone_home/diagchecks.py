@@ -47,6 +47,8 @@ _JSEXC = re.compile(r"RaiseJSException: Method call failed: (\w+\.\w+)")
 _HEALED_OLD = re.compile(r"'healed': 'look (\w+) turned off'")
 _LAUNCH_ERR = re.compile(r"\[stone\] (?:launch (\d+):.*\berror\b.*|optimized: Steam did not start (\d+).*)")
 _EMU_ERR = re.compile(r"\[stone\] emulators?:.*(error|fail|not found|no se)", re.I)
+_PAD = re.compile(r"controller|gamepad|joystick|joy-con|xbox|dualsense|dualshock|wireless pad|8bitdo|pro controller", re.I)
+_NOT_PAD = re.compile(r"motion sensors|touchpad|consumer control|keyboard|mouse", re.I)
 LIB_DIRS = ("/usr/lib64", "/usr/lib", "/usr/lib/x86_64-linux-gnu", "/usr/lib32", "/usr/lib/i386-linux-gnu")
 
 
@@ -91,8 +93,11 @@ def layer_state(root="/", layer_jsons=None):
             continue
         found = True
         lib = (_json(p).get("layer") or {}).get("library_path") or ""
+        # "$LIB" is the dynamic loader's own token (lib64 on Fedora for 64-bit programs): Fedora's
+        # vkBasalt declares /usr/$LIB/vkbasalt/libvkbasalt.so (the console's report, 15-11-2026)
+        libs = [lib.replace("$LIB", d) for d in ("lib64", "lib", "lib/x86_64-linux-gnu", "lib32")] if "$LIB" in lib else [lib]
         if lib.startswith("/"):
-            ok = os.path.exists(os.path.join(root, lib.lstrip("/")))
+            ok = any(os.path.exists(os.path.join(root, x.lstrip("/"))) for x in libs)
         else:
             ok = bool(lib) and any(os.path.exists(os.path.join(root, d.lstrip("/"), lib)) for d in LIB_DIRS)
         lib_ok = lib_ok or ok
@@ -273,7 +278,7 @@ def check_controllers(root="/"):
     for b in blocks:
         n = re.search(r'N: Name="([^"]*)"', b)
         h = re.search(r"H: Handlers=(.*)", b)
-        if n and h and re.search(r"\bjs\d+", h.group(1)):
+        if n and h and (re.search(r"\bjs\d+", h.group(1)) or _PAD.search(n.group(1))) and not _NOT_PAD.search(n.group(1)):
             pads.append(n.group(1))
     if not pads:
         return _check("controllers", name, WARN, "No hay ningún mando conectado ahora mismo.", [],

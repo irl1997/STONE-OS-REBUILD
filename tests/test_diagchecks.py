@@ -177,6 +177,29 @@ def test_symptoms_come_first_and_the_report_says_it():
         shutil.rmtree(t, ignore_errors=True)
 
 
+def test_second_report_false_alarms():
+    """The console's second report (15-11-2026, rc8): Fedora's vkBasalt declares /usr/$LIB/...; Steam's
+    log still had rc7's rejected calls from the day before; a controller seen by name."""
+    with Box(library=False) as b:
+        d = os.path.join(b.root, "usr", "share", "vulkan", "implicit_layer.d", "vkBasalt.json")
+        with open(d, "w") as f:
+            json.dump({"layer": {"library_path": "/usr/$LIB/vkbasalt/libvkbasalt.so"}}, f)
+        assert C.layer_state(b.root)[:2] == (True, False)
+        os.makedirs(os.path.join(b.root, "usr", "lib64", "vkbasalt"))
+        open(os.path.join(b.root, "usr", "lib64", "vkbasalt", "libvkbasalt.so"), "w").close()
+        assert C.layer_state(b.root)[:2] == (True, True)
+        os.makedirs(os.path.join(b.root, "proc", "bus", "input"))
+        with open(os.path.join(b.root, "proc", "bus", "input", "devices"), "w") as f:
+            f.write('N: Name="Xbox Wireless Controller"\nH: Handlers=event7\n\nN: Name="Xbox Wireless Controller Consumer Control"\nH: Handlers=kbd event8\n\n')
+        assert C.check_controllers(b.root)["evidence"] == ["Xbox Wireless Controller"]
+    log = ("[2026-11-14 21:44:51] Client version: 1792618285\n"
+           "[2026-11-14 21:44:52] RaiseJSException: Method call failed: Apps.GetPlaytime requires 2 arguments; only 1 given\n"
+           "[2026-11-15 10:31:05] Client version: 1794536281\n[2026-11-15 10:31:06] Startup\n")
+    rest = D.steam_since_start(log)
+    assert rest.startswith("[2026-11-15 10:31:05]") and "RaiseJSException" not in rest
+    assert C.check_steam({"steam_reachable": True, "steam_functions": {"have": 27, "missing": []}}, rest, [])["status"] == C.OK
+
+
 def test_events_are_kept_small_and_never_fail():
     t = tempfile.mkdtemp(prefix="stone-ev-")
     try:

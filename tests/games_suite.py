@@ -742,7 +742,9 @@ def _fake_net(kind, files, tag="v9.9.9", name=None, digest=True, bad_digest=Fals
 def G20_components_download_verify_install_uninstall():
     from stone_games import install
     opti = {"OptiScaler/OptiScaler.dll": b"MZ" + bytes(50), "OptiScaler/OptiScaler.ini": "[Upscalers]\n",
-            "OptiScaler/D3D12_Optiscaler/D3D12Core.dll": b"MZ"}
+            "OptiScaler/D3D12_Optiscaler/D3D12Core.dll": b"MZ",
+            "OptiScaler/setup_linux.sh": "#!/bin/sh\n", "OptiScaler/setup_windows.bat": "@echo off\n",
+            "OptiScaler/!! README_EXTRACT ALL FILES TO GAME FOLDER !!.txt": "x"}      # the release's own installer: not copied
     with World() as w:
         gdir = os.path.join(w.game_dir, "bin", "x64")
         with open(os.path.join(gdir, "Cyberpunk2077.exe"), "wb") as f:
@@ -785,6 +787,7 @@ def G20_components_download_verify_install_uninstall():
         assert not w.e.install_plan(CP, "optiscaler")["ok"]                         # already installed
         u = w.e.uninstall_image(CP)
         assert u["ok"] and u["removed"] == 3
+        assert not any(os.path.exists(os.path.join(gdir, n)) for n in ("setup_linux.sh", "setup_windows.bat"))
         assert not os.path.exists(os.path.join(gdir, "winmm.dll")) and not os.path.exists(os.path.join(gdir, "D3D12_Optiscaler"))
         assert os.path.isfile(os.path.join(gdir, "Cyberpunk2077.exe"))              # the game's own files untouched
         assert not w.e.uninstall_image(CP)["ok"]
@@ -842,6 +845,25 @@ def G22_guided_optimization_counts_the_matrix_and_grows_with_installed_paths():
         assert o2["next"] != o["next"], (o, o2)
     with World(injected="helixsr") as w2:                       # HelixSR installed -> more rows to measure
         assert w2.e.optimize_status(CP)["total"] > o["total"]
+
+
+@test
+def G25_optiscaler_release_names_in_any_letter_case():
+    """3.1.0-rc8 on the console: OptiScaler v0.9.4 publishes "Optiscaler_0.9.4-final.20260718._MM.7z"
+    (small s) and STONE said "the latest release has no file I recognise"."""
+    from stone_games import install
+    for name in ("Optiscaler_0.9.4-final.20260718._MM.7z", "OptiScaler_0.7.7-pre9.7z", "optiscaler-1.0.zip"):
+        rel = {"tag_name": "v0.9.4", "assets": [{"name": "notes.txt"}, {"name": name, "browser_download_url": "https://github.com/x/" + name,
+                                                 "size": 55016448, "digest": "sha256:" + "a" * 64}]}
+        r = install.latest("optiscaler", lambda url, rel=rel: rel)
+        assert r["name"] == name and r["sha256"] == "a" * 64, r
+    try:
+        install.latest("optiscaler", lambda url: {"tag_name": "v1", "assets": [{"name": "Source.tar.gz"}]})
+        raise AssertionError("an unknown file accepted")
+    except install.InstallError:
+        pass
+    assert install.SKIP_FILES.match("setup_linux.sh") and install.SKIP_FILES.match("!! README_EXTRACT ALL FILES TO GAME FOLDER !!.txt")
+    assert not install.SKIP_FILES.match("OptiScaler.ini") and not install.SKIP_FILES.match("D3D12_Optiscaler/D3D12Core.dll")
 
 
 @test

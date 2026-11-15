@@ -1,3 +1,33 @@
+# STONE OS (rebuild) 3.1.0-rc9
+
+Arreglos sacados del **segundo informe de la consola** (15-11-2026, 10:33, ya con la 3.1.0-rc8) y de la foto de la tele. Decisión D-44.
+
+## Las herramientas de escalado vuelven a instalarse
+
+En la tele salía **«No se pudo: OptiScaler (FSR 3.1): the latest release has no file I recognise (v0.9.4)»**.
+
+- **El nombre del archivo:** desde la versión 0.9, OptiScaler llama a su archivo `Optiscaler_0.9.4-final.20260718._MM.7z`, con la «s» en minúscula. STONE buscaba `OptiScaler`, con mayúscula exacta, y no encontraba nada. Ahora da igual si va en mayúsculas o en minúsculas.
+- **El archivo de la versión 0.9.4, probado de verdad:** se descargó, coincide con la suma SHA-256 que publica GitHub y se descomprimió con el propio código de STONE. Se copian 18 archivos al juego: `OptiScaler.dll` (con el nombre `winmm.dll`), su `.ini`, las DLL de FSR y XeSS y `D3D12_Optiscaler`. Los instaladores del autor (`setup_linux.sh`, `setup_windows.bat` y el LÉEME) ya no se copian: STONE instala OptiScaler por su cuenta.
+- **Descomprimir `.7z` en la consola:** OptiScaler solo se publica en `.7z`. La imagen instala ahora `bsdtar`, y la construcción se detiene si no hay ninguna herramienta capaz de abrir `.7z`. Así no puede volver a salir una imagen sin ella.
+- **HelixSR** sigue publicando `HelixSR-3.3.0.zip`, que STONE ya reconoce.
+
+## El informe, sin falsas alarmas
+
+- **«Filtros de imagen: la biblioteca de vkBasalt no existe».** Era falso. Fedora declara su ruta como `/usr/$LIB/vkbasalt/…`, donde `$LIB` es una palabra que el sistema convierte en `lib64`. Ahora se comprueba así.
+- **«Steam rechazó 184 llamadas».** Eran antiguas: 171 del día anterior y 13 de las 09:26, antes de actualizar. Desde que arrancó la rc8 no hay ninguna, así que el arreglo de la rc8 funciona. El informe ya solo cuenta lo que ha dicho el Steam que está en marcha.
+- **«Disco /: 0 GB libres de 0 GB».** En esta imagen, `/` es el sistema de solo lectura: ocupa 45 MB y está lleno a propósito. La rc8 solo lo ocultaba si medía 0 bytes; ahora se oculta cualquier disco de solo lectura.
+- **Mandos:** la lista de dispositivos no se podía leer (*Invalid argument*), así que el informe no veía los mandos. Ahora se lee bien, y además reconoce un mando por su nombre.
+
+## Steam de 64 bits
+
+La consola ya usa el **cliente de 64 bits de Steam**, versión 1794536281. La herramienta que lee el código de Steam leía el de 32 bits, que se había quedado en una versión anterior. Ahora lee el de la consola. Comprobado contra la 1794536281: las 156 llamadas de STONE coinciden con las que usa Steam, sin ningún error.
+
+## Lo que dijo el informe sobre los colores
+
+Queda confirmado que la salida pasa a **HDR**: gamescope marca `GAMESCOPE_HDR_OUTPUT_FEEDBACK=1` a los 9 s de empezar la sesión. La tele está conectada por DisplayPort → HDMI con un adaptador. Para comprobar si esa es la causa: **Ajustes → Steam → «HDR en la salida de vídeo» → No**.
+
+**Todo está probado en software (CODE TESTED). El archivo real de OptiScaler 0.9.4 se comprobó y se descomprimió en el Mac, pero nada de esta versión se ha observado todavía en la BC-250.** Pruebas de placa: T-DL-04 y T-HEALTH-08.
+
 # STONE OS (rebuild) 3.1.0-rc8
 
 Arreglos sacados del **primer informe de diagnóstico de la consola** (14-11-2026, 21:44). Es la primera versión hecha con los registros reales de la BC-250 en lugar de una foto. Decisión D-42.

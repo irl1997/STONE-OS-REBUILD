@@ -6,7 +6,7 @@
 ],
 "count": 1,
 "samples": [
-"pe.strAppName,pe.strExePath,pe.strArguments,pe.strCmdline"
+"xe.strAppName,xe.strExePath,xe.strArguments,xe.strCmdline"
 ]
 },
 "Apps.BackupFilesForApp": {
@@ -15,7 +15,7 @@
 ],
 "count": 1,
 "samples": [
-"O,this.state.strFolder"
+"x,this.state.strFolder"
 ]
 },
 "Apps.BrowseScreenshotForApp": {
@@ -43,8 +43,8 @@
 "count": 6,
 "samples": [
 "this.m_nGameActionID",
-"U",
-"Xe.gameActionID"
+"K",
+"it.gameActionID"
 ]
 },
 "Apps.CancelLaunch": {
@@ -53,7 +53,7 @@
 ],
 "count": 1,
 "samples": [
-"kt.GetGameID()"
+"Lt.GetGameID()"
 ]
 },
 "Apps.ClearCustomArtworkForApp": {
@@ -63,7 +63,7 @@
 "count": 2,
 "samples": [
 "this.props.app.appid,this.props.eAssetType",
-"this.props.overview.appid,Xe"
+"this.props.overview.appid,it"
 ]
 },
 "Apps.ClearCustomLogoPositionForApp": {
@@ -72,7 +72,7 @@
 ],
 "count": 1,
 "samples": [
-"A.appid"
+"p.appid"
 ]
 },
 "Apps.ClearProton": {
@@ -81,7 +81,7 @@
 ],
 "count": 1,
 "samples": [
-"w"
+"g"
 ]
 },
 "Apps.ContinueGameAction": {
@@ -90,9 +90,9 @@
 ],
 "count": 6,
 "samples": [
-"this.m_nGameActionID,ze",
-" \"+this.m_nGameActionID+\", '\"+Ue+\"' ",
-"this.m_nGameActionID,Ue"
+"this.m_nGameActionID,Pe",
+" \"+this.m_nGameActionID+\", '\"+Te+\"' ",
+"this.m_nGameActionID,Te"
 ]
 },
 "Apps.CreateDesktopShortcutForApp": {
@@ -101,8 +101,8 @@
 ],
 "count": 2,
 "samples": [
-"qt",
-"kt.appid"
+"ve",
+"Lt.appid"
 ]
 },
 "Apps.DownloadWorkshopItem": {
@@ -111,7 +111,7 @@
 ],
 "count": 1,
 "samples": [
-"Y,J,!0"
+"H,q,!0"
 ]
 },
 "Apps.GetAchievementsInTimeRange": {
@@ -120,7 +120,7 @@
 ],
 "count": 1,
 "samples": [
-"E,v,B"
+"P,O,v"
 ]
 },
 "Apps.GetActiveGameActions": {
@@ -138,16 +138,7 @@
 ],
 "count": 1,
 "samples": [
-"b"
-]
-},
-"Apps.GetCachedAppDetails": {
-"arities": [
-1
-],
-"count": 1,
-"samples": [
-"l"
+"y"
 ]
 },
 "Apps.GetCloudPendingRemoteOperations": {
@@ -156,7 +147,7 @@
 ],
 "count": 1,
 "samples": [
-"A.appid"
+"p.appid"
 ]
 },
 "Apps.GetConflictingFileTimestamps": {
@@ -165,7 +156,7 @@
 ],
 "count": 1,
 "samples": [
-"A.appid"
+"p.appid"
 ]
 },
 "Apps.GetDetailsForScreenshotUpload": {
@@ -174,8 +165,8 @@
 ],
 "count": 2,
 "samples": [
-"we.strGameID,we.local?.hHandle",
-"A.strGameID,A.hHandle"
+"Se.strGameID,Se.local?.hHandle",
+"z.strGameID,z.hHandle"
 ]
 },
 "Apps.GetDetailsForScreenshotUploads": {
@@ -184,7 +175,7 @@
 ],
 "count": 1,
 "samples": [
-"tt,Ae[tt]"
+"At,Y[At]"
 ]
 },
 "Apps.GetDownloadedWorkshopItems": {
@@ -193,7 +184,7 @@
 ],
 "count": 1,
 "samples": [
-"Y"
+"H"
 ]
 },
 "Apps.GetDurationControlInfo": {
@@ -211,7 +202,7 @@
 ],
 "count": 1,
 "samples": [
-"A.toString(),H.ConvertTo64BitString()"
+"T.toString(),R.ConvertTo64BitString()"
 ]
 },
 "Apps.GetGameActionDetails": {
@@ -220,7 +211,7 @@
 ],
 "count": 8,
 "samples": [
-"_e,mt=>Re(mt.nLaunchOption)",
+"et,Ee=>Fe(Ee.nLaunchOption)",
 "this.m_nGameActionID,this.OnGetGameActionDetails",
 "this.m_nGameActionID,this.onGetGameActionDetails"
 ]
@@ -238,8 +229,9 @@
 "arities": [
 1
 ],
-"count": 2,
+"count": 3,
 "samples": [
+"Y",
 "this.props.unAppID",
 "this.props.group.id"
 ]
@@ -250,9 +242,9 @@
 ],
 "count": 9,
 "samples": [
-"Ve",
-"xe.appid",
-"Fe"
+"Le",
+"me.appid",
+"Ue"
 ]
 },
 "Apps.GetMyAchievementsForApp": {
@@ -261,7 +253,7 @@
 ],
 "count": 1,
 "samples": [
-"A.toString()"
+"T.toString()"
 ]
 },
 "Apps.GetPlaytime": {
@@ -279,7 +271,7 @@
 ],
 "count": 1,
 "samples": [
-"v"
+"O"
 ]
 },
 "Apps.GetScreenshotsInTimeRange": {
@@ -288,8 +280,8 @@
 ],
 "count": 2,
 "samples": [
-"E.m_unAppID,v,0",
-"I,0,0"
+"P.m_unAppID,O,0",
+"h,0,0"
 ]
 },
 "Apps.GetShortcutDataForPath": {
@@ -298,7 +290,7 @@
 ],
 "count": 1,
 "samples": [
-"X"
+"ee"
 ]
 },
 "Apps.GetSoundtrackDetails": {
@@ -307,8 +299,8 @@
 ],
 "count": 2,
 "samples": [
-"p",
-"V.appid"
+"S",
+"ae.appid"
 ]
 },
 "Apps.GetSubscribedWorkshopItemDetails": {
@@ -317,7 +309,7 @@
 ],
 "count": 1,
 "samples": [
-"Y,R"
+"H,V"
 ]
 },
 "Apps.GetSubscribedWorkshopItems": {
@@ -326,7 +318,7 @@
 ],
 "count": 2,
 "samples": [
-"Y"
+"H"
 ]
 },
 "Apps.InstallFlatpakAppAndCreateShortcut": {
@@ -335,7 +327,7 @@
 ],
 "count": 1,
 "samples": [
-"Qe,It"
+"qe,xt"
 ]
 },
 "Apps.JoinAppContentBeta": {
@@ -344,8 +336,8 @@
 ],
 "count": 2,
 "samples": [
-"Vr.unAppID,ci",
-"Vr.unAppID,Zt.strName"
+"Yr.unAppID,Ti",
+"Yr.unAppID,Rr.strName"
 ]
 },
 "Apps.JoinAppContentBetaByPassword": {
@@ -354,7 +346,7 @@
 ],
 "count": 1,
 "samples": [
-"Sr,Vr"
+"Mi,Yr"
 ]
 },
 "Apps.LaunchNonSteamApp": {
@@ -363,7 +355,7 @@
 ],
 "count": 1,
 "samples": [
-"gt.strCmdline"
+"Wr.strCmdline"
 ]
 },
 "Apps.ListFlatpakApps": {
@@ -390,8 +382,8 @@
 ],
 "count": 2,
 "samples": [
-"le,Ee,Xe",
-"Z,he,ae"
+"je,Ke,Ve",
+"he,oe,Z"
 ]
 },
 "Apps.MoveWorkshopItemLoadOrder": {
@@ -400,7 +392,7 @@
 ],
 "count": 1,
 "samples": [
-"Y,J,G"
+"H,q,U"
 ]
 },
 "Apps.OpenAppSettingsDialog": {
@@ -409,9 +401,9 @@
 ],
 "count": 3,
 "samples": [
-"kt.appid,\"\"",
+"Lt.appid,\"\"",
 "this.props.app.appid,\"updates\"",
-"Bi.appid,\"updates\""
+"di.appid,\"updates\""
 ]
 },
 "Apps.RaiseWindowForGame": {
@@ -420,9 +412,9 @@
 ],
 "count": 3,
 "samples": [
-"ge",
+"wt",
 "this.m_gameid",
-"Bt.gameid"
+"Gt.gameid"
 ]
 },
 "Apps.RegisterForAchievementChanges": {
@@ -449,7 +441,7 @@
 ],
 "count": 1,
 "samples": [
-"A,this.AppDetailsChanged"
+"p,this.AppDetailsChanged"
 ]
 },
 "Apps.RegisterForAppOverviewChanges": {
@@ -458,7 +450,7 @@
 ],
 "count": 1,
 "samples": [
-"pe=>{this.UpdateAppOverview(pe)&&(this.m_bIsInitialized=!0,$&&$(),$=null)}"
+"Le=>{this.UpdateAppOverview(Le)&&(this.m_bIsInitialized=!0,Oe&&Oe(),Oe=null)}"
 ]
 },
 "Apps.RegisterForDRMFailureResponse": {
@@ -467,8 +459,8 @@
 ],
 "count": 2,
 "samples": [
-"N",
-"y"
+"F",
+"w"
 ]
 },
 "Apps.RegisterForGameActionEnd": {
@@ -542,7 +534,7 @@
 ],
 "count": 1,
 "samples": [
-"Qt"
+"zt"
 ]
 },
 "Apps.RegisterForShowPendingGiftsDialog": {
@@ -551,7 +543,16 @@
 ],
 "count": 1,
 "samples": [
-"Qt"
+"zt"
+]
+},
+"Apps.RegisterForStatsSchemaChanges": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnStatsSchemaChange"
 ]
 },
 "Apps.RegisterForWorkshopChanges": {
@@ -569,7 +570,7 @@
 ],
 "count": 1,
 "samples": [
-"Y,this.onWorkshopDownload"
+"H,this.onWorkshopDownload"
 ]
 },
 "Apps.RegisterForWorkshopItemInstalled": {
@@ -587,18 +588,18 @@
 ],
 "count": 1,
 "samples": [
-"Bt"
+"Gt"
 ]
 },
 "Apps.ReportLibraryAssetCacheMiss": {
 "arities": [
 2
 ],
-"count": 4,
+"count": 5,
 "samples": [
-"k,this.props.eAssetType",
-"b,u.uGW",
-"le,n.n4o"
+"p,this.props.eAssetType",
+"Be,G",
+"y,c.uGW"
 ]
 },
 "Apps.ReportMarketingMessageDialogShown": {
@@ -625,7 +626,7 @@
 ],
 "count": 1,
 "samples": [
-"V.appid"
+"Be.appid"
 ]
 },
 "Apps.RequestLegacyCDKeysForApp": {
@@ -634,7 +635,7 @@
 ],
 "count": 1,
 "samples": [
-"N.appid"
+"F.appid"
 ]
 },
 "Apps.RunGame": {
@@ -643,8 +644,8 @@
 ],
 "count": 2,
 "samples": [
-"H.GetGameID(),\"\",-1,d.s7X",
-"Bt.GetGameID(),\"\",-1,ct"
+"C.GetGameID(),\"\",-1,u.s7X",
+"Gt.GetGameID(),\"\",-1,tr"
 ]
 },
 "Apps.SaveAchievementProgressCache": {
@@ -653,7 +654,7 @@
 ],
 "count": 1,
 "samples": [
-"JSON.stringify(this.m_achievementProgress,w)"
+"JSON.stringify(this.m_achievementProgress,g)"
 ]
 },
 "Apps.ScanForInstalledNonSteamApps": {
@@ -662,7 +663,7 @@
 ],
 "count": 1,
 "samples": [
-"s"
+"r"
 ]
 },
 "Apps.SetAppAutoUpdateBehavior": {
@@ -671,8 +672,8 @@
 ],
 "count": 2,
 "samples": [
-"Vr.unAppID,ki.data",
-"Bi.unAppID,us.data"
+"Yr.unAppID,Zt.data",
+"di.unAppID,Xn.data"
 ]
 },
 "Apps.SetAppBackgroundDownloadsBehavior": {
@@ -681,7 +682,7 @@
 ],
 "count": 1,
 "samples": [
-"Vr.unAppID,di.data"
+"Yr.unAppID,qi.data"
 ]
 },
 "Apps.SetAppCurrentLanguage": {
@@ -690,7 +691,7 @@
 ],
 "count": 1,
 "samples": [
-"Vr.unAppID,nn.data"
+"Yr.unAppID,sr.data"
 ]
 },
 "Apps.SetAppLaunchOptions": {
@@ -699,7 +700,7 @@
 ],
 "count": 1,
 "samples": [
-"Vr.unAppID,nn"
+"Yr.unAppID,sr"
 ]
 },
 "Apps.SetAppResolutionOverride": {
@@ -708,16 +709,7 @@
 ],
 "count": 1,
 "samples": [
-"Vr.unAppID,ni.data"
-]
-},
-"Apps.SetCachedAppDetails": {
-"arities": [
-2
-],
-"count": 1,
-"samples": [
-"l,JSON.stringify(Array.from(f))"
+"Yr.unAppID,dn.data"
 ]
 },
 "Apps.SetControllerRumbleIntensity": {
@@ -726,7 +718,7 @@
 ],
 "count": 1,
 "samples": [
-"Vr.unAppID,an.data"
+"Yr.unAppID,ci.data"
 ]
 },
 "Apps.SetCustomArtworkForApp": {
@@ -735,9 +727,9 @@
 ],
 "count": 3,
 "samples": [
-"this.props.app.appid,Y,M,this.props.eAssetType",
-"Qe,vi,fr,It",
-"this.props.overview.appid,Ye,wt,Ee"
+"this.props.app.appid,q,k,this.props.eAssetType",
+"qe,Si,Er,xt",
+"this.props.overview.appid,St,pt,Ve"
 ]
 },
 "Apps.SetCustomLogoPositionForApp": {
@@ -746,7 +738,7 @@
 ],
 "count": 1,
 "samples": [
-"A.appid,JSON.stringify(H)"
+"p.appid,JSON.stringify(k)"
 ]
 },
 "Apps.SetDLCEnabled": {
@@ -755,7 +747,7 @@
 ],
 "count": 1,
 "samples": [
-"Vr,si.unAppID,nn"
+"Yr,Vr.unAppID,sr"
 ]
 },
 "Apps.SetFDMEnable": {
@@ -764,7 +756,7 @@
 ],
 "count": 1,
 "samples": [
-"Vr.unAppID,Nt"
+"Yr.unAppID,Ai"
 ]
 },
 "Apps.SetForceIdentAsSteamDeck": {
@@ -773,7 +765,7 @@
 ],
 "count": 1,
 "samples": [
-"Vr.unAppID,ki"
+"Yr.unAppID,Zt"
 ]
 },
 "Apps.SetLocalScreenshotCaption": {
@@ -782,8 +774,8 @@
 ],
 "count": 2,
 "samples": [
-"Ne.local.strGameID,Ne.local.hHandle,le||\"\"",
-"A.strGameID,A.hHandle,M.strCaption"
+"je.local.strGameID,je.local.hHandle,Ke||\"\"",
+"z.strGameID,z.hHandle,p.strCaption"
 ]
 },
 "Apps.SetLocalScreenshotPrivacy": {
@@ -792,7 +784,7 @@
 ],
 "count": 1,
 "samples": [
-"Ne.local.strGameID,Ne.local.hHandle,Ee"
+"je.local.strGameID,je.local.hHandle,Ve"
 ]
 },
 "Apps.SetLocalScreenshotSpoiler": {
@@ -801,8 +793,8 @@
 ],
 "count": 2,
 "samples": [
-"Ne.local.strGameID,Ne.local.hHandle,le",
-"A.strGameID,A.hHandle,M.bSpoiler"
+"je.local.strGameID,je.local.hHandle,Ke",
+"z.strGameID,z.hHandle,p.bSpoiler"
 ]
 },
 "Apps.SetRPOEnable": {
@@ -811,7 +803,7 @@
 ],
 "count": 1,
 "samples": [
-"Vr.unAppID,Nt"
+"Yr.unAppID,Ai"
 ]
 },
 "Apps.SetShortcutExe": {
@@ -820,8 +812,8 @@
 ],
 "count": 2,
 "samples": [
-"Vr,(0,N.yd)(di)",
-"Vr,di"
+"Yr,(0,j.yd)(qi)",
+"Yr,qi"
 ]
 },
 "Apps.SetShortcutIcon": {
@@ -830,7 +822,7 @@
 ],
 "count": 1,
 "samples": [
-"Vr,Ji"
+"Yr,Ji"
 ]
 },
 "Apps.SetShortcutIsVR": {
@@ -839,7 +831,7 @@
 ],
 "count": 1,
 "samples": [
-"Vr,!nn.bShortcutIsVR"
+"Yr,!sr.bShortcutIsVR"
 ]
 },
 "Apps.SetShortcutLaunchOptions": {
@@ -848,7 +840,7 @@
 ],
 "count": 1,
 "samples": [
-"Vr,di"
+"Yr,qi"
 ]
 },
 "Apps.SetShortcutName": {
@@ -857,7 +849,7 @@
 ],
 "count": 1,
 "samples": [
-"Vr,di"
+"Yr,qi"
 ]
 },
 "Apps.SetShortcutSortAs": {
@@ -866,7 +858,7 @@
 ],
 "count": 1,
 "samples": [
-"V,ee"
+"Be,ze"
 ]
 },
 "Apps.SetShortcutStartDir": {
@@ -875,7 +867,7 @@
 ],
 "count": 2,
 "samples": [
-"Vr,di"
+"Yr,qi"
 ]
 },
 "Apps.SetStreamingClientForApp": {
@@ -884,7 +876,7 @@
 ],
 "count": 1,
 "samples": [
-"this.props.overview.appid,Mt.clientid"
+"this.props.overview.appid,it.clientid"
 ]
 },
 "Apps.SetTSOEnable": {
@@ -893,17 +885,18 @@
 ],
 "count": 1,
 "samples": [
-"Vr.unAppID,ni.data"
+"Yr.unAppID,dn.data"
 ]
 },
 "Apps.SetThirdPartyControllerConfiguration": {
 "arities": [
 2
 ],
-"count": 2,
+"count": 3,
 "samples": [
-"er,Yr?Y.Dt:Y.pg",
-"Vr.unAppID,an"
+"Bi,H.gG",
+"Bi,Gi?H.Dt:H.pg",
+"Yr.unAppID,ci"
 ]
 },
 "Apps.SetWorkshopItemsDisabledLocally": {
@@ -912,8 +905,8 @@
 ],
 "count": 2,
 "samples": [
-"Vr,[Ri],ln",
-"Vr.unAppID,Lr,!bt"
+"Yr,[Yi],ei",
+"Yr.unAppID,yr,!ur"
 ]
 },
 "Apps.SetWorkshopItemsLoadOrder": {
@@ -922,7 +915,7 @@
 ],
 "count": 1,
 "samples": [
-"Y,he"
+"H,he"
 ]
 },
 "Apps.ShowControllerConfigurator": {
@@ -931,9 +924,9 @@
 ],
 "count": 12,
 "samples": [
-"x.qho",
-"l.mZ",
-"_t"
+"A.qho",
+"r.mZ",
+"ye"
 ]
 },
 "Apps.ShowStore": {
@@ -942,8 +935,8 @@
 ],
 "count": 2,
 "samples": [
-"kt.appid",
-"Bt.appid"
+"Lt.appid",
+"Gt.appid"
 ]
 },
 "Apps.SpecifyCompatExperiment": {
@@ -952,8 +945,8 @@
 ],
 "count": 3,
 "samples": [
-"Vr.unAppID,Nt(Er)",
-"Vr.unAppID,\"\""
+"Yr.unAppID,Ai(mi)",
+"Yr.unAppID,\"\""
 ]
 },
 "Apps.StreamGame": {
@@ -962,9 +955,9 @@
 ],
 "count": 3,
 "samples": [
-"N.g5s,Ei.clientId,-1",
-"r.g5s,Z,-1",
-"kt.appid,qt.clientid,-1"
+"j.g5s,ci.clientId,-1",
+"o.g5s,oe,-1",
+"Lt.appid,ve.clientid,-1"
 ]
 },
 "Apps.SubscribeWorkshopItem": {
@@ -973,9 +966,9 @@
 ],
 "count": 3,
 "samples": [
-"Y,J,!0",
-"Y,J,!1",
-"Vr,Ri,!1"
+"H,q,!0",
+"H,q,!1",
+"Yr,Yi,!1"
 ]
 },
 "Apps.TerminateApp": {
@@ -984,9 +977,9 @@
 ],
 "count": 6,
 "samples": [
-"fr,!1",
-"G,!1",
-"Tt.gameid,!1"
+"Er,!1",
+"U,!1",
+"N,!1"
 ]
 },
 "Apps.ToggleAllowDesktopConfiguration": {
@@ -995,7 +988,7 @@
 ],
 "count": 1,
 "samples": [
-"Vr.unAppID"
+"Yr.unAppID"
 ]
 },
 "Apps.ToggleAppSteamCloudEnabled": {
@@ -1004,7 +997,7 @@
 ],
 "count": 1,
 "samples": [
-"Vr.unAppID"
+"Yr.unAppID"
 ]
 },
 "Apps.ToggleAppSteamCloudSyncOnSuspendEnabled": {
@@ -1013,7 +1006,7 @@
 ],
 "count": 1,
 "samples": [
-"Vr.unAppID"
+"Yr.unAppID"
 ]
 },
 "Apps.ToggleEnableSteamOverlayForApp": {
@@ -1022,8 +1015,8 @@
 ],
 "count": 2,
 "samples": [
-"Vr.unAppID",
-"nn.unAppID"
+"Yr.unAppID",
+"sr.unAppID"
 ]
 },
 "Apps.ToggleOverrideResolutionForInternalDisplay": {
@@ -1032,7 +1025,7 @@
 ],
 "count": 1,
 "samples": [
-"Vr.unAppID"
+"Yr.unAppID"
 ]
 },
 "Apps.VerifyApp": {
@@ -1041,7 +1034,7 @@
 ],
 "count": 1,
 "samples": [
-"G"
+"N"
 ]
 },
 "Auth.ClearCachedSignInPin": {
@@ -1095,8 +1088,8 @@
 ],
 "count": 2,
 "samples": [
-"Ut",
-"Mr"
+"Ae",
+"vr"
 ]
 },
 "Auth.IsSecureComputer": {
@@ -1114,7 +1107,7 @@
 ],
 "count": 1,
 "samples": [
-"Rr"
+"wr"
 ]
 },
 "Auth.SetLoginToken": {
@@ -1123,8 +1116,8 @@
 ],
 "count": 2,
 "samples": [
-"me.strRefreshToken,me.strAccountName",
-"He.strRefreshToken,He.strAccountName"
+"nr.strRefreshToken,nr.strAccountName",
+"Xe.strRefreshToken,Xe.strAccountName"
 ]
 },
 "Auth.SetSteamGuardData": {
@@ -1133,8 +1126,8 @@
 ],
 "count": 2,
 "samples": [
-"me.strAccountName,et",
-"He.strAccountName,Ke"
+"nr.strAccountName,zt",
+"Xe.strAccountName,Se"
 ]
 },
 "Auth.StartSignInFromCache": {
@@ -1143,7 +1136,7 @@
 ],
 "count": 1,
 "samples": [
-"qt"
+"tr"
 ]
 },
 "Auth.ValidateCachedSignInPin": {
@@ -1152,7 +1145,7 @@
 ],
 "count": 1,
 "samples": [
-"qt.strAccountName,gt"
+"tr.strAccountName,yt"
 ]
 },
 "Broadcast.ApproveViewerRequest": {
@@ -1161,7 +1154,7 @@
 ],
 "count": 1,
 "samples": [
-"le.ConvertTo64BitString(),Number(Ne)"
+"Ne.ConvertTo64BitString(),Number(Ze)"
 ]
 },
 "Broadcast.InviteToWatch": {
@@ -1170,7 +1163,7 @@
 ],
 "count": 1,
 "samples": [
-"Ne.ConvertTo64BitString()"
+"Ze.ConvertTo64BitString()"
 ]
 },
 "Broadcast.RegisterForBroadcastStatus": {
@@ -1180,8 +1173,8 @@
 "count": 6,
 "samples": [
 "this.OnBroadcastStatus",
-"Wi",
-"on"
+"Hi",
+"Nr"
 ]
 },
 "Broadcast.RegisterForViewerRequests": {
@@ -1199,7 +1192,7 @@
 ],
 "count": 1,
 "samples": [
-"le.ConvertTo64BitString(),Number(Ne)"
+"Ne.ConvertTo64BitString(),Number(Ze)"
 ]
 },
 "Broadcast.StopBroadcasting": {
@@ -1217,7 +1210,7 @@
 ],
 "count": 1,
 "samples": [
-"pe"
+"xe"
 ]
 },
 "Browser.ClearAllBrowsingData": {
@@ -1262,7 +1255,7 @@
 ],
 "count": 1,
 "samples": [
-"X,$"
+"ee,ce"
 ]
 },
 "Browser.NotifyUserActivation": {
@@ -1298,7 +1291,7 @@
 ],
 "count": 1,
 "samples": [
-"Ni"
+"Wi"
 ]
 },
 "Browser.RemoveAllBackstackEntries": {
@@ -1316,7 +1309,7 @@
 ],
 "count": 1,
 "samples": [
-"Br"
+"Mr"
 ]
 },
 "Browser.SetPendingFilePath": {
@@ -1325,7 +1318,7 @@
 ],
 "count": 1,
 "samples": [
-"P,x"
+"f,j"
 ]
 },
 "Browser.SetShouldExitSteamOnBrowserClosed": {
@@ -1335,8 +1328,8 @@
 "count": 6,
 "samples": [
 "!1",
-"tr",
-"Re"
+"rr",
+"Ee"
 ]
 },
 "Browser.StartDownload": {
@@ -1346,8 +1339,8 @@
 "count": 3,
 "samples": [
 "v",
-"_i",
-"ht.item.full_image_url"
+"as",
+"de.item.full_image_url"
 ]
 },
 "BrowserView.Create": {
@@ -1365,7 +1358,7 @@
 ],
 "count": 1,
 "samples": [
-"A"
+"p"
 ]
 },
 "BrowserView.Destroy": {
@@ -1374,8 +1367,8 @@
 ],
 "count": 3,
 "samples": [
-"this.m_browserView",
-"j"
+"h",
+"this.m_browserView"
 ]
 },
 "BrowserView.PostMessageToParent": {
@@ -1385,8 +1378,8 @@
 "count": 3,
 "samples": [
 "\"UnlockH264Request\",\"CUnlockH264Helper\"",
-"r.T,he",
-"he.type,JSON.stringify(he)"
+"i.T,K",
+"K.type,JSON.stringify(K)"
 ]
 },
 "BrowserView.RegisterForMessageFromParent": {
@@ -1404,9 +1397,9 @@
 ],
 "count": 3,
 "samples": [
-"S.k_EClientUINotificationGroupChatMessage,yr,Zr",
-"S.k_EClientUINotificationFriendChatMessage,yr,Zr",
-"S.k_EClientUINotificationFriendPersonaState,yr,Zr"
+"b.k_EClientUINotificationGroupChatMessage,ye,ai",
+"b.k_EClientUINotificationFriendChatMessage,ye,ai",
+"b.k_EClientUINotificationFriendPersonaState,ye,ai"
 ]
 },
 "Cloud.ResolveAppSyncConflict": {
@@ -1415,8 +1408,8 @@
 ],
 "count": 2,
 "samples": [
-"Bt,!0",
-"Bt,!1"
+"ve,!0",
+"ve,!1"
 ]
 },
 "Cloud.RetryAppSync": {
@@ -1425,7 +1418,7 @@
 ],
 "count": 1,
 "samples": [
-"Bt"
+"ve"
 ]
 },
 "CloudStorage.WriteKey": {
@@ -1434,7 +1427,7 @@
 ],
 "count": 1,
 "samples": [
-"mt,ut"
+"Fe,at"
 ]
 },
 "CommunityItems.DownloadItemAsset": {
@@ -1443,7 +1436,7 @@
 ],
 "count": 1,
 "samples": [
-"U.communityitemid,Q,U.movie_webm"
+"N.communityitemid,R,N.movie_webm"
 ]
 },
 "CommunityItems.GetItemAssetPath": {
@@ -1452,7 +1445,7 @@
 ],
 "count": 1,
 "samples": [
-"V.communityitemid,Q,V.movie_webm"
+"Q.communityitemid,R,Q.movie_webm"
 ]
 },
 "CommunityItems.RemoveDownloadedItemAsset": {
@@ -1461,7 +1454,7 @@
 ],
 "count": 1,
 "samples": [
-"U.communityitemid,Q,U.movie_webm"
+"N.communityitemid,R,N.movie_webm"
 ]
 },
 "Console.ExecCommand": {
@@ -1470,7 +1463,7 @@
 ],
 "count": 1,
 "samples": [
-"D"
+"M"
 ]
 },
 "Console.GetAutocompleteSuggestions": {
@@ -1479,7 +1472,7 @@
 ],
 "count": 1,
 "samples": [
-"H"
+"k"
 ]
 },
 "Console.RegisterForSpewOutput": {
@@ -1506,7 +1499,7 @@
 ],
 "count": 1,
 "samples": [
-"Q"
+"R"
 ]
 },
 "Customization.GetLocalStartupMovies": {
@@ -1524,9 +1517,9 @@
 ],
 "count": 5,
 "samples": [
-"!1,qt.clientid",
-"ei,w.hj.CurrentViewingRemoteClientID",
-"!0,w.hj.CurrentViewingRemoteClientID"
+"!1,ve.clientid",
+"Ct,m.hj.CurrentViewingRemoteClientID",
+"!0,m.hj.CurrentViewingRemoteClientID"
 ]
 },
 "Downloads.PauseAppUpdate": {
@@ -1535,7 +1528,7 @@
 ],
 "count": 1,
 "samples": [
-"ce,w.hj.CurrentViewingRemoteClientID"
+"ot,m.hj.CurrentViewingRemoteClientID"
 ]
 },
 "Downloads.QueueAppUpdate": {
@@ -1544,7 +1537,7 @@
 ],
 "count": 1,
 "samples": [
-"me,w.hj.CurrentViewingRemoteClientID"
+"zt,m.hj.CurrentViewingRemoteClientID"
 ]
 },
 "Downloads.RegisterForDownloadItems": {
@@ -1580,7 +1573,7 @@
 ],
 "count": 2,
 "samples": [
-"$e.appid,w.hj.CurrentViewingRemoteClientID"
+"Lt.appid,m.hj.CurrentViewingRemoteClientID"
 ]
 },
 "Downloads.ResumeAppUpdate": {
@@ -1589,9 +1582,9 @@
 ],
 "count": 3,
 "samples": [
-"kt.appid,qt.clientid",
-"ye.appid,i.Oy",
-"me,w.hj.CurrentViewingRemoteClientID"
+"Lt.appid,ve.clientid",
+"W.appid,r.Oy",
+"zt,m.hj.CurrentViewingRemoteClientID"
 ]
 },
 "Downloads.SetLaunchOnUpdateComplete": {
@@ -1600,7 +1593,7 @@
 ],
 "count": 1,
 "samples": [
-"Yt.launch_on_completion?E.sc:Yt.appid"
+"tr.launch_on_completion?O.sc:tr.appid"
 ]
 },
 "Downloads.SetQueueIndex": {
@@ -1609,7 +1602,7 @@
 ],
 "count": 1,
 "samples": [
-"ce,ct.destination.index,w.hj.CurrentViewingRemoteClientID"
+"ot,vt.destination.index,m.hj.CurrentViewingRemoteClientID"
 ]
 },
 "Downloads.SuspendDownloadThrottling": {
@@ -1625,7 +1618,7 @@
 ],
 "count": 1,
 "samples": [
-"!0,w.hj.CurrentViewingRemoteClientID"
+"!0,m.hj.CurrentViewingRemoteClientID"
 ]
 },
 "FamilySharing.GetAvailableLenders": {
@@ -1634,8 +1627,8 @@
 ],
 "count": 2,
 "samples": [
-"Pt",
-"Ne"
+"yt",
+"We"
 ]
 },
 "FamilySharing.RegisterForKickedBorrower": {
@@ -1644,7 +1637,7 @@
 ],
 "count": 1,
 "samples": [
-"ar"
+"mt"
 ]
 },
 "FamilySharing.SetPreferredLender": {
@@ -1653,7 +1646,7 @@
 ],
 "count": 1,
 "samples": [
-"Ke,we"
+"Ue,at"
 ]
 },
 "FriendSettings.GetEnabledFeatures": {
@@ -1681,8 +1674,8 @@
 ],
 "count": 2,
 "samples": [
-"Ne",
-"JSON.stringify(De)"
+"Ze",
+"JSON.stringify(le)"
 ]
 },
 "Friends.GetCoplayData": {
@@ -1700,7 +1693,7 @@
 ],
 "count": 1,
 "samples": [
-"S.ConvertTo64BitString(),b.steamidTarget"
+"I.ConvertTo64BitString(),y.steamidTarget"
 ]
 },
 "Friends.InviteUserToGame": {
@@ -1709,7 +1702,7 @@
 ],
 "count": 1,
 "samples": [
-"S.ConvertTo64BitString(),b.unRequestingAppID,b.strConnectString"
+"I.ConvertTo64BitString(),y.unRequestingAppID,y.strConnectString"
 ]
 },
 "Friends.InviteUserToLobby": {
@@ -1718,7 +1711,7 @@
 ],
 "count": 1,
 "samples": [
-"S.ConvertTo64BitString(),b.steamidTarget"
+"I.ConvertTo64BitString(),y.steamidTarget"
 ]
 },
 "Friends.InviteUserToRemotePlayTogetherCurrentGame": {
@@ -1727,7 +1720,7 @@
 ],
 "count": 1,
 "samples": [
-"S.ConvertTo64BitString()"
+"I.ConvertTo64BitString()"
 ]
 },
 "Friends.RegisterForMultiplayerSessionShareURLChanged": {
@@ -1736,7 +1729,7 @@
 ],
 "count": 1,
 "samples": [
-"Pe,Re"
+"ce,Fe"
 ]
 },
 "Friends.RegisterForVoiceChatStatus": {
@@ -1763,7 +1756,7 @@
 ],
 "count": 1,
 "samples": [
-"S"
+"M"
 ]
 },
 "GameNotes.GetNotes": {
@@ -1772,7 +1765,7 @@
 ],
 "count": 1,
 "samples": [
-"this.FilenameForNotes(x),this.DirectoryForNoteImages(x)"
+"this.FilenameForNotes(h),this.DirectoryForNoteImages(h)"
 ]
 },
 "GameNotes.GetQuota": {
@@ -1790,7 +1783,7 @@
 ],
 "count": 1,
 "samples": [
-"Ds"
+"Kn"
 ]
 },
 "GameNotes.SaveNotes": {
@@ -1799,7 +1792,7 @@
 ],
 "count": 1,
 "samples": [
-"x,g"
+"h,F"
 ]
 },
 "GameNotes.SyncToClient": {
@@ -1826,7 +1819,7 @@
 ],
 "count": 1,
 "samples": [
-"ar=>{const wr=L.deserializeBinary(ar);return rr(wr.sessions()),re.R}"
+"pr=>{const Wr=L.deserializeBinary(pr);return zr(Wr.sessions()),oe.R}"
 ]
 },
 "GameRecording.SetAudioSessionCaptureState": {
@@ -1835,7 +1828,7 @@
 ],
 "count": 1,
 "samples": [
-"Rt.id,Rt.name,ar"
+"Br.id,Br.name,pr"
 ]
 },
 "GameSessions.RegisterForAchievementNotification": {
@@ -1851,7 +1844,7 @@
 "arities": [
 1
 ],
-"count": 1,
+"count": 2,
 "samples": [
 "this.OnAppLifetimeNotification"
 ]
@@ -1871,7 +1864,7 @@
 ],
 "count": 1,
 "samples": [
-"b.nControllerIndex"
+"y.nControllerIndex"
 ]
 },
 "Input.CalibrateControllerJoystick": {
@@ -1880,7 +1873,7 @@
 ],
 "count": 1,
 "samples": [
-"It"
+"xt"
 ]
 },
 "Input.CalibrateControllerTrackpads": {
@@ -1889,7 +1882,7 @@
 ],
 "count": 1,
 "samples": [
-"It"
+"xt"
 ]
 },
 "Input.ClearSelectedConfigForApp": {
@@ -1898,9 +1891,9 @@
 ],
 "count": 9,
 "samples": [
-"Ln,Wn,Fi.eSelectionType",
-"V,ee,De",
-"V,this.m_CurrentEditedConfigSelectedIdx,s.kD"
+"Wt,_n,Zi.eSelectionType",
+"Q,ae,le",
+"Q,this.m_unControllerIndex,o.kD"
 ]
 },
 "Input.ControllerKeyboardSendText": {
@@ -1909,7 +1902,7 @@
 ],
 "count": 1,
 "samples": [
-"k"
+"p"
 ]
 },
 "Input.ControllerKeyboardSetKeyState": {
@@ -1918,7 +1911,7 @@
 ],
 "count": 4,
 "samples": [
-"A,!0",
+"C,!0",
 "e.uw,!0",
 "e.uw,!1"
 ]
@@ -1938,7 +1931,7 @@
 ],
 "count": 1,
 "samples": [
-"Sn?.URL"
+"wn?.URL"
 ]
 },
 "Input.DuplicateControllerConfigurationSourceMode": {
@@ -1947,7 +1940,7 @@
 ],
 "count": 1,
 "samples": [
-"this.m_unControllerIndex,De"
+"this.m_unControllerIndex,le"
 ]
 },
 "Input.EnableControllerAnalogInputMessages": {
@@ -1956,7 +1949,7 @@
 ],
 "count": 3,
 "samples": [
-"y",
+"h",
 "!0",
 "!1"
 ]
@@ -1976,7 +1969,7 @@
 ],
 "count": 1,
 "samples": [
-"this.m_unControllerIndex,this.m_appId,ee,De,Oe,fe??\"\""
+"this.m_unControllerIndex,this.m_appId,ae,le,Be,ze??\"\""
 ]
 },
 "Input.ForceConfiguratorFocus": {
@@ -1985,7 +1978,7 @@
 ],
 "count": 3,
 "samples": [
-"Er",
+"lr",
 "!0",
 "!1"
 ]
@@ -1996,7 +1989,7 @@
 ],
 "count": 1,
 "samples": [
-"or,Ga?Ja.ek:Ja.SN,Ja.fT,0,So-5"
+"fr,ma?qs.ek:qs.SN,qs.fT,0,_a-5"
 ]
 },
 "Input.FreeControllerConfig": {
@@ -2005,16 +1998,17 @@
 ],
 "count": 1,
 "samples": [
-"V"
+"Q"
 ]
 },
 "Input.GetConfigForAppAndController": {
 "arities": [
 2
 ],
-"count": 1,
+"count": 2,
 "samples": [
-"V,ee"
+"Bi,Di",
+"Q,ae"
 ]
 },
 "Input.GetControllerMappingString": {
@@ -2023,7 +2017,7 @@
 ],
 "count": 1,
 "samples": [
-"we"
+"Se"
 ]
 },
 "Input.GetControllerPreviouslySeen": {
@@ -2041,7 +2035,7 @@
 ],
 "count": 1,
 "samples": [
-"h"
+"u"
 ]
 },
 "Input.GetXboxDriverInstallState": {
@@ -2060,8 +2054,8 @@
 "count": 4,
 "samples": [
 "L.nControllerIndex",
-"Pt.nControllerIndex",
-"jr"
+"zt.nControllerIndex",
+"be"
 ]
 },
 "Input.InitControllerSounds": {
@@ -2079,9 +2073,9 @@
 ],
 "count": 3,
 "samples": [
-"ae",
-"It",
-"or"
+"he",
+"xt",
+"fr"
 ]
 },
 "Input.ModalKeyboardDismissed": {
@@ -2099,7 +2093,7 @@
 ],
 "count": 1,
 "samples": [
-"Dr"
+"ar"
 ]
 },
 "Input.PreviewConfigForAppAndController": {
@@ -2108,8 +2102,8 @@
 ],
 "count": 2,
 "samples": [
-"V,ee,De??\"\"",
-"x.qho,V,ee.URL??\"\""
+"Q,ae,le??\"\"",
+"j.qho,Q,ae.URL??\"\""
 ]
 },
 "Input.PreviewControllerLEDColor": {
@@ -2118,7 +2112,7 @@
 ],
 "count": 1,
 "samples": [
-"S.flHue,S.flSaturation,S.flBrightness"
+"D.flHue,D.flSaturation,D.flBrightness"
 ]
 },
 "Input.QueryControllerConfigsForApp": {
@@ -2127,8 +2121,8 @@
 ],
 "count": 2,
 "samples": [
-"Yr,Fi,!yn",
-"V,ee,this.m_bFilterOtherControllerTypes"
+"Gi,Zi,!sn",
+"Q,ae,this.m_bFilterOtherControllerTypes"
 ]
 },
 "Input.RegisterForActiveConfigLoadedMessages": {
@@ -2192,8 +2186,8 @@
 "count": 3,
 "samples": [
 "this.HandleControllerInputMessages",
-"pi",
-"Rn"
+"ln",
+"Cn"
 ]
 },
 "Input.RegisterForDualSenseUpdateNotification": {
@@ -2265,7 +2259,7 @@
 ],
 "count": 1,
 "samples": [
-"B"
+"v"
 ]
 },
 "Input.RegisterForUnboundControllerListChanges": {
@@ -2301,7 +2295,7 @@
 ],
 "count": 1,
 "samples": [
-"V"
+"Q"
 ]
 },
 "Input.ResetControllerBindings": {
@@ -2310,7 +2304,7 @@
 ],
 "count": 1,
 "samples": [
-"we"
+"Se"
 ]
 },
 "Input.ResolveCloudedControllerConfigConflict": {
@@ -2319,7 +2313,7 @@
 ],
 "count": 1,
 "samples": [
-"V"
+"Q"
 ]
 },
 "Input.RestoreControllerPersonalizationSettings": {
@@ -2328,7 +2322,7 @@
 ],
 "count": 2,
 "samples": [
-"ae"
+"he"
 ]
 },
 "Input.SaveControllerCalibration": {
@@ -2346,8 +2340,8 @@
 ],
 "count": 2,
 "samples": [
-"jt",
-"or"
+"Ft",
+"fr"
 ]
 },
 "Input.SaveEditingControllerConfiguration": {
@@ -2356,7 +2350,7 @@
 ],
 "count": 1,
 "samples": [
-"this.m_unControllerIndex,this.m_eConfigSelectionType,ee??!1"
+"this.m_unControllerIndex,this.m_eConfigSelectionType,ae??!1"
 ]
 },
 "Input.SetControllerConfigurationModeShiftBinding": {
@@ -2365,7 +2359,7 @@
 ],
 "count": 1,
 "samples": [
-"this.m_unControllerIndex,De"
+"this.m_unControllerIndex,le"
 ]
 },
 "Input.SetControllerHapticSetting": {
@@ -2374,7 +2368,7 @@
 ],
 "count": 1,
 "samples": [
-"gt.nControllerIndex,me"
+"yt.nControllerIndex,nr"
 ]
 },
 "Input.SetControllerMappingString": {
@@ -2383,7 +2377,7 @@
 ],
 "count": 1,
 "samples": [
-"we"
+"Se"
 ]
 },
 "Input.SetControllerName": {
@@ -2392,8 +2386,8 @@
 ],
 "count": 3,
 "samples": [
-"gr.controllerIndex,et",
-"gr.controllerIndex,$e"
+"tt.controllerIndex,zt",
+"tt.controllerIndex,Gt"
 ]
 },
 "Input.SetControllerPersonalizationSetting": {
@@ -2404,7 +2398,7 @@
 "samples": [
 "\"nTritonGyroHWCalValue\",200",
 "\"nTritonGyroHWCalValue\",L.nTritonGyroHWCalValue",
-"\"nLStickDeadzone\",ro.nLStickDeadzone"
+"\"nLStickDeadzone\",Ca.nLStickDeadzone"
 ]
 },
 "Input.SetControllerPersonalizationSettingFloat": {
@@ -2413,8 +2407,8 @@
 ],
 "count": 2,
 "samples": [
-"\"flGyroStationaryTolerance\",v.flGyroStationaryTolerance",
-"\"flAccelerometerStationaryTolerance\",v.flAccelerometerStationaryTolerance"
+"\"flGyroStationaryTolerance\",O.flGyroStationaryTolerance",
+"\"flAccelerometerStationaryTolerance\",O.flAccelerometerStationaryTolerance"
 ]
 },
 "Input.SetControllerRumbleSetting": {
@@ -2423,7 +2417,7 @@
 ],
 "count": 1,
 "samples": [
-"gt.nControllerIndex,me"
+"yt.nControllerIndex,nr"
 ]
 },
 "Input.SetCursorActionset": {
@@ -2451,7 +2445,7 @@
 ],
 "count": 1,
 "samples": [
-"this.m_unControllerIndex,De"
+"this.m_unControllerIndex,le"
 ]
 },
 "Input.SetEditingControllerConfigurationInputActivator": {
@@ -2460,7 +2454,7 @@
 ],
 "count": 1,
 "samples": [
-"this.m_unControllerIndex,De"
+"this.m_unControllerIndex,le"
 ]
 },
 "Input.SetEditingControllerConfigurationInputActivatorEnabled": {
@@ -2469,7 +2463,7 @@
 ],
 "count": 1,
 "samples": [
-"this.m_unControllerIndex,De"
+"this.m_unControllerIndex,le"
 ]
 },
 "Input.SetEditingControllerConfigurationInputBinding": {
@@ -2478,7 +2472,7 @@
 ],
 "count": 1,
 "samples": [
-"this.m_unControllerIndex,De"
+"this.m_unControllerIndex,le"
 ]
 },
 "Input.SetEditingControllerConfigurationMiscSetting": {
@@ -2487,7 +2481,7 @@
 ],
 "count": 1,
 "samples": [
-"this.m_unControllerIndex,De"
+"this.m_unControllerIndex,le"
 ]
 },
 "Input.SetEditingControllerConfigurationSourceMode": {
@@ -2496,7 +2490,7 @@
 ],
 "count": 1,
 "samples": [
-"this.m_unControllerIndex,De"
+"this.m_unControllerIndex,le"
 ]
 },
 "Input.SetEditingTritonCapSenseSettings": {
@@ -2505,8 +2499,8 @@
 ],
 "count": 2,
 "samples": [
-"It.nControllerIndex,!0",
-"It.nControllerIndex,!1"
+"xt.nControllerIndex,!0",
+"xt.nControllerIndex,!1"
 ]
 },
 "Input.SetGamepadKeyboardText": {
@@ -2515,7 +2509,7 @@
 ],
 "count": 3,
 "samples": [
-"Fa,so",
+"na,Pa",
 "!1,\"\""
 ]
 },
@@ -2536,8 +2530,8 @@
 ],
 "count": 2,
 "samples": [
-"Hs,0,0",
-"Hs,qe,_t"
+"ws,0,0",
+"ws,Nt,ye"
 ]
 },
 "Input.SetSelectedConfigForApp": {
@@ -2546,7 +2540,7 @@
 ],
 "count": 1,
 "samples": [
-"V,ee,De,Oe,this.m_eConfigSelectionType"
+"Q,ae,le,Be,this.m_eConfigSelectionType"
 ]
 },
 "Input.SetSteamControllerDonglePairingMode": {
@@ -2555,8 +2549,8 @@
 ],
 "count": 2,
 "samples": [
-"!1,!et",
-"!gt,!1"
+"!1,!zt",
+"!yt,!1"
 ]
 },
 "Input.SetVirtualMenuKeySelected": {
@@ -2565,7 +2559,7 @@
 ],
 "count": 1,
 "samples": [
-"j.unControllerIndex,j.unMenuIndex,y"
+"m.unControllerIndex,m.unMenuIndex,w"
 ]
 },
 "Input.SetWebBrowserActionset": {
@@ -2584,7 +2578,7 @@
 ],
 "count": 1,
 "samples": [
-"we"
+"Se"
 ]
 },
 "Input.StandaloneKeyboardDismissed": {
@@ -2602,7 +2596,7 @@
 ],
 "count": 2,
 "samples": [
-"we,Ae,this.ProcessSupportFlowUpdates"
+"Se,Y,this.ProcessSupportFlowUpdates"
 ]
 },
 "Input.StartEditingControllerConfigurationForAppIDAndControllerIndex": {
@@ -2611,7 +2605,7 @@
 ],
 "count": 1,
 "samples": [
-"V,ee"
+"Q,ae"
 ]
 },
 "Input.StartUIVisualization": {
@@ -2620,7 +2614,7 @@
 ],
 "count": 1,
 "samples": [
-"c.v3.EditingConfigurationControllerIndex,v"
+"d.v3.EditingConfigurationControllerIndex,O"
 ]
 },
 "Input.StopEditingControllerConfiguration": {
@@ -2629,7 +2623,7 @@
 ],
 "count": 1,
 "samples": [
-"ee.nControllerIndex"
+"ae.nControllerIndex"
 ]
 },
 "Input.StopUIVisualization": {
@@ -2638,7 +2632,7 @@
 ],
 "count": 1,
 "samples": [
-"c.v3.EditingConfigurationControllerIndex"
+"d.v3.EditingConfigurationControllerIndex"
 ]
 },
 "Input.SwapControllerConfigurationSourceModes": {
@@ -2647,7 +2641,7 @@
 ],
 "count": 1,
 "samples": [
-"this.m_unControllerIndex,De"
+"this.m_unControllerIndex,le"
 ]
 },
 "Input.SwapControllerModeInputBindings": {
@@ -2656,7 +2650,7 @@
 ],
 "count": 1,
 "samples": [
-"this.m_unControllerIndex,De"
+"this.m_unControllerIndex,le"
 ]
 },
 "Input.SwapControllerOrder": {
@@ -2665,7 +2659,7 @@
 ],
 "count": 1,
 "samples": [
-"L,E"
+"L,P"
 ]
 },
 "Input.SyncCloudedControllerConfigs": {
@@ -2683,9 +2677,9 @@
 ],
 "count": 3,
 "samples": [
-"It.nControllerIndex,Ja.RJ,Rl,Rl",
-"It.nControllerIndex,Ja.M$,Rl,Rl",
-"d,h,360,0"
+"xt.nControllerIndex,qs.RJ,Al,Al",
+"xt.nControllerIndex,qs.M$,Al,Al",
+"l,u,360,0"
 ]
 },
 "Input.TriggerSimpleHapticEvent": {
@@ -2694,8 +2688,8 @@
 ],
 "count": 2,
 "samples": [
-"Q.nControllerIndex,r.t3,r.IP,r.bN,0",
-"d,h,c,f,p"
+"R.nControllerIndex,i.t3,i.IP,i.bN,0",
+"l,u,B,d,S"
 ]
 },
 "Input.TurnOffController": {
@@ -2704,7 +2698,7 @@
 ],
 "count": 1,
 "samples": [
-"Se.sY.GetControllerPowerMenuIndex()"
+"Le.sY.GetControllerPowerMenuIndex()"
 ]
 },
 "Input.UploadChangesForCloudedControllerConfigs": {
@@ -2722,8 +2716,8 @@
 ],
 "count": 2,
 "samples": [
-"rr",
-"Mr"
+"zr",
+"$t"
 ]
 },
 "InstallFolder.BrowseFilesInFolder": {
@@ -2732,7 +2726,7 @@
 ],
 "count": 1,
 "samples": [
-"tr.nFolderIndex"
+"Qe.nFolderIndex"
 ]
 },
 "InstallFolder.CancelMove": {
@@ -2768,7 +2762,7 @@
 ],
 "count": 1,
 "samples": [
-"S,this.state.toFolder"
+"I,this.state.toFolder"
 ]
 },
 "InstallFolder.RefreshFolders": {
@@ -2813,7 +2807,7 @@
 ],
 "count": 1,
 "samples": [
-"tr.nFolderIndex"
+"Qe.nFolderIndex"
 ]
 },
 "InstallFolder.RepairInstallFolder": {
@@ -2831,8 +2825,8 @@
 ],
 "count": 2,
 "samples": [
-"tr.nFolderIndex",
-"Mr.nFolderIndex"
+"Qe.nFolderIndex",
+"$t.nFolderIndex"
 ]
 },
 "InstallFolder.SetFolderLabel": {
@@ -2877,9 +2871,9 @@
 ],
 "count": 4,
 "samples": [
-"[Number(_e)],s.Oy",
-"[G],U",
-"Gt,P.Oy"
+"[Number(et)],o.Oy",
+"[N],K",
+"pe,le.Oy"
 ]
 },
 "Installs.OpenUninstallWizard": {
@@ -2888,8 +2882,8 @@
 ],
 "count": 2,
 "samples": [
-"[v.unAppID],a.Oy,!0",
-"C,D,!0"
+"[O.unAppID],a.Oy,!0",
+"f,D,!0"
 ]
 },
 "Installs.RegisterForShowConfirmUninstall": {
@@ -2925,7 +2919,7 @@
 ],
 "count": 1,
 "samples": [
-"G,U"
+"N,K"
 ]
 },
 "Installs.SetInstallFolder": {
@@ -2934,7 +2928,7 @@
 ],
 "count": 2,
 "samples": [
-"G"
+"N"
 ]
 },
 "MachineStorage.DeleteKey": {
@@ -2943,7 +2937,7 @@
 ],
 "count": 1,
 "samples": [
-"r"
+"o"
 ]
 },
 "MachineStorage.GetString": {
@@ -2952,8 +2946,8 @@
 ],
 "count": 2,
 "samples": [
-"r",
-"n"
+"o",
+"i"
 ]
 },
 "MachineStorage.SetString": {
@@ -2962,18 +2956,18 @@
 ],
 "count": 1,
 "samples": [
-"r,n"
+"o,i"
 ]
 },
 "Messaging.PostMessage": {
 "arities": [
 3
 ],
-"count": 16,
+"count": 19,
 "samples": [
 "\"FriendsUI\",\"AcceptedRemotePlayInvite\",JSON.stringify({id:this.appID})",
 "\"FriendsUI\",\"AcceptedGameInvite\",JSON.stringify({id:this.appID})",
-"\"PersonaState\",\"PersonaUpdate\",JSON.stringify(Br)"
+"\"PersonaState\",\"PersonaUpdate\",JSON.stringify(Mr)"
 ]
 },
 "Messaging.RegisterForMessages": {
@@ -2984,7 +2978,7 @@
 "samples": [
 "\"LibraryCommands\",this.HandleLibraryCommandMessage",
 "\"PersonaState\",this.HandlePersonaStateMessage",
-"\"FriendsUI\",Tt"
+"\"FriendsUI\",Yt"
 ]
 },
 "Music.PlayNext": {
@@ -3011,7 +3005,7 @@
 ],
 "count": 1,
 "samples": [
-"h=>{this.updatePlaybackState(h)}"
+"u=>{this.updatePlaybackState(u)}"
 ]
 },
 "Music.RegisterForMusicPlaybackPosition": {
@@ -3020,7 +3014,7 @@
 ],
 "count": 1,
 "samples": [
-"Z"
+"X"
 ]
 },
 "Music.SetPlaybackPosition": {
@@ -3029,7 +3023,7 @@
 ],
 "count": 1,
 "samples": [
-"Math.round(ee)"
+"Math.round(ae)"
 ]
 },
 "Music.SetPlayingRepeatStatus": {
@@ -3038,7 +3032,7 @@
 ],
 "count": 1,
 "samples": [
-"De"
+"le"
 ]
 },
 "Music.SetPlayingShuffled": {
@@ -3047,7 +3041,7 @@
 ],
 "count": 1,
 "samples": [
-"!R?.bShuffle"
+"!V?.bShuffle"
 ]
 },
 "Music.SetVolume": {
@@ -3056,7 +3050,7 @@
 ],
 "count": 1,
 "samples": [
-"$"
+"ee"
 ]
 },
 "Music.ToggleMuteVolume": {
@@ -3092,8 +3086,8 @@
 ],
 "count": 2,
 "samples": [
-"Z",
-"R"
+"X",
+"V"
 ]
 },
 "OpenVR.Device.RegisterForDeviceConnectivityChange": {
@@ -3102,7 +3096,7 @@
 ],
 "count": 1,
 "samples": [
-"R,re"
+"V,Z"
 ]
 },
 "OpenVR.Device.RegisterForVRDeviceSeenRecently": {
@@ -3120,8 +3114,8 @@
 ],
 "count": 2,
 "samples": [
-"Z,s.fD.DeviceProvidesBatteryStatus_Bool",
-"he,ae"
+"X,o.fD.DeviceProvidesBatteryStatus_Bool",
+"he,oe"
 ]
 },
 "OpenVR.DeviceProperties.GetDoubleDeviceProperty": {
@@ -3130,7 +3124,7 @@
 ],
 "count": 1,
 "samples": [
-"he,ae"
+"he,oe"
 ]
 },
 "OpenVR.DeviceProperties.GetFloatDeviceProperty": {
@@ -3139,7 +3133,7 @@
 ],
 "count": 1,
 "samples": [
-"he,ae"
+"he,oe"
 ]
 },
 "OpenVR.DeviceProperties.GetInt32DeviceProperty": {
@@ -3148,7 +3142,7 @@
 ],
 "count": 1,
 "samples": [
-"he,ae"
+"he,oe"
 ]
 },
 "OpenVR.DeviceProperties.GetStringDeviceProperty": {
@@ -3157,8 +3151,8 @@
 ],
 "count": 2,
 "samples": [
-"he,ae",
-"\"/user/head\",i.fD.ActualTrackingSystemName_String"
+"he,oe",
+"\"/user/head\",r.fD.ActualTrackingSystemName_String"
 ]
 },
 "OpenVR.DeviceProperties.RegisterForDevicePropertyChange": {
@@ -3167,7 +3161,7 @@
 ],
 "count": 1,
 "samples": [
-"R,Z,V"
+"V,X,Q"
 ]
 },
 "OpenVR.ExtendActivityTimeout": {
@@ -3276,7 +3270,7 @@
 ],
 "count": 1,
 "samples": [
-"k"
+"p"
 ]
 },
 "OpenVR.Keyboard.Show": {
@@ -3321,8 +3315,8 @@
 ],
 "count": 2,
 "samples": [
-"this.m_strPath",
-"D"
+"M",
+"this.m_strPath"
 ]
 },
 "OpenVR.PathProperties.GetStringPathProperty": {
@@ -3340,8 +3334,8 @@
 ],
 "count": 2,
 "samples": [
-"this.m_strPath,()=>this.UpdateValueInternal()",
-"D,z"
+"M,D",
+"this.m_strPath,()=>this.UpdateValueInternal()"
 ]
 },
 "OpenVR.PathProperties.SetBoolPathProperty": {
@@ -3350,9 +3344,9 @@
 ],
 "count": 6,
 "samples": [
-"am.k_strSceneAppInputPreferencePrefersSteamInputPath,he",
 "\"/steam/oobe\",!1",
-"\"/steam/streamingtodevice\",he"
+"\"/steam/streamingtodevice\",Z",
+"\"/steam/oobe\",f"
 ]
 },
 "OpenVR.PathProperties.SetInt32PathProperty": {
@@ -3361,9 +3355,9 @@
 ],
 "count": 3,
 "samples": [
-"am.k_strSceneAppInputPreferenceAppIdPath,Z",
-"\"/steam/guidedtour\",C",
-"mm.k_strSceneAppInputPreferenceAppIdPath,C"
+"\"/steam/guidedtour\",b",
+"a3.k_strSceneAppInputPreferenceAppIdPath,b",
+"o3.k_strSceneAppInputPreferenceAppIdPath,X"
 ]
 },
 "OpenVR.PathProperties.SetStringPathProperty": {
@@ -3408,7 +3402,7 @@
 ],
 "count": 1,
 "samples": [
-"(F,ye)=>{Yt||$t.IN_VR||(sr(F),Bt(ye),F?.length>0&&$e(1))}"
+"(Jt,ve)=>{Mt||Gt.IN_VR||(Je(Jt),re(ve),Jt?.length>0&&_e(1))}"
 ]
 },
 "OpenVR.RegisterForStartupErrors": {
@@ -3435,9 +3429,9 @@
 ],
 "count": 5,
 "samples": [
-"this.OnVRModeChanged",
-"p=>{p||this.m_SteamVR_Client.CancelAllRequests()}",
-"N=>{N?this.Connect():this.Disconnect()}"
+"S=>{S||this.m_SteamVR_Client.CancelAllRequests()}",
+"F=>{F?this.Connect():this.Disconnect()}",
+"Z=>{he.current.Reset(),Z&&X(he.current)}"
 ]
 },
 "OpenVR.RegisterForVRSceneAppChange": {
@@ -3464,7 +3458,7 @@
 ],
 "count": 1,
 "samples": [
-"he,V"
+"he,Q"
 ]
 },
 "OpenVR.SetRegisteredFrameHLAlyxPromo": {
@@ -3473,7 +3467,7 @@
 ],
 "count": 1,
 "samples": [
-"d.iA.steamid,b"
+"u.iA.steamid,y"
 ]
 },
 "OpenVR.ShowKeyboard": {
@@ -3500,9 +3494,9 @@
 ],
 "count": 5,
 "samples": [
-"s.en.ButtonEnter,0",
-"s.en.ButtonLeave,0",
-"lr,0"
+"wt,0",
+"qe,fr",
+"o.en.ButtonEnter,0"
 ]
 },
 "OpenVR.VRNotifications.HideCustomNotification": {
@@ -3511,7 +3505,7 @@
 ],
 "count": 1,
 "samples": [
-"Ft"
+"pt"
 ]
 },
 "OpenVR.VRNotifications.RegisterForNotificationEvent": {
@@ -3529,7 +3523,7 @@
 ],
 "count": 1,
 "samples": [
-"Ct.GetVROverlayKey(),Se.A0,zt"
+"Et.GetVROverlayKey(),Oe.A0,ct"
 ]
 },
 "OpenVR.VROverlay.HideDashboard": {
@@ -3547,7 +3541,7 @@
 ],
 "count": 2,
 "samples": [
-"Oe=>{G.Info(`Button press for window ${re.name} button=${Oe}`),V(Oe)}"
+"Be=>{U.Info(`Button press for window ${Z.name} button=${Be}`),Q(Be)}"
 ]
 },
 "OpenVR.VROverlay.RegisterForCursorMovement": {
@@ -3556,7 +3550,7 @@
 ],
 "count": 1,
 "samples": [
-"(dr,cr,Mr,Ie)=>{dr===1&&Vt(cr,Mr,Ie,dr)}"
+"(i,r,c,f)=>{i===1&&o(r,c,f,i)}"
 ]
 },
 "OpenVR.VROverlay.RegisterForOverlayMousePressEvents": {
@@ -3572,7 +3566,7 @@
 ],
 "count": 1,
 "samples": [
-"h"
+"u"
 ]
 },
 "OpenVR.VROverlay.RegisterForVisibilityChanged": {
@@ -3581,8 +3575,8 @@
 ],
 "count": 2,
 "samples": [
-"c",
-"w"
+"B",
+"g"
 ]
 },
 "OpenVR.VROverlay.ShowDashboard": {
@@ -3591,8 +3585,8 @@
 ],
 "count": 2,
 "samples": [
-" \"${f}\" ",
-"f"
+" \"${d}\" ",
+"d"
 ]
 },
 "OpenVR.VROverlay.SwitchToDashboardOverlay": {
@@ -3601,9 +3595,9 @@
 ],
 "count": 5,
 "samples": [
-"Jn",
-" \"${Xr.GetVROverlayKey()}\" ",
-"Xr.GetVROverlayKey()"
+"ne",
+" \"${_r.GetVROverlayKey()}\" ",
+"_r.GetVROverlayKey()"
 ]
 },
 "Overlay.DestroyGamePadUIDesktopConfiguratorWindow": {
@@ -3630,7 +3624,7 @@
 ],
 "count": 1,
 "samples": [
-"w"
+"g"
 ]
 },
 "Overlay.HandleProtocolForOverlayBrowser": {
@@ -3639,7 +3633,7 @@
 ],
 "count": 1,
 "samples": [
-"this.m_unAppID,w"
+"this.m_unAppID,g"
 ]
 },
 "Overlay.RegisterForActivateOverlayRequests": {
@@ -3658,7 +3652,7 @@
 "count": 2,
 "samples": [
 "this.OnMicroTxnAuth",
-"En"
+"wi"
 ]
 },
 "Overlay.RegisterForMicroTxnAuthDismiss": {
@@ -3668,7 +3662,7 @@
 "count": 2,
 "samples": [
 "this.OnMicroTxnAuthDismiss",
-"Yn"
+"hn"
 ]
 },
 "Overlay.RegisterForNotificationPositionChanged": {
@@ -3686,7 +3680,7 @@
 ],
 "count": 2,
 "samples": [
-"P",
+"f",
 "this.OnOverlayActivated"
 ]
 },
@@ -3712,11 +3706,11 @@
 "arities": [
 2
 ],
-"count": 15,
+"count": 16,
 "samples": [
-"M.gameid,k",
-"Nt.gameid,Re.I5.Overlay",
-"qe,i.I5.Hidden"
+"C.gameid,s.I5.Hidden",
+"C.gameid,U",
+"sr.gameid,e.I5.Overlay"
 ]
 },
 "Overlay.SetWindowAlpha": {
@@ -3725,7 +3719,7 @@
 ],
 "count": 2,
 "samples": [
-"Or",
+"Cr",
 "1"
 ]
 },
@@ -3735,7 +3729,7 @@
 ],
 "count": 1,
 "samples": [
-"!br"
+"!ar"
 ]
 },
 "Parental.LockParentalLock": {
@@ -3753,7 +3747,7 @@
 ],
 "count": 1,
 "samples": [
-"mn"
+"fi"
 ]
 },
 "Parental.RegisterForParentalSettingsChanges": {
@@ -3762,8 +3756,8 @@
 ],
 "count": 2,
 "samples": [
-"le=>this.UpdateParentalState(le)",
-"he=>{this.UpdateParentalState(he),Z&&Z(),Z=null}"
+"Ne=>this.UpdateParentalState(Ne)",
+"he=>{this.UpdateParentalState(he),X&&X(),X=null}"
 ]
 },
 "Parental.UnlockParentalLock": {
@@ -3772,8 +3766,8 @@
 ],
 "count": 2,
 "samples": [
-"Ae,!1",
-"J,!0"
+"Pe,!1",
+"q,!0"
 ]
 },
 "RemotePlay.BCanAcceptInviteForGame": {
@@ -3782,7 +3776,7 @@
 ],
 "count": 2,
 "samples": [
-"D,z"
+"M,D"
 ]
 },
 "RemotePlay.BCanCreateInviteForGame": {
@@ -3791,7 +3785,7 @@
 ],
 "count": 2,
 "samples": [
-"D,z"
+"M,D"
 ]
 },
 "RemotePlay.BRemotePlayTogetherGuestOnPhoneOrTablet": {
@@ -3800,7 +3794,7 @@
 ],
 "count": 1,
 "samples": [
-"D.groupid,D.steamid,D.guestid"
+"M.groupid,M.steamid,M.guestid"
 ]
 },
 "RemotePlay.CancelInviteAndSession": {
@@ -3809,9 +3803,9 @@
 ],
 "count": 3,
 "samples": [
-"this.m_unGroupID,z.ConvertTo64BitString(),0",
-"this.m_unGroupID,D,z",
-"this.m_unGroupID,D.playerID.steamid,D.playerID.guestid"
+"this.m_unGroupID,D.ConvertTo64BitString(),0",
+"this.m_unGroupID,M,D",
+"this.m_unGroupID,M.playerID.steamid,M.playerID.guestid"
 ]
 },
 "RemotePlay.CancelRemoteClientPairing": {
@@ -3838,8 +3832,8 @@
 ],
 "count": 2,
 "samples": [
-"this.m_unGroupID,S.ConvertTo64BitString(),!1",
-"this.m_unGroupID,z.ConvertTo64BitString(),!0"
+"this.m_unGroupID,I.ConvertTo64BitString(),!1",
+"this.m_unGroupID,D.ConvertTo64BitString(),!0"
 ]
 },
 "RemotePlay.EnableWifiRadioSoftwareState": {
@@ -3884,7 +3878,7 @@
 ],
 "count": 1,
 "samples": [
-"this.m_unGroupID,D"
+"this.m_unGroupID,M"
 ]
 },
 "RemotePlay.GetGameSystemVolume": {
@@ -3902,7 +3896,7 @@
 ],
 "count": 1,
 "samples": [
-"D.groupid,D.steamid,D.guestid"
+"M.groupid,M.steamid,M.guestid"
 ]
 },
 "RemotePlay.GetRemotePlayTogetherGroupIDForOverlayPID": {
@@ -3911,7 +3905,7 @@
 ],
 "count": 1,
 "samples": [
-"D"
+"M"
 ]
 },
 "RemotePlay.HasRemoteDevicePIN": {
@@ -3929,7 +3923,7 @@
 ],
 "count": 1,
 "samples": [
-"this.m_unGroupID,D"
+"this.m_unGroupID,M"
 ]
 },
 "RemotePlay.InstallAudioDriver": {
@@ -3956,7 +3950,7 @@
 ],
 "count": 1,
 "samples": [
-"this.m_unGroupID,D,z"
+"this.m_unGroupID,M,D"
 ]
 },
 "RemotePlay.PairViaWifiAP": {
@@ -3965,7 +3959,7 @@
 ],
 "count": 1,
 "samples": [
-"Z"
+"oe"
 ]
 },
 "RemotePlay.RegisterForAdditionalParentalBlocks": {
@@ -4250,7 +4244,7 @@
 ],
 "count": 1,
 "samples": [
-"this.m_unGroupID,D"
+"this.m_unGroupID,M"
 ]
 },
 "RemotePlay.SetClientStreamingQuality": {
@@ -4259,7 +4253,7 @@
 ],
 "count": 1,
 "samples": [
-"this.m_unGroupID,D"
+"this.m_unGroupID,M"
 ]
 },
 "RemotePlay.SetGameSystemVolume": {
@@ -4268,7 +4262,7 @@
 ],
 "count": 1,
 "samples": [
-"this.m_unGroupID,D"
+"this.m_unGroupID,M"
 ]
 },
 "RemotePlay.SetPerUserControllerInputEnabledWithGuestID": {
@@ -4277,7 +4271,7 @@
 ],
 "count": 1,
 "samples": [
-"D.groupid,D.steamid,D.guestid,z"
+"M.groupid,M.steamid,M.guestid,D"
 ]
 },
 "RemotePlay.SetPerUserKeyboardInputEnabledWithGuestID": {
@@ -4286,7 +4280,7 @@
 ],
 "count": 1,
 "samples": [
-"D.groupid,D.steamid,D.guestid,z"
+"M.groupid,M.steamid,M.guestid,D"
 ]
 },
 "RemotePlay.SetPerUserMouseInputEnabledWithGuestID": {
@@ -4295,7 +4289,7 @@
 ],
 "count": 1,
 "samples": [
-"D.groupid,D.steamid,D.guestid,z"
+"M.groupid,M.steamid,M.guestid,D"
 ]
 },
 "RemotePlay.SetRemoteDeviceAuthorized": {
@@ -4305,7 +4299,7 @@
 "count": 2,
 "samples": [
 "!1,\"\"",
-"!0,J"
+"!0,N"
 ]
 },
 "RemotePlay.SetRemoteDevicePIN": {
@@ -4314,7 +4308,7 @@
 ],
 "count": 2,
 "samples": [
-"k",
+"C",
 "\"\""
 ]
 },
@@ -4322,10 +4316,9 @@
 "arities": [
 2
 ],
-"count": 2,
+"count": 1,
 "samples": [
-"!1,!1",
-"!0,!1"
+"q,U"
 ]
 },
 "RemotePlay.SetRemotePlayEnabled": {
@@ -4334,7 +4327,7 @@
 ],
 "count": 1,
 "samples": [
-"ws"
+"Cs"
 ]
 },
 "RemotePlay.SetStreamingClientConfig": {
@@ -4343,7 +4336,7 @@
 ],
 "count": 1,
 "samples": [
-"Z.serializeBase64String(),this.m_settings.unStreamingSessionID"
+"oe.serializeBase64String(),this.m_settings.unStreamingSessionID"
 ]
 },
 "RemotePlay.SetStreamingClientConfigEnabled": {
@@ -4352,7 +4345,7 @@
 ],
 "count": 1,
 "samples": [
-"ws,Cr.unStreamingSessionID"
+"Cs,gr.unStreamingSessionID"
 ]
 },
 "RemotePlay.SetStreamingDesktopToRemotePlayTogetherEnabled": {
@@ -4361,7 +4354,7 @@
 ],
 "count": 1,
 "samples": [
-"this.m_unGroupID,D"
+"this.m_unGroupID,M"
 ]
 },
 "RemotePlay.SetStreamingP2PScope": {
@@ -4370,7 +4363,7 @@
 ],
 "count": 1,
 "samples": [
-"ws.data"
+"Cs.data"
 ]
 },
 "RemotePlay.SetStreamingServerConfig": {
@@ -4379,7 +4372,7 @@
 ],
 "count": 1,
 "samples": [
-"Z.serializeBase64String()"
+"oe.serializeBase64String()"
 ]
 },
 "RemotePlay.SetStreamingServerConfigEnabled": {
@@ -4388,7 +4381,7 @@
 ],
 "count": 1,
 "samples": [
-"ws"
+"Cs"
 ]
 },
 "RemotePlay.StartDesktopStream": {
@@ -4397,7 +4390,7 @@
 ],
 "count": 1,
 "samples": [
-"Cr.clientId"
+"gr.clientId"
 ]
 },
 "RemotePlay.StopRemoteClientStream": {
@@ -4406,9 +4399,9 @@
 ],
 "count": 4,
 "samples": [
-"Xn?.m_unGroupID,Xn?.m_steamid,Xn?.m_gameid,Xn?.m_clientid",
-"as?.m_unGroupID,as?.m_steamid,as?.m_gameid,as?.m_clientid",
-"Lt.m_unGroupID,Lt.m_steamid,Lt.m_gameid,Lt.m_clientid"
+"ur?.m_unGroupID,ur?.m_steamid,ur?.m_gameid,ur?.m_clientid",
+"Zn?.m_unGroupID,Zn?.m_steamid,Zn?.m_gameid,Zn?.m_clientid",
+"He.m_unGroupID,He.m_steamid,He.m_gameid,He.m_clientid"
 ]
 },
 "RemotePlay.StopStreamingSession": {
@@ -4417,8 +4410,8 @@
 ],
 "count": 2,
 "samples": [
-"gr.unStreamingSessionID",
-"Z.unStreamingSessionID"
+"be.unStreamingSessionID",
+"oe.unStreamingSessionID"
 ]
 },
 "RemotePlay.StopStreamingSessionAndSuspendDevice": {
@@ -4427,7 +4420,7 @@
 ],
 "count": 1,
 "samples": [
-"gr.unStreamingSessionID"
+"be.unStreamingSessionID"
 ]
 },
 "RemotePlay.UnlockH264": {
@@ -4454,7 +4447,7 @@
 ],
 "count": 1,
 "samples": [
-"Cr.clientId"
+"gr.clientId"
 ]
 },
 "RemotePlay.UnpairRemoteDevice": {
@@ -4463,7 +4456,7 @@
 ],
 "count": 1,
 "samples": [
-"Cr.deviceId"
+"gr.deviceId"
 ]
 },
 "RemotePlay.UnpairRemoteDevices": {
@@ -4481,7 +4474,7 @@
 ],
 "count": 1,
 "samples": [
-"o"
+"n"
 ]
 },
 "RoamingStorage.GetJSON": {
@@ -4490,7 +4483,7 @@
 ],
 "count": 1,
 "samples": [
-"o"
+"n"
 ]
 },
 "RoamingStorage.GetString": {
@@ -4499,7 +4492,7 @@
 ],
 "count": 1,
 "samples": [
-"o"
+"n"
 ]
 },
 "RoamingStorage.SetObject": {
@@ -4508,7 +4501,7 @@
 ],
 "count": 1,
 "samples": [
-"o,u"
+"n,s"
 ]
 },
 "RoamingStorage.SetString": {
@@ -4517,7 +4510,7 @@
 ],
 "count": 1,
 "samples": [
-"o,u"
+"n,s"
 ]
 },
 "Screenshots.DeleteLocalScreenshots": {
@@ -4526,7 +4519,7 @@
 ],
 "count": 1,
 "samples": [
-"Ne"
+"je"
 ]
 },
 "Screenshots.GetAllAppsLocalScreenshotsCount": {
@@ -4544,7 +4537,7 @@
 ],
 "count": 1,
 "samples": [
-"Ee,Xe"
+"Ve,it"
 ]
 },
 "Screenshots.GetLastScreenshotTaken": {
@@ -4562,7 +4555,7 @@
 ],
 "count": 1,
 "samples": [
-"Ne.strGameID,Ne.local.hHandle"
+"je.strGameID,je.local.hHandle"
 ]
 },
 "Screenshots.GetLocalScreenshotPath": {
@@ -4571,9 +4564,9 @@
 ],
 "count": 4,
 "samples": [
-"et.local.strGameID,et.local.hHandle",
-"v.local.strGameID,v.local.hHandle",
-"M,H"
+"nr.local.strGameID,nr.local.hHandle",
+"O.local.strGameID,O.local.hHandle",
+"C,k"
 ]
 },
 "Screenshots.GetTotalDiskSpaceUsage": {
@@ -4582,8 +4575,8 @@
 ],
 "count": 2,
 "samples": [
-"tr?.folder?.strFolderPath",
-"nr?.strFolderPath"
+"Qe?.folder?.strFolderPath",
+"ue?.strFolderPath"
 ]
 },
 "Screenshots.ShowScreenshotsOnDisk": {
@@ -4592,8 +4585,8 @@
 ],
 "count": 2,
 "samples": [
-"Qt.strGameID",
-"Et.strGameID"
+"Br.strGameID",
+"ut.strGameID"
 ]
 },
 "Screenshots.UploadLocalScreenshot": {
@@ -4602,8 +4595,8 @@
 ],
 "count": 2,
 "samples": [
-"Ne.strGameID,Ne.local?.hHandle,Ee",
-"A.strGameID,A.hHandle,M.ePrivacy"
+"je.strGameID,je.local?.hHandle,Ve",
+"z.strGameID,z.hHandle,p.ePrivacy"
 ]
 },
 "ServerBrowser.AddFavoriteServer": {
@@ -4612,7 +4605,7 @@
 ],
 "count": 1,
 "samples": [
-"L(G)"
+"L(U)"
 ]
 },
 "ServerBrowser.AddFavoriteServersByIP": {
@@ -4621,7 +4614,7 @@
 ],
 "count": 1,
 "samples": [
-"R"
+"V"
 ]
 },
 "ServerBrowser.CancelServerQuery": {
@@ -4650,8 +4643,8 @@
 ],
 "count": 2,
 "samples": [
-"ue,this.props.friend.steamid64",
-"E,v.ConvertTo64BitString()"
+"fe,this.props.friend.steamid64",
+"P,O.ConvertTo64BitString()"
 ]
 },
 "ServerBrowser.CreateServerGameInfoDialog": {
@@ -4660,7 +4653,7 @@
 ],
 "count": 1,
 "samples": [
-"E,B,k,A,M"
+"P,v,z,p,C"
 ]
 },
 "ServerBrowser.CreateServerListRequest": {
@@ -4669,7 +4662,7 @@
 ],
 "count": 1,
 "samples": [
-"B,E.id,k,v,A"
+"v,P.id,z,O,p"
 ]
 },
 "ServerBrowser.DestroyGameInfoDialog": {
@@ -4723,7 +4716,7 @@
 ],
 "count": 1,
 "samples": [
-"St"
+"Tt"
 ]
 },
 "ServerBrowser.RegisterForFriendGamePlayed": {
@@ -4777,7 +4770,7 @@
 ],
 "count": 1,
 "samples": [
-"L(R)"
+"L(V)"
 ]
 },
 "ServerBrowser.RemoveHistoryServer": {
@@ -4786,7 +4779,7 @@
 ],
 "count": 1,
 "samples": [
-"L(R)"
+"L(V)"
 ]
 },
 "ServerBrowser.RequestPlayerDetails": {
@@ -4813,7 +4806,7 @@
 ],
 "count": 1,
 "samples": [
-"C"
+"b"
 ]
 },
 "Settings.AddClientBeta": {
@@ -4822,7 +4815,7 @@
 ],
 "count": 1,
 "samples": [
-"Ct,be"
+"Yt,de"
 ]
 },
 "Settings.ClearAllHTTPCaches": {
@@ -4858,7 +4851,7 @@
 ],
 "count": 1,
 "samples": [
-"us??0"
+"Xn??0"
 ]
 },
 "Settings.GetAvailableLanguages": {
@@ -4948,7 +4941,7 @@
 ],
 "count": 1,
 "samples": [
-"Ii=>Qr(Ii.map(Bi=>Bi.appid))"
+"gi=>Lr(gi.map(di=>di.appid))"
 ]
 },
 "Settings.RegisterForMicVolumeUpdates": {
@@ -4957,7 +4950,7 @@
 ],
 "count": 1,
 "samples": [
-"Qr"
+"Lr"
 ]
 },
 "Settings.RegisterForSettingsArrayChanges": {
@@ -4984,7 +4977,7 @@
 ],
 "count": 2,
 "samples": [
-"h",
+"d",
 "this.OnTimeZoneChange"
 ]
 },
@@ -5003,7 +4996,7 @@
 ],
 "count": 1,
 "samples": [
-"re"
+"oe"
 ]
 },
 "Settings.SelectClientBeta": {
@@ -5012,9 +5005,9 @@
 ],
 "count": 6,
 "samples": [
-"m.nBetaID",
-"T.nBetaID",
-"b.E8"
+"P.nBetaID",
+"O.nBetaID",
+"y.E8"
 ]
 },
 "Settings.SetCurrentLanguage": {
@@ -5023,8 +5016,8 @@
 ],
 "count": 2,
 "samples": [
-"E.strShortName",
-"Me"
+"P.strShortName",
+"re"
 ]
 },
 "Settings.SetEnableSoftProcessKill": {
@@ -5033,7 +5026,7 @@
 ],
 "count": 1,
 "samples": [
-"Lt"
+"It"
 ]
 },
 "Settings.SetHostname": {
@@ -5042,7 +5035,7 @@
 ],
 "count": 1,
 "samples": [
-"We"
+"Ot"
 ]
 },
 "Settings.SetMicTestMode": {
@@ -5051,7 +5044,7 @@
 ],
 "count": 1,
 "samples": [
-"Pr"
+"jn"
 ]
 },
 "Settings.SetPreferredMonitor": {
@@ -5060,7 +5053,7 @@
 ],
 "count": 1,
 "samples": [
-"De"
+"le"
 ]
 },
 "Settings.SetRegisteredSteamDeck": {
@@ -5069,7 +5062,7 @@
 ],
 "count": 2,
 "samples": [
-"r.iA.steamid,U"
+"i.iA.steamid,N"
 ]
 },
 "Settings.SetSaveAccountCredentials": {
@@ -5078,7 +5071,7 @@
 ],
 "count": 1,
 "samples": [
-"!Ii"
+"!gi"
 ]
 },
 "Settings.SetSetting": {
@@ -5087,7 +5080,7 @@
 ],
 "count": 1,
 "samples": [
-"X"
+"G"
 ]
 },
 "Settings.SetTimeZone": {
@@ -5096,8 +5089,8 @@
 ],
 "count": 2,
 "samples": [
-"E",
-"S"
+"P",
+"I"
 ]
 },
 "Settings.SetUseNintendoButtonLayout": {
@@ -5106,7 +5099,7 @@
 ],
 "count": 1,
 "samples": [
-"jr.nControllerIndex,tr"
+"be.nControllerIndex,mt"
 ]
 },
 "Settings.SetUseUniversalFaceButtonGlyphs": {
@@ -5115,7 +5108,7 @@
 ],
 "count": 1,
 "samples": [
-"jr.nControllerIndex,me"
+"be.nControllerIndex,nr"
 ]
 },
 "Settings.SetWindowed": {
@@ -5124,7 +5117,7 @@
 ],
 "count": 1,
 "samples": [
-"De"
+"le"
 ]
 },
 "Settings.ToggleSteamInstall": {
@@ -5176,7 +5169,7 @@
 ],
 "count": 1,
 "samples": [
-"this.m_hSharedConnection,u=>this.OnMsgRecvd(l.bg(u))"
+"this.m_hSharedConnection,me=>this.OnMsgRecvd(l.bg(me))"
 ]
 },
 "SharedConnection.SendMsg": {
@@ -5185,7 +5178,7 @@
 ],
 "count": 1,
 "samples": [
-"this.m_hSharedConnection,ce"
+"this.m_hSharedConnection,ee"
 ]
 },
 "SharedConnection.SendMsgAndAwaitBinaryResponse": {
@@ -5194,7 +5187,7 @@
 ],
 "count": 1,
 "samples": [
-"this.m_hSharedConnection,O"
+"this.m_hSharedConnection,he"
 ]
 },
 "SharedConnection.SendMsgAndAwaitResponse": {
@@ -5203,7 +5196,7 @@
 ],
 "count": 1,
 "samples": [
-"this.m_hSharedConnection,O"
+"this.m_hSharedConnection,he"
 ]
 },
 "SharedConnection.SubscribeToClientServiceMethod": {
@@ -5212,7 +5205,7 @@
 ],
 "count": 1,
 "samples": [
-"this.m_hSharedConnection,ne"
+"this.m_hSharedConnection,ie"
 ]
 },
 "SharedConnection.SubscribeToEMsg": {
@@ -5221,7 +5214,25 @@
 ],
 "count": 1,
 "samples": [
-"this.m_hSharedConnection,ne"
+"this.m_hSharedConnection,ie"
+]
+},
+"SiteLicense.ApproveSiteAssociation": {
+"arities": [
+2
+],
+"count": 1,
+"samples": [
+"tt,Jr"
+]
+},
+"SiteLicense.RegisterForSiteAssociationApproval": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"Dt"
 ]
 },
 "Stats.RecordActivationEvent": {
@@ -5230,7 +5241,7 @@
 ],
 "count": 43,
 "samples": [
-"\"CloudStorage.Download\",Fe",
+"\"CloudStorage.Download\",Ee",
 "\"CloudStorage.Notification\",\"ignored\"",
 "\"CloudStorage.Notification\",\"useful\""
 ]
@@ -5241,7 +5252,7 @@
 ],
 "count": 1,
 "samples": [
-"!0,\"PlayNextShowcase_NumDisplayed\",Ns.length.toString()"
+"!0,\"PlayNextShowcase_NumDisplayed\",ss.length.toString()"
 ]
 },
 "SteamChina.GetCustomLauncherAppID": {
@@ -5259,8 +5270,8 @@
 ],
 "count": 2,
 "samples": [
-"w",
-"r"
+"z",
+"o"
 ]
 },
 "Storage.GetString": {
@@ -5269,8 +5280,8 @@
 ],
 "count": 2,
 "samples": [
-"w",
-"r"
+"z",
+"o"
 ]
 },
 "Storage.SetString": {
@@ -5279,9 +5290,9 @@
 ],
 "count": 3,
 "samples": [
-"w,g",
-"r,o",
-"r,n"
+"z,f",
+"o,n",
+"o,i"
 ]
 },
 "Streaming.AcceptStreamingEULA": {
@@ -5290,7 +5301,7 @@
 ],
 "count": 1,
 "samples": [
-"G,U,K"
+"U,N,K"
 ]
 },
 "Streaming.CancelStreamGame": {
@@ -5407,7 +5418,7 @@
 ],
 "count": 1,
 "samples": [
-"M,Z"
+"C,X"
 ]
 },
 "Streaming.StreamingSetLaunchOption": {
@@ -5416,7 +5427,7 @@
 ],
 "count": 1,
 "samples": [
-"J"
+"q"
 ]
 },
 "System.Audio": {
@@ -5430,7 +5441,7 @@
 ],
 "count": 1,
 "samples": [
-"W"
+"re"
 ]
 },
 "System.Audio.GetApps": {
@@ -5529,7 +5540,7 @@
 ],
 "count": 1,
 "samples": [
-"this.id,W"
+"this.id,re"
 ]
 },
 "System.Audio.SetDefaultDeviceOverride": {
@@ -5538,7 +5549,7 @@
 ],
 "count": 1,
 "samples": [
-"this.m_id,W"
+"this.m_id,re"
 ]
 },
 "System.Audio.SetDeviceVolume": {
@@ -5547,7 +5558,7 @@
 ],
 "count": 1,
 "samples": [
-"this.m_id,W,Be"
+"this.m_id,re,Ie"
 ]
 },
 "System.AudioDevices.RegisterForStateChanges": {
@@ -5565,8 +5576,8 @@
 ],
 "count": 2,
 "samples": [
-"wt.serializeBase64String()",
-"Et.serializeBase64String()"
+"ke.serializeBase64String()",
+"nt.serializeBase64String()"
 ]
 },
 "System.CopyFile": {
@@ -5575,8 +5586,8 @@
 ],
 "count": 2,
 "samples": [
-"dr,Mr",
-"se,Oe"
+"mt,$t",
+"te,Be"
 ]
 },
 "System.CopyFilesToClipboard": {
@@ -5585,9 +5596,9 @@
 ],
 "count": 4,
 "samples": [
-"yt.filter(Boolean)",
-"[xi.strExportPath]",
-"[B]"
+"Tr.filter(Boolean)",
+"[Es.strExportPath]",
+"[v]"
 ]
 },
 "System.CreateTempPath": {
@@ -5596,8 +5607,8 @@
 ],
 "count": 3,
 "samples": [
-"cr",
-"B",
+"Dt",
+"v",
 "\"mp4\""
 ]
 },
@@ -5616,7 +5627,7 @@
 ],
 "count": 1,
 "samples": [
-"Et,wt"
+"nt,ke"
 ]
 },
 "System.Devkit.SetPairing": {
@@ -5625,7 +5636,7 @@
 ],
 "count": 1,
 "samples": [
-"Et"
+"nt"
 ]
 },
 "System.Display.EnableUnderscan": {
@@ -5634,7 +5645,7 @@
 ],
 "count": 4,
 "samples": [
-"!Y",
+"!H",
 "!K",
 "!0"
 ]
@@ -5654,7 +5665,7 @@
 ],
 "count": 1,
 "samples": [
-"k"
+"v"
 ]
 },
 "System.Display.SetUnderscanLevel": {
@@ -5663,8 +5674,8 @@
 ],
 "count": 3,
 "samples": [
-"X",
-"U"
+"G",
+"N"
 ]
 },
 "System.DisplayManager": {
@@ -5678,7 +5689,7 @@
 ],
 "count": 1,
 "samples": [
-"k"
+"z"
 ]
 },
 "System.DisplayManager.GetState": {
@@ -5705,7 +5716,7 @@
 ],
 "count": 1,
 "samples": [
-"k"
+"z"
 ]
 },
 "System.DisplayManager.SetGamescopeInternalResolution": {
@@ -5714,7 +5725,7 @@
 ],
 "count": 1,
 "samples": [
-"A,U/K==1.6?A/1.6:M"
+"z,U/N==1.6?z/1.6:p"
 ]
 },
 "System.DisplayManager.SetMode": {
@@ -5723,7 +5734,7 @@
 ],
 "count": 1,
 "samples": [
-"H.serializeBase64String()"
+"k.serializeBase64String()"
 ]
 },
 "System.Dock.DisarmSafetyNet": {
@@ -5750,7 +5761,7 @@
 ],
 "count": 1,
 "samples": [
-"C.serializeBase64String()"
+"b.serializeBase64String()"
 ]
 },
 "System.FormatStorage": {
@@ -5759,7 +5770,7 @@
 ],
 "count": 1,
 "samples": [
-"ze"
+"We"
 ]
 },
 "System.GetOSType": {
@@ -5827,7 +5838,7 @@
 ],
 "count": 1,
 "samples": [
-"pt"
+"Je"
 ]
 },
 "System.Network.RegisterForConnectionStateUpdate": {
@@ -5836,7 +5847,7 @@
 ],
 "count": 1,
 "samples": [
-"Me"
+"pe"
 ]
 },
 "System.Network.RegisterForConnectivityTestChanges": {
@@ -5863,7 +5874,7 @@
 ],
 "count": 1,
 "samples": [
-"ze"
+"Ze"
 ]
 },
 "System.Network.SetProxyInfo": {
@@ -5872,7 +5883,7 @@
 ],
 "count": 1,
 "samples": [
-"ze.proxy_mode,ze.address??\"\",ze.port??0,ze.exclude_local??!0"
+"Ze.proxy_mode,Ze.address??\"\",Ze.port??0,Ze.exclude_local??!0"
 ]
 },
 "System.Network.SetWifiEnabled": {
@@ -5881,7 +5892,7 @@
 ],
 "count": 1,
 "samples": [
-"ze"
+"Ze"
 ]
 },
 "System.Network.StartScanningForNetworks": {
@@ -5908,7 +5919,7 @@
 ],
 "count": 1,
 "samples": [
-"B,E"
+"v,P"
 ]
 },
 "System.OpenFileDialog": {
@@ -5917,9 +5928,9 @@
 ],
 "count": 12,
 "samples": [
-"{strTitle:(0,s.we)(\"#AddNonSteam_PickAppTitle\"),rgFilters:C(),strInitialFile:Q}",
-"{strTitle:(0,c.we)(\"#MediaManager_SaveDialogTitle\"),bChooseDirectory:!0}",
-"Lr"
+"{strTitle:(0,o.we)(\"#AddNonSteam_PickAppTitle\"),rgFilters:f(),strInitialFile:P}",
+"{strTitle:(0,d.we)(\"#MediaManager_SaveDialogTitle\"),bChooseDirectory:!0}",
+"_t"
 ]
 },
 "System.OpenInSystemBrowser": {
@@ -5928,9 +5939,9 @@
 ],
 "count": 3,
 "samples": [
-"I",
-"dr",
-"W"
+"h",
+"cr",
+"De"
 ]
 },
 "System.OpenLocalDirectoryInSystemExplorer": {
@@ -5939,9 +5950,9 @@
 ],
 "count": 5,
 "samples": [
-"kt.strShortcutStartDir",
-"kt.strInstallFolder",
-"Vr.strInstallFolder"
+"Lt.strShortcutStartDir",
+"Lt.strInstallFolder",
+"Yr.strInstallFolder"
 ]
 },
 "System.Perf.RegisterForDiagnosticInfoChanges": {
@@ -5968,9 +5979,9 @@
 ],
 "count": 26,
 "samples": [
-"Pe.serializeBase64String()",
-"ke.serializeBase64String()",
-"pe.serializeBase64String()"
+"ce.serializeBase64String()",
+"xe.serializeBase64String()",
+"ee.serializeBase64String()"
 ]
 },
 "System.RebootToAlternateSystemPartition": {
@@ -6018,33 +6029,6 @@
 "this.OnSettingsChanged"
 ]
 },
-"System.Report.GenerateSystemReport": {
-"arities": [
-0
-],
-"count": 1,
-"samples": [
-""
-]
-},
-"System.Report.SaveToDesktop": {
-"arities": [
-1
-],
-"count": 1,
-"samples": [
-"I"
-]
-},
-"System.Report.Submit": {
-"arities": [
-1
-],
-"count": 1,
-"samples": [
-"I"
-]
-},
 "System.RestartPC": {
 "arities": [
 0
@@ -6060,7 +6044,7 @@
 ],
 "count": 1,
 "samples": [
-"k"
+"v"
 ]
 },
 "System.ShutdownPC": {
@@ -6096,7 +6080,7 @@
 ],
 "count": 1,
 "samples": [
-"ot,Te"
+"fe,Xt"
 ]
 },
 "System.UI.GetGameWindowsInfo": {
@@ -6105,7 +6089,7 @@
 ],
 "count": 1,
 "samples": [
-"ot,Te"
+"fe,Xt"
 ]
 },
 "System.UI.RegisterForFocusChangeEvents": {
@@ -6142,9 +6126,9 @@
 ],
 "count": 17,
 "samples": [
-"A.serializeBase64String()",
-"k.serializeBase64String()",
-"M.serializeBase64String()"
+"z.serializeBase64String()",
+"v.serializeBase64String()",
+"p.serializeBase64String()"
 ]
 },
 "System.VideoRecordingDriverCheck": {
@@ -6214,7 +6198,7 @@
 "arities": [
 0
 ],
-"count": 1,
+"count": 2,
 "samples": [
 ""
 ]
@@ -6234,6 +6218,15 @@
 ],
 "count": 1,
 "samples": []
+},
+"UI.RegisterForDifferentLauncherRequested": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"this.OnDifferentLauncherRequested"
+]
 },
 "UI.RegisterForErrorCondition": {
 "arities": [
@@ -6259,7 +6252,7 @@
 ],
 "count": 1,
 "samples": [
-"()=>{Y(),window.clearTimeout(G),U.unregister()}"
+"()=>{K(),V.unregister()}"
 ]
 },
 "UI.RegisterForUIModeChanged": {
@@ -6298,18 +6291,18 @@
 "samples": [
 "a.$l2",
 "a.ogI",
-"P.$l2"
+"M.$l2"
 ]
 },
 "URL.ExecuteSteamURL": {
 "arities": [
 1
 ],
-"count": 7,
+"count": 9,
 "samples": [
 "\"steam://open/settings/voice\"",
-"\"steam://open/settings/friends\"",
-"\"steam://open/settings/audio\""
+"`steam://joinparty/${ke.m_unGamePlayedAppID}/${Se.beacon_id}`",
+"\"steam://open/settings/friends\""
 ]
 },
 "URL.GetSteamURLList": {
@@ -6318,7 +6311,7 @@
 ],
 "count": 1,
 "samples": [
-"[...c]"
+"[...B]"
 ]
 },
 "URL.RegisterForRunSteamURL": {
@@ -6327,9 +6320,9 @@
 ],
 "count": 3,
 "samples": [
-"f,p",
-"\"checkout_return/paypal_cancel\",Ci",
-"\"checkout_return/paypal_success\",Wi"
+"d,S",
+"\"checkout_return/paypal_cancel\",Fi",
+"\"checkout_return/paypal_success\",Hi"
 ]
 },
 "URL.RegisterForSteamURLChanges": {
@@ -6347,7 +6340,7 @@
 ],
 "count": 1,
 "samples": [
-"pe.serializeBase64String()"
+"ce.serializeBase64String()"
 ]
 },
 "Updates.CheckForUpdates": {
@@ -6392,7 +6385,7 @@
 ],
 "count": 1,
 "samples": [
-"$.serializeBase64String()"
+"G.serializeBase64String()"
 ]
 },
 "User.AuthorizeMicrotxn": {
@@ -6442,7 +6435,7 @@
 ],
 "count": 1,
 "samples": [
-"N"
+"F"
 ]
 },
 "User.GetLoginUsers": {
@@ -6577,7 +6570,7 @@
 ],
 "count": 1,
 "samples": [
-"k"
+"z"
 ]
 },
 "User.RegisterForShutdownDone": {
@@ -6622,7 +6615,7 @@
 ],
 "count": 1,
 "samples": [
-"re"
+"oe"
 ]
 },
 "User.RemoveAllUsers": {
@@ -6640,7 +6633,7 @@
 ],
 "count": 1,
 "samples": [
-"w"
+"g"
 ]
 },
 "User.RequestSupportSystemReport": {
@@ -6649,7 +6642,7 @@
 ],
 "count": 1,
 "samples": [
-"Q"
+"R"
 ]
 },
 "User.RestartAsUser": {
@@ -6658,8 +6651,8 @@
 ],
 "count": 2,
 "samples": [
-"N",
-"S"
+"F",
+"I"
 ]
 },
 "User.RestartToLoginScreen": {
@@ -6696,9 +6689,9 @@
 ],
 "count": 3,
 "samples": [
-"E",
-"k",
-"cr"
+"P",
+"z",
+"hr"
 ]
 },
 "User.SendSurvey": {
@@ -6716,8 +6709,8 @@
 ],
 "count": 2,
 "samples": [
-"Ve.request.appid,!0",
-"Ve.request.appid,!1"
+"Le.request.appid,!0",
+"Le.request.appid,!1"
 ]
 },
 "User.SetCheckForUpdatesOnRestart": {
@@ -6735,7 +6728,16 @@
 ],
 "count": 1,
 "samples": [
-"Bt,$e,Yt"
+"D,y,E"
+]
+},
+"User.SetRestartArgs": {
+"arities": [
+1
+],
+"count": 1,
+"samples": [
+"h"
 ]
 },
 "User.ShowSaveHardwareDialog": {
@@ -6778,7 +6780,7 @@
 "arities": [
 1
 ],
-"count": 14,
+"count": 15,
 "samples": [
 "!1",
 "!0"
@@ -6824,9 +6826,10 @@
 "arities": [
 1
 ],
-"count": 1,
+"count": 2,
 "samples": [
-"ue"
+"ce",
+"fe"
 ]
 },
 "WebChat.GetPushToTalkEnabled": {
@@ -6853,8 +6856,8 @@
 ],
 "count": 2,
 "samples": [
-"pe,ke.accountid(),Pe",
-"Pe,e.iA.accountid,ke"
+"le,ze.accountid(),Be",
+"Be,e.iA.accountid,ze"
 ]
 },
 "WebChat.OnNewGroupChatMsgAdded": {
@@ -6863,7 +6866,7 @@
 ],
 "count": 1,
 "samples": [
-"this.m_ulGroupID,this.m_ulChatID,T,L,Q,E"
+"this.m_ulGroupID,this.m_ulChatID,T,L,R,P"
 ]
 },
 "WebChat.OpenURLInClient": {
@@ -6872,9 +6875,9 @@
 ],
 "count": 7,
 "samples": [
-"Zr,bi.m_unPID,!1",
-"bi,yr.m_unPID,!1",
-"Br,Zr.m_unPID,!1"
+"ai,Nt.m_unPID,!1",
+"Nt,ye.m_unPID,!1",
+"Mr,ai.m_unPID,!1"
 ]
 },
 "WebChat.RegisterForComputerActiveStateChange": {
@@ -6937,7 +6940,7 @@
 ],
 "count": 1,
 "samples": [
-"Oe"
+"Z"
 ]
 },
 "WebChat.SetNumChatsWithUnreadPriorityMessages": {
@@ -6946,7 +6949,7 @@
 ],
 "count": 1,
 "samples": [
-"Bt"
+"Ie"
 ]
 },
 "WebChat.SetPersonaName": {
@@ -6973,9 +6976,9 @@
 ],
 "count": 3,
 "samples": [
-"!M",
-"H",
-"Bi==1"
+"!p",
+"C",
+"di==1"
 ]
 },
 "WebChat.SetPushToTalkHotKey": {
@@ -6985,8 +6988,8 @@
 "count": 5,
 "samples": [
 "0",
-"M.keyCode",
-"us"
+"p.keyCode",
+"Xn"
 ]
 },
 "WebChat.SetPushToTalkMouseButton": {
@@ -6995,9 +6998,9 @@
 ],
 "count": 3,
 "samples": [
-"M",
-"M.button",
-"us"
+"p",
+"p.button",
+"Xn"
 ]
 },
 "WebChat.SetVoiceChatActive": {
@@ -7006,7 +7009,7 @@
 ],
 "count": 1,
 "samples": [
-"Ie"
+"ue"
 ]
 },
 "WebChat.SetVoiceChatStatus": {
@@ -7015,7 +7018,7 @@
 ],
 "count": 1,
 "samples": [
-"Ie,yt"
+"ue,Qe"
 ]
 },
 "WebChat.UnregisterForMouseXButtonDown": {
@@ -7042,7 +7045,7 @@
 ],
 "count": 1,
 "samples": [
-"y.serializeBase64String()"
+"w.serializeBase64String()"
 ]
 },
 "Window.BringToFront": {
@@ -7053,8 +7056,8 @@
 "count": 32,
 "samples": [
 "",
-"k",
-"v"
+"z",
+"O"
 ]
 },
 "Window.Close": {
@@ -7171,9 +7174,9 @@
 ],
 "count": 7,
 "samples": [
-"this.state.menuLeft,this.state.menuTop,ee??!0",
+"this.state.menuLeft,this.state.menuTop,le??!0",
 "0,0,!1",
-"Math.ceil(Math.max(0,Se/2-mt.width/2)),Math.ceil(Math.max(0,Ve/2-mt.height/2)),!1"
+"Math.ceil(Math.max(0,me/2-dt.width/2)),Math.ceil(Math.max(0,Te/2-dt.height/2)),!1"
 ]
 },
 "Window.MoveToLocation": {
@@ -7185,7 +7188,7 @@
 "count": 3,
 "samples": [
 "this.KeyboardLocation,this.k_nKeyboardWindowOffset",
-"\"upper-left\",0,Gt.strMonitorDeviceName",
+"\"upper-left\",0,pe.strMonitorDeviceName",
 "\"center\""
 ]
 },
@@ -7195,9 +7198,9 @@
 ],
 "count": 5,
 "samples": [
-"A,k.left,k.top,k.width,k.height",
-"b,O,m,this.state.width,this.state.height",
-"ee,De,Oe,this.state.menuWidth,this.state.menuHeight"
+"p,z.left,z.top,z.width,z.height",
+"y,x,E,this.state.width,this.state.height",
+"le,Be,ze,this.state.menuWidth,this.state.menuHeight"
 ]
 },
 "Window.ProcessShuttingDown": {
@@ -7215,9 +7218,9 @@
 ],
 "count": 12,
 "samples": [
-"1280,Li.innerHeight,!1",
-"Xs.UIDisplayPrefs.nFriendsListSingleWindowWidthPx,Li.innerHeight,!1",
-"this.state.menuWidth,this.state.menuHeight,ee??!0"
+"1280,Bt.innerHeight,!1",
+"la.UIDisplayPrefs.nFriendsListSingleWindowWidthPx,Bt.innerHeight,!1",
+"this.state.menuWidth,this.state.menuHeight,le??!0"
 ]
 },
 "Window.RestoreWindowSizeAndPosition": {
@@ -7226,7 +7229,7 @@
 ],
 "count": 1,
 "samples": [
-"cr.strRestoreDetails"
+"hr.strRestoreDetails"
 ]
 },
 "Window.SetComposition": {
@@ -7235,7 +7238,7 @@
 ],
 "count": 1,
 "samples": [
-"k,A,H"
+"z,p,k"
 ]
 },
 "Window.SetGamepadUIAutoDisplayScale": {
@@ -7244,7 +7247,7 @@
 ],
 "count": 2,
 "samples": [
-"J",
+"q",
 "!0"
 ]
 },
@@ -7254,8 +7257,8 @@
 ],
 "count": 3,
 "samples": [
-"ae",
-"J"
+"oe",
+"q"
 ]
 },
 "Window.SetHideOnClose": {
@@ -7265,7 +7268,7 @@
 "count": 5,
 "samples": [
 "!1",
-"!!w.bHideOnClose"
+"!!g.bHideOnClose"
 ]
 },
 "Window.SetKeyFocus": {
@@ -7285,9 +7288,9 @@
 ],
 "count": 9,
 "samples": [
-"Ln.KO,Ln.rS",
-"Ln.Y$,Ln.rS",
-"Qt,Kt"
+"Es.KO,Es.rS",
+"Es.Y$,Es.rS",
+"Jr,Tr"
 ]
 },
 "Window.SetModal": {
@@ -7306,7 +7309,7 @@
 ],
 "count": 2,
 "samples": [
-"w,j",
+"g,m",
 "0,0"
 ]
 },
@@ -7316,7 +7319,7 @@
 ],
 "count": 1,
 "samples": [
-"Br"
+"Mr"
 ]
 },
 "Window.SetWindowIcon": {
@@ -7345,7 +7348,7 @@
 ],
 "count": 3,
 "samples": [
-"!De",
+"!le",
 "!0",
 "!1"
 ]
@@ -7451,10 +7454,6 @@
 "k_EConnectivityTestResult_TimedOut": 3,
 "k_EConnectivityTestResult_Unknown": 0,
 "k_EConnectivityTestResult_WifiDisabled": 5,
-"k_ECuratorFollow": 1,
-"k_ECuratorIgnore": 3,
-"k_ECuratorUnfollow": 2,
-"k_ECuratorUnignore": 4,
 "k_EFloatingGamepadTextInputModeModeEmail": 2,
 "k_EFloatingGamepadTextInputModeModeMultipleLines": 1,
 "k_EFloatingGamepadTextInputModeModeNumeric": 3,
@@ -7510,9 +7509,6 @@
 "k_ENoiseGateLevel_Low": 1,
 "k_ENoiseGateLevel_Medium": 2,
 "k_ENoiseGateLevel_Off": 0,
-"k_ENotifyFlagByEmail": 1,
-"k_ENotifyFlagByPush": 2,
-"k_ENotifyFlagNone": 0,
 "k_EOverlayToStoreFlag_AddToCart": 1,
 "k_EOverlayToStoreFlag_AddToCartAndShow": 2,
 "k_EOverlayToStoreFlag_None": 0,
@@ -7800,6 +7796,7 @@
 "SetVoiceForceConnectingStatus",
 "SetVoiceForceReconnectingStatus",
 "SetVoiceLogDetails",
+"ShowContentReportDialog",
 "ShowVROverlay",
 "SteamUIStore",
 "SuspendResumeStore",
@@ -7874,5 +7871,5 @@
 "vrPooledPopupStore",
 "workshopStore"
 ],
-"version": "1792618285"
+"version": "1794536281"
 }

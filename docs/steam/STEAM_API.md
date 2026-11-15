@@ -1,6 +1,6 @@
-# La interfaz de Steam (cliente 1792618285)
+# La interfaz de Steam (cliente 1794536281)
 
-Generado por `dev/steam/steam_api.py report` a partir del código que Valve publica con el cliente (`steam_client_ubuntu12` → `steamui_websrc_all`). Es la referencia de lo que STONE puede pedirle a Steam: las funciones que la propia interfaz de Steam llama, cuántas veces y con qué argumentos.
+Generado por `dev/steam/steam_api.py report` a partir del código que Valve publica con el cliente (`steam_client_steamrt64` → `steamui_websrc_all`, el cliente de 64 bits que usa la consola). Es la referencia de lo que STONE puede pedirle a Steam: las funciones que la propia interfaz de Steam llama, cuántas veces y con qué argumentos.
 
 ## STONE frente a Steam
 
@@ -167,56 +167,55 @@ Generado por `dev/steam/steam_api.py report` a partir del código que Valve publ
 
 | Función | Veces | Argumentos | Ejemplos de la interfaz de Steam |
 | --- | --- | --- | --- |
-| `Apps.AddShortcut` | 1 | 4 | `(pe.strAppName,pe.strExePath,pe.strArguments,pe.strCmdline)` |
-| `Apps.BackupFilesForApp` | 1 | 2 | `(O,this.state.strFolder)` |
+| `Apps.AddShortcut` | 1 | 4 | `(xe.strAppName,xe.strExePath,xe.strArguments,xe.strCmdline)` |
+| `Apps.BackupFilesForApp` | 1 | 2 | `(x,this.state.strFolder)` |
 | `Apps.BrowseScreenshotForApp` | 1 | 2 | `(v.strGameID,v.hHandle)` |
 | `Apps.CancelBackup` | 1 | 0 | `()` |
-| `Apps.CancelGameAction` | 6 | 1 | `(this.m_nGameActionID)` · `(U)` |
-| `Apps.CancelLaunch` | 1 | 1 | `(kt.GetGameID())` |
-| `Apps.ClearCustomArtworkForApp` | 2 | 2 | `(this.props.app.appid,this.props.eAssetType)` · `(this.props.overview.appid,Xe)` |
-| `Apps.ClearCustomLogoPositionForApp` | 1 | 1 | `(A.appid)` |
-| `Apps.ClearProton` | 1 | 1 | `(w)` |
-| `Apps.ContinueGameAction` | 6 | 2 | `(this.m_nGameActionID,ze)` · `( "+this.m_nGameActionID+", '"+Ue+"' )` |
-| `Apps.CreateDesktopShortcutForApp` | 2 | 1 | `(qt)` · `(kt.appid)` |
-| `Apps.DownloadWorkshopItem` | 1 | 3 | `(Y,J,!0)` |
-| `Apps.GetAchievementsInTimeRange` | 1 | 3 | `(E,v,B)` |
+| `Apps.CancelGameAction` | 6 | 1 | `(this.m_nGameActionID)` · `(K)` |
+| `Apps.CancelLaunch` | 1 | 1 | `(Lt.GetGameID())` |
+| `Apps.ClearCustomArtworkForApp` | 2 | 2 | `(this.props.app.appid,this.props.eAssetType)` · `(this.props.overview.appid,it)` |
+| `Apps.ClearCustomLogoPositionForApp` | 1 | 1 | `(p.appid)` |
+| `Apps.ClearProton` | 1 | 1 | `(g)` |
+| `Apps.ContinueGameAction` | 6 | 2 | `(this.m_nGameActionID,Pe)` · `( "+this.m_nGameActionID+", '"+Te+"' )` |
+| `Apps.CreateDesktopShortcutForApp` | 2 | 1 | `(ve)` · `(Lt.appid)` |
+| `Apps.DownloadWorkshopItem` | 1 | 3 | `(H,q,!0)` |
+| `Apps.GetAchievementsInTimeRange` | 1 | 3 | `(P,O,v)` |
 | `Apps.GetActiveGameActions` | 1 | 0 | `()` |
-| `Apps.GetBackupsInFolder` | 1 | 1 | `(b)` |
-| `Apps.GetCachedAppDetails` | 1 | 1 | `(l)` |
-| `Apps.GetCloudPendingRemoteOperations` | 1 | 1 | `(A.appid)` |
-| `Apps.GetConflictingFileTimestamps` | 1 | 1 | `(A.appid)` |
-| `Apps.GetDetailsForScreenshotUpload` | 2 | 2 | `(we.strGameID,we.local?.hHandle)` · `(A.strGameID,A.hHandle)` |
-| `Apps.GetDetailsForScreenshotUploads` | 1 | 2 | `(tt,Ae[tt])` |
-| `Apps.GetDownloadedWorkshopItems` | 1 | 1 | `(Y)` |
+| `Apps.GetBackupsInFolder` | 1 | 1 | `(y)` |
+| `Apps.GetCloudPendingRemoteOperations` | 1 | 1 | `(p.appid)` |
+| `Apps.GetConflictingFileTimestamps` | 1 | 1 | `(p.appid)` |
+| `Apps.GetDetailsForScreenshotUpload` | 2 | 2 | `(Se.strGameID,Se.local?.hHandle)` · `(z.strGameID,z.hHandle)` |
+| `Apps.GetDetailsForScreenshotUploads` | 1 | 2 | `(At,Y[At])` |
+| `Apps.GetDownloadedWorkshopItems` | 1 | 1 | `(H)` |
 | `Apps.GetDurationControlInfo` | 1 | 1 | `(this.appid)` |
-| `Apps.GetFriendAchievementsForApp` | 1 | 2 | `(A.toString(),H.ConvertTo64BitString())` |
-| `Apps.GetGameActionDetails` | 8 | 2 | `(_e,mt=>Re(mt.nLaunchOption))` · `(this.m_nGameActionID,this.OnGetGameActionDetails)` |
+| `Apps.GetFriendAchievementsForApp` | 1 | 2 | `(T.toString(),R.ConvertTo64BitString())` |
+| `Apps.GetGameActionDetails` | 8 | 2 | `(et,Ee=>Fe(Ee.nLaunchOption))` · `(this.m_nGameActionID,this.OnGetGameActionDetails)` |
 | `Apps.GetGameActionForApp` | 1 | 2 | `(this.props.overview.GetGameID(),this.onGameActionStart)` |
-| `Apps.GetIsSubscribedApp` | 2 | 1 | `(this.props.unAppID)` · `(this.props.group.id)` |
-| `Apps.GetLaunchOptionsForApp` | 9 | 1 | `(Ve)` · `(xe.appid)` |
-| `Apps.GetMyAchievementsForApp` | 1 | 1 | `(A.toString())` |
+| `Apps.GetIsSubscribedApp` | 3 | 1 | `(Y)` · `(this.props.unAppID)` |
+| `Apps.GetLaunchOptionsForApp` | 9 | 1 | `(Le)` · `(me.appid)` |
+| `Apps.GetMyAchievementsForApp` | 1 | 1 | `(T.toString())` |
 | `Apps.GetPlaytime` | 1 | 1 | `(this.appid)` |
-| `Apps.GetPrePurchasedApps` | 1 | 1 | `(v)` |
-| `Apps.GetScreenshotsInTimeRange` | 2 | 3 | `(E.m_unAppID,v,0)` · `(I,0,0)` |
-| `Apps.GetShortcutDataForPath` | 1 | 1 | `(X)` |
-| `Apps.GetSoundtrackDetails` | 2 | 1 | `(p)` · `(V.appid)` |
-| `Apps.GetSubscribedWorkshopItemDetails` | 1 | 2 | `(Y,R)` |
-| `Apps.GetSubscribedWorkshopItems` | 2 | 1 | `(Y)` |
-| `Apps.InstallFlatpakAppAndCreateShortcut` | 1 | 2 | `(Qe,It)` |
-| `Apps.JoinAppContentBeta` | 2 | 2 | `(Vr.unAppID,ci)` · `(Vr.unAppID,Zt.strName)` |
-| `Apps.JoinAppContentBetaByPassword` | 1 | 2 | `(Sr,Vr)` |
-| `Apps.LaunchNonSteamApp` | 1 | 1 | `(gt.strCmdline)` |
+| `Apps.GetPrePurchasedApps` | 1 | 1 | `(O)` |
+| `Apps.GetScreenshotsInTimeRange` | 2 | 3 | `(P.m_unAppID,O,0)` · `(h,0,0)` |
+| `Apps.GetShortcutDataForPath` | 1 | 1 | `(ee)` |
+| `Apps.GetSoundtrackDetails` | 2 | 1 | `(S)` · `(ae.appid)` |
+| `Apps.GetSubscribedWorkshopItemDetails` | 1 | 2 | `(H,V)` |
+| `Apps.GetSubscribedWorkshopItems` | 2 | 1 | `(H)` |
+| `Apps.InstallFlatpakAppAndCreateShortcut` | 1 | 2 | `(qe,xt)` |
+| `Apps.JoinAppContentBeta` | 2 | 2 | `(Yr.unAppID,Ti)` · `(Yr.unAppID,Rr.strName)` |
+| `Apps.JoinAppContentBetaByPassword` | 1 | 2 | `(Mi,Yr)` |
+| `Apps.LaunchNonSteamApp` | 1 | 1 | `(Wr.strCmdline)` |
 | `Apps.ListFlatpakApps` | 2 | 0 | `()` |
 | `Apps.LoadEula` | 1 | 1 | `(this.m_AppID)` |
-| `Apps.MarkEulaAccepted` | 2 | 3 | `(le,Ee,Xe)` · `(Z,he,ae)` |
-| `Apps.MoveWorkshopItemLoadOrder` | 1 | 3 | `(Y,J,G)` |
-| `Apps.OpenAppSettingsDialog` | 3 | 2 | `(kt.appid,"")` · `(this.props.app.appid,"updates")` |
-| `Apps.RaiseWindowForGame` | 3 | 1 | `(ge)` · `(this.m_gameid)` |
+| `Apps.MarkEulaAccepted` | 2 | 3 | `(je,Ke,Ve)` · `(he,oe,Z)` |
+| `Apps.MoveWorkshopItemLoadOrder` | 1 | 3 | `(H,q,U)` |
+| `Apps.OpenAppSettingsDialog` | 3 | 2 | `(Lt.appid,"")` · `(this.props.app.appid,"updates")` |
+| `Apps.RaiseWindowForGame` | 3 | 1 | `(wt)` · `(this.m_gameid)` |
 | `Apps.RegisterForAchievementChanges` | 1 | 1 | `(this.OnAchievementChange)` |
 | `Apps.RegisterForAppBackupStatus` | 1 | 1 | `(this.OnAppBackupStatus)` |
-| `Apps.RegisterForAppDetails` | 1 | 2 | `(A,this.AppDetailsChanged)` |
-| `Apps.RegisterForAppOverviewChanges` | 1 | 1 | `(pe=>{this.UpdateAppOverview(pe)&&(this.m_bIsInitialized=!0,$&&$(),$=null)})` |
-| `Apps.RegisterForDRMFailureResponse` | 2 | 1 | `(N)` · `(y)` |
+| `Apps.RegisterForAppDetails` | 1 | 2 | `(p,this.AppDetailsChanged)` |
+| `Apps.RegisterForAppOverviewChanges` | 1 | 1 | `(Le=>{this.UpdateAppOverview(Le)&&(this.m_bIsInitialized=!0,Oe&&Oe(),Oe=null)})` |
+| `Apps.RegisterForDRMFailureResponse` | 2 | 1 | `(F)` · `(w)` |
 | `Apps.RegisterForGameActionEnd` | 2 | 1 | `(this.OnGameActionEnd)` · `(this.onGameActionEnd)` |
 | `Apps.RegisterForGameActionShowError` | 1 | 1 | `(this.OnGameActionShowError)` |
 | `Apps.RegisterForGameActionShowUI` | 1 | 1 | `(this.OnGameActionShowUI)` |
@@ -224,116 +223,116 @@ Generado por `dev/steam/steam_api.py report` a partir del código que Valve publ
 | `Apps.RegisterForGameActionTaskChange` | 1 | 1 | `(this.OnGameActionTaskChange)` |
 | `Apps.RegisterForGameActionUserRequest` | 1 | 1 | `(this.OnGameActionUserRequest)` |
 | `Apps.RegisterForPrePurchasedAppChanges` | 1 | 1 | `(()=>this.ScheduleUpdate(0))` |
-| `Apps.RegisterForShowMarketingMessageDialog` | 1 | 1 | `(Qt)` |
-| `Apps.RegisterForShowPendingGiftsDialog` | 1 | 1 | `(Qt)` |
+| `Apps.RegisterForShowMarketingMessageDialog` | 1 | 1 | `(zt)` |
+| `Apps.RegisterForShowPendingGiftsDialog` | 1 | 1 | `(zt)` |
+| `Apps.RegisterForStatsSchemaChanges` | 1 | 1 | `(this.OnStatsSchemaChange)` |
 | `Apps.RegisterForWorkshopChanges` | 1 | 1 | `(this.onWorkshopChanges)` |
-| `Apps.RegisterForWorkshopItemDownloads` | 1 | 2 | `(Y,this.onWorkshopDownload)` |
+| `Apps.RegisterForWorkshopItemDownloads` | 1 | 2 | `(H,this.onWorkshopDownload)` |
 | `Apps.RegisterForWorkshopItemInstalled` | 1 | 1 | `(this.onWorkshopItemInstalled)` |
-| `Apps.RemoveShortcut` | 1 | 1 | `(Bt)` |
-| `Apps.ReportLibraryAssetCacheMiss` | 4 | 2 | `(k,this.props.eAssetType)` · `(b,u.uGW)` |
+| `Apps.RemoveShortcut` | 1 | 1 | `(Gt)` |
+| `Apps.ReportLibraryAssetCacheMiss` | 5 | 2 | `(p,this.props.eAssetType)` · `(Be,G)` |
 | `Apps.ReportMarketingMessageDialogShown` | 1 | 0 | `()` |
 | `Apps.ReportPendingGiftsDialogShown` | 1 | 0 | `()` |
-| `Apps.RequestIconDataForApp` | 1 | 1 | `(V.appid)` |
-| `Apps.RequestLegacyCDKeysForApp` | 1 | 1 | `(N.appid)` |
-| `Apps.RunGame` | 2 | 4 | `(H.GetGameID(),"",-1,d.s7X)` · `(Bt.GetGameID(),"",-1,ct)` |
-| `Apps.SaveAchievementProgressCache` | 1 | 1 | `(JSON.stringify(this.m_achievementProgress,w))` |
-| `Apps.ScanForInstalledNonSteamApps` | 1 | 1 | `(s)` |
-| `Apps.SetAppAutoUpdateBehavior` | 2 | 2 | `(Vr.unAppID,ki.data)` · `(Bi.unAppID,us.data)` |
-| `Apps.SetAppBackgroundDownloadsBehavior` | 1 | 2 | `(Vr.unAppID,di.data)` |
-| `Apps.SetAppCurrentLanguage` | 1 | 2 | `(Vr.unAppID,nn.data)` |
-| `Apps.SetAppLaunchOptions` | 1 | 2 | `(Vr.unAppID,nn)` |
-| `Apps.SetAppResolutionOverride` | 1 | 2 | `(Vr.unAppID,ni.data)` |
-| `Apps.SetCachedAppDetails` | 1 | 2 | `(l,JSON.stringify(Array.from(f)))` |
-| `Apps.SetControllerRumbleIntensity` | 1 | 2 | `(Vr.unAppID,an.data)` |
-| `Apps.SetCustomArtworkForApp` | 3 | 4 | `(this.props.app.appid,Y,M,this.props.eAssetType)` · `(Qe,vi,fr,It)` |
-| `Apps.SetCustomLogoPositionForApp` | 1 | 2 | `(A.appid,JSON.stringify(H))` |
-| `Apps.SetDLCEnabled` | 1 | 3 | `(Vr,si.unAppID,nn)` |
-| `Apps.SetFDMEnable` | 1 | 2 | `(Vr.unAppID,Nt)` |
-| `Apps.SetForceIdentAsSteamDeck` | 1 | 2 | `(Vr.unAppID,ki)` |
-| `Apps.SetLocalScreenshotCaption` | 2 | 3 | `(Ne.local.strGameID,Ne.local.hHandle,le\|\|"")` · `(A.strGameID,A.hHandle,M.strCaption)` |
-| `Apps.SetLocalScreenshotPrivacy` | 1 | 3 | `(Ne.local.strGameID,Ne.local.hHandle,Ee)` |
-| `Apps.SetLocalScreenshotSpoiler` | 2 | 3 | `(Ne.local.strGameID,Ne.local.hHandle,le)` · `(A.strGameID,A.hHandle,M.bSpoiler)` |
-| `Apps.SetRPOEnable` | 1 | 2 | `(Vr.unAppID,Nt)` |
-| `Apps.SetShortcutExe` | 2 | 2 | `(Vr,(0,N.yd)(di))` · `(Vr,di)` |
-| `Apps.SetShortcutIcon` | 1 | 2 | `(Vr,Ji)` |
-| `Apps.SetShortcutIsVR` | 1 | 2 | `(Vr,!nn.bShortcutIsVR)` |
-| `Apps.SetShortcutLaunchOptions` | 1 | 2 | `(Vr,di)` |
-| `Apps.SetShortcutName` | 1 | 2 | `(Vr,di)` |
-| `Apps.SetShortcutSortAs` | 1 | 2 | `(V,ee)` |
-| `Apps.SetShortcutStartDir` | 2 | 2 | `(Vr,di)` |
-| `Apps.SetStreamingClientForApp` | 1 | 2 | `(this.props.overview.appid,Mt.clientid)` |
-| `Apps.SetTSOEnable` | 1 | 2 | `(Vr.unAppID,ni.data)` |
-| `Apps.SetThirdPartyControllerConfiguration` | 2 | 2 | `(er,Yr?Y.Dt:Y.pg)` · `(Vr.unAppID,an)` |
-| `Apps.SetWorkshopItemsDisabledLocally` | 2 | 3 | `(Vr,[Ri],ln)` · `(Vr.unAppID,Lr,!bt)` |
-| `Apps.SetWorkshopItemsLoadOrder` | 1 | 2 | `(Y,he)` |
-| `Apps.ShowControllerConfigurator` | 12 | 1 | `(x.qho)` · `(l.mZ)` |
-| `Apps.ShowStore` | 2 | 1 | `(kt.appid)` · `(Bt.appid)` |
-| `Apps.SpecifyCompatExperiment` | 3 | 2 | `(Vr.unAppID,Nt(Er))` · `(Vr.unAppID,"")` |
-| `Apps.StreamGame` | 3 | 3 | `(N.g5s,Ei.clientId,-1)` · `(r.g5s,Z,-1)` |
-| `Apps.SubscribeWorkshopItem` | 3 | 3 | `(Y,J,!0)` · `(Y,J,!1)` |
-| `Apps.TerminateApp` | 6 | 2 | `(fr,!1)` · `(G,!1)` |
-| `Apps.ToggleAllowDesktopConfiguration` | 1 | 1 | `(Vr.unAppID)` |
-| `Apps.ToggleAppSteamCloudEnabled` | 1 | 1 | `(Vr.unAppID)` |
-| `Apps.ToggleAppSteamCloudSyncOnSuspendEnabled` | 1 | 1 | `(Vr.unAppID)` |
-| `Apps.ToggleEnableSteamOverlayForApp` | 2 | 1 | `(Vr.unAppID)` · `(nn.unAppID)` |
-| `Apps.ToggleOverrideResolutionForInternalDisplay` | 1 | 1 | `(Vr.unAppID)` |
-| `Apps.VerifyApp` | 1 | 1 | `(G)` |
+| `Apps.RequestIconDataForApp` | 1 | 1 | `(Be.appid)` |
+| `Apps.RequestLegacyCDKeysForApp` | 1 | 1 | `(F.appid)` |
+| `Apps.RunGame` | 2 | 4 | `(C.GetGameID(),"",-1,u.s7X)` · `(Gt.GetGameID(),"",-1,tr)` |
+| `Apps.SaveAchievementProgressCache` | 1 | 1 | `(JSON.stringify(this.m_achievementProgress,g))` |
+| `Apps.ScanForInstalledNonSteamApps` | 1 | 1 | `(r)` |
+| `Apps.SetAppAutoUpdateBehavior` | 2 | 2 | `(Yr.unAppID,Zt.data)` · `(di.unAppID,Xn.data)` |
+| `Apps.SetAppBackgroundDownloadsBehavior` | 1 | 2 | `(Yr.unAppID,qi.data)` |
+| `Apps.SetAppCurrentLanguage` | 1 | 2 | `(Yr.unAppID,sr.data)` |
+| `Apps.SetAppLaunchOptions` | 1 | 2 | `(Yr.unAppID,sr)` |
+| `Apps.SetAppResolutionOverride` | 1 | 2 | `(Yr.unAppID,dn.data)` |
+| `Apps.SetControllerRumbleIntensity` | 1 | 2 | `(Yr.unAppID,ci.data)` |
+| `Apps.SetCustomArtworkForApp` | 3 | 4 | `(this.props.app.appid,q,k,this.props.eAssetType)` · `(qe,Si,Er,xt)` |
+| `Apps.SetCustomLogoPositionForApp` | 1 | 2 | `(p.appid,JSON.stringify(k))` |
+| `Apps.SetDLCEnabled` | 1 | 3 | `(Yr,Vr.unAppID,sr)` |
+| `Apps.SetFDMEnable` | 1 | 2 | `(Yr.unAppID,Ai)` |
+| `Apps.SetForceIdentAsSteamDeck` | 1 | 2 | `(Yr.unAppID,Zt)` |
+| `Apps.SetLocalScreenshotCaption` | 2 | 3 | `(je.local.strGameID,je.local.hHandle,Ke\|\|"")` · `(z.strGameID,z.hHandle,p.strCaption)` |
+| `Apps.SetLocalScreenshotPrivacy` | 1 | 3 | `(je.local.strGameID,je.local.hHandle,Ve)` |
+| `Apps.SetLocalScreenshotSpoiler` | 2 | 3 | `(je.local.strGameID,je.local.hHandle,Ke)` · `(z.strGameID,z.hHandle,p.bSpoiler)` |
+| `Apps.SetRPOEnable` | 1 | 2 | `(Yr.unAppID,Ai)` |
+| `Apps.SetShortcutExe` | 2 | 2 | `(Yr,(0,j.yd)(qi))` · `(Yr,qi)` |
+| `Apps.SetShortcutIcon` | 1 | 2 | `(Yr,Ji)` |
+| `Apps.SetShortcutIsVR` | 1 | 2 | `(Yr,!sr.bShortcutIsVR)` |
+| `Apps.SetShortcutLaunchOptions` | 1 | 2 | `(Yr,qi)` |
+| `Apps.SetShortcutName` | 1 | 2 | `(Yr,qi)` |
+| `Apps.SetShortcutSortAs` | 1 | 2 | `(Be,ze)` |
+| `Apps.SetShortcutStartDir` | 2 | 2 | `(Yr,qi)` |
+| `Apps.SetStreamingClientForApp` | 1 | 2 | `(this.props.overview.appid,it.clientid)` |
+| `Apps.SetTSOEnable` | 1 | 2 | `(Yr.unAppID,dn.data)` |
+| `Apps.SetThirdPartyControllerConfiguration` | 3 | 2 | `(Bi,H.gG)` · `(Bi,Gi?H.Dt:H.pg)` |
+| `Apps.SetWorkshopItemsDisabledLocally` | 2 | 3 | `(Yr,[Yi],ei)` · `(Yr.unAppID,yr,!ur)` |
+| `Apps.SetWorkshopItemsLoadOrder` | 1 | 2 | `(H,he)` |
+| `Apps.ShowControllerConfigurator` | 12 | 1 | `(A.qho)` · `(r.mZ)` |
+| `Apps.ShowStore` | 2 | 1 | `(Lt.appid)` · `(Gt.appid)` |
+| `Apps.SpecifyCompatExperiment` | 3 | 2 | `(Yr.unAppID,Ai(mi))` · `(Yr.unAppID,"")` |
+| `Apps.StreamGame` | 3 | 3 | `(j.g5s,ci.clientId,-1)` · `(o.g5s,oe,-1)` |
+| `Apps.SubscribeWorkshopItem` | 3 | 3 | `(H,q,!0)` · `(H,q,!1)` |
+| `Apps.TerminateApp` | 6 | 2 | `(Er,!1)` · `(U,!1)` |
+| `Apps.ToggleAllowDesktopConfiguration` | 1 | 1 | `(Yr.unAppID)` |
+| `Apps.ToggleAppSteamCloudEnabled` | 1 | 1 | `(Yr.unAppID)` |
+| `Apps.ToggleAppSteamCloudSyncOnSuspendEnabled` | 1 | 1 | `(Yr.unAppID)` |
+| `Apps.ToggleEnableSteamOverlayForApp` | 2 | 1 | `(Yr.unAppID)` · `(sr.unAppID)` |
+| `Apps.ToggleOverrideResolutionForInternalDisplay` | 1 | 1 | `(Yr.unAppID)` |
+| `Apps.VerifyApp` | 1 | 1 | `(N)` |
 | `Auth.ClearCachedSignInPin` | 1 | 0 | `()` |
 | `Auth.CurrentUserHasCachedSignInPin` | 1 | 0 | `()` |
 | `Auth.GetLocalHostname` | 3 | 0 | `()` |
 | `Auth.GetMachineID` | 1 | 0 | `()` |
 | `Auth.GetRefreshInfo` | 2 | 0 | `()` |
-| `Auth.GetSteamGuardData` | 2 | 1 | `(Ut)` · `(Mr)` |
+| `Auth.GetSteamGuardData` | 2 | 1 | `(Ae)` · `(vr)` |
 | `Auth.IsSecureComputer` | 1 | 0 | `()` |
-| `Auth.SetCachedSignInPin` | 1 | 1 | `(Rr)` |
-| `Auth.SetLoginToken` | 2 | 2 | `(me.strRefreshToken,me.strAccountName)` · `(He.strRefreshToken,He.strAccountName)` |
-| `Auth.SetSteamGuardData` | 2 | 2 | `(me.strAccountName,et)` · `(He.strAccountName,Ke)` |
-| `Auth.StartSignInFromCache` | 1 | 1 | `(qt)` |
-| `Auth.ValidateCachedSignInPin` | 1 | 2 | `(qt.strAccountName,gt)` |
-| `Downloads.EnableAllDownloads` | 5 | 2 | `(!1,qt.clientid)` · `(ei,w.hj.CurrentViewingRemoteClientID)` |
-| `Downloads.PauseAppUpdate` | 1 | 2 | `(ce,w.hj.CurrentViewingRemoteClientID)` |
-| `Downloads.QueueAppUpdate` | 1 | 2 | `(me,w.hj.CurrentViewingRemoteClientID)` |
+| `Auth.SetCachedSignInPin` | 1 | 1 | `(wr)` |
+| `Auth.SetLoginToken` | 2 | 2 | `(nr.strRefreshToken,nr.strAccountName)` · `(Xe.strRefreshToken,Xe.strAccountName)` |
+| `Auth.SetSteamGuardData` | 2 | 2 | `(nr.strAccountName,zt)` · `(Xe.strAccountName,Se)` |
+| `Auth.StartSignInFromCache` | 1 | 1 | `(tr)` |
+| `Auth.ValidateCachedSignInPin` | 1 | 2 | `(tr.strAccountName,yt)` |
+| `Downloads.EnableAllDownloads` | 5 | 2 | `(!1,ve.clientid)` · `(Ct,m.hj.CurrentViewingRemoteClientID)` |
+| `Downloads.PauseAppUpdate` | 1 | 2 | `(ot,m.hj.CurrentViewingRemoteClientID)` |
+| `Downloads.QueueAppUpdate` | 1 | 2 | `(zt,m.hj.CurrentViewingRemoteClientID)` |
 | `Downloads.RegisterForDownloadItems` | 1 | 1 | `(this.OnDownloadItems)` |
 | `Downloads.RegisterForDownloadOverview` | 1 | 1 | `(this.OnDownloadOverview)` |
 | `Downloads.RegisterForRemoteClientsConnected` | 1 | 1 | `(this.OnRemoteClientsChanged)` |
-| `Downloads.RemoveFromDownloadList` | 2 | 2 | `($e.appid,w.hj.CurrentViewingRemoteClientID)` |
-| `Downloads.ResumeAppUpdate` | 3 | 2 | `(kt.appid,qt.clientid)` · `(ye.appid,i.Oy)` |
-| `Downloads.SetLaunchOnUpdateComplete` | 1 | 1 | `(Yt.launch_on_completion?E.sc:Yt.appid)` |
-| `Downloads.SetQueueIndex` | 1 | 3 | `(ce,ct.destination.index,w.hj.CurrentViewingRemoteClientID)` |
+| `Downloads.RemoveFromDownloadList` | 2 | 2 | `(Lt.appid,m.hj.CurrentViewingRemoteClientID)` |
+| `Downloads.ResumeAppUpdate` | 3 | 2 | `(Lt.appid,ve.clientid)` · `(W.appid,r.Oy)` |
+| `Downloads.SetLaunchOnUpdateComplete` | 1 | 1 | `(tr.launch_on_completion?O.sc:tr.appid)` |
+| `Downloads.SetQueueIndex` | 1 | 3 | `(ot,vt.destination.index,m.hj.CurrentViewingRemoteClientID)` |
 | `Downloads.SuspendDownloadThrottling` | 1 | 2 |  |
-| `Downloads.SuspendLanPeerContent` | 1 | 2 | `(!0,w.hj.CurrentViewingRemoteClientID)` |
+| `Downloads.SuspendLanPeerContent` | 1 | 2 | `(!0,m.hj.CurrentViewingRemoteClientID)` |
 | `GameSessions.RegisterForAchievementNotification` | 3 | 1 | `(this.OnAchievementNotification)` |
-| `GameSessions.RegisterForAppLifetimeNotifications` | 1 | 1 | `(this.OnAppLifetimeNotification)` |
+| `GameSessions.RegisterForAppLifetimeNotifications` | 2 | 1 | `(this.OnAppLifetimeNotification)` |
 | `GameSessions.RegisterForScreenshotNotification` | 3 | 1 | `(this.OnScreenshotNotification)` |
 | `Installs.CancelInstall` | 8 | 0 | `()` |
 | `Installs.ContinueInstall` | 4 | 0 | `()` |
 | `Installs.OpenInstallBackup` | 1 | 1 | `(this.state.strFolder)` |
-| `Installs.OpenInstallWizard` | 4 | 2 | `([Number(_e)],s.Oy)` · `([G],U)` |
-| `Installs.OpenUninstallWizard` | 2 | 3 | `([v.unAppID],a.Oy,!0)` · `(C,D,!0)` |
+| `Installs.OpenInstallWizard` | 4 | 2 | `([Number(et)],o.Oy)` · `([N],K)` |
+| `Installs.OpenUninstallWizard` | 2 | 3 | `([O.unAppID],a.Oy,!0)` · `(f,D,!0)` |
 | `Installs.RegisterForShowConfirmUninstall` | 1 | 1 | `(this.OnShowConfirmUninstall)` |
 | `Installs.RegisterForShowFailedUninstall` | 1 | 1 | `(this.OnShowFailedUninstall)` |
 | `Installs.RegisterForShowInstallWizard` | 1 | 1 | `(this.OnShowInstallWizard)` |
-| `Installs.SetCreateShortcuts` | 1 | 2 | `(G,U)` |
-| `Installs.SetInstallFolder` | 2 | 1 | `(G)` |
+| `Installs.SetCreateShortcuts` | 1 | 2 | `(N,K)` |
+| `Installs.SetInstallFolder` | 2 | 1 | `(N)` |
 | `Overlay.DestroyGamePadUIDesktopConfiguratorWindow` | 5 | 0 | `()` |
 | `Overlay.GetOverlayBrowserInfo` | 1 | 0 | `()` |
-| `Overlay.HandleGameWebCallback` | 1 | 1 | `(w)` |
-| `Overlay.HandleProtocolForOverlayBrowser` | 1 | 2 | `(this.m_unAppID,w)` |
+| `Overlay.HandleGameWebCallback` | 1 | 1 | `(g)` |
+| `Overlay.HandleProtocolForOverlayBrowser` | 1 | 2 | `(this.m_unAppID,g)` |
 | `Overlay.RegisterForActivateOverlayRequests` | 1 | 1 | `(this.OnGameOverlayActivateRequested)` |
-| `Overlay.RegisterForMicroTxnAuth` | 2 | 1 | `(this.OnMicroTxnAuth)` · `(En)` |
-| `Overlay.RegisterForMicroTxnAuthDismiss` | 2 | 1 | `(this.OnMicroTxnAuthDismiss)` · `(Yn)` |
+| `Overlay.RegisterForMicroTxnAuth` | 2 | 1 | `(this.OnMicroTxnAuth)` · `(wi)` |
+| `Overlay.RegisterForMicroTxnAuthDismiss` | 2 | 1 | `(this.OnMicroTxnAuthDismiss)` · `(hn)` |
 | `Overlay.RegisterForNotificationPositionChanged` | 1 | 1 | `(this.OverlayNotificationPositionChanged)` |
-| `Overlay.RegisterForOverlayActivated` | 2 | 1 | `(P)` · `(this.OnOverlayActivated)` |
+| `Overlay.RegisterForOverlayActivated` | 2 | 1 | `(f)` · `(this.OnOverlayActivated)` |
 | `Overlay.RegisterForOverlayBrowserProtocols` | 1 | 1 | `(this.OnOverlayBrowserProtocol)` |
 | `Overlay.RegisterOverlayBrowserInfoChanged` | 1 | 1 | `(this.OnOverlayBrowserInfoChanged)` |
-| `Overlay.SetOverlayState` | 15 | 2 | `(M.gameid,k)` · `(Nt.gameid,Re.I5.Overlay)` |
-| `Overlay.SetWindowAlpha` | 2 | 1 | `(Or)` · `(1)` |
-| `Overlay.SetWindowPinned` | 1 | 1 | `(!br)` |
-| `Settings.AddClientBeta` | 1 | 2 | `(Ct,be)` |
+| `Overlay.SetOverlayState` | 16 | 2 | `(C.gameid,s.I5.Hidden)` · `(C.gameid,U)` |
+| `Overlay.SetWindowAlpha` | 2 | 1 | `(Cr)` · `(1)` |
+| `Overlay.SetWindowPinned` | 1 | 1 | `(!ar)` |
+| `Settings.AddClientBeta` | 1 | 2 | `(Yt,de)` |
 | `Settings.ClearAllHTTPCaches` | 1 | 0 | `()` |
 | `Settings.ClearDownloadCache` | 1 | 0 | `()` |
 | `Settings.GetAccountSettings` | 2 | 0 | `()` |
-| `Settings.GetAppUsesP2PVoice` | 1 | 1 | `(us??0)` |
+| `Settings.GetAppUsesP2PVoice` | 1 | 1 | `(Xn??0)` |
 | `Settings.GetAvailableLanguages` | 2 | 0 | `()` |
 | `Settings.GetAvailableTimeZones` | 2 | 0 | `()` |
 | `Settings.GetCurrentLanguage` | 2 | 0 | `()` |
@@ -343,32 +342,32 @@ Generado por `dev/steam/steam_api.py report` a partir del código que Valve publ
 | `Settings.GetWindowed` | 1 | 0 | `()` |
 | `Settings.IgnoreSteamDeckRewards` | 1 | 0 | `()` |
 | `Settings.OpenWindowsMicSettings` | 1 | 0 | `()` |
-| `Settings.RegisterForAppsWithAutoUpdateOverrides` | 1 | 1 | `(Ii=>Qr(Ii.map(Bi=>Bi.appid)))` |
-| `Settings.RegisterForMicVolumeUpdates` | 1 | 1 | `(Qr)` |
+| `Settings.RegisterForAppsWithAutoUpdateOverrides` | 1 | 1 | `(gi=>Lr(gi.map(di=>di.appid)))` |
+| `Settings.RegisterForMicVolumeUpdates` | 1 | 1 | `(Lr)` |
 | `Settings.RegisterForSettingsArrayChanges` | 1 | 1 | `(this.OnClientSettingsMsgChange)` |
 | `Settings.RegisterForSettingsChanges` | 1 | 1 | `(this.OnClientSettingsChange)` |
-| `Settings.RegisterForTimeZoneChange` | 2 | 1 | `(h)` · `(this.OnTimeZoneChange)` |
+| `Settings.RegisterForTimeZoneChange` | 2 | 1 | `(d)` · `(this.OnTimeZoneChange)` |
 | `Settings.ReinitMicSettings` | 1 | 0 | `()` |
-| `Settings.RenderHotkey` | 1 | 1 | `(re)` |
-| `Settings.SelectClientBeta` | 6 | 1 | `(m.nBetaID)` · `(T.nBetaID)` |
-| `Settings.SetCurrentLanguage` | 2 | 1 | `(E.strShortName)` · `(Me)` |
-| `Settings.SetEnableSoftProcessKill` | 1 | 1 | `(Lt)` |
-| `Settings.SetHostname` | 1 | 1 | `(We)` |
-| `Settings.SetMicTestMode` | 1 | 1 | `(Pr)` |
-| `Settings.SetPreferredMonitor` | 1 | 1 | `(De)` |
-| `Settings.SetRegisteredSteamDeck` | 2 | 2 | `(r.iA.steamid,U)` |
-| `Settings.SetSaveAccountCredentials` | 1 | 1 | `(!Ii)` |
-| `Settings.SetSetting` | 1 | 1 | `(X)` |
-| `Settings.SetTimeZone` | 2 | 1 | `(E)` · `(S)` |
-| `Settings.SetUseNintendoButtonLayout` | 1 | 2 | `(jr.nControllerIndex,tr)` |
-| `Settings.SetUseUniversalFaceButtonGlyphs` | 1 | 2 | `(jr.nControllerIndex,me)` |
-| `Settings.SetWindowed` | 1 | 1 | `(De)` |
+| `Settings.RenderHotkey` | 1 | 1 | `(oe)` |
+| `Settings.SelectClientBeta` | 6 | 1 | `(P.nBetaID)` · `(O.nBetaID)` |
+| `Settings.SetCurrentLanguage` | 2 | 1 | `(P.strShortName)` · `(re)` |
+| `Settings.SetEnableSoftProcessKill` | 1 | 1 | `(It)` |
+| `Settings.SetHostname` | 1 | 1 | `(Ot)` |
+| `Settings.SetMicTestMode` | 1 | 1 | `(jn)` |
+| `Settings.SetPreferredMonitor` | 1 | 1 | `(le)` |
+| `Settings.SetRegisteredSteamDeck` | 2 | 2 | `(i.iA.steamid,N)` |
+| `Settings.SetSaveAccountCredentials` | 1 | 1 | `(!gi)` |
+| `Settings.SetSetting` | 1 | 1 | `(G)` |
+| `Settings.SetTimeZone` | 2 | 1 | `(P)` · `(I)` |
+| `Settings.SetUseNintendoButtonLayout` | 1 | 2 | `(be.nControllerIndex,mt)` |
+| `Settings.SetUseUniversalFaceButtonGlyphs` | 1 | 2 | `(be.nControllerIndex,nr)` |
+| `Settings.SetWindowed` | 1 | 1 | `(le)` |
 | `Settings.ToggleSteamInstall` | 1 | 0 | `()` |
-| `Storage.DeleteKey` | 2 | 1 | `(w)` · `(r)` |
-| `Storage.GetString` | 2 | 1 | `(w)` · `(r)` |
-| `Storage.SetString` | 3 | 2 | `(w,g)` · `(r,o)` |
+| `Storage.DeleteKey` | 2 | 1 | `(z)` · `(o)` |
+| `Storage.GetString` | 2 | 1 | `(z)` · `(o)` |
+| `Storage.SetString` | 3 | 2 | `(z,f)` · `(o,n)` |
 | `System.Audio` | 1 | — |  |
-| `System.Audio.ClearDefaultDeviceOverride` | 1 | 1 | `(W)` |
+| `System.Audio.ClearDefaultDeviceOverride` | 1 | 1 | `(re)` |
 | `System.Audio.GetApps` | 1 | 0 | `()` |
 | `System.Audio.GetDevices` | 3 | 0 | `()` |
 | `System.Audio.RegisterForAppAdded` | 1 | 1 | `(this.OnAppAdded)` |
@@ -379,32 +378,32 @@ Generado por `dev/steam/steam_api.py report` a partir del código que Valve publ
 | `System.Audio.RegisterForDeviceVolumeChanged` | 1 | 1 | `(this.OnAudioDeviceVolumeChanged)` |
 | `System.Audio.RegisterForServiceConnectionStateChanges` | 1 | 1 | `(this.OnServiceConnectionStateChanged)` |
 | `System.Audio.RegisterForVolumeButtonPressed` | 1 | 1 | `(this.OnVolumeButtonPressed)` |
-| `System.Audio.SetAppVolume` | 1 | 2 | `(this.id,W)` |
-| `System.Audio.SetDefaultDeviceOverride` | 1 | 2 | `(this.m_id,W)` |
-| `System.Audio.SetDeviceVolume` | 1 | 3 | `(this.m_id,W,Be)` |
+| `System.Audio.SetAppVolume` | 1 | 2 | `(this.id,re)` |
+| `System.Audio.SetDefaultDeviceOverride` | 1 | 2 | `(this.m_id,re)` |
+| `System.Audio.SetDeviceVolume` | 1 | 3 | `(this.m_id,re,Ie)` |
 | `System.AudioDevices.RegisterForStateChanges` | 1 | 1 | `(this.OnStateChanged)` |
-| `System.AudioDevices.UpdateSomething` | 2 | 1 | `(wt.serializeBase64String())` · `(Et.serializeBase64String())` |
-| `System.CopyFile` | 2 | 2 | `(dr,Mr)` · `(se,Oe)` |
-| `System.CopyFilesToClipboard` | 4 | 1 | `(yt.filter(Boolean))` · `([xi.strExportPath])` |
-| `System.CreateTempPath` | 3 | 1 | `(cr)` · `(B)` |
+| `System.AudioDevices.UpdateSomething` | 2 | 1 | `(ke.serializeBase64String())` · `(nt.serializeBase64String())` |
+| `System.CopyFile` | 2 | 2 | `(mt,$t)` · `(te,Be)` |
+| `System.CopyFilesToClipboard` | 4 | 1 | `(Tr.filter(Boolean))` · `([Es.strExportPath])` |
+| `System.CreateTempPath` | 3 | 1 | `(Dt)` · `(v)` |
 | `System.Devkit.RegisterForPairingPrompt` | 1 | 1 | `(this.OnPairingPrompt)` |
-| `System.Devkit.RespondToPairingPrompt` | 1 | 2 | `(Et,wt)` |
-| `System.Devkit.SetPairing` | 1 | 1 | `(Et)` |
-| `System.Display.EnableUnderscan` | 4 | 1 | `(!Y)` · `(!K)` |
+| `System.Devkit.RespondToPairingPrompt` | 1 | 2 | `(nt,ke)` |
+| `System.Devkit.SetPairing` | 1 | 1 | `(nt)` |
+| `System.Display.EnableUnderscan` | 4 | 1 | `(!H)` · `(!K)` |
 | `System.Display.RegisterForBrightnessChanges` | 1 | 1 | `(this.OnDisplayBrightnessChanged)` |
-| `System.Display.SetBrightness` | 1 | 1 | `(k)` |
-| `System.Display.SetUnderscanLevel` | 3 | 1 | `(X)` · `(U)` |
+| `System.Display.SetBrightness` | 1 | 1 | `(v)` |
+| `System.Display.SetUnderscanLevel` | 3 | 1 | `(G)` · `(N)` |
 | `System.DisplayManager` | 1 | — |  |
-| `System.DisplayManager.ClearModeOverride` | 1 | 1 | `(k)` |
+| `System.DisplayManager.ClearModeOverride` | 1 | 1 | `(z)` |
 | `System.DisplayManager.GetState` | 2 | 0 | `()` |
 | `System.DisplayManager.RegisterForStateChanges` | 1 | 1 | `(this.OnStateChanged)` |
-| `System.DisplayManager.SetCompatibilityMode` | 1 | 1 | `(k)` |
-| `System.DisplayManager.SetGamescopeInternalResolution` | 1 | 2 | `(A,U/K==1.6?A/1.6:M)` |
-| `System.DisplayManager.SetMode` | 1 | 1 | `(H.serializeBase64String())` |
+| `System.DisplayManager.SetCompatibilityMode` | 1 | 1 | `(z)` |
+| `System.DisplayManager.SetGamescopeInternalResolution` | 1 | 2 | `(z,U/N==1.6?z/1.6:p)` |
+| `System.DisplayManager.SetMode` | 1 | 1 | `(k.serializeBase64String())` |
 | `System.Dock.DisarmSafetyNet` | 1 | 0 | `()` |
 | `System.Dock.RegisterForStateChanges` | 1 | 1 | `(this.OnStateChanged)` |
-| `System.Dock.UpdateFirmware` | 1 | 1 | `(C.serializeBase64String())` |
-| `System.FormatStorage` | 1 | 1 | `(ze)` |
+| `System.Dock.UpdateFirmware` | 1 | 1 | `(b.serializeBase64String())` |
+| `System.FormatStorage` | 1 | 1 | `(We)` |
 | `System.GetOSType` | 2 | 0 | `()` |
 | `System.GetSystemInfo` | 2 | 0 | `()` |
 | `System.IsDeckFactoryImage` | 1 | 0 | `()` |
@@ -412,41 +411,38 @@ Generado por `dev/steam/steam_api.py report` a partir del código que Valve publ
 | `System.Network.Device` | 5 | — |  |
 | `System.Network.ForceTestConnectivity` | 1 | 0 | `()` |
 | `System.Network.GetProxyInfo` | 1 | 0 | `()` |
-| `System.Network.RegisterForAppSummaryUpdate` | 1 | 1 | `(pt)` |
-| `System.Network.RegisterForConnectionStateUpdate` | 1 | 1 | `(Me)` |
+| `System.Network.RegisterForAppSummaryUpdate` | 1 | 1 | `(Je)` |
+| `System.Network.RegisterForConnectionStateUpdate` | 1 | 1 | `(pe)` |
 | `System.Network.RegisterForConnectivityTestChanges` | 1 | 1 | `(this.OnConnectivityTestStateChanged)` |
 | `System.Network.RegisterForDeviceChanges` | 1 | 1 | `(this.OnNetworkDevicesChanged)` |
-| `System.Network.SetFakeLocalSystemState` | 1 | 1 | `(ze)` |
-| `System.Network.SetProxyInfo` | 1 | 4 | `(ze.proxy_mode,ze.address??"",ze.port??0,ze.exclude_local??!0)` |
-| `System.Network.SetWifiEnabled` | 1 | 1 | `(ze)` |
+| `System.Network.SetFakeLocalSystemState` | 1 | 1 | `(Ze)` |
+| `System.Network.SetProxyInfo` | 1 | 4 | `(Ze.proxy_mode,Ze.address??"",Ze.port??0,Ze.exclude_local??!0)` |
+| `System.Network.SetWifiEnabled` | 1 | 1 | `(Ze)` |
 | `System.Network.StartScanningForNetworks` | 1 | 0 | `()` |
 | `System.Network.StopScanningForNetworks` | 1 | 0 | `()` |
-| `System.NotifyGameOverlayStateChanged` | 1 | 2 | `(B,E)` |
-| `System.OpenFileDialog` | 12 | 1 | `({strTitle:(0,s.we)("#AddNonSteam_PickAppTitle"),rgFilters:C(),strInitialFile:Q})` · `({strTitle:(0,c.we)("#MediaManager_SaveDialogTitle"),bChooseDirectory:!0})` |
-| `System.OpenInSystemBrowser` | 3 | 1 | `(I)` · `(dr)` |
-| `System.OpenLocalDirectoryInSystemExplorer` | 5 | 1 | `(kt.strShortcutStartDir)` · `(kt.strInstallFolder)` |
+| `System.NotifyGameOverlayStateChanged` | 1 | 2 | `(v,P)` |
+| `System.OpenFileDialog` | 12 | 1 | `({strTitle:(0,o.we)("#AddNonSteam_PickAppTitle"),rgFilters:f(),strInitialFile:P})` · `({strTitle:(0,d.we)("#MediaManager_SaveDialogTitle"),bChooseDirectory:!0})` |
+| `System.OpenInSystemBrowser` | 3 | 1 | `(h)` · `(cr)` |
+| `System.OpenLocalDirectoryInSystemExplorer` | 5 | 1 | `(Lt.strShortcutStartDir)` · `(Lt.strInstallFolder)` |
 | `System.Perf.RegisterForDiagnosticInfoChanges` | 1 | 1 | `(this.OnDiagnosticInfoChanged)` |
 | `System.Perf.RegisterForStateChanges` | 1 | 1 | `(this.OnStateChanged)` |
-| `System.Perf.UpdateSettings` | 26 | 1 | `(Pe.serializeBase64String())` · `(ke.serializeBase64String())` |
+| `System.Perf.UpdateSettings` | 26 | 1 | `(ce.serializeBase64String())` · `(xe.serializeBase64String())` |
 | `System.RebootToAlternateSystemPartition` | 2 | 0 | `()` |
 | `System.RegisterForAirplaneModeChanges` | 1 | 1 | `(this.OnAirplaneModeChanged)` |
 | `System.RegisterForBatteryStateChanges` | 1 | 1 | `(this.OnBatteryStateChanged)` |
 | `System.RegisterForFormatStorageProgress` | 1 | 1 | `(this.OnFormatStorageProgress)` |
 | `System.RegisterForSettingsChanges` | 1 | 1 | `(this.OnSettingsChanged)` |
-| `System.Report.GenerateSystemReport` | 1 | 0 | `()` |
-| `System.Report.SaveToDesktop` | 1 | 1 | `(I)` |
-| `System.Report.Submit` | 1 | 1 | `(I)` |
 | `System.RestartPC` | 8 | 0 | `()` |
-| `System.SetAirplaneMode` | 1 | 1 | `(k)` |
+| `System.SetAirplaneMode` | 1 | 1 | `(v)` |
 | `System.ShutdownPC` | 1 | 0 | `()` |
 | `System.SteamRuntimeSystemInfo` | 1 | 0 | `()` |
 | `System.SuspendPC` | 1 | 0 | `()` |
-| `System.UI.CloseGameWindow` | 1 | 2 | `(ot,Te)` |
-| `System.UI.GetGameWindowsInfo` | 1 | 2 | `(ot,Te)` |
+| `System.UI.CloseGameWindow` | 1 | 2 | `(fe,Xt)` |
+| `System.UI.GetGameWindowsInfo` | 1 | 2 | `(fe,Xt)` |
 | `System.UI.RegisterForFocusChangeEvents` | 3 | 1 | `(this.OnFocusChangeEvent)` |
 | `System.UI.RegisterForOverlayGameWindowFocusChanged` | 1 | 1 | `(this.OnOverlayGameWindowFocusChanged)` |
 | `System.UI.RegisterForSystemKeyEvents` | 2 | 1 | `(this.HandleSystemKeyEvents)` · `(this.HandleGamepadGuideButtonEvents)` |
-| `System.UpdateSettings` | 17 | 1 | `(A.serializeBase64String())` · `(k.serializeBase64String())` |
+| `System.UpdateSettings` | 17 | 1 | `(z.serializeBase64String())` · `(v.serializeBase64String())` |
 | `System.VideoRecordingDriverCheck` | 1 | 0 | `()` |
 | `UI.EnsureMainWindowCreated` | 1 | 0 | `()` |
 | `UI.ExitBigPictureMode` | 3 | 0 | `()` |
@@ -454,12 +450,13 @@ Generado por `dev/steam/steam_api.py report` a partir del código que Valve publ
 | `UI.GetOSEndOfLifeInfo` | 1 | 0 | `()` |
 | `UI.GetUIMode` | 2 | 0 | `()` |
 | `UI.NotifyAppInitialized` | 2 | 0 | `()` |
-| `UI.NotifyMainWindowShown` | 1 | 0 | `()` |
+| `UI.NotifyMainWindowShown` | 2 | 0 | `()` |
 | `UI.RegisterDesiredSteamUIWindowsChanged` | 1 | 1 | `(this.OnDesiredSteamUIWindowsChanged)` |
 | `UI.RegisterForClientConVar` | 1 | 2 |  |
+| `UI.RegisterForDifferentLauncherRequested` | 1 | 1 | `(this.OnDifferentLauncherRequested)` |
 | `UI.RegisterForErrorCondition` | 1 | 1 | `(this.OnErrorCondition)` |
 | `UI.RegisterForKioskModeResetSignal` | 1 | 1 | `(this.OnKioskModeReset)` |
-| `UI.RegisterForStartupFinished` | 1 | 1 | `(()=>{Y(),window.clearTimeout(G),U.unregister()})` |
+| `UI.RegisterForStartupFinished` | 1 | 1 | `(()=>{K(),V.unregister()})` |
 | `UI.RegisterForUIModeChanged` | 3 | 1 | `(K=>{this.EnsureCurrentRouteAllowed()})` · `(this.OnUIModeChanged)` |
 | `UI.RegisterMoveGamepadUIMainWindowToPrimaryDisplay` | 1 | 1 | `(this.OnMoveGamepadUIMainWindowToPrimaryDisplay)` |
 | `UI.ResetErrorCondition` | 1 | 0 | `()` |
@@ -469,7 +466,7 @@ Generado por `dev/steam/steam_api.py report` a partir del código que Valve publ
 | `User.CancelShutdown` | 1 | 0 | `()` |
 | `User.Connect` | 1 | 0 | `()` |
 | `User.ForceShutdown` | 1 | — |  |
-| `User.ForgetPassword` | 1 | 1 | `(N)` |
+| `User.ForgetPassword` | 1 | 1 | `(F)` |
 | `User.GetLoginUsers` | 2 | 0 | `()` |
 | `User.GetStartupUserChooserState` | 2 | 0 | `()` |
 | `User.GoOffline` | 2 | 0 | `()` |
@@ -484,31 +481,32 @@ Generado por `dev/steam/steam_api.py report` a partir del código que Valve publ
 | `User.RegisterForLoginUsersChanged` | 1 | 1 | `(this.OnLoginUsersChanged)` |
 | `User.RegisterForPrepareForSystemSuspendProgress` | 1 | 1 | `(this.OnPrepareForSuspendProgress)` |
 | `User.RegisterForResumeSuspendedGamesProgress` | 1 | 1 | `(this.OnResumeSuspendedGamesProgress)` |
-| `User.RegisterForShowHardwareSurvey` | 1 | 1 | `(k)` |
+| `User.RegisterForShowHardwareSurvey` | 1 | 1 | `(z)` |
 | `User.RegisterForShutdownDone` | 1 | 1 | `(this.OnShutdownDone)` |
 | `User.RegisterForShutdownFailed` | 1 | 1 | `(this.OnShutdownFailed)` |
 | `User.RegisterForShutdownStart` | 1 | 1 | `(this.OnShutdownStart)` |
 | `User.RegisterForShutdownState` | 1 | 1 | `(this.OnShutdownState)` |
-| `User.RegisterShowSaveHardwareDialog` | 1 | 1 | `(re)` |
+| `User.RegisterShowSaveHardwareDialog` | 1 | 1 | `(oe)` |
 | `User.RemoveAllUsers` | 1 | 0 | `()` |
-| `User.RemoveUser` | 1 | 1 | `(w)` |
-| `User.RequestSupportSystemReport` | 1 | 1 | `(Q)` |
-| `User.RestartAsUser` | 2 | 1 | `(N)` · `(S)` |
+| `User.RemoveUser` | 1 | 1 | `(g)` |
+| `User.RequestSupportSystemReport` | 1 | 1 | `(R)` |
+| `User.RestartAsUser` | 2 | 1 | `(F)` · `(I)` |
 | `User.RestartToLoginScreen` | 2 | 0 | `()` |
 | `User.RestartToUserChooser` | 2 | 0 | `()` |
 | `User.ResumeSuspendedGames` | 2 | 1 | `(!1)` · `(!0)` |
-| `User.RunSurvey` | 3 | 1 | `(E)` · `(k)` |
+| `User.RunSurvey` | 3 | 1 | `(P)` · `(z)` |
 | `User.SendSurvey` | 1 | 0 | `()` |
-| `User.SetAsyncNotificationEnabled` | 2 | 2 | `(Ve.request.appid,!0)` · `(Ve.request.appid,!1)` |
+| `User.SetAsyncNotificationEnabled` | 2 | 2 | `(Le.request.appid,!0)` · `(Le.request.appid,!1)` |
 | `User.SetCheckForUpdatesOnRestart` | 1 | 1 | `(!0)` |
-| `User.SetLoginCredentials` | 1 | 3 | `(Bt,$e,Yt)` |
+| `User.SetLoginCredentials` | 1 | 3 | `(D,y,E)` |
+| `User.SetRestartArgs` | 1 | 1 | `(h)` |
 | `User.ShowSaveHardwareDialog` | 2 | 0 | `()` |
 | `User.SignOutAndRestart` | 1 | 0 | `()` |
 | `User.StartLogin` | 2 | 0 | `()` |
 | `User.StartOffline` | 1 | 1 | `(!0)` |
-| `User.StartRestart` | 14 | 1 | `(!1)` · `(!0)` |
+| `User.StartRestart` | 15 | 1 | `(!1)` · `(!0)` |
 | `User.StartShutdown` | 8 | 1 | `(!0)` |
-| `Window.BringToFront` | 32 | 0, 1 | `()` · `(k)` |
+| `Window.BringToFront` | 32 | 0, 1 | `()` · `(z)` |
 | `Window.Close` | 3 | 0 | `()` |
 | `Window.DefaultMonitorHasFullscreenWindow` | 1 | 0 | `()` |
 | `Window.GetDefaultMonitorDimensions` | 1 | 0 | `()` |
@@ -521,29 +519,29 @@ Generado por `dev/steam/steam_api.py report` a partir del código que Valve publ
 | `Window.IsWindowMinimized` | 2 | 0 | `()` |
 | `Window.MarkLastFocused` | 2 | 0 | `()` |
 | `Window.Minimize` | 4 | 0 | `()` |
-| `Window.MoveTo` | 7 | 3 | `(this.state.menuLeft,this.state.menuTop,ee??!0)` · `(0,0,!1)` |
-| `Window.MoveToLocation` | 3 | 1, 2, 3 | `(this.KeyboardLocation,this.k_nKeyboardWindowOffset)` · `("upper-left",0,Gt.strMonitorDeviceName)` |
-| `Window.PositionWindowRelative` | 5 | 5 | `(A,k.left,k.top,k.width,k.height)` · `(b,O,m,this.state.width,this.state.height)` |
+| `Window.MoveTo` | 7 | 3 | `(this.state.menuLeft,this.state.menuTop,le??!0)` · `(0,0,!1)` |
+| `Window.MoveToLocation` | 3 | 1, 2, 3 | `(this.KeyboardLocation,this.k_nKeyboardWindowOffset)` · `("upper-left",0,pe.strMonitorDeviceName)` |
+| `Window.PositionWindowRelative` | 5 | 5 | `(p,z.left,z.top,z.width,z.height)` · `(y,x,E,this.state.width,this.state.height)` |
 | `Window.ProcessShuttingDown` | 1 | 0 | `()` |
-| `Window.ResizeTo` | 12 | 3 | `(1280,Li.innerHeight,!1)` · `(Xs.UIDisplayPrefs.nFriendsListSingleWindowWidthPx,Li.innerHeight,!1)` |
-| `Window.RestoreWindowSizeAndPosition` | 1 | 1 | `(cr.strRestoreDetails)` |
-| `Window.SetComposition` | 1 | 3 | `(k,A,H)` |
-| `Window.SetGamepadUIAutoDisplayScale` | 2 | 1 | `(J)` · `(!0)` |
-| `Window.SetGamepadUIManualDisplayScaleFactor` | 3 | 1 | `(ae)` · `(J)` |
-| `Window.SetHideOnClose` | 5 | 1 | `(!1)` · `(!!w.bHideOnClose)` |
+| `Window.ResizeTo` | 12 | 3 | `(1280,Bt.innerHeight,!1)` · `(la.UIDisplayPrefs.nFriendsListSingleWindowWidthPx,Bt.innerHeight,!1)` |
+| `Window.RestoreWindowSizeAndPosition` | 1 | 1 | `(hr.strRestoreDetails)` |
+| `Window.SetComposition` | 1 | 3 | `(z,p,k)` |
+| `Window.SetGamepadUIAutoDisplayScale` | 2 | 1 | `(q)` · `(!0)` |
+| `Window.SetGamepadUIManualDisplayScaleFactor` | 3 | 1 | `(oe)` · `(q)` |
+| `Window.SetHideOnClose` | 5 | 1 | `(!1)` · `(!!g.bHideOnClose)` |
 | `Window.SetKeyFocus` | 4 | 1 | `( true )` · `(!0)` |
-| `Window.SetMinSize` | 9 | 2 | `(Ln.KO,Ln.rS)` · `(Ln.Y$,Ln.rS)` |
+| `Window.SetMinSize` | 9 | 2 | `(Es.KO,Es.rS)` · `(Es.Y$,Es.rS)` |
 | `Window.SetModal` | 2 | 1 | `(!0)` · `(!1)` |
-| `Window.SetResizeGrip` | 2 | 2 | `(w,j)` · `(0,0)` |
-| `Window.SetWindowFlashing` | 1 | 1 | `(Br)` |
+| `Window.SetResizeGrip` | 2 | 2 | `(g,m)` · `(0,0)` |
+| `Window.SetWindowFlashing` | 1 | 1 | `(Mr)` |
 | `Window.SetWindowIcon` | 7 | 1 | `("voice")` · `("messages")` |
 | `Window.ShowWindow` | 14 | 0 | `()` |
-| `Window.ToggleFullScreen` | 3 | 1 | `(!De)` · `(!0)` |
+| `Window.ToggleFullScreen` | 3 | 1 | `(!le)` · `(!0)` |
 | `Window.ToggleMaximize` | 1 | 0 | `()` |
 
 ## Almacenes en `window`
 
-`App`, `BrowserAndBackstackInstances`, `ControllerStore`, `DEBUG_GetDesiredSteamUIWindows`, `DEBUG_SuppressWindowType`, `FocusNavController`, `FocusedAppWindowStore`, `LocalizationManager`, `MainWindowBrowserManager`, `NotificationStore`, `RemotePlayStore_SteamUI`, `ResetNewContentRollup`, `SetHoverPresentation`, `SetVoiceAutoShowVideoStream`, `SetVoiceEchoLocalMic`, `SetVoiceForceConnectingStatus`, `SetVoiceForceReconnectingStatus`, `SetVoiceLogDetails`, `ShowVROverlay`, `SteamUIStore`, `SuspendResumeStore`, `SystemAudioDevicesStore`, `SystemDevkitStore`, `SystemDisplayManagerStore`, `SystemDockStore`, `SystemNetworkStore`, `SystemPerfStore`, `SystemPowerStore`, `SystemReportStore`, `SystemStoragStore`, `UpdateStore`, `VRPathProperties`, `appAchievementProgressCache`, `appActivityStore`, `appDetailsCache`, `appDetailsStore`, `appInfoStore`, `appReviewStore`, `appSpotlightStore`, `appStore`, `badgeStore`, `cloudStorage`, `cloudStorageInternalState`, `cm`, `collectionStore`, `communityStore`, `consoleStore`, `controllerConfiguratorStore`, `downloadsStore`, `dragStore`, `friendStore`, `g_FriendsUIApp`, `g_GRS`, `g_LogManager`, `g_PopupManager`, `g_SubscriptionStore`, `g_WindowFocusCoordinator`, `gameReleaseStore`, `hardwarePromoStore`, `installFolderStore`, `jsonit`, `libraryEventStore`, `loginStore`, `multiSelectStore`, `onYouTubeIframeAPIReady`, `overlayStore`, `partnerEventStore`, `playNextStore`, `protoPathProperties`, `screenshotStore`, `searchstore`, `securitystore`, `serverBrowserStore`, `settingsStore`, `settingsZooStore`, `showcaseStore`, `steamAjaxRequest`, `streamingStore`, `subscriberAgreementStore`, `tempNavStore`, `toJS`, `trendingStore`, `uiBroadcastWatchStore`, `uiStore`, `urlStore`, `userProfileStore`, `vrAudioSettingsStore`, `vrFrameStore`, `vrGamepadInput`, `vrPooledPopupStore`, `workshopStore`
+`App`, `BrowserAndBackstackInstances`, `ControllerStore`, `DEBUG_GetDesiredSteamUIWindows`, `DEBUG_SuppressWindowType`, `FocusNavController`, `FocusedAppWindowStore`, `LocalizationManager`, `MainWindowBrowserManager`, `NotificationStore`, `RemotePlayStore_SteamUI`, `ResetNewContentRollup`, `SetHoverPresentation`, `SetVoiceAutoShowVideoStream`, `SetVoiceEchoLocalMic`, `SetVoiceForceConnectingStatus`, `SetVoiceForceReconnectingStatus`, `SetVoiceLogDetails`, `ShowContentReportDialog`, `ShowVROverlay`, `SteamUIStore`, `SuspendResumeStore`, `SystemAudioDevicesStore`, `SystemDevkitStore`, `SystemDisplayManagerStore`, `SystemDockStore`, `SystemNetworkStore`, `SystemPerfStore`, `SystemPowerStore`, `SystemReportStore`, `SystemStoragStore`, `UpdateStore`, `VRPathProperties`, `appAchievementProgressCache`, `appActivityStore`, `appDetailsCache`, `appDetailsStore`, `appInfoStore`, `appReviewStore`, `appSpotlightStore`, `appStore`, `badgeStore`, `cloudStorage`, `cloudStorageInternalState`, `cm`, `collectionStore`, `communityStore`, `consoleStore`, `controllerConfiguratorStore`, `downloadsStore`, `dragStore`, `friendStore`, `g_FriendsUIApp`, `g_GRS`, `g_LogManager`, `g_PopupManager`, `g_SubscriptionStore`, `g_WindowFocusCoordinator`, `gameReleaseStore`, `hardwarePromoStore`, `installFolderStore`, `jsonit`, `libraryEventStore`, `loginStore`, `multiSelectStore`, `onYouTubeIframeAPIReady`, `overlayStore`, `partnerEventStore`, `playNextStore`, `protoPathProperties`, `screenshotStore`, `searchstore`, `securitystore`, `serverBrowserStore`, `settingsStore`, `settingsZooStore`, `showcaseStore`, `steamAjaxRequest`, `streamingStore`, `subscriberAgreementStore`, `tempNavStore`, `toJS`, `trendingStore`, `uiBroadcastWatchStore`, `uiStore`, `urlStore`, `userProfileStore`, `vrAudioSettingsStore`, `vrFrameStore`, `vrGamepadInput`, `vrPooledPopupStore`, `workshopStore`
 
 ## Enumeraciones que STONE usa
 

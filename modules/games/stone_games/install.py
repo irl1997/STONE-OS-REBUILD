@@ -16,7 +16,9 @@ in the background, never for a game that has anti-cheat or is online-only.
 
 Sources (author's official repositories; STONE bundles nothing):
   helixsr     github.com/lonewolf0622/HelixSR       asset HelixSR-<version>.zip
-  optiscaler  github.com/optiscaler/OptiScaler      asset OptiScaler*.7z or .zip
+  optiscaler  github.com/optiscaler/OptiScaler      asset Optiscaler*.7z or .zip, any letter case (v0.9.x:
+                                                    "Optiscaler_0.9.4-final.20260718._MM.7z"; until 3.1.0-rc8
+                                                    STONE asked for "OptiScaler" exactly and found nothing)
 """
 
 import hashlib
@@ -36,10 +38,12 @@ from . import graphics
 
 SOURCES = {
     "helixsr": {"repo": "lonewolf0622/HelixSR", "asset": r"^HelixSR-[0-9][0-9A-Za-z._-]*\.zip$", "label": "HelixSR"},
-    "optiscaler": {"repo": "optiscaler/OptiScaler", "asset": r"^OptiScaler.*\.(7z|zip)$", "label": "OptiScaler (FSR 3.1)"},
+    "optiscaler": {"repo": "optiscaler/OptiScaler", "asset": r"(?i)^optiscaler.*\.(7z|zip)$", "label": "OptiScaler (FSR 3.1)"},
 }
 HOSTS = ("api.github.com", "github.com", "objects.githubusercontent.com", "release-assets.githubusercontent.com")
 MAX_BYTES = 400 * 2**20
+# the release's own installer scripts and notes: never copied into a game (STONE installs it itself)
+SKIP_FILES = re.compile(r"^(setup_[^/]*\.(sh|bat|cmd|ps1)|[^/]*readme[^/]*\.(txt|md))$", re.I)
 SKIP_EXE = re.compile(r"(unins|crash|launcher|redist|setup|install|dxsetup|vc_|dotnet|ue4prereq|epicweb|eac|battleye|updater|helper|report)", re.I)
 PROXY_NAME = "winmm.dll"
 
@@ -134,7 +138,8 @@ def _extract_zip(path, dest):
 
 def _extract_7z(path, dest):
     for tool, args in (("bsdtar", ["-xf", path, "-C", dest]), ("7z", ["x", "-y", "-o" + dest, path]),
-                       ("7za", ["x", "-y", "-o" + dest, path]), ("7zr", ["x", "-y", "-o" + dest, path])):
+                       ("7za", ["x", "-y", "-o" + dest, path]), ("7zz", ["x", "-y", "-o" + dest, path]),
+                       ("7zr", ["x", "-y", "-o" + dest, path])):
         exe = shutil.which(tool)
         if exe:
             r = subprocess.run([exe, *args], capture_output=True, timeout=300)
@@ -274,6 +279,8 @@ def install_plan(appid, facts, game):
     for d, _dirs, fs in os.walk(src):
         for f in fs:
             rel = os.path.relpath(os.path.join(d, f), src)
+            if SKIP_FILES.match(rel.replace(os.sep, "/")):
+                continue
             pairs.append((os.path.join(d, f), PROXY_NAME if rel.lower() == "optiscaler.dll" else rel))
     files = [p[1] for p in pairs]
     clash = [f for f in files if os.path.lexists(os.path.join(exe_dir, f))]

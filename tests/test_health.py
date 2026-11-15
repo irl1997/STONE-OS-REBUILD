@@ -76,10 +76,14 @@ def test_the_bc250s_own_start_messages_and_a_read_only_root_are_not_alarms():
     assert H.gpu_errors(fake_run({}, journal=kernel)) == ["amdgpu 0000:01:00.0: ring gfx_0.0.0 timeout, signaled seq=1, emitted seq=3"]
     assert H.gpu_errors(fake_run({}, journal=kernel.rsplit("amdgpu 0000:01:00.0: ring", 1)[0])) == []
     old = H.os.statvfs
-    H.os.statvfs = lambda p: type("V", (), {"f_blocks": 0 if p == "/" else 1000, "f_frsize": 4096, "f_bavail": 500})()
+    H.os.statvfs = lambda p: type("V", (), {"f_blocks": 0 if p == "/" else 1000, "f_frsize": 4096, "f_bavail": 500, "f_flag": 0})()
     try:
         paths = [s["path"] for s in H.storage(("/", tempfile.gettempdir()))]
         assert "/" not in paths and paths == [tempfile.gettempdir()]
+        # rc8 on the console (15-11-2026): "/" is composefs, 45 MB, full and read-only: «Disco /: 0 GB libres de 0 GB»
+        H.os.statvfs = lambda p: type("V", (), {"f_blocks": 11520 if p == "/" else 1000, "f_frsize": 4096, "f_bavail": 0 if p == "/" else 500,
+                                                "f_flag": H.os.ST_RDONLY if p == "/" else 0})()
+        assert [s["path"] for s in H.storage(("/", tempfile.gettempdir()))] == [tempfile.gettempdir()]
     finally:
         H.os.statvfs = old
 
