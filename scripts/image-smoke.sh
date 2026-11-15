@@ -62,6 +62,7 @@ check "stone-doctor --json answers" "stone-doctor --json | python3 -c 'import js
 
 # Optional pieces: their feature says "no disponible" without them
 if compgen -G "/usr/share/vulkan/implicit_layer.d/*[Bb]asalt*" >/dev/null; then ok "vkBasalt (STONE IMAGE)"; else warn "vkBasalt missing: STONE IMAGE looks unavailable"; fi
+check ".7z unpacker for OptiScaler" "command -v bsdtar || command -v 7z || command -v 7za || command -v 7zz"
 if command -v mangohud >/dev/null; then ok "MangoHud (measurements)"; else warn "MangoHud missing: OPTIMIZAR cannot measure"; fi
 
 echo

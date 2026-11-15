@@ -84,7 +84,9 @@ def storage(paths=("/", "/var/home")):
             dev = os.stat(p).st_dev
         except OSError:
             continue
-        if dev in seen or st.f_blocks == 0:          # "/" of a bootc image is the read-only system: no size of its own
+        # "/" of a bootc image is the read-only system (composefs, 45 MB and full on the console, 15-11-2026):
+        # it is not where anything is kept, so it is not a disk to report on. rc8 only skipped a size of 0.
+        if dev in seen or st.f_blocks == 0 or (getattr(st, "f_flag", 0) & os.ST_RDONLY):
             continue
         seen.add(dev)
         out.append({"path": p, "total": st.f_blocks * st.f_frsize, "free": st.f_bavail * st.f_frsize})
