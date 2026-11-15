@@ -26,7 +26,7 @@ La consola ya usa el **cliente de 64 bits de Steam**, versión 1794536281. La he
 
 Queda confirmado que la salida pasa a **HDR**: gamescope marca `GAMESCOPE_HDR_OUTPUT_FEEDBACK=1` a los 9 s de empezar la sesión. La tele está conectada por DisplayPort → HDMI con un adaptador. Para comprobar si esa es la causa: **Ajustes → Steam → «HDR en la salida de vídeo» → No**.
 
-**Todo está probado en software (CODE TESTED). El archivo real de OptiScaler 0.9.4 se comprobó y se descomprimió en el Mac, pero nada de esta versión se ha observado todavía en la BC-250.** Pruebas de placa: T-DL-03 y T-HEALTH-08.
+**Todo está probado en software (CODE TESTED). El archivo real de OptiScaler 0.9.4 se comprobó y se descomprimió en el Mac, pero nada de esta versión se ha observado todavía en la BC-250.** Pruebas de placa: T-DL-04 y T-HEALTH-08.
 
 # STONE OS (rebuild) 3.1.0-rc8
 
