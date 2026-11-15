@@ -36,14 +36,34 @@ CURATED = {
     "save_uncompressed_screenshots": ("Guardar capturas sin comprimir", "Capturas"),
     "enable_hardware_video_decoding": ("Decodificar vídeo con la GPU", "Sistema"),
     "accessibility_reduce_motion": ("Reducir movimiento en Steam", "Accesibilidad"),
+    # Steam's «Activar HDR» (its Display page: setting "gamescope_hdr_enabled", 3.1.0-rc8). With it on and
+    # a TV that takes HDR, gamescope's output goes HDR a few seconds after Steam starts.
+    "gamescope_hdr_enabled": ("HDR en la salida de vídeo", "Pantalla"),
 }
 
-READ_EXPRESSION = (
-    "(()=>{const S=window.settingsStore;if(!S)return null;let c=null;try{c=S.clientSettings;}catch(e){}"
-    "if(!c||typeof c!=='object')return null;const o={};"
-    f"for(const k of {json.dumps(sorted(CURATED))}){{const v=c[k];"
-    "if(typeof v==='boolean'||typeof v==='number'||(typeof v==='string'&&v.length<=80))o[k]=v;}"
-    "return JSON.stringify(o);})()")
+# read only, for the diagnostic report: what Steam has set for gamescope's output
+DISPLAY_KEYS = ("gamescope_hdr_enabled", "gamescope_game_resolution_global", "gamescope_native_external_res_in_steam")
+
+
+def read_expression(keys):
+    return ("(()=>{const S=window.settingsStore;if(!S)return null;let c=null;try{c=S.clientSettings;}catch(e){}"
+            "if(!c||typeof c!=='object')return null;const o={};"
+            f"for(const k of {json.dumps(list(keys))}){{const v=c[k];"
+            "if(typeof v==='boolean'||typeof v==='number'||(typeof v==='string'&&v.length<=80))o[k]=v;}"
+            "return JSON.stringify(o);})()")
+
+
+READ_EXPRESSION = read_expression(sorted(CURATED))
+
+
+def read_display(cef):
+    """{key: value} of DISPLAY_KEYS as Steam holds them, or None when its interface does not answer."""
+    raw = cef.ui_value(read_expression(DISPLAY_KEYS))
+    try:
+        v = json.loads(raw) if isinstance(raw, str) else None
+    except ValueError:
+        v = None
+    return v if isinstance(v, dict) else None
 
 
 def write_expression(name, value):

@@ -36,6 +36,9 @@ from . import detect, experience, framegen, graphics, look, metrics, schema, sco
 
 ENGINE_VERSION = 1
 ABNORMAL_S = 60          # a game gone this soon after it appeared did not end normally
+LOOK_CRASH_S = 20        # a look is only blamed for a game gone this soon, twice in a row (3.1.0-rc8)
+LOOK_CRASHES = 2
+PROBE_AFTER_S = 25       # EFFECTS PROBE: this long after the game appeared, look inside its processes
 SUSPECT_AFTER = 2        # abnormal exits before a configuration is suspect
 START_TIMEOUT_S = 180    # Steam did not start the game: clean up
 FALLBACK = {"helixsr": ["game_upscaler", "native"], "optiscaler": ["game_upscaler", "native"],
@@ -250,10 +253,12 @@ class Engine:
         watch           .running(appid) -> bool  (Steam's reaper for this AppId exists)
     """
 
-    def __init__(self, root, cef, display, perf, watch=None, clock=time.time, log=print):
+    def __init__(self, root, cef, display, perf, watch=None, clock=time.time, log=print, events=None, probe=None):
         self.root, self.cef, self.display_fn, self.perf = root, cef, display, perf
         self.watch = watch or ProcWatch()
         self.clock, self.log = clock, log
+        self.events = events or (lambda kind, **data: None)   # events.record (STONE Home's event log)
+        self.probe = probe or effects_probe
         self.lo = graphics.LaunchOptions(cef)
         self.ov = graphics.Overrides(self.lo)
         self.session_path = os.path.join(graphics.state_dir(), "game-session.json")
@@ -564,6 +569,9 @@ class Engine:
                 "look": lenv.get("STONE_LOOK"),
                 "target": rec["target"]}
         self._save_session(sess)
+        self._event("game_prepare", appid=appid, path=c["graphics"]["path"], look=lenv.get("STONE_LOOK"),
+                    graphics_applied=graphics_ok, graphics_error=err if not graphics_ok else None,
+                    performance=pid or "global", measuring=bool(mstate))
         return {"ok": True, "config": c, "settings": settings_hint(c, p["game"]), "graphics_applied": graphics_ok,
                 "graphics_error": err if not graphics_ok else None, "performance": pid or "global",
                 "performance_error": perf_err if not perf_ok else None, "why": rec["why"] if not measure else "measurement",
@@ -594,7 +602,19 @@ class Engine:
             s["t_started"] = now
             self._save_session(s)
             self.log(f"[stone] optimized: {s['appid']} started with {s['key']}")
+            self._event("game_started", appid=s["appid"], look=s.get("look"), path=s["config"]["graphics"]["path"])
             return "started"
+        if running and s.get("t_started") and not s.get("probed") and now - s["t_started"] >= PROBE_AFTER_S:
+            # EFFECTS PROBE (3.1.0-rc8): did what STONE put in the launch options reach the game, and
+            # is vkBasalt really loaded in it? The diagnostic report says "works" or "fails" from this.
+            try:
+                pr = self.probe(s["appid"])
+            except Exception as e:  # noqa: BLE001  (a probe never disturbs the game)
+                pr = {"error": repr(e)[:200]}
+            s["probed"] = pr
+            self._save_session(s)
+            self._event("game_effects", appid=s["appid"], look=s.get("look"), **{k: v for k, v in pr.items() if k != "appid"})
+            return None
         if not running and s.get("t_started"):
             return self.finish(s["appid"], reason="exit")
         if not running and not s.get("t_started") and now - s["t_prepared"] > START_TIMEOUT_S:
@@ -635,20 +655,29 @@ class Engine:
                 f["p:" + s["perf_profile"]] = f.get("p:" + s["perf_profile"], 0) + 1
                 auto["safety"]["next_safe_perf"] = s["perf_profile"]
             changed = True
-            # Self-healing (EXPERIENCE ENGINE, non-destructive): a look on when the game ended badly is
-            # turned off for this game; the person can choose it again on the game's page.
-            if s.get("look"):
-                try:
-                    look.set_look(s["appid"], None)
-                    result["healed"] = f"look {s['look']} turned off"
-                except (OSError, ValueError):
-                    pass
+            # Self-healing (EXPERIENCE ENGINE, non-destructive). Until 3.1.0-rc7 a look was turned off
+            # after ANY game that ended within ABNORMAL_S: opening a game to see the look and leaving it
+            # within a minute turned it off without a word (the console's report: "los filtros no
+            # funcionan", looks.json empty). Now only a game gone within LOOK_CRASH_S of appearing (or
+            # lost with the console) with the look on, LOOK_CRASHES times in a row; and it is said.
+            if s.get("look") and (reason == "lost" or (dur is not None and dur < LOOK_CRASH_S)):
+                n = self._look_crashes(s["appid"], s["look"], +1)
+                result["look_crashes"] = n
+                if n >= LOOK_CRASHES:
+                    try:
+                        look.set_look(s["appid"], None)
+                        result["healed"] = f"look {s['look']} turned off"
+                        self._look_crashes(s["appid"], s["look"], None)
+                    except (OSError, ValueError):
+                        pass
             result["collected"] = {"config": s["config"], "graphics_applied": s["graphics_applied"],
                                    "performance": s.get("perf_profile"), "environment": s.get("environment"),
                                    "blamed": [x for x, b in (("graphics", g_blame), ("performance", p_blame)) if b]}
         elif reason == "exit" and (auto["safety"]["next_safe"] or auto["safety"]["next_safe_perf"]):
             auto["safety"] = {"next_safe": None, "next_safe_perf": None}   # one clean run: back to normal
             changed = True
+        if not abnormal and reason == "exit" and s.get("look"):
+            self._look_crashes(s["appid"], s["look"], None)                # a clean run with the look
         if changed:
             self._save_auto(auto)
         # RESTORE GLOBAL PERFORMANCE (stoned also goes back to the global profile when the game ends)
@@ -658,9 +687,42 @@ class Engine:
         # CLEAN GRAPHICS OVERRIDES
         result["graphics_restored"] = self.ov.restore(s["appid"])
         self._save_session(None)
+        self._event("game_end", appid=s["appid"], reason=reason, seconds=result["seconds"], abnormal=abnormal,
+                    look=s.get("look"), healed=result.get("healed"), probed=bool(s.get("probed")),
+                    graphics_restored=str(result["graphics_restored"]))
         self.log(f"[stone] optimized: {s['appid']} {reason}{' (abnormal)' if abnormal else ''}: "
                  f"graphics {result['graphics_restored']}")
         return result
+
+    def _look_crashes(self, appid, lk, step):
+        """Consecutive early ends of a game with a look on: +1, or None to forget. Returns the count."""
+        path = os.path.join(graphics.state_dir(), "look-crashes.json")
+        try:
+            with open(path) as fh:
+                d = json.load(fh)
+        except (OSError, ValueError):
+            d = {}
+        d = d if isinstance(d, dict) else {}
+        key = f"{appid}:{lk}"
+        n = 0 if step is None else int(d.get(key, 0)) + step
+        if n:
+            d[key] = n
+        else:
+            d.pop(key, None)
+        try:
+            os.makedirs(os.path.dirname(path), exist_ok=True)
+            with open(path + ".tmp", "w") as fh:
+                json.dump(d, fh)
+            os.replace(path + ".tmp", path)
+        except OSError:
+            pass
+        return n
+
+    def _event(self, kind, **data):
+        try:
+            self.events(kind, **data)
+        except Exception:  # noqa: BLE001  (the event log never fails a launch)
+            pass
 
     def recover(self):
         """At STONE Home's start (and before every launch): a session that never ended is a crash
@@ -786,6 +848,57 @@ def _save_mode_prefs(d):
     os.makedirs(os.path.dirname(_prefs_path()), exist_ok=True)
     with open(_prefs_path(), "w") as f:
         json.dump(d, f)
+
+
+WATCHED_ENV = ("ENABLE_VKBASALT", "VKBASALT_CONFIG_FILE", "STONE_LOOK", "STONE_OPTIMIZED", "WINEDLLOVERRIDES",
+               "DXVK_FRAME_RATE", "VKD3D_FRAME_RATE", "STEAM_COMPAT_TOOL_PATHS", "PRESSURE_VESSEL_RUNTIME")
+
+
+def effects_probe(appid, sysroot=None):
+    """Look inside the processes Steam started for this AppId (SteamAppId / SteamGameId in their
+    environment): which of STONE's variables they got and whether the vkBasalt layer is mapped in
+    any of them. Read-only, the person's own processes; only variable NAMES and STONE's own values
+    are kept (no paths outside STONE's state, nothing else from the environment)."""
+    appid = str(appid)
+    root = os.path.join(sysroot or os.environ.get("STONE_SYSFS_ROOT", "/"), "proc")
+    out = {"processes": 0, "env": {}, "vkbasalt_loaded": False, "vulkan_loaded": False, "wine": False, "names": []}
+    try:
+        pids = [p for p in os.listdir(root) if p.isdigit()]
+    except OSError as e:
+        return dict(out, error=str(e))
+    for pid in pids:
+        try:
+            with open(os.path.join(root, pid, "environ"), "rb") as f:
+                raw = f.read(256 * 1024)
+        except OSError:
+            continue
+        env = {}
+        for item in raw.split(b"\0"):
+            k, _, v = item.partition(b"=")
+            env[k.decode("ascii", "replace")] = v.decode("utf-8", "replace")
+        if env.get("SteamAppId") != appid and env.get("SteamGameId") != appid:
+            continue
+        out["processes"] += 1
+        for k in WATCHED_ENV:
+            if k in env and k not in out["env"]:
+                v = env[k]
+                out["env"][k] = v if k in ("ENABLE_VKBASALT", "STONE_LOOK", "STONE_OPTIMIZED", "DXVK_FRAME_RATE", "VKD3D_FRAME_RATE") else "set"
+        try:
+            with open(os.path.join(root, pid, "comm")) as f:
+                name = f.read().strip()[:40]
+        except OSError:
+            name = "?"
+        if name and name not in out["names"] and len(out["names"]) < 12:
+            out["names"].append(name)
+        try:
+            with open(os.path.join(root, pid, "maps"), "rb") as f:
+                maps = f.read(8 * 1024 * 1024).lower()
+        except OSError:
+            continue
+        out["vkbasalt_loaded"] = out["vkbasalt_loaded"] or b"vkbasalt" in maps
+        out["vulkan_loaded"] = out["vulkan_loaded"] or b"libvulkan" in maps
+        out["wine"] = out["wine"] or b"wine" in maps or b"ntdll.so" in maps
+    return out
 
 
 class ProcWatch:

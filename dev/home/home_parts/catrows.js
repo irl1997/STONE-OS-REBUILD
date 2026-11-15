@@ -300,7 +300,7 @@ function healthRows() {
   rows.push({ l: 'Estabilidad', s: st.safe_mode ? `Safe Mode activo (${SAFE_REASON[st.safe_reason] || st.safe_reason})` : st.last_failure ? 'Hubo un fallo reciente: STONE volvió a la última configuración buena' : 'Sin fallos de rendimiento recientes',
     v: st.safe_mode ? 'Aviso' : 'Bien', act: 'info', where: 'Detalle en Ajustes → Rendimiento' });
   rows.push({ l: 'Volver a comprobar', s: 'Lee todo de nuevo', v: '', act: 'health' });
-  rows.push({ l: 'Informe de diagnóstico', s: 'Si algo falla: un archivo con los registros, sin datos personales, para llevar al móvil o a un USB', v: 'Hacer', act: 'diag' });
+  rows.push({ l: 'Informe de diagnóstico', s: 'Si algo falla: marca qué y STONE comprueba cada función. Un archivo sin datos personales para el móvil o un USB', v: 'Hacer', act: 'diag' });
   return rows;
 }
 function catRows() {

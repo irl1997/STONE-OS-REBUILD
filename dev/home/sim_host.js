@@ -284,8 +284,23 @@ const Bridge = (() => {
           emit('usb', { state: 'done', copied: 3, skipped: 0, error: null }); emit('library', { reason: 'changed' }); } };
       setTimeout(tick, 300); return { ok: true }; },
     'usb.cancel': () => ({ ok: true }),
-    'diag.build': async () => { await wait(2500); return { name: 'stone-informe-20261114-1830.zip', size: 412000, summary: { version: '3.1.0-rc8 (simulación)', errors: 3,
-      previous_boot_errors: 0, failed_services: [], steam_functions: { have: 27, missing: [] }, findings: ['Wi-Fi: la red no tiene salida a internet'], last_errors: [] } }; },
+    'diag.build': async (symptoms = []) => {
+      await wait(2500);
+      const sym = { filters: 'Los filtros de imagen (Aspecto) no cambian nada', colors: 'Los colores se ven desvaídos o cambian solos' };
+      const tie = id => (symptoms || []).filter(k => (k === 'filters' && id === 'filters') || (k === 'colors' && id === 'display')).map(k => sym[k]);
+      const checks = [
+        { id: 'filters', name: 'Filtros de imagen (Aspecto, vkBasalt)', status: 'fail', detail: 'STONE apagó aspectos tras cerrarse los juegos: por eso no se notan. Vuelve a elegirlos.' },
+        { id: 'display', name: 'Colores de la pantalla (HDR / SDR)', status: 'warn', detail: 'La salida de vídeo pasó a HDR a los 6 s de empezar la sesión, cuando Steam arrancó con «Activar HDR».' },
+        { id: 'games', name: 'Abrir juegos (JUGAR)', status: 'ok', detail: '2 juegos abiertos sin fallo desde que se registra.' },
+        { id: 'steam', name: 'Steam (su interfaz, la tienda y volver a STONE)', status: 'ok', detail: 'Steam responde.' },
+        { id: 'sound', name: 'Sonido', status: 'ok', detail: 'Salida de sonido al 70 %.' },
+        { id: 'controllers', name: 'Mandos', status: 'ok', detail: '1 mando conectado.' },
+        { id: 'network', name: 'Wi-Fi e internet', status: 'ok', detail: 'Conectado y con internet.' },
+        { id: 'emulators', name: 'Emuladores', status: 'nodata', detail: 'No hay emuladores instalados.' }].map(c => ({ ...c, symptom: tie(c.id) }));
+      return { name: 'stone-informe-20261114-1830.zip', size: 412000, summary: { version: '3.1.0-rc8 (simulación)', errors: 3,
+        previous_boot_errors: 0, failed_services: [], steam_functions: { have: 27, missing: [] }, findings: [], last_errors: [], checks,
+        symptoms: (symptoms || []).map(k => sym[k] || k), failing: 1 } };
+    },
     'diag.phone': () => ({ open: true, url: 'http://192.168.1.40:41817/kD9x2mQe7LwP4sZa/', download: 'http://192.168.1.40:41817/kD9x2mQe7LwP4sZa/informe', seconds: 1800, received: [] }),
     'diag.usb': async () => { await wait(900); return /usb/.test(location.search) ? { drive: 'JUEGOS', path: '/run/media/stone/JUEGOS/stone-informe.zip' } : { error: 'No hay ningún USB conectado' }; },
     'diag.close': () => ({ ok: true }),
