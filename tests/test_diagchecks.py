@@ -200,6 +200,21 @@ def test_second_report_false_alarms():
     assert C.check_steam({"steam_reachable": True, "steam_functions": {"have": 27, "missing": []}}, rest, [])["status"] == C.OK
 
 
+def test_third_report_hdr_now_and_launches_across_a_sleep():
+    """Third report (15-11-2026): the journal said HDR on at 219 s while gamescope said SDR; a launch at
+    10:47 "never started" because the console was off until 16:35."""
+    j = JOURNAL + "2026-11-14T21:47:03-03:00 bazzite gamescope-session-plus[3070]: [gamescope] [Info]  xwm: HDR output enabled\n"
+    r = C.check_display(j, {"gamescope_atoms": {"GAMESCOPE_HDR_OUTPUT_FEEDBACK": [0]}, "steam_display": {"gamescope_hdr_enabled": False}})
+    assert r["status"] == C.OK and "ahora" in r["detail"]
+    assert C.check_display(j, {"gamescope_atoms": {"GAMESCOPE_HDR_OUTPUT_FEEDBACK": [1]}})["status"] == C.WARN
+    slept = [{"kind": "game_prepare", "appid": "200260", "t": 1000.0},
+             {"kind": "game_end", "appid": "200260", "reason": "not started", "t": 21000.0}]
+    assert C.check_games(slept, "", {})["status"] == C.NODATA
+    live = [{"kind": "game_prepare", "appid": "200260", "t": 1000.0},
+            {"kind": "game_end", "appid": "200260", "reason": "not started", "t": 1181.0}]
+    assert C.check_games(live, "", {})["status"] == C.FAIL
+
+
 def test_events_are_kept_small_and_never_fail():
     t = tempfile.mkdtemp(prefix="stone-ev-")
     try:

@@ -81,7 +81,7 @@ def build(src):
     # HOME, then what 3.0 adds next to it: the store and a game's store page, the QR code for the
     # phone, Steam's own window in front (D-34), the library following Steam, and the sections' covers.
     t = replace_span(t, "/* ---------- HOME ---------- */", "/* ---------- LIBRARY ---------- */",
-                     "\n".join(part(n) for n in ("home.js", "store.js", "qr.js", "steamfront.js", "libwatch.js", "covers.js", "install.js", "launchwatch.js", "steamactions.js", "netstatus.js", "emugames.js", "diag.js")) + "\n\n", "home")
+                     "\n".join(part(n) for n in ("home.js", "store.js", "qr.js", "steamfront.js", "libwatch.js", "covers.js", "install.js", "launchwatch.js", "steamactions.js", "netstatus.js", "emugames.js", "diag.js", "activity.js")) + "\n\n", "home")
     t = replace_once(t, "<span>INICIO</span><span>BIBLIOTECA</span><span>EXPLORAR</span><span>MEDIA</span></div>",
                      "<span>Inicio</span><span>Biblioteca</span><span>Explorar</span><span>Media</span><span>Tienda</span></div>", "store tab")
     t = replace_span(t, "const FILTERS = [", "function enterLibrary(", part("libfilter.js") + "\n", "filters")
@@ -147,8 +147,8 @@ def build(src):
     t = replace_once(t, "let SCALE = 1;\nfunction fit() {\n  const vp = $('#viewport'), w = vp.clientWidth, h = vp.clientHeight;\n  SCALE = Math.min(w / 1920, h / 1080);",
                      "let SCALE = 1, FRAME = 0;\nfunction fit() {\n  const vp = $('#viewport'), w = vp.clientWidth, h = vp.clientHeight;\n  SCALE = Math.min(w / 1920, h / 1080) * (1 - FRAME / 50);", "fit frame")
     # LEFT/RIGHT can adjust a value in a dialog or the SETUP (volume, framing) instead of moving.
-    t = replace_once(t, "  if (S.screen === 'dlg') {\n    if (dirs.includes(a)) return move(a);",
-                     "  if (S.screen === 'dlg') {\n    if ((a === 'left' || a === 'right') && DLG.onLR && DLG.onLR(a === 'left' ? -1 : 1, focusEl())) return;\n    if (dirs.includes(a)) return move(a);", "dlg lr")
+    t = replace_once(t, "  if (S.screen === 'dlg') {\n    if (!DLG) return dlgRecover();\n    if (dirs.includes(a)) return move(a);",
+                     "  if (S.screen === 'dlg') {\n    if (!DLG) return dlgRecover();\n    if ((a === 'left' || a === 'right') && DLG.onLR && DLG.onLR(a === 'left' ? -1 : 1, focusEl())) return;\n    if (dirs.includes(a)) return move(a);", "dlg lr")
     t = replace_once(t, "Si la pantalla no funciona, también se puede activar desde una terminal con <b>sudo stonectl safe-mode on</b>.",
                      "Si la pantalla no funciona, el menú de arranque de la consola también ofrece Safe Mode.", "safe mode terminal")
     t = replace_once(t, "/* Gamepad (standard mapping) */\n", part("dormant.js") + "\n/* Gamepad (standard mapping) */\n", "dormant")
@@ -162,7 +162,7 @@ def build(src):
     # CRISTAL: colour behind every screen that has no game art of its own (cristal.css --aurora);
     # without blur when the person chose «Ligeros» or STONE Home draws without GPU.
     t = replace_once(t, "const neutralBg = 'linear-gradient(to bottom, #1c1d1f 0%, #141517 60%, #0a0a0b 100%)';", "const neutralBg = 'var(--aurora)';", "aurora")
-    t = replace_once(t, "$('#settings').innerHTML = `<div class=\"ttl\">AJUSTES</div>", "$('#settings').innerHTML = `<div class=\"ttl\">Ajustes</div>", "settings title")
+    t = replace_once(t, "const html = `<div class=\"ttl\">AJUSTES</div>", "const html = `<div class=\"ttl\">Ajustes</div>", "settings title")
     t = replace_once(t, "  stage.classList.toggle('rm', S.rm);\n", "  stage.classList.toggle('rm', S.rm);\n  stage.classList.toggle('lite', !S.glass || S.render === 1);\n", "glass lite")
     t = replace_once(t, '<div id="app">', part("lens.html") + '<div id="app">', "liquid glass lens")
     # The light line marks the chosen game; everything else that is chosen turns into the white panel.

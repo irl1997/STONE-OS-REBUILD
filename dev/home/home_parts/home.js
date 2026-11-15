@@ -74,6 +74,15 @@ function homeContext(el) {
     if (el.closest('.sys') == null || S.section !== 0) setBg(neutralBg, '');
   }
 }
+/* 3.1.0-rc10: a screen redrawn in place (keep: the library changed, a cover arrived) gets its focus before
+   its first frame. Until then the focus came a frame later: the focused card grew again from nothing, the
+   line slid in, and the game's details under it faded out and back in 600 ms later: the "parpadeo" seen
+   on the console whenever covers or downloads changed the library. */
+function focusInPlace() {
+  const el = focusEl();
+  if (el) el.classList.add('f');          /* before any layout read: no transition from "not focused" */
+  applyFocus();
+}
 function enterHome(opts = {}) {
   S.screen = 'home'; S.from = 'home';
   if (S.section === 1 || S.section === 4) S.section = 0;
@@ -101,7 +110,10 @@ function enterHome(opts = {}) {
   });
   NAV.id = 'home';
   if (NAV.c >= rows[NAV.r].length) NAV.c = rows[NAV.r].length - 1;
-  requestAnimationFrame(() => applyFocus({ slow: opts.slow }));
+  if (opts.keep) {
+    focusInPlace(); clearTimeout(metaT);
+    const hm = $('#hm'); if (hm && hm.textContent) hm.classList.add('on');     /* the details stay, no fade */
+  } else requestAnimationFrame(() => applyFocus({ slow: opts.slow }));
   hints([['A', S.section === 0 ? 'Abrir' : 'Elegir'], ['LB RB', 'Sección']]);
 }
 function homeA(el) {

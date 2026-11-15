@@ -1,3 +1,47 @@
+# STONE OS (rebuild) 3.1.0-rc10
+
+Hecha con el **tercer informe de la consola** (15-11-2026, 17:04) y con lo que pediste: que no parpadee, que se vea cuándo STONE está trabajando y que los cuadros de diálogo estén bien encuadrados. Además se hizo una auditoría con el informe y el código. Decisión D-45.
+
+## Lo que el informe destapó (y estaba mal de verdad)
+
+- **El «script de instalación» de Steam se confundía con el juego.** Antes de abrir un juego, Steam ejecuta su script de instalación (DirectX, VC++). Lo hace con el mismo proceso que STONE vigila, marcado `Install=1`. STONE lo tomaba por el juego, veía que «se cerraba» a los 6 s y lo contaba como un cierre en falso. Por eso apagó el aspecto CINEMA de Batman. Además, gamescope ponía delante una ventana que todavía no existía. Ahora STONE, gamescope y `stoned` ignoran ese proceso.
+- **Las variables de STONE se quedaban en las opciones de lanzamiento del juego.** Un JUGAR que nunca arrancó (la consola se apagó entre medio), seguido de una restauración que no pudo hablar con Steam, dejó `ENABLE_VKBASALT=1 … STONE_LOOK=cinema` guardado en las opciones de Batman. STONE las tomó después por tuyas: el juego seguía recibiendo el aspecto con «Original» elegido. Ahora STONE reconoce sus propias variables por sus marcas y nunca las guarda como tuyas. Las que ya se habían quedado se quitan en el siguiente JUGAR, sin tocar las tuyas.
+- **OptiScaler acabó en la carpeta equivocada.** En Batman: Arkham Asylum se instaló en `redist`, la carpeta de instaladores, porque ahí estaba el `.exe` más grande. Ahora esas carpetas se saltan. Si STONE ya lo había dejado ahí, lo retira solo al arrancar (solo los archivos que él mismo puso) para que puedas instalarlo bien.
+- **OptiScaler necesita algo que reemplazar.** OptiScaler mejora el DLSS, el FSR 2/3 o el XeSS que ya trae el juego. Los Batman de 2009 y 2011 no traen ninguno. STONE ahora mira las bibliotecas del juego y, si no encuentra ninguna, te avisa antes de instalarlo.
+- **Un error de la pantalla:** `Cannot read properties of null (reading 'onB')`. Un diálogo que se cerraba sin volver a una pantalla dejaba el mando sin respuesta. Ahora cualquier botón te devuelve a donde estabas.
+- **Colores:** el informe ya mira lo que gamescope dice en ese momento. En tu consola la salida está ahora en SDR (HDR desactivado en Steam). Un JUGAR que quedó a medias porque la consola se apagó ya no cuenta como fallo.
+
+## Sin parpadeos
+
+- **Ajustes** se reconstruía entero en cada paso arriba o abajo. La fila elegida perdía el resaltado durante un instante y una lista larga saltaba arriba y volvía. **Emuladores** se reconstruía además cada 10 s. Ahora solo se redibuja lo que cambió, y la lista mantiene su posición.
+- **Inicio y Biblioteca** se redibujaban cuando llegaba una carátula o terminaba una descarga: el juego elegido «crecía» otra vez y sus datos se apagaban y volvían a encenderse. Ahora el resaltado está puesto desde el primer instante.
+- **Al abrir un juego**, STONE se dormía y despertaba varias veces en milisegundos, y cada vez pausaba y reanudaba todas las animaciones. Ahora solo se duerme cuando el juego lleva un momento delante; despertar sigue siendo inmediato.
+- **Los cuadros de diálogo** ya no aparecen ni desaparecen de golpe: entran y salen con un fundido corto.
+
+## Ahora se ve cuándo STONE está trabajando
+
+- Arriba a la derecha, en cualquier pantalla, aparece un **anillo que gira** con lo que está pasando. Cubre:
+  - la **actualización de STONE OS**, con su porcentaje real, leído del propio `uupd`;
+  - las descargas de Steam;
+  - la instalación de emuladores;
+  - la copia desde un USB;
+  - la descarga e instalación de OptiScaler;
+  - el informe;
+  - el cambio de Wi-Fi.
+- En **Ajustes → Actualizaciones**, la fila muestra «Actualizando · 45 %» y qué parte va: el sistema o las aplicaciones. Al terminar avisa de que la actualización está lista. También funciona cuando la búsqueda la empieza el propio sistema.
+- Cualquier fila que esté «Leyendo…» o «Buscando…» lleva el mismo anillo.
+
+## Cuadros de diálogo bien encuadrados
+
+Todos empezaban a 200 px del borde de arriba, fuera cual fuera su altura, y los espacios entre sus partes eran de 12, 17, 18, 25, 26 o 34 px según el diálogo. Ahora:
+- todos van **centrados** en la pantalla;
+- los espacios siguen **un único ritmo**: 24 px entre bloques, el título pegado a su epígrafe y los botones 36 px por debajo;
+- el fondo queda algo más oscuro.
+
+Se midieron 12 diálogos y ninguno se sale ni se corta.
+
+**Todo está probado en software (CODE TESTED) y en el simulador. Nada de esta versión se ha observado todavía en la BC-250.** Pruebas de placa: T-HOME-08, T-HOME-09, T-HOME-10 y T-LOOK-04.
+
 # STONE OS (rebuild) 3.1.0-rc9
 
 Arreglos sacados del **segundo informe de la consola** (15-11-2026, 10:33, ya con la 3.1.0-rc8) y de la foto de la tele. Decisión D-44.

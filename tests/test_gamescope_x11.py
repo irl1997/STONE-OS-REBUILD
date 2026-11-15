@@ -44,6 +44,16 @@ def test_running_game_is_the_newest_steam_launch_and_never_stone_home():
         shutil.rmtree(root)
 
 
+def test_the_games_install_script_is_not_the_game():
+    # the console's report (15-11-2026): Steam runs the install script first, with the same reaper
+    root = _proc({500: ["/home/u/.local/share/Steam/steamrt64/reaper", "SteamLaunch", "AppId=200260", "Install=1", "--",
+                        "/x/_v2-entry-point", "--verb=run", "--", "proton", "run", "iscriptevaluator.exe"]})
+    try:
+        assert GX.running_game(root) is None
+    finally:
+        shutil.rmtree(root)
+
+
 def test_no_game_and_unreadable_proc():
     root = _proc({100: ["/usr/bin/steam", "-silent"]})
     try:

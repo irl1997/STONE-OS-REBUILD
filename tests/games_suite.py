@@ -848,6 +848,78 @@ def G22_guided_optimization_counts_the_matrix_and_grows_with_installed_paths():
 
 
 @test
+def G26_install_script_is_not_the_game_and_stone_never_keeps_its_own_options():
+    """The console's report (15-11-2026): Steam's install script (reaper ... Install=1) was taken for the
+    game, its end for a crash at 6 s, and Batman's look was turned off; and STONE's look variables stayed
+    in the options as if they were the person's after a restore that could not reach Steam."""
+    d = tempfile.mkdtemp(prefix="stone-proc-")
+    old = os.environ.get("STONE_SYSFS_ROOT")
+    try:
+        p = os.path.join(d, "proc", "700")
+        os.makedirs(p)
+        with open(os.path.join(p, "cmdline"), "wb") as f:
+            f.write(b"\0".join([b"/s/steamrt64/reaper", b"SteamLaunch", b"AppId=200260", b"Install=1", b"--", b"iscriptevaluator.exe"]) + b"\0")
+        os.environ["STONE_SYSFS_ROOT"] = d
+        assert optimizer.ProcWatch().running("200260") is False
+        with open(os.path.join(p, "cmdline"), "wb") as f:
+            f.write(b"\0".join([b"/s/steamrt64/reaper", b"SteamLaunch", b"AppId=200260", b"--", b"BatmanAC.exe"]) + b"\0")
+        assert optimizer.ProcWatch().running("200260") is True
+    finally:
+        if old is None:
+            os.environ.pop("STONE_SYSFS_ROOT", None)
+        else:
+            os.environ["STONE_SYSFS_ROOT"] = old
+        shutil.rmtree(d, ignore_errors=True)
+    with World(user_options="-nointro") as w:
+        ov = w.e.ov
+        assert ov.apply(CP, {"ENABLE_VKBASALT": "1", "STONE_LOOK": "cinema"}, "k")[0].startswith("ENABLE_VKBASALT=1")
+        w.cef_up = False                                    # Steam does not answer: the record stays
+        assert ov.restore(CP).startswith("error")
+        w.cef_up = True
+        new, err = ov.apply(CP, {"STONE_OPTIMIZED": "x"}, "k2")  # the next launch, look turned off
+        assert err is None and "STONE_LOOK" not in new and "ENABLE_VKBASALT" not in new and new.endswith("-nointro"), new
+        assert ov.restore(CP) == "restored" and w.options[CP] == "-nointro"
+        # already leaked (no record at all): taken out at the next launch, the person's part kept
+        w.options[CP] = "ENABLE_VKBASALT=1 VKBASALT_CONFIG_FILE=/h/.local/state/stone/looks/cinema.conf STONE_LOOK=cinema %command% -nointro"
+        new, err = ov.apply(CP, {"DXVK_FRAME_RATE": "60", "STONE_OPTIMIZED": "y"}, "k3")
+        assert "STONE_LOOK" not in new and "DXVK_FRAME_RATE=60" in new
+        assert ov.restore(CP) == "restored" and w.options[CP] == "%command% -nointro"
+        assert graphics.strip_stone("WINEDLLOVERRIDES=dxgi=n,b %command%") == "WINEDLLOVERRIDES=dxgi=n,b %command%"   # the person's own
+
+
+@test
+def G27_optiscaler_goes_next_to_the_game_never_in_an_installer_folder():
+    """The console (15-11-2026): Batman: Arkham Asylum got OptiScaler in "redist" (the largest .exe there)."""
+    from stone_games import install
+    opti = {"OptiScaler/OptiScaler.dll": b"MZ" + bytes(50), "OptiScaler/OptiScaler.ini": "[Upscalers]\n"}
+    with World() as w:
+        redist = os.path.join(w.game_dir, "redist")
+        os.makedirs(redist)
+        with open(os.path.join(redist, "PhysX_9.09_SystemSoftware.exe"), "wb") as f:
+            f.write(bytes(90000))
+        with open(os.path.join(w.game_dir, "bin", "x64", "Cyberpunk2077.exe"), "wb") as f:
+            f.write(bytes(5000))
+        gj, dl = _fake_net("optiscaler", opti)
+        install.fetch("optiscaler", gj, dl)
+        plan = w.e.install_plan(CP, "optiscaler")
+        assert plan["folder"].replace(os.sep, "/") == "bin/x64" and plan["no_upscaler"] and plan["upscalers"] == []
+        with open(os.path.join(w.game_dir, "bin", "x64", "nvngx_dlss.dll"), "wb") as f:
+            f.write(b"MZ")                                  # a game with DLSS: something to replace
+        assert w.e.install_plan(CP, "optiscaler")["upscalers"] == ["nvngx_dlss.dll"]
+        os.remove(os.path.join(w.game_dir, "bin", "x64", "nvngx_dlss.dll"))
+        # an install left by rc9 in "redist" is taken out at the next start, and can be done again
+        os.makedirs(install.installs_dir(), exist_ok=True)
+        with open(os.path.join(redist, "winmm.dll"), "wb") as f:
+            f.write(b"MZ")
+        with open(os.path.join(install.installs_dir(), f"{CP}.json"), "w") as f:
+            json.dump({"appid": CP, "kind": "optiscaler", "tag": "v9.9.9", "exe_dir": redist, "files": ["winmm.dll"]}, f)
+        assert install.misplaced() == [CP]
+        out = w.e.recover()
+        assert out["misplaced_optiscaler"] == {CP: 1} and not os.path.exists(os.path.join(redist, "winmm.dll"))
+        assert install.misplaced() == [] and w.e.install_plan(CP, "optiscaler")["ok"]
+
+
+@test
 def G25_optiscaler_release_names_in_any_letter_case():
     """3.1.0-rc8 on the console: OptiScaler v0.9.4 publishes "Optiscaler_0.9.4-final.20260718._MM.7z"
     (small s) and STONE said "the latest release has no file I recognise"."""

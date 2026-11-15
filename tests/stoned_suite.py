@@ -953,6 +953,7 @@ def wait_for(fn, timeout=6):
 @test
 def G01_reaper_command_line_parsing():
     assert GM.parse_reaper([REAPER, "SteamLaunch", "AppId=570", "--", "x"]) == "570"
+    assert GM.parse_reaper([REAPER, "SteamLaunch", "AppId=200260", "Install=1", "--", "iscriptevaluator.exe"]) is None  # install script
     assert GM.parse_reaper([REAPER, "SteamLaunch", "AppId=2929382885", "--"]) == "2929382885"   # non-Steam shortcut
     assert GM.parse_reaper(["/usr/bin/bash", "SteamLaunch", "AppId=570"]) is None
     assert GM.parse_reaper([REAPER, "AppId=570"]) is None

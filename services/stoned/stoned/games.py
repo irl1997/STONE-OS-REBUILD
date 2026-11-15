@@ -44,6 +44,8 @@ def parse_reaper(argv):
     """['/.../reaper', 'SteamLaunch', 'AppId=570', '--', ...] -> '570', else None."""
     if not argv or os.path.basename(argv[0]) != "reaper" or "SteamLaunch" not in argv[1:3]:
         return None
+    if "Install=1" in argv[1:6]:          # the game's install script (redistributables), not the game
+        return None
     if "--" in argv:
         rest = argv[argv.index("--") + 1:]
         if any(os.path.basename(a.strip('"')) in NOT_GAMES for a in rest[:8]):

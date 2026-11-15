@@ -238,13 +238,20 @@ const Bridge = (() => {
         stage, rate: stage === 'download' ? 36.4 * 2 ** 20 : 0, eta: stage === 'download' ? Math.round((1 - t) * 1500) : null, installed: false }; }) }),
     'session.wantSteam': () => ({ ok: true }),
     /* Buscar actualizaciones: uupd "runs" 10 s, then a newer version is staged */
-    'update.now': () => { SIM.updUntil = Date.now() + 10000; return { ok: true, unit: 'uupd-manual.service', already: false }; },
+    'update.now': () => { SIM.updUntil = Date.now() + 20000; return { ok: true, unit: 'uupd-manual.service', already: false }; },
+    /* rc10: uupd's progress records, as update.state reads them from its journal */
+    'update.state': () => {
+      const left = SIM.updUntil ? SIM.updUntil - Date.now() : -1, running = left > 0, t = running ? 1 - left / 20000 : 0;
+      return { unit: 'uupd-manual.service', running, result: 'success', since: null,
+        progress: running ? { module: t < .6 ? 'system' : 'flatpak', title: t < .6 ? 'Sistema' : 'Aplicaciones', description: t < .6 ? 'descargando e instalando la imagen nueva de STONE OS' : 'actualizando las aplicaciones y los emuladores (Flatpak)',
+          overall: Math.round(t * 100), step: t < .6 ? 0 : 1, total: 3 } : null };
+    },
     openSteam: async () => ({ ok: true }), openSteamSettings: async () => ({ ok: true }), restart: async () => ({ ok: true }),
     power: async ([a]) => { toast(`Simulación: «${a === 'off' ? 'Apagar' : 'Reiniciar'}» no hace nada aquí`, false); return { ok: true }; },
-    systemInfo: () => ({ session: 'stone', release: { STONE_VERSION: '3.1.0-rc9 (simulación)', STONE_BASE_IMAGE: 'bazzite-deck', STONE_KERNEL: 'simulado', STONE_MESA: 'simulado', STONE_GOVERNOR_VERSION: 'simulado' },
+    systemInfo: () => ({ session: 'stone', release: { STONE_VERSION: '3.1.0-rc10 (simulación)', STONE_BASE_IMAGE: 'bazzite-deck', STONE_KERNEL: 'simulado', STONE_MESA: 'simulado', STONE_GOVERNOR_VERSION: 'simulado' },
       boot_time: Math.round(now - 3600),
-      deployments: { booted: { image: 'simulación', version: '3.1.0-rc9', timestamp: now },
-        staged: SIM.updUntil && Date.now() > SIM.updUntil ? { image: 'simulación', version: '3.1.0-rc9', timestamp: now } : null,
+      deployments: { booted: { image: 'simulación', version: '3.1.0-rc10', timestamp: now },
+        staged: SIM.updUntil && Date.now() > SIM.updUntil ? { image: 'simulación', version: '3.1.0-rc10', timestamp: now } : null,
         rollback: { image: 'simulación', version: '3.0.0-rc1', timestamp: now - 86400 } },
       updates: { unit: 'uupd.timer', enabled: true, last: Math.round(now - 3600 * 15), next: Math.round(now + 3600 * 9) },
       updating: { unit: 'uupd-manual.service', running: !!SIM.updUntil && Date.now() < SIM.updUntil, result: 'success' } }),
@@ -297,7 +304,7 @@ const Bridge = (() => {
         { id: 'controllers', name: 'Mandos', status: 'ok', detail: '1 mando conectado.' },
         { id: 'network', name: 'Wi-Fi e internet', status: 'ok', detail: 'Conectado y con internet.' },
         { id: 'emulators', name: 'Emuladores', status: 'nodata', detail: 'No hay emuladores instalados.' }].map(c => ({ ...c, symptom: tie(c.id) }));
-      return { name: 'stone-informe-20261114-1830.zip', size: 412000, summary: { version: '3.1.0-rc9 (simulación)', errors: 3,
+      return { name: 'stone-informe-20261114-1830.zip', size: 412000, summary: { version: '3.1.0-rc10 (simulación)', errors: 3,
         previous_boot_errors: 0, failed_services: [], steam_functions: { have: 27, missing: [] }, findings: [], last_errors: [], checks,
         symptoms: (symptoms || []).map(k => sym[k] || k), failing: 1 } };
     },
@@ -485,3 +492,6 @@ const Bridge = (() => {
 })();
 const PerfAPI = SimStoned;
 window.SimPanel = SimPanel; window.SimStoned = SimStoned;
+/* SIMULATION ONLY (never in the console's page): a way in for reviewing screens and dialogs from the
+   developer's browser (window.__stoneEval('propsDlg(G[0])')). build_home.py does not include this file. */
+window.__stoneEval = src => eval(src);   // eslint-disable-line no-eval
