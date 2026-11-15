@@ -456,7 +456,16 @@
 #detail .dl-bar{height:6px;margin-top:9px;border-radius:3px;background:rgb(255 255 255/.2);overflow:hidden}
 #detail .dl-bar i{display:block;height:100%;width:0;border-radius:3px;background:#fff;box-shadow:0 0 14px var(--accent-glow);transition:width .8s linear}
 #detail .dl-sub{margin-top:8px;font-size:17px;line-height:22px;color:var(--text-2);font-variant-numeric:tabular-nums}
-#dlst{font-variant-numeric:tabular-nums;white-space:nowrap}
+/* ACTIVIDAD (3.1.0-rc10, activity.js): a turning ring and what STONE is doing, on every screen */
+#actv{display:inline-flex;align-items:center;gap:10px;max-width:520px;font-variant-numeric:tabular-nums}
+#actv[hidden]{display:none}
+#actv .lbl{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:18px;letter-spacing:.02em}
+.spin{display:inline-block;flex:none;width:18px;height:18px;box-sizing:border-box;border-radius:50%;border:2.5px solid currentColor;
+  border-right-color:transparent;opacity:.9;animation:stone-spin .9s linear infinite;vertical-align:-3px}
+.srow .v .spin{margin-right:12px}
+#dlg .spin{width:26px;height:26px;border-width:3px;margin-right:14px;vertical-align:-6px}
+#stage.rm .spin{animation-duration:2.4s}
+@keyframes stone-spin{to{transform:rotate(360deg)}}
 /* Backgrounds: what must be enlarged a lot is softened (bgTune sets --bg-blur), and bright art gets a
    deeper shade under the text (--bg-dim). Without GPU nothing is filtered. */
 #stage .bg{inset:-16px;filter:blur(var(--bg-blur,0px))}
@@ -467,3 +476,20 @@
 #dlg .btns{gap:64px}
 #dlg .tech{font-family:"IBM Plex Mono","JetBrains Mono",monospace;font-size:15px;line-height:22px;color:var(--slate);word-break:break-word}
 #sfront.now{transition:none}
+/* DIALOGS (3.1.0-rc10). The console's owner: "el encuadre de los cuadros de diálogo a veces no respeta bien
+   los espacios". Every dialog started 200 px from the top whatever its height (a short one sat over the
+   covers with the screen empty below), appeared and vanished in one frame, and its blocks were 12, 17,
+   18, 25, 26 or 34 px apart depending on which rules met. Now: centred on the screen, a 160 ms fade,
+   one rhythm (24 px between blocks, the caption 10 px above its title, the buttons 36 px below the
+   rest) and a darker veil so what is behind does not compete. */
+#stage #dlg{display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity 160ms var(--e-step),visibility 0s linear 160ms}
+#stage #dlg.on{opacity:1;transition:opacity 160ms var(--e-step)}
+#stage.rm #dlg,#stage.rm #dlg.on{transition:none}
+#stage #dlg .box{position:relative;left:auto;top:auto;flex:none;max-height:860px;gap:24px}
+#stage #dlg.viewer .box{position:absolute;left:0;top:0}
+#stage #dlg .dim{opacity:.62}
+#stage #dlg.solid .dim{opacity:1}
+#stage #dlg .box > .st-cap{margin:0 0 -14px}
+#stage #dlg .box > .btns{margin-top:12px}
+#stage #dlg .box > p + p{margin-top:-6px}
+#stage #dlg .box > .slist{margin-top:-8px;margin-bottom:-8px}

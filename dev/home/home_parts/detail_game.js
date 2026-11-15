@@ -99,12 +99,19 @@ async function insOpti(g, i) {
     let plan = await Sys.gamePlan(g.appid, 'optiscaler');
     if (plan && plan.needs_download) {
       toast('Descargando OptiScaler del autor (GitHub)… puede tardar', false);
-      await Sys.components('optiscaler');
+      busy('opti', 'Descargando OptiScaler');
+      try { await Sys.components('optiscaler'); } finally { busy('opti'); }
       plan = await Sys.gamePlan(g.appid, 'optiscaler');
     }
     if (!plan || !plan.ok) { play('error'); return toast(((plan && plan.error) || 'No se pudo preparar') + '', false); }
-    if (!insConfirmed(key)) return toast(`OptiScaler ${plan.component.tag} → ${plan.folder} (${plan.files} archivos). Pulsa otra vez para instalar`, false);
-    const r = await Sys.gameInstall(g.appid); await imgLoad(g, i); experience(g, i);
+    /* rc10: a game without DLSS, FSR 2/3 or XeSS gives OptiScaler nothing to replace: said before installing */
+    if (!insConfirmed(key)) return plan.no_upscaler
+      ? longToast(`${g.n} no trae DLSS, FSR 2/3 ni XeSS: OptiScaler no tendrá nada que mejorar y puede impedir que el juego abra. Pulsa otra vez solo si quieres probarlo`, 8000)
+      : toast(`OptiScaler ${plan.component.tag} → ${plan.folder} (${plan.files} archivos). Pulsa otra vez para instalar`, false);
+    busy('opti', 'Instalando OptiScaler');
+    let r = null;
+    try { r = await Sys.gameInstall(g.appid); } finally { busy('opti'); }
+    await imgLoad(g, i); experience(g, i);
     toast(r && r.ok ? 'FSR (OptiScaler) instalado. Elige «Imagen: OptiScaler» para usarlo' : ((r && r.error) || 'No se pudo instalar'), false);
   } catch (e) { play('error'); toast('No se pudo: ' + ((e && e.message) || 'sin respuesta') + '. Si fue la descarga, revisa internet y vuelve a pulsar', false); }
 }

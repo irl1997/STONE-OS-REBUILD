@@ -4,7 +4,18 @@
    and transitions are paused, the controller loop stops, the interface sound is suspended and
    live readings are unsubscribed. Chromium then produces no frames at all, so the GPU and CPU
    are the game's. Focus back (game closed, or STONE chosen from Steam) wakes it at once. */
+/* rc10: asleep only once the game has kept the focus for a moment. While a game opens, Steam's own
+   windows, the install script and the game take the focus in turns: the console's log (15-11-2026) has
+   "asleep" and "awake" three times within 13 ms at 16:53:01, each one pausing and resuming every
+   animation (a flash). Waking stays immediate. */
+let dormT = 0;
 function dormantCheck() {
+  const on = S.running !== null && S.running !== undefined && !document.hasFocus();
+  clearTimeout(dormT);
+  if (on && !S.dormant) { dormT = setTimeout(dormantApply, 1500); return; }
+  dormantApply();
+}
+function dormantApply() {
   const on = S.running !== null && S.running !== undefined && !document.hasFocus();
   if (!!S.dormant === on) return;
   S.dormant = on;

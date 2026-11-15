@@ -556,6 +556,10 @@ class Host:
         self._dl_live = (now, live)
         return live
 
+    def m_update_state(self, args, done):
+        """update.state(): is uupd working now, and how far ({"unit", "running", "result", "progress"})."""
+        self.sys.update_state(done)
+
     def m_update_now(self, args, done):
         """update.now(): look for a STONE OS update now and download it (applied at the next restart)."""
         self.sys.update_now(done)

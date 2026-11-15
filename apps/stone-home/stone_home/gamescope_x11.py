@@ -64,8 +64,8 @@ def running_game(proc_root="/proc"):
         except OSError:
             continue
         m = REAPER.search(cmd)
-        if not m or b"stone-home" in cmd:
-            continue
+        if not m or b"stone-home" in cmd or b"\x00Install=1\x00" in cmd.split(b"\x00--\x00", 1)[0] + b"\x00":
+            continue                       # Install=1: the game's install script, not the game
         pid = int(name)
         if best is None or pid > best[0]:
             best = (pid, int(m.group(1)))

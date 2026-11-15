@@ -54,6 +54,35 @@ def env_in(options, key):
     return v[1:-1] if v[:1] in "\"'" and v[-1:] == v[:1] else v
 
 
+# STONE IMAGE's variables (look.env_for_game): STONE's when STONE_LOOK is there too
+LOOK_VARS = ("ENABLE_VKBASALT", "VKBASALT_CONFIG_FILE", "VKBASALT_LOG_LEVEL", "VKBASALT_LOG_FILE", "STONE_LOOK")
+
+
+def strip_stone(options):
+    """The launch options without what STONE put in front of %command%.
+
+    The console's report (15-11-2026): Batman's options kept STONE's look variables after a launch that
+    never started and a restore that failed, so STONE took them for the person's own: the game got the
+    look with "Original" chosen, and nothing put the options back. STONE's variables carry its marks:
+    STONE_LOOK (with the vkBasalt ones) and STONE_OPTIMIZED (with the MANAGED ones). Without a mark
+    nothing is touched; STONE never adds a variable the person already set (compose)."""
+    o = (options or "").strip()
+    head, sep, tail = o.partition("%command%")
+    if not sep:
+        return o
+    names = ["STONE_LOOK", "STONE_OPTIMIZED"]
+    if env_in(head, "STONE_LOOK") is not None:
+        names += LOOK_VARS
+    if env_in(head, "STONE_OPTIMIZED") is not None:
+        names += MANAGED
+    if names == ["STONE_LOOK", "STONE_OPTIMIZED"] and not any(env_in(head, n) is not None for n in names):
+        return o
+    rx = r"(?:^|\s)(?:" + "|".join(re.escape(n) for n in dict.fromkeys(names)) + r")=(?:\"[^\"]*\"|'[^']*'|\S*)"
+    head = " ".join(re.sub(rx, " ", head).split())
+    out = ((head + " ") if head else "") + "%command%" + tail
+    return "" if out.strip() == "%command%" else out.strip()
+
+
 def compose(original, env):
     """The person's options with STONE's variables in front. env: ordered {VAR: value}."""
     original = (original or "").strip()
@@ -223,12 +252,16 @@ class Overrides:
         """(applied options, None) or (None, why). The person's options are recorded first."""
         appid = str(appid)
         doc = self._doc()
-        if appid in doc:                         # left over: put the original back first
+        left = doc.get(appid)
+        if left:                                 # left over: put the original back first
             self.restore(appid)
             doc = self._doc()
         original, err = self.lo.get(appid)
         if original is None:
             return None, err
+        if left and appid in doc:                # it could not be put back: the record knows the original
+            original = left["original"]
+        original = strip_stone(original)         # never STONE's own variables as the person's (rc9)
         new = compose(original, env)
         if new == original.strip():
             return original, None
@@ -252,6 +285,11 @@ class Overrides:
             return f"error: {err}"                # keep the record: retried at the next start
         if now.strip() != rec["applied"].strip() and now.strip() != rec["original"].strip():
             result = "kept (changed by the person)"
+            clean = strip_stone(now)
+            if clean != now.strip():             # the person's change stays; STONE's variables go
+                ok, err = self.lo.set(appid, clean)
+                if not ok:
+                    return f"error: {err}"
         elif now.strip() == rec["original"].strip():
             result = "restored"
         else:

@@ -1250,7 +1250,7 @@ function enterLibrary(opts = {}) {
   });
   NAV.ensure = ensure;
   NAV.id = 'library';
-  requestAnimationFrame(() => applyFocus());
+  if (opts.keep) focusInPlace(); else requestAnimationFrame(() => applyFocus());   /* rc10: redrawn in place, focused at once */
   hints([['A', 'Abrir'], ['LB RB', 'Sección'], ['B', 'Volver']]);
 }
 const LIB_ROW_H = 437, LIB_COL_W = (1728 - 5 * 40) / 6;
@@ -1496,13 +1496,23 @@ function catRows() {
   }
 }
 function enterSettings(opts = {}) {
+  const was = $('#settings').classList.contains('on');     /* on screen already (a dialog may be over it) */
   S.screen = 'settings';
-  const c = catRows();
-  $('#settings').innerHTML = `<div class="ttl">AJUSTES</div>
+  const c = catRows(), fi = opts.pane ? Math.min(opts.ri || 0, c.rows.length - 1) : -1;
+  const html = `<div class="ttl">AJUSTES</div>
     <div class="cats">${CATS.map((n, k) => `<span class="txt-f${k === cat ? ' cur' : ''}" data-f data-cat="${k}">${n}</span>`).join('')}</div>
     <div class="vr"></div>
-    <div class="pane"><div class="desc">${c.d}</div><div class="rows">${c.rows.map((r, k) => `<div class="srow" data-f data-row="${k}"><div class="l"><b>${r.l}</b><small>${r.s}</small></div><div class="v">${r.key && !['sound', 'hc', 'rm', 'tech'].includes(r.key) ? `<span class="ar">‹</span>${r.v}<span class="ar">›</span>` : r.v}</div></div>`).join('')}</div></div>`;
-  showScreen('settings'); chrome(true, false); setBg('', 'none');
+    <div class="pane"><div class="desc">${c.d}</div><div class="rows">${c.rows.map((r, k) => `<div class="srow" data-f data-row="${k}"><div class="l"><b>${r.l}</b><small>${r.s}</small></div><div class="v">${r.busy || /…$/.test(r.l) ? '<i class="spin" aria-hidden="true"></i>' : ''}${r.key && !['sound', 'hc', 'rm', 'tech'].includes(r.key) ? `<span class="ar">‹</span>${r.v}<span class="ar">›</span>` : r.v}</div></div>`).join('')}</div></div>`;
+  const box = $('#settings'), same = was && html === setHTML && box.firstChild;
+  if (!same) {
+    const old = box.querySelector('.rows'), top = was && setCat === cat && old ? old.scrollTop : 0;
+    box.innerHTML = html; setHTML = html; setCat = cat;
+    const rowsEl = box.querySelector('.rows');
+    if (rowsEl) rowsEl.scrollTop = top;
+    const fe = fi >= 0 ? box.querySelectorAll('.srow')[fi] : box.querySelectorAll('.cats [data-f]')[cat];
+    if (fe) fe.classList.add('f');                     /* focused from its first frame: nothing fades in */
+  }
+  if (!was) { showScreen('settings'); chrome(true, false); setBg('', 'none'); }
   const s = $('#settings');
   const left = [...s.querySelectorAll('.cats [data-f]')], right = [...s.querySelectorAll('.srow')];
   /* two columns: the nav grid is column-major (rows = list items, col 0 = categories, col 1 = options) */
@@ -1514,10 +1524,16 @@ function enterSettings(opts = {}) {
   };
   NAV.id = 'settings'; NAV.pane = opts.pane ? 1 : 0; NAV.right = right; NAV.ri = opts.ri || 0;
   if (NAV.pane && right.length) NAV.rows = [right], NAV.c = Math.min(NAV.ri, right.length - 1);
-  requestAnimationFrame(() => applyFocus());
+  applyFocus();
   $('#safe').classList.toggle('on', CATS[cat] === 'Pantalla' && !!NAV.pane && NAV.c === 0);
   hints([['A', 'Elegir'], ['B', 'Volver']]);
 }
+/* 3.1.0-rc10: Ajustes is drawn again only when what it shows changed. Until then every step up or down,
+   and every refresh (the USB look every 10 s, the network, Steam's answers), rebuilt the whole screen:
+   the focused row lost its plate for a frame and faded it in again, and a scrolled list jumped to the top
+   and back ("a veces parpadea"). Now the same HTML keeps the same elements; a new one keeps the list's
+   scroll and is drawn with the focus already on its row (no fade from nothing). */
+let setHTML = '', setCat = -1;
 function settingsMove(dir) {
   const inPane = NAV.pane === 1;
   if (!inPane) {
@@ -1533,7 +1549,7 @@ function settingsMove(dir) {
   if (dir === 'up' || dir === 'down') {
     const n = NAV.c + (dir === 'up' ? -1 : 1);
     if (n < 0 || n >= NAV.rows[0].length) return play('edge');
-    play('nav'); return enterSettings({ pane: true, ri: n });
+    play('nav'); return enterSettings({ pane: true, ri: n });   /* same HTML: only the focus moves */
   }
   if (r && r.key) return adjust(r.key, dir === 'left' ? -1 : 1, NAV.c);
   if (dir === 'left') { play('back'); return enterSettings(); }
@@ -1877,7 +1893,20 @@ function openDlg(html, handlers, noButtons, solid) {
   if (btns.length) requestAnimationFrame(() => { line.classList.remove('off'); applyFocus(); });
   if (btns.length) hints([['A', 'Elegir'], ...(handlers.onB ? [['B', 'Volver']] : [])]);
 }
-function closeDlg() { $('#dlg').classList.remove('on'); DLG = null; dlgPrev = null; }
+let dlgLast = null;
+function closeDlg() { $('#dlg').classList.remove('on'); if (dlgPrev) dlgLast = dlgPrev; DLG = null; dlgPrev = null; }
+/* rc10: a dialog closed by code that then took no screen back left STONE on 'dlg' with no dialog: the
+   console's report (15-11-2026) has "Cannot read properties of null (reading 'onB')" and the controller
+   did nothing until something else redrew. Any key then brings back the screen the dialog came from. */
+function dlgRecover() {
+  const s = (dlgLast && dlgLast.screen) || 'home';
+  play('back');
+  if (s === 'settings') return enterSettings({ pane: true, ri: NAV && NAV.pane ? NAV.c : 0 });
+  if (s === 'library') return enterLibrary();
+  if (s === 'detail' && G[curG]) return enterDetail(curG);
+  if (s === 'store' && typeof enterStore === 'function') return enterStore();
+  return enterHome();
+}
 
 /* ---------- POWER ---------- */
 let powerFrom = 'home';
@@ -1989,6 +2018,7 @@ function act(a) {
     return;
   }
   if (S.screen === 'dlg') {
+    if (!DLG) return dlgRecover();
     if (dirs.includes(a)) return move(a);
     if (a === 'a') return DLG.onA(focusEl());
     if (a === 'b' && DLG.onB) return DLG.onB();

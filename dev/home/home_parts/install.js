@@ -97,10 +97,7 @@ function dlShow() {
     b.lastChild.firstChild.style.width = d.progress == null ? '' : `${Math.max(2, Math.min(100, d.progress * 100)).toFixed(1)}%`;
   });
   /* the status at the top right: the download in progress, whatever screen is open */
-  const act = Object.values(DL.at).find(d => d.stage !== 'queued' && d.stage !== 'paused') || Object.values(DL.at)[0];
-  let chip = $('#dlst');
-  if (!chip && act && $('#status')) { chip = document.createElement('span'); chip.id = 'dlst'; $('#status').insertBefore(chip, $('#clock')); }
-  if (chip) { chip.hidden = !act; if (act) chip.textContent = `↓ ${dlPct(act) || (DL_STAGE[act.stage] || '').toLowerCase()}`; }
+  actPaint();                        /* rc10: one activity indicator for everything (activity.js) */
   /* a game that Steam updates before opening it */
   if (S.launching !== null && G[S.launching]) {
     const g = G[S.launching], d = DL.at[g.appid], gm = $('#game');

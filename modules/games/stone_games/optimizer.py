@@ -734,6 +734,16 @@ class Engine:
         left = self.ov.restore_all()
         if left:
             out["overrides"] = left
+        # OptiScaler that STONE put in an installer folder (rc9 and before): taken out, so that "Instalar"
+        # puts it next to the game. STONE's own recorded files only; the person's files are never touched.
+        try:
+            from . import install
+            for appid in install.misplaced():
+                r = install.uninstall(appid)
+                out.setdefault("misplaced_optiscaler", {})[appid] = r.get("removed")
+                self._event("optiscaler_misplaced", appid=appid, removed=r.get("removed"))
+        except (OSError, ValueError) as e:
+            out["misplaced_error"] = str(e)
         return out
 
     def status(self):
@@ -917,5 +927,11 @@ class ProcWatch:
             except OSError:
                 continue
             if argv and os.path.basename(argv[0]) == "reaper" and "SteamLaunch" in argv[1:3] and f"AppId={appid}" in argv[1:6]:
+                if "Install=1" in argv[1:6]:
+                    # the game's install script (DirectX, VC++...), run by Steam before the game with the
+                    # same reaper: `reaper SteamLaunch AppId=200260 Install=1 -- ... iscriptevaluator.exe`.
+                    # Until 3.1.0-rc9 STONE took it for the game and its end for a crash 6 s in
+                    # (the console's report, 15-11-2026: Batman's look turned off for nothing).
+                    continue
                 return True
         return False

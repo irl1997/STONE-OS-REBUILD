@@ -60,7 +60,8 @@ function netRows() {
 /* Every network change: the status, the list and the status icon are read again. */
 function netRun(method, args, ok, ri, onError) {
   toast('Un momento…', false);
-  return Bridge.call(method, ...args).then(() => { if (ok) toast(ok, false); return true; },
+  busy('net', method === 'net.wifiConnect' ? `Conectando a ${args[0]}` : 'Cambiando la red');
+  return Bridge.call(method, ...args).finally(() => busy('net')).then(() => { if (ok) toast(ok, false); return true; },
     e => { const m = (e && e.message) || 'No se pudo'; if (onError && onError(m)) return false; play('error'); toast(m, false); return false; })
     .then(r => { delete CX.net; delete CX.wifi; netIconKick(); if (S.screen !== 'game' && S.screen !== 'off' && !$('#dlg').classList.contains('on')) enterSettings({ pane: true, ri }); return r; });
 }

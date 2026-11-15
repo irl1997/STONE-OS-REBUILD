@@ -246,33 +246,23 @@ function applyRender() {
 /* BUSCAR ACTUALIZACIONES (3.1.0-rc2): uupd checks, downloads and stages the new image now
    (system.update_now); it is applied at the next restart. Bazzite's deck images leave the automatic
    check off and wait for Steam's Game Mode to ask, which the STONE session never shows. */
-let updT = 0;
 function updRow() {
-  const u = S.info && S.info.updating;
+  const i = S.info && S.info.updating, u = S.upd || i;
   if (!u) return { l: 'Buscar actualizaciones', s: 'Esta imagen no tiene servicio de actualización', v: '—' };
-  if (u.running || S.updAsked) return { l: 'Buscando y descargando…', s: 'Puedes seguir usando la consola. Al terminar, aquí aparece Reiniciar y actualizar', v: '' };
+  if (u.running || S.updAsked) {
+    /* rc10: what uupd is doing and how far (activity.js reads its own progress records) */
+    const p = u.progress;
+    return { l: p && p.overall != null ? `Actualizando · ${p.overall} %` : 'Buscando una versión nueva…',
+      s: p ? `${p.title}${p.description ? ': ' + p.description : ''}. Puedes seguir usando la consola` : 'Puedes seguir usando la consola. Al terminar, aquí aparece Reiniciar y actualizar',
+      v: '', busy: true };
+  }
   return { l: 'Buscar actualizaciones', s: u.result && u.result !== 'success' ? 'La última búsqueda no terminó bien: vuelve a intentarlo' : 'Busca una versión nueva de STONE OS y la descarga ahora', v: 'Buscar', act: 'updnow' };
 }
 function updateNow(ri) {
   if (!needNet('buscar actualizaciones')) return;
   play('select');
-  Sys.updateNow().then(() => { S.updAsked = Date.now(); toast('Buscando una versión nueva de STONE OS…', false); enterSettings({ pane: true, ri }); updPoll(ri); },
+  Sys.updateNow().then(() => { S.updAsked = Date.now(); toast('Buscando una versión nueva de STONE OS…', false); enterSettings({ pane: true, ri }); updWatch(); },
     e => { play('error'); toast(e && e.code === 'Unsupported' ? 'Esta imagen no tiene servicio de actualización' : 'No se pudo empezar a buscar', false); });
-}
-function updPoll(ri) {
-  clearTimeout(updT);
-  updT = setTimeout(async () => {
-    const i = await Sys.info().catch(() => null);
-    if (i) S.info = i;
-    const u = i && i.updating, dep = i && i.deployments;
-    const done = !u || (!u.running && Date.now() - S.updAsked > 6000);
-    if (done) S.updAsked = 0;
-    if (S.screen === 'settings' && CATS[cat] === 'Actualizaciones') enterSettings({ pane: !!(NAV && NAV.pane), ri: NAV && NAV.pane ? Math.min(NAV.c, ri) : 0 });
-    if (!done) return updPoll(ri);
-    if (dep && dep.staged) { play('notify'); longToast(`Actualización lista: ${dep.staged.version || 'versión nueva'}. Ajustes → Actualizaciones → Reiniciar y actualizar`, 9000); }
-    else if (u && u.result && u.result !== 'success') { play('error'); toast('No se pudo comprobar. Revisa la conexión y vuelve a intentarlo', false); }
-    else toast('Ya tienes la última versión de STONE OS', false);
-  }, 5000);
 }
 /* Bazzite checks for a new image by itself and leaves it ready for the next restart (M01). */
 function updTimerText(u) {

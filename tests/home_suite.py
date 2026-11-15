@@ -560,12 +560,23 @@ def P04_automatic_update_timer_first_loaded_one_is_reported():
     assert system.update_timer(lambda u: {"LoadState": "not-found"}) is None
     assert system.update_timer(get, timers=("rpm-ostreed-automatic.timer",)) is None
     # Buscar actualizaciones (3.1.0-rc2): the first loaded uupd service, running or with its last result
-    svc = {"uupd-manual.service": {"LoadState": "loaded", "ActiveState": "activating", "Result": "success"}}
-    assert system.update_service(svc.get) == {"unit": "uupd-manual.service", "running": True, "result": "success"}
+    svc = {"uupd-manual.service": {"LoadState": "loaded", "ActiveState": "activating", "Result": "success", "ActiveEnterTimestamp": 1_800_000_000_000_000}}
+    assert system.update_service(svc.get) == {"unit": "uupd-manual.service", "running": True, "result": "success", "since": 1_800_000_000}
     svc["uupd-manual.service"] = {"LoadState": "not-found"}
     svc["uupd.service"] = {"LoadState": "loaded", "ActiveState": "inactive", "Result": "exit-code"}
-    assert system.update_service(svc.get) == {"unit": "uupd.service", "running": False, "result": "exit-code"}
+    assert system.update_service(svc.get) == {"unit": "uupd.service", "running": False, "result": "exit-code", "since": None}
     assert system.update_service(lambda u: None) is None
+    # 3.1.0-rc10: uupd's own progress records (--json) say what it does and how far, for the activity ring
+    seen = []
+    journal = ('Starting uupd-manual.service\n'
+               '{"time":"t","level":"INFO","msg":"Updating","module":"system","status":"starting","title":"System","description":"System Updates","progress":0,"total":3,"step_progress":0,"overall":0}\n'
+               'not json\n'
+               '{"time":"t","level":"INFO","msg":"Updating","module":"flatpak","status":"running","title":"Flatpak","description":"Flatpak Apps","progress":1,"total":3,"step_progress":0,"overall":33.4}\n')
+    p = system.update_progress("uupd-manual.service", 1_800_000_000, run=lambda argv: (seen.append(argv), journal)[1])
+    assert p == {"module": "flatpak", "title": "Aplicaciones", "description": "actualizando las aplicaciones y los emuladores (Flatpak)",
+                 "overall": 33, "step": 1, "total": 3}, p
+    assert seen[0][-2:] == ["--since", "@1800000000"] and "-u" in seen[0]
+    assert system.update_progress("uupd.service", None, run=lambda argv: "") is None
 
 
 # ---------------------------------------------------------------- host request table

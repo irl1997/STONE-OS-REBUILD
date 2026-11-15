@@ -195,8 +195,56 @@ def update_service(get_props, units=UPDATE_SERVICES):
         if not p or p.get("LoadState") != "loaded":
             continue
         return {"unit": unit, "running": p.get("ActiveState") in ("activating", "active", "reloading", "deactivating"),
-                "result": p.get("Result") or None}
+                "result": p.get("Result") or None, "since": _usec(p.get("ActiveEnterTimestamp")) or _usec(p.get("InactiveExitTimestamp"))}
     return None
+
+
+# uupd's own words while it works (3.1.0-rc10: "cuando descargo las actualizaciones no hay nada que me
+# señale que se está descargando"). Started with --json, uupd writes one JSON record per step to its
+# unit's journal (ublue-os/uupd, pkg/percent/progressmanager.go, ReportStatusChange):
+#   {"msg":"Updating","module":"system","status":"running","title":"System","description":"...",
+#    "progress":0,"total":3,"step_progress":0,"overall":12.5}
+UPDATE_MODULES = {"system": ("Sistema", "descargando e instalando la imagen nueva de STONE OS"),
+                  "flatpak": ("Aplicaciones", "actualizando las aplicaciones y los emuladores (Flatpak)"),
+                  "distrobox": ("Contenedores", "actualizando los contenedores"),
+                  "brew": ("Herramientas", "actualizando las herramientas de la consola")}
+
+
+def _journal(argv):
+    try:
+        r = subprocess.run(argv, capture_output=True, text=True, timeout=8)
+        return r.stdout or ""
+    except (OSError, subprocess.SubprocessError):
+        return ""
+
+
+def update_progress(unit, since=None, run=_journal):
+    """{"module", "title", "description", "overall" (0-100), "step", "total"} of uupd's latest step in
+    this run, or None (no record yet, or its journal cannot be read)."""
+    argv = ["journalctl", "--no-pager", "-o", "cat", "-n", "300", "-u", unit]
+    argv += ["--since", f"@{int(since)}"] if since else ["--since", "-3h"]
+    last = None
+    for line in run(argv).splitlines():
+        line = line.strip()
+        if not line.startswith("{"):
+            continue
+        try:
+            d = json.loads(line)
+        except ValueError:
+            continue
+        if isinstance(d, dict) and d.get("msg") == "Updating":
+            last = d
+    if not last:
+        return None
+    module = str(last.get("module") or str(last.get("title") or "")).lower()
+    try:
+        overall = max(0, min(100, round(float(last.get("overall")))))
+    except (TypeError, ValueError):
+        overall = None
+    title, text = UPDATE_MODULES.get(module, (str(last.get("title") or "")[:40], str(last.get("description") or "")[:120]))
+    return {"module": module, "title": title, "description": text, "overall": overall,
+            "step": last.get("progress") if isinstance(last.get("progress"), int) else None,
+            "total": last.get("total") if isinstance(last.get("total"), int) else None}
 
 
 class System:
@@ -260,7 +308,7 @@ class System:
         path = bus.call_sync(SD[0], SD[1], "org.freedesktop.systemd1.Manager", "LoadUnit", GLib.Variant("(s)", (unit,)),
                              GLib.VariantType("(o)"), Gio.DBusCallFlags.NONE, 5000, None).unpack()[0]
         out = {}
-        for iface, keys in (("org.freedesktop.systemd1.Unit", ("LoadState", "ActiveState")),
+        for iface, keys in (("org.freedesktop.systemd1.Unit", ("LoadState", "ActiveState", "ActiveEnterTimestamp", "InactiveExitTimestamp")),
                             ("org.freedesktop.systemd1.Service", ("Result",))):
             for k in keys:
                 try:
@@ -288,6 +336,18 @@ class System:
             except GLib.Error as e:
                 res = (None, "PermissionDenied" if "Access" in (Gio.DBusError.get_remote_error(e) or "") else "Unsupported", e.message)
             GLib.idle_add(lambda: (done(*res), False)[1])
+        threading.Thread(target=work, daemon=True).start()
+
+    def update_state(self, done):
+        """The update service now, and uupd's latest step while it runs (cheap: polled by Home)."""
+        def work():
+            try:
+                st = update_service(self._service_props)
+            except Exception:  # noqa: BLE001
+                st = None
+            if st and st["running"]:
+                st["progress"] = update_progress(st["unit"], st.get("since"))
+            GLib.idle_add(lambda: (done(st), False)[1])
         threading.Thread(target=work, daemon=True).start()
 
     def info(self, done):

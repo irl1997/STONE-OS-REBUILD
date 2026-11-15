@@ -44,7 +44,11 @@ HOSTS = ("api.github.com", "github.com", "objects.githubusercontent.com", "relea
 MAX_BYTES = 400 * 2**20
 # the release's own installer scripts and notes: never copied into a game (STONE installs it itself)
 SKIP_FILES = re.compile(r"^(setup_[^/]*\.(sh|bat|cmd|ps1)|[^/]*readme[^/]*\.(txt|md))$", re.I)
-SKIP_EXE = re.compile(r"(unins|crash|launcher|redist|setup|install|dxsetup|vc_|dotnet|ue4prereq|epicweb|eac|battleye|updater|helper|report)", re.I)
+# folders that hold installers, never the game (the console, 15-11-2026: Batman: Arkham Asylum got
+# OptiScaler in "redist", where the largest .exe was a redistributable installer)
+SKIP_DIRS = re.compile(r"^(_?commonredist|redist|redistributables?|directx|dxsetup|vcredist.*|physx.*|support|installers?|"
+                       r"__installer|_installer|prereq.*|dotnet.*|easyanticheat|battleye|eac)$", re.I)
+SKIP_EXE = re.compile(r"(unins|crash|launcher|redist|setup|install|dxsetup|vc_|dotnet|ue4prereq|epicweb|eac|battleye|updater|helper|report|physx)", re.I)
 PROXY_NAME = "winmm.dll"
 
 
@@ -216,6 +220,28 @@ def status():
 
 
 # ---- OptiScaler in a game ----------------------------------------------------------------------
+# What OptiScaler replaces: a game's own DLSS, FSR 2/3 or XeSS, recognised by their libraries (OptiScaler's
+# own documentation: it takes the inputs of one of these). Without any, it has nothing to work on: the
+# console (15-11-2026) got it in Batman: Arkham Asylum and Arkham City (2009 and 2011), which have none.
+UPSCALER_DLLS = ("nvngx_dlss.dll", "nvngx_dlssg.dll", "sl.interposer.dll", "libxess.dll", "libxess_dx11.dll",
+                 "amd_fidelityfx_dx12.dll", "amd_fidelityfx_vk.dll", "amd_fidelityfx_upscaler_dx12.dll",
+                 "ffx_fsr2_api_x64.dll", "ffx_fsr2_api_dx12_x64.dll", "ffx_fsr2_api_vk_x64.dll", "ffx_fsr3upscaler_x64.dll")
+
+
+def game_upscalers(folder, limit=40000):
+    """The upscaler libraries found in the game's folder (names, lower case)."""
+    found, n = set(), 0
+    for _d, dirs, files in os.walk(folder):
+        dirs[:] = [x for x in dirs if not SKIP_DIRS.match(x)]
+        for f in files:
+            n += 1
+            if f.lower() in UPSCALER_DLLS:
+                found.add(f.lower())
+        if n > limit:
+            break
+    return sorted(found)
+
+
 def find_exe_dir(folder):
     """The folder of the game's executable: where the largest game .exe is."""
     best = None
@@ -224,6 +250,7 @@ def find_exe_dir(folder):
     for d, dirs, files in os.walk(top):
         if d.count(os.sep) - base >= 5:
             dirs[:] = []
+        dirs[:] = [x for x in dirs if not SKIP_DIRS.match(x)]
         for f in files:
             if f.lower().endswith(".exe") and not SKIP_EXE.search(f):
                 try:
@@ -287,8 +314,9 @@ def install_plan(appid, facts, game):
     if clash:
         return {"ok": False, "error": "files with the same name already exist in the game folder: " + ", ".join(clash[:3])}
     rel_dir = os.path.relpath(exe_dir, facts["install_dir"])
+    ups = game_upscalers(facts["install_dir"])
     return {"ok": True, "component": {"tag": comp["tag"]}, "exe": exe, "folder": rel_dir if rel_dir != "." else "(carpeta del juego)",
-            "files": len(files), "_pairs": pairs, "_exe_dir": exe_dir}
+            "files": len(files), "upscalers": ups, "no_upscaler": not ups, "_pairs": pairs, "_exe_dir": exe_dir}
 
 
 def install_optiscaler(appid, facts, game):
@@ -347,6 +375,24 @@ def uninstall(appid):
         pass
     os.remove(_install_path(appid))
     return {"ok": True, "removed": removed}
+
+
+def misplaced():
+    """App ids where STONE put OptiScaler in an installer folder (until 3.1.0-rc9: "redist"), where the
+    game never loads it. Only STONE's own recorded installs are looked at."""
+    out = []
+    try:
+        names = os.listdir(installs_dir())
+    except OSError:
+        return out
+    for n in names:
+        if not n.endswith(".json") or not n[:-5].isdigit():
+            continue
+        rec = installed_by_stone(n[:-5])
+        parts = os.path.normpath(str((rec or {}).get("exe_dir", ""))).split(os.sep)
+        if rec and any(SKIP_DIRS.match(x) for x in parts[-4:]):
+            out.append(n[:-5])
+    return sorted(out)
 
 
 def helixsr_command():

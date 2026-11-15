@@ -33,9 +33,11 @@ function diagStart(ri, picked = new Set(), at = 0) {
 async function diagBuild(ri, symptoms) {
   play('select');
   const back = () => { closeDlg(); Bridge.call('diag.close').catch(() => {}); play('back'); enterSettings({ pane: true, ri }); };
-  openDlg(`<span class="st-cap">SALUD</span><h2>INFORME DE DIAGNÓSTICO</h2><p>Comprobando cada función y reuniendo los registros de STONE, de Steam y del sistema. Tarda unos segundos…</p>`, { onB: back }, true);
+  openDlg(`<span class="st-cap">SALUD</span><h2>INFORME DE DIAGNÓSTICO</h2><p><i class="spin" aria-hidden="true"></i>Comprobando cada función y reuniendo los registros de STONE, de Steam y del sistema. Tarda unos segundos…</p>`, { onB: back }, true);
   let r = null;
-  try { r = await Bridge.call('diag.build', symptoms); } catch (e) { closeDlg(); play('error'); toast('No se pudo hacer el informe: ' + ((e && e.message) || 'sin respuesta'), false); return enterSettings({ pane: true, ri }); }
+  busy('diag', 'Haciendo el informe');
+  try { r = await Bridge.call('diag.build', symptoms); } catch (e) { busy('diag'); closeDlg(); play('error'); toast('No se pudo hacer el informe: ' + ((e && e.message) || 'sin respuesta'), false); return enterSettings({ pane: true, ri }); }
+  busy('diag');
   diagShow(r, ri, back);
 }
 function diagShow(r, ri, back) {

@@ -910,7 +910,16 @@ body.dormant *,body.dormant *::before,body.dormant *::after{animation-play-state
 #detail .dl-bar{height:6px;margin-top:9px;border-radius:3px;background:rgb(255 255 255/.2);overflow:hidden}
 #detail .dl-bar i{display:block;height:100%;width:0;border-radius:3px;background:#fff;box-shadow:0 0 14px var(--accent-glow);transition:width .8s linear}
 #detail .dl-sub{margin-top:8px;font-size:17px;line-height:22px;color:var(--text-2);font-variant-numeric:tabular-nums}
-#dlst{font-variant-numeric:tabular-nums;white-space:nowrap}
+/* ACTIVIDAD (3.1.0-rc10, activity.js): a turning ring and what STONE is doing, on every screen */
+#actv{display:inline-flex;align-items:center;gap:10px;max-width:520px;font-variant-numeric:tabular-nums}
+#actv[hidden]{display:none}
+#actv .lbl{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:18px;letter-spacing:.02em}
+.spin{display:inline-block;flex:none;width:18px;height:18px;box-sizing:border-box;border-radius:50%;border:2.5px solid currentColor;
+  border-right-color:transparent;opacity:.9;animation:stone-spin .9s linear infinite;vertical-align:-3px}
+.srow .v .spin{margin-right:12px}
+#dlg .spin{width:26px;height:26px;border-width:3px;margin-right:14px;vertical-align:-6px}
+#stage.rm .spin{animation-duration:2.4s}
+@keyframes stone-spin{to{transform:rotate(360deg)}}
 /* Backgrounds: what must be enlarged a lot is softened (bgTune sets --bg-blur), and bright art gets a
    deeper shade under the text (--bg-dim). Without GPU nothing is filtered. */
 #stage .bg{inset:-16px;filter:blur(var(--bg-blur,0px))}
@@ -921,6 +930,23 @@ body.dormant *,body.dormant *::before,body.dormant *::after{animation-play-state
 #dlg .btns{gap:64px}
 #dlg .tech{font-family:"IBM Plex Mono","JetBrains Mono",monospace;font-size:15px;line-height:22px;color:var(--slate);word-break:break-word}
 #sfront.now{transition:none}
+/* DIALOGS (3.1.0-rc10). The console's owner: "el encuadre de los cuadros de diálogo a veces no respeta bien
+   los espacios". Every dialog started 200 px from the top whatever its height (a short one sat over the
+   covers with the screen empty below), appeared and vanished in one frame, and its blocks were 12, 17,
+   18, 25, 26 or 34 px apart depending on which rules met. Now: centred on the screen, a 160 ms fade,
+   one rhythm (24 px between blocks, the caption 10 px above its title, the buttons 36 px below the
+   rest) and a darker veil so what is behind does not compete. */
+#stage #dlg{display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity 160ms var(--e-step),visibility 0s linear 160ms}
+#stage #dlg.on{opacity:1;transition:opacity 160ms var(--e-step)}
+#stage.rm #dlg,#stage.rm #dlg.on{transition:none}
+#stage #dlg .box{position:relative;left:auto;top:auto;flex:none;max-height:860px;gap:24px}
+#stage #dlg.viewer .box{position:absolute;left:0;top:0}
+#stage #dlg .dim{opacity:.62}
+#stage #dlg.solid .dim{opacity:1}
+#stage #dlg .box > .st-cap{margin:0 0 -14px}
+#stage #dlg .box > .btns{margin-top:12px}
+#stage #dlg .box > p + p{margin-top:-6px}
+#stage #dlg .box > .slist{margin-top:-8px;margin-bottom:-8px}
 </style>
 
 <!-- LIQUID GLASS (cristal.css): the lens of the section bar and the status. Chromium bends what is behind them
@@ -1616,6 +1642,15 @@ function homeContext(el) {
     if (el.closest('.sys') == null || S.section !== 0) setBg(neutralBg, '');
   }
 }
+/* 3.1.0-rc10: a screen redrawn in place (keep: the library changed, a cover arrived) gets its focus before
+   its first frame. Until then the focus came a frame later: the focused card grew again from nothing, the
+   line slid in, and the game's details under it faded out and back in 600 ms later: the "parpadeo" seen
+   on the console whenever covers or downloads changed the library. */
+function focusInPlace() {
+  const el = focusEl();
+  if (el) el.classList.add('f');          /* before any layout read: no transition from "not focused" */
+  applyFocus();
+}
 function enterHome(opts = {}) {
   S.screen = 'home'; S.from = 'home';
   if (S.section === 1 || S.section === 4) S.section = 0;
@@ -1643,7 +1678,10 @@ function enterHome(opts = {}) {
   });
   NAV.id = 'home';
   if (NAV.c >= rows[NAV.r].length) NAV.c = rows[NAV.r].length - 1;
-  requestAnimationFrame(() => applyFocus({ slow: opts.slow }));
+  if (opts.keep) {
+    focusInPlace(); clearTimeout(metaT);
+    const hm = $('#hm'); if (hm && hm.textContent) hm.classList.add('on');     /* the details stay, no fade */
+  } else requestAnimationFrame(() => applyFocus({ slow: opts.slow }));
   hints([['A', S.section === 0 ? 'Abrir' : 'Elegir'], ['LB RB', 'Sección']]);
 }
 function homeA(el) {
@@ -2438,10 +2476,7 @@ function dlShow() {
     b.lastChild.firstChild.style.width = d.progress == null ? '' : `${Math.max(2, Math.min(100, d.progress * 100)).toFixed(1)}%`;
   });
   /* the status at the top right: the download in progress, whatever screen is open */
-  const act = Object.values(DL.at).find(d => d.stage !== 'queued' && d.stage !== 'paused') || Object.values(DL.at)[0];
-  let chip = $('#dlst');
-  if (!chip && act && $('#status')) { chip = document.createElement('span'); chip.id = 'dlst'; $('#status').insertBefore(chip, $('#clock')); }
-  if (chip) { chip.hidden = !act; if (act) chip.textContent = `↓ ${dlPct(act) || (DL_STAGE[act.stage] || '').toLowerCase()}`; }
+  actPaint();                        /* rc10: one activity indicator for everything (activity.js) */
   /* a game that Steam updates before opening it */
   if (S.launching !== null && G[S.launching]) {
     const g = G[S.launching], d = DL.at[g.appid], gm = $('#game');
@@ -2921,9 +2956,11 @@ function diagStart(ri, picked = new Set(), at = 0) {
 async function diagBuild(ri, symptoms) {
   play('select');
   const back = () => { closeDlg(); Bridge.call('diag.close').catch(() => {}); play('back'); enterSettings({ pane: true, ri }); };
-  openDlg(`<span class="st-cap">SALUD</span><h2>INFORME DE DIAGNÓSTICO</h2><p>Comprobando cada función y reuniendo los registros de STONE, de Steam y del sistema. Tarda unos segundos…</p>`, { onB: back }, true);
+  openDlg(`<span class="st-cap">SALUD</span><h2>INFORME DE DIAGNÓSTICO</h2><p><i class="spin" aria-hidden="true"></i>Comprobando cada función y reuniendo los registros de STONE, de Steam y del sistema. Tarda unos segundos…</p>`, { onB: back }, true);
   let r = null;
-  try { r = await Bridge.call('diag.build', symptoms); } catch (e) { closeDlg(); play('error'); toast('No se pudo hacer el informe: ' + ((e && e.message) || 'sin respuesta'), false); return enterSettings({ pane: true, ri }); }
+  busy('diag', 'Haciendo el informe');
+  try { r = await Bridge.call('diag.build', symptoms); } catch (e) { busy('diag'); closeDlg(); play('error'); toast('No se pudo hacer el informe: ' + ((e && e.message) || 'sin respuesta'), false); return enterSettings({ pane: true, ri }); }
+  busy('diag');
   diagShow(r, ri, back);
 }
 function diagShow(r, ri, back) {
@@ -2970,6 +3007,83 @@ Bridge.on('game', d => {
   const g = G.find(x => String(x.appid) === String(e.appid));
   toast(`STONE quitó el aspecto de ${g ? g.n : 'un juego'}: se cerró dos veces nada más empezar. Puedes volver a elegirlo en su página`, false);
 });
+/* ---------- ACTIVIDAD (3.1.0-rc10) ----------
+   The console's owner (15-11-2026): "cuando descargo las actualizaciones no hay nada que me señale que se
+   está descargando". Everything STONE (or Steam, for STONE) does in the background now shows in one
+   place, on every screen: a turning ring and what is happening, in the status at the top right.
+
+     STONE OS update   uupd running (update.state, its own JSON progress records: module and %)
+     Steam downloads   install.js (DL.at), the one moving first
+     emulators/ports   installing or updating (EMU_STATE)
+     USB copy          emugames.js (EG.copy)
+     anything else     busy(key, text) while it lasts: OptiScaler's download, the diagnostic report...
+
+   A row of Ajustes that is working shows the same ring (row.busy). The ring only turns: no text is
+   rewritten unless it changed, so nothing flickers. */
+const ACT = new Map();
+function busy(key, text) {
+  if (text) ACT.set(key, text); else ACT.delete(key);
+  actPaint();
+}
+function actItems() {
+  const out = [];
+  const u = S.upd;
+  if (u && u.running) out.push({ t: 'Actualizando STONE OS', p: u.progress && u.progress.overall != null ? u.progress.overall : null });
+  const dls = typeof DL !== 'undefined' ? Object.entries(DL.at || {}) : [];
+  const dl = dls.find(([, d]) => d.stage !== 'queued' && d.stage !== 'paused');
+  if (dl) {
+    const g = G.find(x => String(x.appid) === String(dl[0])), d = dl[1];
+    out.push({ t: `${DL_STAGE[d.stage] || 'Descargando'}${g ? ' ' + g.n : ''}`, p: d.progress != null ? Math.min(100, Math.floor(d.progress * 100)) : null });
+  }
+  if (typeof EMU_STATE !== 'undefined') {
+    Object.values(EMU_STATE).filter(d => d && ['installing', 'updating'].includes(d.state))
+      .forEach(d => out.push({ t: d.state === 'updating' ? 'Actualizando un emulador' : 'Instalando', p: d.pct != null ? Math.round(d.pct) : null }));
+  }
+  if (typeof EG !== 'undefined' && EG.copy) out.push({ t: 'Copiando juegos del USB', p: EG.copy.total ? Math.floor(EG.copy.done * 100 / EG.copy.total) : null });
+  ACT.forEach(t => out.push({ t, p: null }));
+  return out;
+}
+function actPaint() {
+  const st = $('#status');
+  if (!st) return;
+  const it = actItems();
+  let chip = $('#actv');
+  if (!chip) {
+    if (!it.length) return;
+    chip = document.createElement('span'); chip.id = 'actv';
+    chip.innerHTML = '<i class="spin" aria-hidden="true"></i><span class="lbl"></span>';
+    st.insertBefore(chip, $('#clock'));
+  }
+  chip.hidden = !it.length;
+  if (!it.length) return;
+  const a = it[0], txt = `${a.t}${a.p != null ? ` · ${a.p} %` : ''}${it.length > 1 ? ` · +${it.length - 1}` : ''}`;
+  if (chip.lastChild.textContent !== txt) chip.lastChild.textContent = txt;
+}
+/* STONE OS's update: looked at every 30 s (every 3 s while uupd works). Bazzite's own timer can start it
+   too, so it is followed whoever started it; the end says whether a new version is ready. */
+let updT = 0, updWas = false;
+async function updWatch() {
+  clearTimeout(updT);
+  const u = S.dormant ? S.upd : await Bridge.call('update.state').catch(() => null);
+  S.upd = u;
+  actPaint();
+  const running = !!(u && u.running);
+  if (S.screen === 'settings' && CATS[cat] === 'Actualizaciones') enterSettings({ pane: !!(NAV && NAV.pane), ri: NAV && NAV.pane ? NAV.c : 0 });
+  if (!running && (updWas || (S.updAsked && Date.now() - S.updAsked > 8000))) updEnded(u);   /* a quick "no update" too */
+  updWas = running;
+  updT = setTimeout(updWatch, running || S.updAsked ? 3000 : 30000);
+}
+async function updEnded(u) {
+  const i = await Sys.info().catch(() => null);
+  if (i) S.info = i;
+  const dep = i && i.deployments, asked = S.updAsked;
+  S.updAsked = 0;
+  if (S.screen === 'settings' && CATS[cat] === 'Actualizaciones') enterSettings({ pane: !!(NAV && NAV.pane), ri: NAV && NAV.pane ? NAV.c : 0 });
+  if (dep && dep.staged) { play('notify'); longToast(`Actualización lista: ${dep.staged.version || 'versión nueva'}. Ajustes → Actualizaciones → Reiniciar y actualizar`, 9000); }
+  else if (u && u.result && u.result !== 'success') { play('error'); toast('La actualización no terminó bien. Revisa la conexión y vuelve a intentarlo', false); }
+  else if (asked) toast('Ya tienes la última versión de STONE OS', false);
+}
+setTimeout(updWatch, 6000);
 
 /* ---------- LIBRARY ---------- */
 const FILTERS = ['Todos', 'Steam', 'Accesos directos', 'Favoritos', 'Por instalar', 'Sorpréndeme'];
@@ -3028,7 +3142,7 @@ function enterLibrary(opts = {}) {
   NAV.ensure = ensure;
   NAV.id = 'library';
   if (opts.keep && opts.sy) { grid.style.transition = 'none'; grid.dataset.sy = opts.sy; grid.style.transform = `translateY(${opts.sy}px)`; requestAnimationFrame(() => { grid.style.transition = ''; }); }
-  requestAnimationFrame(() => applyFocus());
+  if (opts.keep) focusInPlace(); else requestAnimationFrame(() => applyFocus());   /* rc10: redrawn in place, focused at once */
   hints([['A', 'Abrir'], ['LB RB', 'Sección'], ['B', 'Volver']]);
 }
 const LIB_ROW_H = 437, LIB_COL_W = (1728 - 5 * 40) / 6;
@@ -3143,12 +3257,19 @@ async function insOpti(g, i) {
     let plan = await Sys.gamePlan(g.appid, 'optiscaler');
     if (plan && plan.needs_download) {
       toast('Descargando OptiScaler del autor (GitHub)… puede tardar', false);
-      await Sys.components('optiscaler');
+      busy('opti', 'Descargando OptiScaler');
+      try { await Sys.components('optiscaler'); } finally { busy('opti'); }
       plan = await Sys.gamePlan(g.appid, 'optiscaler');
     }
     if (!plan || !plan.ok) { play('error'); return toast(((plan && plan.error) || 'No se pudo preparar') + '', false); }
-    if (!insConfirmed(key)) return toast(`OptiScaler ${plan.component.tag} → ${plan.folder} (${plan.files} archivos). Pulsa otra vez para instalar`, false);
-    const r = await Sys.gameInstall(g.appid); await imgLoad(g, i); experience(g, i);
+    /* rc10: a game without DLSS, FSR 2/3 or XeSS gives OptiScaler nothing to replace: said before installing */
+    if (!insConfirmed(key)) return plan.no_upscaler
+      ? longToast(`${g.n} no trae DLSS, FSR 2/3 ni XeSS: OptiScaler no tendrá nada que mejorar y puede impedir que el juego abra. Pulsa otra vez solo si quieres probarlo`, 8000)
+      : toast(`OptiScaler ${plan.component.tag} → ${plan.folder} (${plan.files} archivos). Pulsa otra vez para instalar`, false);
+    busy('opti', 'Instalando OptiScaler');
+    let r = null;
+    try { r = await Sys.gameInstall(g.appid); } finally { busy('opti'); }
+    await imgLoad(g, i); experience(g, i);
     toast(r && r.ok ? 'FSR (OptiScaler) instalado. Elige «Imagen: OptiScaler» para usarlo' : ((r && r.error) || 'No se pudo instalar'), false);
   } catch (e) { play('error'); toast('No se pudo: ' + ((e && e.message) || 'sin respuesta') + '. Si fue la descarga, revisa internet y vuelve a pulsar', false); }
 }
@@ -3806,33 +3927,23 @@ function applyRender() {
 /* BUSCAR ACTUALIZACIONES (3.1.0-rc2): uupd checks, downloads and stages the new image now
    (system.update_now); it is applied at the next restart. Bazzite's deck images leave the automatic
    check off and wait for Steam's Game Mode to ask, which the STONE session never shows. */
-let updT = 0;
 function updRow() {
-  const u = S.info && S.info.updating;
+  const i = S.info && S.info.updating, u = S.upd || i;
   if (!u) return { l: 'Buscar actualizaciones', s: 'Esta imagen no tiene servicio de actualización', v: '—' };
-  if (u.running || S.updAsked) return { l: 'Buscando y descargando…', s: 'Puedes seguir usando la consola. Al terminar, aquí aparece Reiniciar y actualizar', v: '' };
+  if (u.running || S.updAsked) {
+    /* rc10: what uupd is doing and how far (activity.js reads its own progress records) */
+    const p = u.progress;
+    return { l: p && p.overall != null ? `Actualizando · ${p.overall} %` : 'Buscando una versión nueva…',
+      s: p ? `${p.title}${p.description ? ': ' + p.description : ''}. Puedes seguir usando la consola` : 'Puedes seguir usando la consola. Al terminar, aquí aparece Reiniciar y actualizar',
+      v: '', busy: true };
+  }
   return { l: 'Buscar actualizaciones', s: u.result && u.result !== 'success' ? 'La última búsqueda no terminó bien: vuelve a intentarlo' : 'Busca una versión nueva de STONE OS y la descarga ahora', v: 'Buscar', act: 'updnow' };
 }
 function updateNow(ri) {
   if (!needNet('buscar actualizaciones')) return;
   play('select');
-  Sys.updateNow().then(() => { S.updAsked = Date.now(); toast('Buscando una versión nueva de STONE OS…', false); enterSettings({ pane: true, ri }); updPoll(ri); },
+  Sys.updateNow().then(() => { S.updAsked = Date.now(); toast('Buscando una versión nueva de STONE OS…', false); enterSettings({ pane: true, ri }); updWatch(); },
     e => { play('error'); toast(e && e.code === 'Unsupported' ? 'Esta imagen no tiene servicio de actualización' : 'No se pudo empezar a buscar', false); });
-}
-function updPoll(ri) {
-  clearTimeout(updT);
-  updT = setTimeout(async () => {
-    const i = await Sys.info().catch(() => null);
-    if (i) S.info = i;
-    const u = i && i.updating, dep = i && i.deployments;
-    const done = !u || (!u.running && Date.now() - S.updAsked > 6000);
-    if (done) S.updAsked = 0;
-    if (S.screen === 'settings' && CATS[cat] === 'Actualizaciones') enterSettings({ pane: !!(NAV && NAV.pane), ri: NAV && NAV.pane ? Math.min(NAV.c, ri) : 0 });
-    if (!done) return updPoll(ri);
-    if (dep && dep.staged) { play('notify'); longToast(`Actualización lista: ${dep.staged.version || 'versión nueva'}. Ajustes → Actualizaciones → Reiniciar y actualizar`, 9000); }
-    else if (u && u.result && u.result !== 'success') { play('error'); toast('No se pudo comprobar. Revisa la conexión y vuelve a intentarlo', false); }
-    else toast('Ya tienes la última versión de STONE OS', false);
-  }, 5000);
 }
 /* Bazzite checks for a new image by itself and leaves it ready for the next restart (M01). */
 function updTimerText(u) {
@@ -4042,7 +4153,8 @@ function netRows() {
 /* Every network change: the status, the list and the status icon are read again. */
 function netRun(method, args, ok, ri, onError) {
   toast('Un momento…', false);
-  return Bridge.call(method, ...args).then(() => { if (ok) toast(ok, false); return true; },
+  busy('net', method === 'net.wifiConnect' ? `Conectando a ${args[0]}` : 'Cambiando la red');
+  return Bridge.call(method, ...args).finally(() => busy('net')).then(() => { if (ok) toast(ok, false); return true; },
     e => { const m = (e && e.message) || 'No se pudo'; if (onError && onError(m)) return false; play('error'); toast(m, false); return false; })
     .then(r => { delete CX.net; delete CX.wifi; netIconKick(); if (S.screen !== 'game' && S.screen !== 'off' && !$('#dlg').classList.contains('on')) enterSettings({ pane: true, ri }); return r; });
 }
@@ -4174,13 +4286,23 @@ function romAct(r, ri) {
     e => toast((e && e.message) || 'No se pudo', false)).then(() => { cxReset('roms', 'Emuladores', ri); loadLibrary(); });
 }
 function enterSettings(opts = {}) {
+  const was = $('#settings').classList.contains('on');     /* on screen already (a dialog may be over it) */
   S.screen = 'settings';
-  const c = catRows();
-  $('#settings').innerHTML = `<div class="ttl">Ajustes</div>
+  const c = catRows(), fi = opts.pane ? Math.min(opts.ri || 0, c.rows.length - 1) : -1;
+  const html = `<div class="ttl">Ajustes</div>
     <div class="cats">${CATS.map((n, k) => `<span class="txt-f${k === cat ? ' cur' : ''}" data-f data-cat="${k}">${n}</span>`).join('')}</div>
     <div class="vr"></div>
-    <div class="pane"><div class="desc">${c.d}</div><div class="rows">${c.rows.map((r, k) => `<div class="srow" data-f data-row="${k}"><div class="l"><b>${r.l}</b><small>${r.s}</small></div><div class="v">${r.key && !['sound', 'hc', 'rm', 'tech'].includes(r.key) ? `<span class="ar">‹</span>${r.v}<span class="ar">›</span>` : r.v}</div></div>`).join('')}</div></div>`;
-  showScreen('settings'); chrome(true, false); setBg('', 'none');
+    <div class="pane"><div class="desc">${c.d}</div><div class="rows">${c.rows.map((r, k) => `<div class="srow" data-f data-row="${k}"><div class="l"><b>${r.l}</b><small>${r.s}</small></div><div class="v">${r.busy || /…$/.test(r.l) ? '<i class="spin" aria-hidden="true"></i>' : ''}${r.key && !['sound', 'hc', 'rm', 'tech'].includes(r.key) ? `<span class="ar">‹</span>${r.v}<span class="ar">›</span>` : r.v}</div></div>`).join('')}</div></div>`;
+  const box = $('#settings'), same = was && html === setHTML && box.firstChild;
+  if (!same) {
+    const old = box.querySelector('.rows'), top = was && setCat === cat && old ? old.scrollTop : 0;
+    box.innerHTML = html; setHTML = html; setCat = cat;
+    const rowsEl = box.querySelector('.rows');
+    if (rowsEl) rowsEl.scrollTop = top;
+    const fe = fi >= 0 ? box.querySelectorAll('.srow')[fi] : box.querySelectorAll('.cats [data-f]')[cat];
+    if (fe) fe.classList.add('f');                     /* focused from its first frame: nothing fades in */
+  }
+  if (!was) { showScreen('settings'); chrome(true, false); setBg('', 'none'); }
   const s = $('#settings');
   const left = [...s.querySelectorAll('.cats [data-f]')], right = [...s.querySelectorAll('.srow')];
   /* two columns: the nav grid is column-major (rows = list items, col 0 = categories, col 1 = options) */
@@ -4192,10 +4314,16 @@ function enterSettings(opts = {}) {
   };
   NAV.id = 'settings'; NAV.pane = opts.pane ? 1 : 0; NAV.right = right; NAV.ri = opts.ri || 0;
   if (NAV.pane && right.length) NAV.rows = [right], NAV.c = Math.min(NAV.ri, right.length - 1);
-  requestAnimationFrame(() => applyFocus());
+  applyFocus();
   $('#safe').classList.toggle('on', CATS[cat] === 'Pantalla' && !!NAV.pane && (catRows().rows[NAV.c] || {}).key === 'frame');
   hints([['A', 'Elegir'], ['B', 'Volver']]);
 }
+/* 3.1.0-rc10: Ajustes is drawn again only when what it shows changed. Until then every step up or down,
+   and every refresh (the USB look every 10 s, the network, Steam's answers), rebuilt the whole screen:
+   the focused row lost its plate for a frame and faded it in again, and a scrolled list jumped to the top
+   and back ("a veces parpadea"). Now the same HTML keeps the same elements; a new one keeps the list's
+   scroll and is drawn with the focus already on its row (no fade from nothing). */
+let setHTML = '', setCat = -1;
 function settingsMove(dir) {
   const inPane = NAV.pane === 1;
   if (!inPane) {
@@ -4211,7 +4339,7 @@ function settingsMove(dir) {
   if (dir === 'up' || dir === 'down') {
     const n = NAV.c + (dir === 'up' ? -1 : 1);
     if (n < 0 || n >= NAV.rows[0].length) return play('edge');
-    play('nav'); return enterSettings({ pane: true, ri: n });
+    play('nav'); return enterSettings({ pane: true, ri: n });   /* same HTML: only the focus moves */
   }
   if (r && r.key) return adjust(r.key, dir === 'left' ? -1 : 1, NAV.c);
   if (dir === 'left') { play('back'); return enterSettings(); }
@@ -4568,7 +4696,20 @@ function openDlg(html, handlers, noButtons, solid) {
   if (btns.length) requestAnimationFrame(() => { line.classList.remove('off'); applyFocus(); });
   if (btns.length) hints([['A', 'Elegir'], ...(handlers.onB ? [['B', 'Volver']] : [])]);
 }
-function closeDlg() { $('#dlg').classList.remove('on'); DLG = null; dlgPrev = null; }
+let dlgLast = null;
+function closeDlg() { $('#dlg').classList.remove('on'); if (dlgPrev) dlgLast = dlgPrev; DLG = null; dlgPrev = null; }
+/* rc10: a dialog closed by code that then took no screen back left STONE on 'dlg' with no dialog: the
+   console's report (15-11-2026) has "Cannot read properties of null (reading 'onB')" and the controller
+   did nothing until something else redrew. Any key then brings back the screen the dialog came from. */
+function dlgRecover() {
+  const s = (dlgLast && dlgLast.screen) || 'home';
+  play('back');
+  if (s === 'settings') return enterSettings({ pane: true, ri: NAV && NAV.pane ? NAV.c : 0 });
+  if (s === 'library') return enterLibrary();
+  if (s === 'detail' && G[curG]) return enterDetail(curG);
+  if (s === 'store' && typeof enterStore === 'function') return enterStore();
+  return enterHome();
+}
 
 /* ---------- POWER ---------- */
 let powerFrom = 'home';
@@ -4981,6 +5122,7 @@ function act(a) {
     return;
   }
   if (S.screen === 'dlg') {
+    if (!DLG) return dlgRecover();
     if ((a === 'left' || a === 'right') && DLG.onLR && DLG.onLR(a === 'left' ? -1 : 1, focusEl())) return;
     if (dirs.includes(a)) return move(a);
     if (a === 'a') return DLG.onA(focusEl());
@@ -5068,7 +5210,18 @@ window.addEventListener('blur', () => stopHold());
    and transitions are paused, the controller loop stops, the interface sound is suspended and
    live readings are unsubscribed. Chromium then produces no frames at all, so the GPU and CPU
    are the game's. Focus back (game closed, or STONE chosen from Steam) wakes it at once. */
+/* rc10: asleep only once the game has kept the focus for a moment. While a game opens, Steam's own
+   windows, the install script and the game take the focus in turns: the console's log (15-11-2026) has
+   "asleep" and "awake" three times within 13 ms at 16:53:01, each one pausing and resuming every
+   animation (a flash). Waking stays immediate. */
+let dormT = 0;
 function dormantCheck() {
+  const on = S.running !== null && S.running !== undefined && !document.hasFocus();
+  clearTimeout(dormT);
+  if (on && !S.dormant) { dormT = setTimeout(dormantApply, 1500); return; }
+  dormantApply();
+}
+function dormantApply() {
   const on = S.running !== null && S.running !== undefined && !document.hasFocus();
   if (!!S.dormant === on) return;
   S.dormant = on;

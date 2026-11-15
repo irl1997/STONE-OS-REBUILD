@@ -190,17 +190,22 @@ def check_display(journal, live):
     disp = live.get("display") or {}
     if disp.get("summary"):
         evidence.append(f"Pantalla: {disp['summary']}")
-    on = tl[-1][1] == "enabled" if tl else bool(steam_hdr)
-    if not tl and steam_hdr is None:
+    # what gamescope says NOW wins over the journal (the third report, 15-11-2026: HDR on at 8 s, off,
+    # on again at 219 s in the journal, while gamescope's own feedback said SDR and Steam's switch was off)
+    fb = atoms.get("GAMESCOPE_HDR_OUTPUT_FEEDBACK")
+    live = bool(fb[0]) if isinstance(fb, list) and fb else None
+    on = live if live is not None else (tl[-1][1] == "enabled" if tl else bool(steam_hdr))
+    if not tl and steam_hdr is None and live is None:
         return _check("display", name, NODATA, "No hay registro de gamescope sobre HDR ni respuesta de Steam.", evidence,
                       "Haz el informe con la consola recién encendida, sin reiniciar la sesión.")
     if on:
-        when = next((f" a los {s} s de empezar la sesión" for s, st, _ in tl if st == "enabled" and s is not None), "")
+        when = "" if live is not None and tl and tl[-1][1] != "enabled" else next((f" a los {s} s de empezar la sesión" for s, st, _ in tl if st == "enabled" and s is not None), "")
         return _check("display", name, WARN, f"La salida de vídeo pasó a HDR{when}, cuando Steam arrancó con «Activar HDR». La pantalla de "
                       "inicio de STONE está hecha en SDR: en una salida HDR gamescope la convierte y los colores pueden verse desvaídos. "
                       "Coincide con «los colores se deslavan al pasar unos segundos».", evidence,
                       "Para probarlo: Ajustes → Steam → «HDR en la salida de vídeo» en No, y mira si los colores dejan de cambiar.")
-    return _check("display", name, OK, "La salida está en SDR: la interfaz se ve con sus colores.", evidence)
+    return _check("display", name, OK, "La salida está en SDR ahora mismo (lo dice gamescope)" if live is not None
+                  else "La salida está en SDR: la interfaz se ve con sus colores.", evidence)
 
 
 # ---- games ----------------------------------------------------------------------------------------
@@ -208,7 +213,17 @@ def check_games(ev, logs, names):
     name = "Abrir juegos (JUGAR)"
     started = [e for e in ev if e.get("kind") == "game_started"]
     ends = [e for e in ev if e.get("kind") == "game_end"]
-    not_started = [e for e in ends if e.get("reason") == "not started"]
+    # a launch that "never started" because the console was turned off or asleep in between is not a
+    # failure: only a launch STONE saw time out (START_TIMEOUT_S, 3 min) while the console was on
+    prep = {}
+    not_started = []
+    for e in ev:
+        if e.get("kind") == "game_prepare":
+            prep[e.get("appid")] = e.get("t")
+        elif e.get("kind") == "game_end" and e.get("reason") == "not started":
+            t0 = prep.get(e.get("appid"))
+            if t0 is None or e.get("t") is None or e.get("t") - t0 < 600:
+                not_started.append(e)
     early = [e for e in ends if e.get("abnormal") and e.get("reason") == "exit"]
     errs = [m.group(0) for m in _LAUNCH_ERR.finditer(logs)]
     evidence = [f"{_game(names, e.get('appid'))}: {e.get('reason')} a los {e.get('seconds')} s" for e in ends[-6:]] + errs[-4:]
