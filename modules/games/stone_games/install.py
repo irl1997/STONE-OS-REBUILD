@@ -194,6 +194,14 @@ def fetch(kind, get_json=None, download=None, log=lambda m: None):
         shutil.rmtree(tmp, ignore_errors=True)
 
 
+def _ver(tag):
+    return tuple(int(x) for x in re.findall(r"\d+", str(tag or "")))
+
+
+def _newer(a, b):
+    return (a.get("time", 0), _ver(a.get("tag"))) > (b.get("time", 0), _ver(b.get("tag")))
+
+
 def have(kind):
     """The newest component of this kind already on the console, or None."""
     d = os.path.join(components_dir(), kind)
@@ -204,7 +212,8 @@ def have(kind):
             if os.path.isfile(p):
                 with open(p) as f:
                     r = json.load(f)
-                if best is None or r.get("time", 0) > best.get("time", 0):
+                # the latest download; the same second (a test, a quick second press): the higher version
+                if best is None or _newer(r, best):
                     best = dict(r, path=os.path.join(d, t))
     except (OSError, ValueError):
         return None
