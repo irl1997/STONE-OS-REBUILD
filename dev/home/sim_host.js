@@ -248,10 +248,10 @@ const Bridge = (() => {
     },
     openSteam: async () => ({ ok: true }), openSteamSettings: async () => ({ ok: true }), restart: async () => ({ ok: true }),
     power: async ([a]) => { toast(`Simulación: «${a === 'off' ? 'Apagar' : 'Reiniciar'}» no hace nada aquí`, false); return { ok: true }; },
-    systemInfo: () => ({ session: 'stone', release: { STONE_VERSION: '3.1.0-rc10 (simulación)', STONE_BASE_IMAGE: 'bazzite-deck', STONE_KERNEL: 'simulado', STONE_MESA: 'simulado', STONE_GOVERNOR_VERSION: 'simulado' },
+    systemInfo: () => ({ session: 'stone', release: { STONE_VERSION: '3.1.0-rc11 (simulación)', STONE_BASE_IMAGE: 'bazzite-deck', STONE_KERNEL: 'simulado', STONE_MESA: 'simulado', STONE_GOVERNOR_VERSION: 'simulado' },
       boot_time: Math.round(now - 3600),
-      deployments: { booted: { image: 'simulación', version: '3.1.0-rc10', timestamp: now },
-        staged: SIM.updUntil && Date.now() > SIM.updUntil ? { image: 'simulación', version: '3.1.0-rc10', timestamp: now } : null,
+      deployments: { booted: { image: 'simulación', version: '3.1.0-rc11', timestamp: now },
+        staged: SIM.updUntil && Date.now() > SIM.updUntil ? { image: 'simulación', version: '3.1.0-rc11', timestamp: now } : null,
         rollback: { image: 'simulación', version: '3.0.0-rc1', timestamp: now - 86400 } },
       updates: { unit: 'uupd.timer', enabled: true, last: Math.round(now - 3600 * 15), next: Math.round(now + 3600 * 9) },
       updating: { unit: 'uupd-manual.service', running: !!SIM.updUntil && Date.now() < SIM.updUntil, result: 'success' } }),
@@ -262,8 +262,13 @@ const Bridge = (() => {
       ['ok', 'Regulador de GPU', 'en marcha'], ['ok', 'Guardia de arranque', 'en espera'], ['ok', 'Caja negra', 'en espera'],
       ['ok', 'GPU', 'Sin errores en este arranque'], ['ok', 'Caja negra', 'Los arranques anteriores terminaron bien']] }; },
     'boot.mark': () => null, 'boot.history': () => [],
-    'game.look': () => ({ available: true, reason: null, chosen: null, looks: ['NATURAL', 'CLARITY', 'CINEMA', 'VIVID', 'RETRO'].map(l => ({ key: l.toLowerCase(), label: l, description: 'Aspecto ' + l })) }),
-    'game.setLook': () => ({ ok: true }),
+    'game.look': () => ({ available: true, reason: null, chosen: SIM.look || null, looks: [
+      ['natural', 'NATURAL', 'El juego tal cual, más limpio: nitidez sin realzar el grano'], ['clarity', 'CLARITY', 'Más detalle para juegos que se ven blandos'],
+      ['cinema', 'CINEMA', 'Película: más contraste, negros profundos, sombras frías y luces cálidas'], ['vivid', 'VIVID', 'Mucho más color y más contraste'],
+      ['retro', 'RETRO', 'Cálido y desvaído, para juegos antiguos y emuladores'], ['nextgen', 'NEXT-GEN', 'Aspecto de nueva generación: luces suaves, sombras profundas, color rico y bordes limpios'],
+      ['realistic', 'REALISTA', 'Fotográfico: colores naturales, contraste de cámara y detalle limpio'], ['clean', 'SIN GRANO', 'Para juegos que se ven granulados: quita ruido y bandas, sin tocar el color']]
+      .map(([key, label, description]) => ({ key, label, description })) }),
+    'game.setLook': ([, k]) => { SIM.look = k; return { ok: true, look: k }; },
     'game.frameGen': () => ({ available: false, reason: 'Solo con FSR (OptiScaler) instalado por STONE en este juego', on: false, experimental: true }), 'game.setFrameGen': ([, on]) => ({ ok: true, on }),
     'audio.status': () => ({ outputs: [{ id: 51, name: 'HDMI · Televisor', default: true }, { id: 52, name: 'Auriculares USB', default: false }], volume: 0.6, muted: false }),
     'audio.volume': () => ({ ok: true }), 'audio.default': () => ({ ok: true }),
@@ -291,7 +296,7 @@ const Bridge = (() => {
           emit('usb', { state: 'done', copied: 3, skipped: 0, error: null }); emit('library', { reason: 'changed' }); } };
       setTimeout(tick, 300); return { ok: true }; },
     'usb.cancel': () => ({ ok: true }),
-    'diag.build': async (symptoms = []) => {
+    'diag.build': async ([symptoms = []] = []) => {
       await wait(2500);
       const sym = { filters: 'Los filtros de imagen (Aspecto) no cambian nada', colors: 'Los colores se ven desvaídos o cambian solos' };
       const tie = id => (symptoms || []).filter(k => (k === 'filters' && id === 'filters') || (k === 'colors' && id === 'display')).map(k => sym[k]);
@@ -304,7 +309,7 @@ const Bridge = (() => {
         { id: 'controllers', name: 'Mandos', status: 'ok', detail: '1 mando conectado.' },
         { id: 'network', name: 'Wi-Fi e internet', status: 'ok', detail: 'Conectado y con internet.' },
         { id: 'emulators', name: 'Emuladores', status: 'nodata', detail: 'No hay emuladores instalados.' }].map(c => ({ ...c, symptom: tie(c.id) }));
-      return { name: 'stone-informe-20261114-1830.zip', size: 412000, summary: { version: '3.1.0-rc10 (simulación)', errors: 3,
+      return { name: 'stone-informe-20261114-1830.zip', size: 412000, summary: { version: '3.1.0-rc11 (simulación)', errors: 3,
         previous_boot_errors: 0, failed_services: [], steam_functions: { have: 27, missing: [] }, findings: [], last_errors: [], checks,
         symptoms: (symptoms || []).map(k => sym[k] || k), failing: 1 } };
     },

@@ -194,6 +194,14 @@ def fetch(kind, get_json=None, download=None, log=lambda m: None):
         shutil.rmtree(tmp, ignore_errors=True)
 
 
+def _ver(tag):
+    return tuple(int(x) for x in re.findall(r"\d+", str(tag or "")))
+
+
+def _newer(a, b):
+    return (a.get("time", 0), _ver(a.get("tag"))) > (b.get("time", 0), _ver(b.get("tag")))
+
+
 def have(kind):
     """The newest component of this kind already on the console, or None."""
     d = os.path.join(components_dir(), kind)
@@ -204,7 +212,8 @@ def have(kind):
             if os.path.isfile(p):
                 with open(p) as f:
                     r = json.load(f)
-                if best is None or r.get("time", 0) > best.get("time", 0):
+                # the latest download; the same second (a test, a quick second press): the higher version
+                if best is None or _newer(r, best):
                     best = dict(r, path=os.path.join(d, t))
     except (OSError, ValueError):
         return None
@@ -226,6 +235,13 @@ def status():
 UPSCALER_DLLS = ("nvngx_dlss.dll", "nvngx_dlssg.dll", "sl.interposer.dll", "libxess.dll", "libxess_dx11.dll",
                  "amd_fidelityfx_dx12.dll", "amd_fidelityfx_vk.dll", "amd_fidelityfx_upscaler_dx12.dll",
                  "ffx_fsr2_api_x64.dll", "ffx_fsr2_api_dx12_x64.dll", "ffx_fsr2_api_vk_x64.dll", "ffx_fsr3upscaler_x64.dll")
+
+
+# Upscaler libraries a game may already ship next to its .exe (Cyberpunk 2077: libxess.dll, libxess_dx11.dll,
+# libxess_fg.dll). OptiScaler's release carries its own copies; the game's are kept (never overwritten, never
+# removed by "Quitar"): OptiScaler loads whichever is in the folder. The console, 19-11-2026: "files with
+# the same name already exist in the game folder: libxess_fg.dll, libxess_dx11.dll, libxess.dll".
+KEEP_GAMES_OWN = re.compile(r"^(libxess[^/]*|amd_fidelityfx_[^/]*|nvngx_[^/]*|ffx_[^/]*|sl\.[^/]*)\.dll$", re.I)
 
 
 def game_upscalers(folder, limit=40000):
@@ -309,6 +325,8 @@ def install_plan(appid, facts, game):
             if SKIP_FILES.match(rel.replace(os.sep, "/")):
                 continue
             pairs.append((os.path.join(d, f), PROXY_NAME if rel.lower() == "optiscaler.dll" else rel))
+    kept = [f for _o, f in pairs if KEEP_GAMES_OWN.match(f.replace(os.sep, "/")) and os.path.lexists(os.path.join(exe_dir, f))]
+    pairs = [p for p in pairs if p[1] not in kept]
     files = [p[1] for p in pairs]
     clash = [f for f in files if os.path.lexists(os.path.join(exe_dir, f))]
     if clash:
@@ -316,7 +334,7 @@ def install_plan(appid, facts, game):
     rel_dir = os.path.relpath(exe_dir, facts["install_dir"])
     ups = game_upscalers(facts["install_dir"])
     return {"ok": True, "component": {"tag": comp["tag"]}, "exe": exe, "folder": rel_dir if rel_dir != "." else "(carpeta del juego)",
-            "files": len(files), "upscalers": ups, "no_upscaler": not ups, "_pairs": pairs, "_exe_dir": exe_dir}
+            "files": len(files), "kept": sorted(kept), "upscalers": ups, "no_upscaler": not ups, "_pairs": pairs, "_exe_dir": exe_dir}
 
 
 def install_optiscaler(appid, facts, game):

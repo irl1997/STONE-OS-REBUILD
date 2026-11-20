@@ -57,12 +57,33 @@ function lwAnswer(g, a) {
   if (a === 'cancel') { S.launching = null; S.running = null; clearTimeout(launchT); loadingOff(); returnHome(); }
   else { S.screen = 'game'; NAV = null; line.classList.add('off'); $('#hints').classList.add('hide'); }
 }
-function lwDlg(g, cap, text, buttons, extra) {
+/* Steam's launch options come as its own localisation keys ("#Steam_LaunchOption_Game"). The console
+   (19-11-2026) showed the key itself on a button that did not fit in the dialog. Steam's Spanish texts
+   for them (steamui/localization/steamui_spanish-json.js, client 1794536281); %1$s is the game. */
+const STEAM_LO = { Game: 'Jugar a «%1$s»', Application: 'Iniciar %1$s', SafeMode: 'Iniciar %1$s en modo seguro',
+  Multiplayer: 'Iniciar %1$s en modo multijugador', VR: 'Iniciar %1$s en modo SteamVR', openxr: 'Iniciar %1$s en modo OpenXR',
+  othervr: 'Iniciar %1$s en modo Oculus VR', osvr: 'Iniciar %1$s en modo OSVR', openvroverlay: 'Iniciar %1$s como superposición de SteamVR',
+  Server: 'Iniciar servidor dedicado', Editor: 'Iniciar editor del juego', Config: 'Iniciar herramienta de disposición de mandos',
+  Manual: 'Mostrar manual', Benchmark: 'Iniciar herramienta de benchmarking' };
+function steamLabel(label, gameName) {
+  const m = /^#?Steam_LaunchOption_(\w+)$/i.exec(String(label || '').trim());
+  if (!m) return String(label || '').replace(/^#/, '');
+  const k = Object.keys(STEAM_LO).find(x => x.toLowerCase() === m[1].toLowerCase());
+  return k ? STEAM_LO[k].replace('%1$s', gameName) : m[1].replace(/_/g, ' ');
+}
+/* list: Steam's choices as rows (the launch options can be long); the buttons below only cancel */
+function lwDlg(g, cap, text, buttons, extra, list) {
   play('notify');
-  openDlg(`<span class="st-cap">${cap}</span><h2>${esc(g.n.toUpperCase())}</h2>${extra || ''}<p>${esc(text)}</p>
+  const rows = list ? `<div class="slist">${list.map(([l], i) => `<span class="txt-f sres" data-f data-l="${i}">${esc(l)}</span>`).join('')}</div>` : '';
+  openDlg(`<span class="st-cap">${cap}</span><h2>${esc(g.n.toUpperCase())}</h2>${extra || ''}<p>${esc(text)}</p>${rows}
     <div class="btns">${buttons.map(([l], i) => `<span class="txt-f" data-f data-i="${i}">${esc(l)}</span>`).join('')}</div>`, {
-    onA: el => { const a = buttons[+el.dataset.i][1]; closeDlg(); lwAnswer(g, a); },
+    onA: el => { const a = el.dataset.l !== undefined ? list[+el.dataset.l][1] : buttons[+el.dataset.i][1]; closeDlg(); lwAnswer(g, a); },
     onB: () => { closeDlg(); lwAnswer(g, 'cancel'); } });
+  if (list) {
+    const d = $('#dlg');
+    NAV = mkNav([...d.querySelectorAll('.slist [data-f]')].map(e => [e]).concat([[...d.querySelectorAll('.btns [data-f]')]]), { place: (el, b) => ({ x: b.x, y: b.y + b.h + 4, w: b.w }) });
+    NAV.id = 'dlg'; requestAnimationFrame(() => applyFocus());
+  }
 }
 function lwAsk(g, st) {
   const r = st.request;
@@ -74,7 +95,8 @@ function lwAsk(g, st) {
   if (r === 'ShowLaunchOption') {
     const o = st.options || [];
     if (!o.length) return lwAnswer(g, '0');
-    return lwDlg(g, 'OPCIÓN DE INICIO', 'Este juego tiene varias formas de iniciarse. Elige una:', [...o.slice(0, 4).map(x => [x.label || `Opción ${x.index + 1}`, String(x.index)]), ['CANCELAR', 'cancel']]);
+    return lwDlg(g, 'OPCIÓN DE INICIO', 'Este juego tiene varias formas de iniciarse. Elige una:', [['CANCELAR', 'cancel']], '',
+      o.slice(0, 6).map(x => [x.label ? steamLabel(x.label, g.n) : `Opción ${x.index + 1}`, String(x.index)]));
   }
   if (r === 'ShowEula') {
     const e = (st.eulas || [])[0], qr = e ? `<div class="qrrow">${qrSvg(e.url, 220)}<div><p class="url">${esc(e.url.slice(8))}</p></div></div>` : '';

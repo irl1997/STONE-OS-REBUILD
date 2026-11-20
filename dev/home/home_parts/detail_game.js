@@ -107,7 +107,7 @@ async function insOpti(g, i) {
     /* rc10: a game without DLSS, FSR 2/3 or XeSS gives OptiScaler nothing to replace: said before installing */
     if (!insConfirmed(key)) return plan.no_upscaler
       ? longToast(`${g.n} no trae DLSS, FSR 2/3 ni XeSS: OptiScaler no tendrá nada que mejorar y puede impedir que el juego abra. Pulsa otra vez solo si quieres probarlo`, 8000)
-      : toast(`OptiScaler ${plan.component.tag} → ${plan.folder} (${plan.files} archivos). Pulsa otra vez para instalar`, false);
+      : toast(`OptiScaler ${plan.component.tag} → ${plan.folder} (${plan.files} archivos${plan.kept && plan.kept.length ? `; se conservan ${plan.kept.length} del propio juego (${plan.kept.join(', ')})` : ''}). Pulsa otra vez para instalar`, false);
     busy('opti', 'Instalando OptiScaler');
     let r = null;
     try { r = await Sys.gameInstall(g.appid); } finally { busy('opti'); }
@@ -161,13 +161,7 @@ function detailA(el) {
   if (a === 'look') {
     if (!g.look) { play('error'); return toast('Leyendo los aspectos…', false); }
     if (!g.look.available) { play('error'); return toast(g.look.reason || 'No disponible', false); }
-    play('nav');
-    const keys = [null, ...g.look.looks.map(l => l.key)], next = keys[(keys.indexOf(g.look.chosen ?? null) + 1) % keys.length];
-    return Sys.gameSetLook(g.appid, next).then(() => {
-      g.look.chosen = next; imgRefresh(g);
-      const l = g.look.looks.find(x => x.key === next);
-      toast(l ? `${l.label}: ${l.description}. Se aplica al jugar` : 'Original: sin cambios de aspecto', false);
-    }, e => { play('error'); toast('No se pudo cambiar: ' + ((e && e.message) || 'sin respuesta'), false); });
+    return lookPicker(g);
   }
   if (a === 'img' || a === 'pre') {
     if (!g.img) { play('error'); return toast('Leyendo las opciones de imagen…', false); }
@@ -355,6 +349,31 @@ async function xpDlg(g) {
   openDlg(`<h2>EXPERIENCIA</h2>${rows.join('')}<div class="btns"><span class="txt-f" data-f data-b="ok">VOLVER</span></div>`, { onA: back, onB: back });
 }
 
+/* ASPECTO (3.1.0-rc11): eight looks and Original in a list with what each one does, instead of going
+   through them one by one with A. The chosen one is marked; A chooses and goes back. */
+function lookPicker(g) {
+  play('select');
+  const fromGfx = S.screen === 'dlg' && $('#dlg h2') && $('#dlg h2').textContent === 'GRÁFICOS';
+  const back = () => { if (fromGfx) return gfxPanel(g, 2); closeDlg(); enterDetail(curG, { r: 1, c: 2 }); };
+  const items = [{ key: null, label: 'ORIGINAL', description: 'El juego tal cual, sin ningún filtro' }, ...g.look.looks];
+  const cur = g.look.chosen ?? null;
+  openDlg(`<span class="st-cap">GRÁFICOS · ${esc(g.n.toUpperCase())}</span><h2>ASPECTO</h2>
+    <div class="slist two looks">${items.map((l, i) => `<span class="txt-f sres look" data-f data-i="${i}"><span class="lbl">${esc(l.label)}${l.key === cur ? ' ✓' : ''}</span><small>${esc(l.description)}</small></span>`).join('')}</div>
+    <div class="btns"><span class="txt-f" data-f data-b="no">VOLVER</span></div>`, {
+    onA: el => {
+      if (el.dataset.b === 'no') { play('back'); return back(); }
+      const l = items[+el.dataset.i];
+      Sys.gameSetLook(g.appid, l.key).then(() => {
+        g.look.chosen = l.key; imgRefresh(g); play('select');
+        toast(l.key ? `${l.label}: se aplica la próxima vez que juegues` : 'Original: sin filtro', false); back();
+      }, e => { play('error'); toast('No se pudo cambiar: ' + ((e && e.message) || 'sin respuesta'), false); });
+    }, onB: () => { play('back'); back(); } });
+  const d = $('#dlg'), cells = [...d.querySelectorAll('.slist [data-f]')], rows = [];
+  for (let i = 0; i < cells.length; i += 2) rows.push(cells.slice(i, i + 2));
+  const at = Math.max(0, items.findIndex(l => l.key === cur));
+  NAV = mkNav(rows.concat([[...d.querySelectorAll('.btns [data-f]')]]), { r: Math.floor(at / 2), c: at % 2, place: (el, b) => ({ x: b.x, y: b.y + b.h + 4, w: b.w }) });
+  NAV.id = 'dlg'; requestAnimationFrame(() => applyFocus());
+}
 /* GRÁFICOS: the image options of one game in a list, each line with its value; A changes it in place. */
 const GFX = [['img', g => imgLabel(g)], ['pre', g => preLabel(g)], ['look', g => lookLabel(g)], ['fg', g => fgLabel(g)], ['ins', g => optLabel(g)], ['opz', g => optzLabel(g)]];
 function gfxPanel(g, at = 0) {

@@ -947,6 +947,15 @@ body.dormant *,body.dormant *::before,body.dormant *::after{animation-play-state
 #stage #dlg .box > .btns{margin-top:12px}
 #stage #dlg .box > p + p{margin-top:-6px}
 #stage #dlg .box > .slist{margin-top:-8px;margin-bottom:-8px}
+/* rc11: a button row that does not fit wraps inside the box (a Steam launch option ran out of it) */
+#stage #dlg .btns{flex-wrap:wrap;row-gap:16px}
+#stage #dlg .btns [data-f]{white-space:nowrap}
+/* rc11: ASPECTO, each look with what it does */
+#stage #dlg .box:has(.slist.looks){width:1180px}
+#stage #dlg .slist.looks{row-gap:10px}
+#stage #dlg .sres.look{flex-direction:column;align-items:flex-start;justify-content:flex-start;gap:4px;padding:12px 18px;margin:0 -18px;border-radius:14px}
+#stage #dlg .sres.look .lbl{letter-spacing:.14em;font-size:20px}
+#stage #dlg .sres.look small{white-space:normal;text-align:left;font-size:17px;line-height:24px}
 </style>
 
 <!-- LIQUID GLASS (cristal.css): the lens of the section bar and the status. Chromium bends what is behind them
@@ -2656,12 +2665,33 @@ function lwAnswer(g, a) {
   if (a === 'cancel') { S.launching = null; S.running = null; clearTimeout(launchT); loadingOff(); returnHome(); }
   else { S.screen = 'game'; NAV = null; line.classList.add('off'); $('#hints').classList.add('hide'); }
 }
-function lwDlg(g, cap, text, buttons, extra) {
+/* Steam's launch options come as its own localisation keys ("#Steam_LaunchOption_Game"). The console
+   (19-11-2026) showed the key itself on a button that did not fit in the dialog. Steam's Spanish texts
+   for them (steamui/localization/steamui_spanish-json.js, client 1794536281); %1$s is the game. */
+const STEAM_LO = { Game: 'Jugar a «%1$s»', Application: 'Iniciar %1$s', SafeMode: 'Iniciar %1$s en modo seguro',
+  Multiplayer: 'Iniciar %1$s en modo multijugador', VR: 'Iniciar %1$s en modo SteamVR', openxr: 'Iniciar %1$s en modo OpenXR',
+  othervr: 'Iniciar %1$s en modo Oculus VR', osvr: 'Iniciar %1$s en modo OSVR', openvroverlay: 'Iniciar %1$s como superposición de SteamVR',
+  Server: 'Iniciar servidor dedicado', Editor: 'Iniciar editor del juego', Config: 'Iniciar herramienta de disposición de mandos',
+  Manual: 'Mostrar manual', Benchmark: 'Iniciar herramienta de benchmarking' };
+function steamLabel(label, gameName) {
+  const m = /^#?Steam_LaunchOption_(\w+)$/i.exec(String(label || '').trim());
+  if (!m) return String(label || '').replace(/^#/, '');
+  const k = Object.keys(STEAM_LO).find(x => x.toLowerCase() === m[1].toLowerCase());
+  return k ? STEAM_LO[k].replace('%1$s', gameName) : m[1].replace(/_/g, ' ');
+}
+/* list: Steam's choices as rows (the launch options can be long); the buttons below only cancel */
+function lwDlg(g, cap, text, buttons, extra, list) {
   play('notify');
-  openDlg(`<span class="st-cap">${cap}</span><h2>${esc(g.n.toUpperCase())}</h2>${extra || ''}<p>${esc(text)}</p>
+  const rows = list ? `<div class="slist">${list.map(([l], i) => `<span class="txt-f sres" data-f data-l="${i}">${esc(l)}</span>`).join('')}</div>` : '';
+  openDlg(`<span class="st-cap">${cap}</span><h2>${esc(g.n.toUpperCase())}</h2>${extra || ''}<p>${esc(text)}</p>${rows}
     <div class="btns">${buttons.map(([l], i) => `<span class="txt-f" data-f data-i="${i}">${esc(l)}</span>`).join('')}</div>`, {
-    onA: el => { const a = buttons[+el.dataset.i][1]; closeDlg(); lwAnswer(g, a); },
+    onA: el => { const a = el.dataset.l !== undefined ? list[+el.dataset.l][1] : buttons[+el.dataset.i][1]; closeDlg(); lwAnswer(g, a); },
     onB: () => { closeDlg(); lwAnswer(g, 'cancel'); } });
+  if (list) {
+    const d = $('#dlg');
+    NAV = mkNav([...d.querySelectorAll('.slist [data-f]')].map(e => [e]).concat([[...d.querySelectorAll('.btns [data-f]')]]), { place: (el, b) => ({ x: b.x, y: b.y + b.h + 4, w: b.w }) });
+    NAV.id = 'dlg'; requestAnimationFrame(() => applyFocus());
+  }
 }
 function lwAsk(g, st) {
   const r = st.request;
@@ -2673,7 +2703,8 @@ function lwAsk(g, st) {
   if (r === 'ShowLaunchOption') {
     const o = st.options || [];
     if (!o.length) return lwAnswer(g, '0');
-    return lwDlg(g, 'OPCIÓN DE INICIO', 'Este juego tiene varias formas de iniciarse. Elige una:', [...o.slice(0, 4).map(x => [x.label || `Opción ${x.index + 1}`, String(x.index)]), ['CANCELAR', 'cancel']]);
+    return lwDlg(g, 'OPCIÓN DE INICIO', 'Este juego tiene varias formas de iniciarse. Elige una:', [['CANCELAR', 'cancel']], '',
+      o.slice(0, 6).map(x => [x.label ? steamLabel(x.label, g.n) : `Opción ${x.index + 1}`, String(x.index)]));
   }
   if (r === 'ShowEula') {
     const e = (st.eulas || [])[0], qr = e ? `<div class="qrrow">${qrSvg(e.url, 220)}<div><p class="url">${esc(e.url.slice(8))}</p></div></div>` : '';
@@ -3265,7 +3296,7 @@ async function insOpti(g, i) {
     /* rc10: a game without DLSS, FSR 2/3 or XeSS gives OptiScaler nothing to replace: said before installing */
     if (!insConfirmed(key)) return plan.no_upscaler
       ? longToast(`${g.n} no trae DLSS, FSR 2/3 ni XeSS: OptiScaler no tendrá nada que mejorar y puede impedir que el juego abra. Pulsa otra vez solo si quieres probarlo`, 8000)
-      : toast(`OptiScaler ${plan.component.tag} → ${plan.folder} (${plan.files} archivos). Pulsa otra vez para instalar`, false);
+      : toast(`OptiScaler ${plan.component.tag} → ${plan.folder} (${plan.files} archivos${plan.kept && plan.kept.length ? `; se conservan ${plan.kept.length} del propio juego (${plan.kept.join(', ')})` : ''}). Pulsa otra vez para instalar`, false);
     busy('opti', 'Instalando OptiScaler');
     let r = null;
     try { r = await Sys.gameInstall(g.appid); } finally { busy('opti'); }
@@ -3319,13 +3350,7 @@ function detailA(el) {
   if (a === 'look') {
     if (!g.look) { play('error'); return toast('Leyendo los aspectos…', false); }
     if (!g.look.available) { play('error'); return toast(g.look.reason || 'No disponible', false); }
-    play('nav');
-    const keys = [null, ...g.look.looks.map(l => l.key)], next = keys[(keys.indexOf(g.look.chosen ?? null) + 1) % keys.length];
-    return Sys.gameSetLook(g.appid, next).then(() => {
-      g.look.chosen = next; imgRefresh(g);
-      const l = g.look.looks.find(x => x.key === next);
-      toast(l ? `${l.label}: ${l.description}. Se aplica al jugar` : 'Original: sin cambios de aspecto', false);
-    }, e => { play('error'); toast('No se pudo cambiar: ' + ((e && e.message) || 'sin respuesta'), false); });
+    return lookPicker(g);
   }
   if (a === 'img' || a === 'pre') {
     if (!g.img) { play('error'); return toast('Leyendo las opciones de imagen…', false); }
@@ -3514,6 +3539,31 @@ async function xpDlg(g) {
   openDlg(`<h2>EXPERIENCIA</h2>${rows.join('')}<div class="btns"><span class="txt-f" data-f data-b="ok">VOLVER</span></div>`, { onA: back, onB: back });
 }
 
+/* ASPECTO (3.1.0-rc11): eight looks and Original in a list with what each one does, instead of going
+   through them one by one with A. The chosen one is marked; A chooses and goes back. */
+function lookPicker(g) {
+  play('select');
+  const fromGfx = S.screen === 'dlg' && $('#dlg h2') && $('#dlg h2').textContent === 'GRÁFICOS';
+  const back = () => { if (fromGfx) return gfxPanel(g, 2); closeDlg(); enterDetail(curG, { r: 1, c: 2 }); };
+  const items = [{ key: null, label: 'ORIGINAL', description: 'El juego tal cual, sin ningún filtro' }, ...g.look.looks];
+  const cur = g.look.chosen ?? null;
+  openDlg(`<span class="st-cap">GRÁFICOS · ${esc(g.n.toUpperCase())}</span><h2>ASPECTO</h2>
+    <div class="slist two looks">${items.map((l, i) => `<span class="txt-f sres look" data-f data-i="${i}"><span class="lbl">${esc(l.label)}${l.key === cur ? ' ✓' : ''}</span><small>${esc(l.description)}</small></span>`).join('')}</div>
+    <div class="btns"><span class="txt-f" data-f data-b="no">VOLVER</span></div>`, {
+    onA: el => {
+      if (el.dataset.b === 'no') { play('back'); return back(); }
+      const l = items[+el.dataset.i];
+      Sys.gameSetLook(g.appid, l.key).then(() => {
+        g.look.chosen = l.key; imgRefresh(g); play('select');
+        toast(l.key ? `${l.label}: se aplica la próxima vez que juegues` : 'Original: sin filtro', false); back();
+      }, e => { play('error'); toast('No se pudo cambiar: ' + ((e && e.message) || 'sin respuesta'), false); });
+    }, onB: () => { play('back'); back(); } });
+  const d = $('#dlg'), cells = [...d.querySelectorAll('.slist [data-f]')], rows = [];
+  for (let i = 0; i < cells.length; i += 2) rows.push(cells.slice(i, i + 2));
+  const at = Math.max(0, items.findIndex(l => l.key === cur));
+  NAV = mkNav(rows.concat([[...d.querySelectorAll('.btns [data-f]')]]), { r: Math.floor(at / 2), c: at % 2, place: (el, b) => ({ x: b.x, y: b.y + b.h + 4, w: b.w }) });
+  NAV.id = 'dlg'; requestAnimationFrame(() => applyFocus());
+}
 /* GRÁFICOS: the image options of one game in a list, each line with its value; A changes it in place. */
 const GFX = [['img', g => imgLabel(g)], ['pre', g => preLabel(g)], ['look', g => lookLabel(g)], ['fg', g => fgLabel(g)], ['ins', g => optLabel(g)], ['opz', g => optzLabel(g)]];
 function gfxPanel(g, at = 0) {

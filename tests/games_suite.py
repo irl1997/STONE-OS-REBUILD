@@ -791,6 +791,19 @@ def G20_components_download_verify_install_uninstall():
         assert not os.path.exists(os.path.join(gdir, "winmm.dll")) and not os.path.exists(os.path.join(gdir, "D3D12_Optiscaler"))
         assert os.path.isfile(os.path.join(gdir, "Cyberpunk2077.exe"))              # the game's own files untouched
         assert not w.e.uninstall_image(CP)["ok"]
+        # the game's own upscaler libraries stay (Cyberpunk ships libxess*.dll); they are not copied over nor removed
+        opti2 = dict(opti, **{"OptiScaler/libxess.dll": b"MZnew", "OptiScaler/libxess_fg.dll": b"MZnew"})
+        gj2, dl2 = _fake_net("optiscaler", opti2, tag="v9.9.10")
+        install.fetch("optiscaler", gj2, dl2)
+        for n in ("libxess.dll", "libxess_fg.dll"):
+            with open(os.path.join(gdir, n), "wb") as f:
+                f.write(b"MZgame")
+        plan = w.e.install_plan(CP, "optiscaler")
+        assert plan["ok"] and plan["kept"] == ["libxess.dll", "libxess_fg.dll"] and plan["upscalers"] == ["libxess.dll"], plan
+        assert w.e.install_image(CP)["ok"] and open(os.path.join(gdir, "libxess.dll"), "rb").read() == b"MZgame"
+        assert w.e.uninstall_image(CP)["ok"] and open(os.path.join(gdir, "libxess_fg.dll"), "rb").read() == b"MZgame"
+        for n in ("libxess.dll", "libxess_fg.dll"):
+            os.remove(os.path.join(gdir, n))
         # never over existing files
         os.makedirs(os.path.join(gdir, "D3D12_Optiscaler"))
         with open(os.path.join(gdir, "D3D12_Optiscaler", "D3D12Core.dll"), "w") as f:
@@ -917,6 +930,41 @@ def G27_optiscaler_goes_next_to_the_game_never_in_an_installer_folder():
         out = w.e.recover()
         assert out["misplaced_optiscaler"] == {CP: 1} and not os.path.exists(os.path.join(redist, "winmm.dll"))
         assert install.misplaced() == [] and w.e.install_plan(CP, "optiscaler")["ok"]
+
+
+@test
+def G28_cancelled_launch_and_probe_again_after_the_launcher():
+    """The console's report (19-11-2026, 23:22): a launch option cancelled by the person showed as
+    "Steam no llegó a abrir" three minutes later; Cyberpunk was probed on its launcher (no Vulkan yet)."""
+    with World() as w:
+        rows = []
+        w.e.events = lambda kind, **d: rows.append(dict(d, kind=kind))
+        w.e.prepare(CP)
+        assert w.e.cancel(CP) is True
+        w.now += 3
+        res = w.e.tick()
+        assert res["reason"] == "cancelled" and not res["abnormal"] and w.e._session() is None
+        assert [e["reason"] for e in rows if e["kind"] == "game_end"] == ["cancelled"]
+        # probe: on the launcher at 25 s, in the game at 60 s: only the second is recorded
+        seen = iter([{"processes": 14, "vulkan_loaded": False, "vkbasalt_loaded": False},
+                     {"processes": 24, "vulkan_loaded": True, "vkbasalt_loaded": True}])
+        w.e.probe = lambda appid: next(seen)
+        w.e.prepare(CP)
+        w.running_set.add(CP)
+        w.now += 5
+        assert w.e.tick() == "started"
+        w.now += optimizer.PROBE_AFTER_S + 1
+        w.e.tick()
+        assert not [e for e in rows if e["kind"] == "game_effects"]
+        w.now += optimizer.PROBE_AGAIN_S[0]
+        w.e.tick()
+        eff = [e for e in rows if e["kind"] == "game_effects"]
+        assert len(eff) == 1 and eff[0]["vulkan_loaded"] is True
+        w.now += 600
+        w.e.tick()
+        assert len([e for e in rows if e["kind"] == "game_effects"]) == 1     # never again once in the game
+        w.running_set.discard(CP)
+        assert w.e.tick()["reason"] == "exit"
 
 
 @test
