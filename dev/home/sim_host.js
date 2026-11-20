@@ -346,9 +346,9 @@ const Bridge = (() => {
     'storage.status': async () => { await wait(400); return { libraries: [{ path: '/var/home/stone/.local/share/Steam', free: 412 * 2 ** 30, total: 476 * 2 ** 30, low: false }],
       downloads: [{ appid: '1091500', name: 'Cyberpunk 2077', downloaded: 3.2 * 2 ** 30, total: 12 * 2 ** 30, progress: 0.27, installed: true }],
       games: [{ appid: '1091500', name: 'Cyberpunk 2077', size: 71 * 2 ** 30, shader_cache: 1.4 * 2 ** 30, prefix: 0.3 * 2 ** 30 }], alerts: [] }; },
-    'store.search': async ([q]) => { await wait(700); if (/offline/.test(location.search)) bad('Unsupported', 'La tienda de Steam no responde (URLError): ¿hay conexión a internet?');
+    'store.search': async ([q]) => { await wait(700); if (/offline/.test(location.search)) bad('Unsupported', 'La tienda de Steam no responde. ¿Hay conexión a internet?');
       const w = q.toLowerCase(); return { results: STORE_ALL.filter(i => i.name.toLowerCase().includes(w)).concat(STORE_ALL.filter(i => !i.name.toLowerCase().includes(w)).slice(0, 2)).slice(0, 8).map(storeRow) }; },
-    'store.featured': async () => { await wait(600); if (/offline/.test(location.search)) bad('Unsupported', 'La tienda de Steam no responde (URLError): ¿hay conexión a internet?');
+    'store.featured': async () => { await wait(600); if (/offline/.test(location.search)) bad('Unsupported', 'La tienda de Steam no responde. ¿Hay conexión a internet?');
       return { sections: STORE_SECTIONS.map(([key, title, ids]) => ({ key, title, items: ids.map(id => storeRow(storeItem(id))) })) }; },
     'store.details': async ([appid]) => { await wait(500); const it = storeItem(appid); if (!it) bad('Unsupported', 'Steam no tiene ficha de tienda para este juego en tu región.');
       setTimeout(() => emit('art', { art: { [appid]: { capsule: false, hero: true, header: true } } }), 1200);

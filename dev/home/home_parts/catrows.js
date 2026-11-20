@@ -389,7 +389,7 @@ function cu40Dlg(ri) {
       onA: el => { if (el.dataset.b === 'no') return back(); play('select'); closeDlg(); cu40Run(el.dataset.b === 'test' ? 'test' : 'disable', ri); }, onB: back });
   }
   openDlg(`<h2>ACTIVAR 40 CU</h2>${CU40_WARN}<p>Se aplica al reiniciar.</p>
-    <div class="btns"><span class="txt-f" data-f data-b="yes">ACTIVAR</span><span class="txt-f" data-f data-b="no">CANCELAR</span></div>`, {
+    <div class="btns"><span class="txt-f" data-f data-b="yes">ACTIVAR</span><span class="txt-f" data-f data-def data-b="no">CANCELAR</span></div>`, {
     onA: el => { if (el.dataset.b !== 'yes') return back(); play('select'); closeDlg(); cu40Run('enable', ri); }, onB: back });
 }
 async function cu40Run(op, ri) {

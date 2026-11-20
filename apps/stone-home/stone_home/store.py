@@ -33,7 +33,13 @@ MAX = 20
 SECTIONS = (("specials", "Ofertas"), ("top_sellers", "Lo más vendido"), ("new_releases", "Novedades"),
             ("coming_soon", "Próximamente"))
 SECTION_MAX = 12
-OFFLINE = "La tienda de Steam no responde ({}): ¿hay conexión a internet?"
+# what the person reads has no exception names (3.1.0-rc12: "no responde (URLError)"); the log keeps it
+OFFLINE = "La tienda de Steam no responde. ¿Hay conexión a internet?"
+
+
+def _offline(e):
+    print(f"[stone] store: Steam did not answer ({e.__class__.__name__}: {e})", flush=True)
+    return {"error": OFFLINE}
 
 
 def _get(url, timeout=10):
@@ -118,7 +124,7 @@ def search(term, get=None, head=None):
     try:
         d = json.loads((get or _get)(url))
     except (OSError, ValueError) as e:
-        return {"error": OFFLINE.format(e.__class__.__name__)}
+        return _offline(e)
     out = []
     for it in (d.get("items") or [] if isinstance(d, dict) else []):
         if not isinstance(it, dict) or it.get("type") not in (None, "app") or not isinstance(it.get("id"), int) or it["id"] <= 0:
@@ -152,7 +158,7 @@ def featured(get=None):
     try:
         d = json.loads((get or _get)(FEATURED + "?" + urllib.parse.urlencode({"l": "spanish"})))
     except (OSError, ValueError) as e:
-        return {"error": OFFLINE.format(e.__class__.__name__)}
+        return _offline(e)
     out, seen = [], set()
     for key, title in SECTIONS:
         sec = d.get(key) if isinstance(d, dict) else None
@@ -182,7 +188,7 @@ def details(appid, get=None):
     try:
         d = json.loads((get or _get)(DETAILS + "?" + urllib.parse.urlencode({"appids": appid, "l": "spanish"})))
     except (OSError, ValueError) as e:
-        return {"error": OFFLINE.format(e.__class__.__name__)}
+        return _offline(e)
     node = d.get(appid) if isinstance(d, dict) else None
     data = node.get("data") if isinstance(node, dict) and node.get("success") else None
     if not isinstance(data, dict) or not isinstance(data.get("name"), str):

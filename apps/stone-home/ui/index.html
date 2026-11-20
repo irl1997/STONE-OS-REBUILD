@@ -984,6 +984,10 @@ body.dormant *,body.dormant *::before,body.dormant *::after{animation-play-state
 #stage.pano #home .ctx .meta{font-size:calc(23px * min(var(--ts), 1.3));max-width:1000px}
 #stage.pano #home .strata,#stage.pano #home .st-label.l2,#stage.pano #home .horizon{display:none}
 #stage.pano #home .sys{top:996px}
+/* the quick menu's four profiles: equal cells with room inside (3.1.0-rc12: PERFORMANCE filled its
+   cell edge to edge and pushed it wider than the other three) */
+#quick .opts{gap:6px}
+#quick .opts span{flex:1 1 0;min-width:0;padding:12px 4px;font-size:17px;letter-spacing:.04em;white-space:nowrap}
 </style>
 
 <!-- LIQUID GLASS (cristal.css): the lens of the section bar and the status. Chromium bends what is behind them
@@ -4285,7 +4289,7 @@ function cu40Dlg(ri) {
       onA: el => { if (el.dataset.b === 'no') return back(); play('select'); closeDlg(); cu40Run(el.dataset.b === 'test' ? 'test' : 'disable', ri); }, onB: back });
   }
   openDlg(`<h2>ACTIVAR 40 CU</h2>${CU40_WARN}<p>Se aplica al reiniciar.</p>
-    <div class="btns"><span class="txt-f" data-f data-b="yes">ACTIVAR</span><span class="txt-f" data-f data-b="no">CANCELAR</span></div>`, {
+    <div class="btns"><span class="txt-f" data-f data-b="yes">ACTIVAR</span><span class="txt-f" data-f data-def data-b="no">CANCELAR</span></div>`, {
     onA: el => { if (el.dataset.b !== 'yes') return back(); play('select'); closeDlg(); cu40Run('enable', ri); }, onB: back });
 }
 async function cu40Run(op, ri) {
@@ -4421,7 +4425,7 @@ async function cxAct(r, ri) {
     if (!d.paired) return run('bt.action', ['pair', d.mac], `${d.name}: emparejado`, 'bt', 'Bluetooth');
     const back = () => { closeDlg(); play('back'); enterSettings({ pane: true, ri }); };
     return openDlg(`<h2>${esc(d.name)}</h2><p>${d.connected ? 'Conectado' : 'Emparejado, sin conectar'}${d.battery != null ? ` · batería ${d.battery} %` : ''}</p>
-      <div class="btns"><span class="txt-f" data-f data-b="${d.connected ? 'disconnect' : 'connect'}">${d.connected ? 'DESCONECTAR' : 'CONECTAR'}</span><span class="txt-f" data-f data-b="forget">OLVIDAR</span><span class="txt-f" data-f data-b="no">VOLVER</span></div>`, {
+      <div class="btns"><span class="txt-f" data-f data-b="${d.connected ? 'disconnect' : 'connect'}">${d.connected ? 'DESCONECTAR' : 'CONECTAR'}</span><span class="txt-f" data-f data-b="forget">OLVIDAR</span><span class="txt-f" data-f data-def data-b="no">VOLVER</span></div>`, {
       onA: el => { if (el.dataset.b === 'no') return back(); closeDlg(); play('select'); run('bt.action', [el.dataset.b, d.mac], el.dataset.b === 'forget' ? `${d.name}: olvidado` : null, 'bt', 'Bluetooth'); }, onB: back });
   }
 }
@@ -4441,11 +4445,13 @@ function osk(title, done, secret) {
         if (k === '✓') { closeDlg(); return done(text); } if (k === '✕') { closeDlg(); return done(null); }
         if (k === '⌫') text = text.slice(0, -1); else if (k === '⇧') shift = !shift; else if (k === '#') sym = !sym; else if (text.length < 63) text += k;
         const at = [NAV.r, NAV.c]; draw(); NAV.r = Math.min(at[0], NAV.rows.length - 1); NAV.c = Math.min(at[1], NAV.rows[NAV.r].length - 1); applyFocus(); },
-      onB: () => { play('back'); text = text.slice(0, -1); const at = [NAV.r, NAV.c]; draw(); NAV.r = at[0]; NAV.c = Math.min(at[1], NAV.rows[NAV.r].length - 1); applyFocus(); } });
+      /* B erases; with nothing written it closes, like the consoles' keyboards (3.1.0-rc12: it did
+         nothing, and the search could only be left with ✕ on the keyboard's last row) */
+      onB: () => { play('back'); if (!text) { closeDlg(); return done(null); } text = text.slice(0, -1); const at = [NAV.r, NAV.c]; draw(); NAV.r = at[0]; NAV.c = Math.min(at[1], NAV.rows[NAV.r].length - 1); applyFocus(); } });
     const d = $('#dlg');
     NAV = mkNav([...d.querySelectorAll('.krow')].map(r => [...r.querySelectorAll('[data-f]')]), { place: (el, b) => ({ x: b.x, y: b.y + b.h + 4, w: b.w }) });
     NAV.id = 'dlg'; requestAnimationFrame(() => applyFocus());
-    hints([['A', 'Escribir'], ['B', 'Borrar']]);
+    hints([['A', 'Escribir'], ['B', text ? 'Borrar' : 'Salir']]);
   };
   draw();
 }
@@ -4475,7 +4481,7 @@ function storeAct(r, ri) {
   play('select');
   openDlg(`<h2>${esc(g.name)}</h2><p>Juego: <b>${GB(g.size)}</b> · caché de sombreadores: <b>${GB(g.shader_cache)}</b> · datos de Proton: <b>${GB(g.prefix)}</b></p>
     <p>La caché de sombreadores se vuelve a crear sola la próxima vez que juegues (el primer arranque irá algo más lento).</p>
-    <div class="btns"><span class="txt-f" data-f data-b="cache">LIMPIAR CACHÉ</span><span class="txt-f" data-f data-b="uninstall">DESINSTALAR</span><span class="txt-f" data-f data-b="no">VOLVER</span></div>`, {
+    <div class="btns"><span class="txt-f" data-f data-b="cache">LIMPIAR CACHÉ</span><span class="txt-f" data-f data-b="uninstall">DESINSTALAR</span><span class="txt-f" data-f data-def data-b="no">VOLVER</span></div>`, {
     onA: el => {
       if (el.dataset.b === 'no') return back();
       closeDlg(); play('select');
@@ -4914,6 +4920,10 @@ function openDlg(html, handlers, noButtons, solid) {
   const btns = [...d.querySelectorAll('.btns [data-f]')];
   NAV = mkNav(btns.length ? [btns] : [[d.querySelector('.box')]], { place: (el, b) => ({ x: b.x, y: b.y + b.h + 8, w: b.w }) });
   NAV.id = 'dlg';
+  /* the button chosen when the window opens: the first, or the one marked data-def (a window whose
+     first button deletes or changes something opens on the safe one, as the consoles require) */
+  const def = btns.findIndex(b => b.hasAttribute('data-def'));
+  if (def > 0) NAV.c = def;
   if (btns.length) requestAnimationFrame(() => { line.classList.remove('off'); applyFocus(); });
   if (btns.length) hints([['A', 'Elegir'], ...(handlers.onB ? [['B', 'Volver']] : [])]);
 }
@@ -5341,6 +5351,8 @@ function act(a) {
   }
   if (S.screen === 'power') {
     if (a === 'b') return closePower();
+    /* the guide button always reaches Home, as on the consoles (3.1.0-rc12: it did nothing here) */
+    if (a === 'home') { const inGame = powerFrom === 'game'; closePower(); if (inGame) return; if (NAV) NAV.id = ''; return enterHome({ r: 0, c: 0 }); }
     if (dirs.includes(a)) return move(a);
     if (a === 'a') return powerA(focusEl());
     return;
@@ -5351,6 +5363,15 @@ function act(a) {
     if (dirs.includes(a)) return move(a);
     if (a === 'a') return DLG.onA(focusEl());
     if (a === 'b' && DLG.onB) return DLG.onB();
+    /* the guide button: a window that can be closed with B is closed as B would (its cancel), then
+       Home. One that cannot (a question Steam is waiting for, work in progress) stays. */
+    if (a === 'home' && DLG.onB) {
+      const from = dlgPrev && dlgPrev.screen;
+      DLG.onB();
+      if (from === 'game') { if (S.screen === 'dlg') { closeDlg(); S.screen = 'game'; } return; }   /* over a running game: back to it */
+      if (S.screen === 'dlg') closeDlg();
+      if (NAV) NAV.id = ''; return enterHome({ r: 0, c: 0 });
+    }
     return;
   }
   if (S.screen === 'perf') {

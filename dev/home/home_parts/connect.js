@@ -109,7 +109,7 @@ async function cxAct(r, ri) {
     if (!d.paired) return run('bt.action', ['pair', d.mac], `${d.name}: emparejado`, 'bt', 'Bluetooth');
     const back = () => { closeDlg(); play('back'); enterSettings({ pane: true, ri }); };
     return openDlg(`<h2>${esc(d.name)}</h2><p>${d.connected ? 'Conectado' : 'Emparejado, sin conectar'}${d.battery != null ? ` · batería ${d.battery} %` : ''}</p>
-      <div class="btns"><span class="txt-f" data-f data-b="${d.connected ? 'disconnect' : 'connect'}">${d.connected ? 'DESCONECTAR' : 'CONECTAR'}</span><span class="txt-f" data-f data-b="forget">OLVIDAR</span><span class="txt-f" data-f data-b="no">VOLVER</span></div>`, {
+      <div class="btns"><span class="txt-f" data-f data-b="${d.connected ? 'disconnect' : 'connect'}">${d.connected ? 'DESCONECTAR' : 'CONECTAR'}</span><span class="txt-f" data-f data-b="forget">OLVIDAR</span><span class="txt-f" data-f data-def data-b="no">VOLVER</span></div>`, {
       onA: el => { if (el.dataset.b === 'no') return back(); closeDlg(); play('select'); run('bt.action', [el.dataset.b, d.mac], el.dataset.b === 'forget' ? `${d.name}: olvidado` : null, 'bt', 'Bluetooth'); }, onB: back });
   }
 }
@@ -129,11 +129,13 @@ function osk(title, done, secret) {
         if (k === '✓') { closeDlg(); return done(text); } if (k === '✕') { closeDlg(); return done(null); }
         if (k === '⌫') text = text.slice(0, -1); else if (k === '⇧') shift = !shift; else if (k === '#') sym = !sym; else if (text.length < 63) text += k;
         const at = [NAV.r, NAV.c]; draw(); NAV.r = Math.min(at[0], NAV.rows.length - 1); NAV.c = Math.min(at[1], NAV.rows[NAV.r].length - 1); applyFocus(); },
-      onB: () => { play('back'); text = text.slice(0, -1); const at = [NAV.r, NAV.c]; draw(); NAV.r = at[0]; NAV.c = Math.min(at[1], NAV.rows[NAV.r].length - 1); applyFocus(); } });
+      /* B erases; with nothing written it closes, like the consoles' keyboards (3.1.0-rc12: it did
+         nothing, and the search could only be left with ✕ on the keyboard's last row) */
+      onB: () => { play('back'); if (!text) { closeDlg(); return done(null); } text = text.slice(0, -1); const at = [NAV.r, NAV.c]; draw(); NAV.r = at[0]; NAV.c = Math.min(at[1], NAV.rows[NAV.r].length - 1); applyFocus(); } });
     const d = $('#dlg');
     NAV = mkNav([...d.querySelectorAll('.krow')].map(r => [...r.querySelectorAll('[data-f]')]), { place: (el, b) => ({ x: b.x, y: b.y + b.h + 4, w: b.w }) });
     NAV.id = 'dlg'; requestAnimationFrame(() => applyFocus());
-    hints([['A', 'Escribir'], ['B', 'Borrar']]);
+    hints([['A', 'Escribir'], ['B', text ? 'Borrar' : 'Salir']]);
   };
   draw();
 }
@@ -163,7 +165,7 @@ function storeAct(r, ri) {
   play('select');
   openDlg(`<h2>${esc(g.name)}</h2><p>Juego: <b>${GB(g.size)}</b> · caché de sombreadores: <b>${GB(g.shader_cache)}</b> · datos de Proton: <b>${GB(g.prefix)}</b></p>
     <p>La caché de sombreadores se vuelve a crear sola la próxima vez que juegues (el primer arranque irá algo más lento).</p>
-    <div class="btns"><span class="txt-f" data-f data-b="cache">LIMPIAR CACHÉ</span><span class="txt-f" data-f data-b="uninstall">DESINSTALAR</span><span class="txt-f" data-f data-b="no">VOLVER</span></div>`, {
+    <div class="btns"><span class="txt-f" data-f data-b="cache">LIMPIAR CACHÉ</span><span class="txt-f" data-f data-b="uninstall">DESINSTALAR</span><span class="txt-f" data-f data-def data-b="no">VOLVER</span></div>`, {
     onA: el => {
       if (el.dataset.b === 'no') return back();
       closeDlg(); play('select');

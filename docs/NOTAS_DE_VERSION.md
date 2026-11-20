@@ -79,6 +79,18 @@ Recorrimos cada sección en el simulador (Inicio, Biblioteca, Explorar, Media, T
 - **Explorar** escribía dos veces qué hace cada tarjeta, en la tarjeta y debajo de la fila, y en la tarjeta elegida el texto se partía en dos líneas. Ahora la tarjeta lleva solo su nombre y la explicación va una vez, debajo.
 - **El fundido de la imagen del juego** con su copia suave dejaba una línea horizontal en algunos juegos (Cyberpunk 2077). Ahora el fundido es más largo y gradual.
 
+## Prueba de uso como consola (QA)
+
+Probamos STONE OS como se prueba una consola antes de certificarla: botones B e Inicio en cada pantalla, que la selección vuelva a su sitio al salir de cada pantalla, 120 pulsaciones al azar seguidas, jugar y volver, y STONE en una consola nueva, sin sesión de Steam y sin internet. Lo que se corrigió:
+
+- **El teclado en pantalla (buscar, contraseñas Wi-Fi) no se podía cerrar con B.** B borraba la última letra y, con el texto ya vacío, no hacía nada. Solo se salía con la tecla ✕ de la última fila. Ahora B con el texto vacío cierra el teclado, y la ayuda de abajo dice «Salir».
+- **El botón Inicio no hacía nada con una ventana abierta**, incluido el menú Apagar. Ahora cierra la ventana como lo haría B y lleva al Inicio. Si la ventana está sobre un juego abierto, vuelve al juego. Las ventanas que no se pueden cerrar con B (una pregunta que Steam espera, un trabajo en curso) siguen igual.
+- **Ventanas que abrían con la opción peligrosa ya elegida:** la de un dispositivo Bluetooth («Olvidar»), la de un juego en Almacenamiento («Limpiar caché») y «Activar 40 CU» («Activar»). Ahora abren en «Volver» o «Cancelar», y los botones mantienen su orden.
+- **Mensajes técnicos en pantalla:** sin internet, la tienda decía «no responde (URLError)». Al instalar o actualizar un emulador se veía el error interno de Python. Ahora se dice qué pasa con palabras («no hay conexión a internet», «no queda espacio en el disco», «tardó demasiado en responder…»), y el error exacto queda en el registro para el informe de diagnóstico.
+- **El menú rápido en el juego:** «PERFORMANCE» llenaba su botón de borde a borde y quedaba más ancho que los otros tres perfiles. Ahora los cuatro botones miden lo mismo y tienen margen.
+
+Lo que funcionó bien en la prueba: B vuelve atrás en todas las pantallas, la selección vuelve a la misma tarjeta al salir de un juego o de Ajustes, el botón Inicio lleva al Inicio desde cualquier sección, jugar → menú rápido → volver al juego, y no apareció ningún error tras las 120 pulsaciones al azar.
+
 ## Desinstalar juegos
 
 - **Juegos de Steam:** «Desinstalar» está ahora en la propia página del juego. Antes solo estaba dentro de Propiedades y en Ajustes → Almacenamiento. Para dejarle sitio, «Experiencia» pasa a GRÁFICOS.

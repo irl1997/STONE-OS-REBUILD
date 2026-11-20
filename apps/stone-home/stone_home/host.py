@@ -105,6 +105,25 @@ def _want_steam():
         print(f"[stone] steam: could not ask the session for Steam ({e!r})", flush=True)
 
 
+
+def why(e):
+    """An error in words the person can act on, for what is shown on screen (3.1.0-rc12: the screen
+    showed Python's own text, such as "URLError(gaierror(-2, ...))"). The log keeps the exact error."""
+    import errno
+    import socket
+    import subprocess
+    import urllib.error
+    print(f"[stone] error shown as text: {e!r}", flush=True)
+    if isinstance(e, OSError) and e.errno == errno.ENOSPC:
+        return "no queda espacio en el disco"
+    if isinstance(e, (urllib.error.URLError, socket.gaierror, ConnectionError)) or (isinstance(e, OSError) and e.errno in (errno.ENETUNREACH, errno.EHOSTUNREACH)):
+        return "no hay conexión a internet"
+    if isinstance(e, (TimeoutError, socket.timeout, subprocess.TimeoutExpired)):
+        return "tardó demasiado en responder; inténtalo de nuevo"
+    if isinstance(e, PermissionError):
+        return "falta un permiso del sistema"
+    return "error inesperado (queda en el informe de diagnóstico)"
+
 class Host:
     def __init__(self, emit, stoned=None, sysapi=None, steam_root=None):
         self.emit = emit                                      # emit(event_name, data)
@@ -707,7 +726,7 @@ class Host:
             try:
                 ports.install(args[0], progress, steam_ui=self.steam_ui)
             except Exception as e:  # noqa: BLE001
-                progress("error", f"No se pudo instalar: {e!r}")
+                progress("error", f"No se pudo instalar: {why(e)}")
             finally:
                 self.emu_busy.discard(key)
                 GLib.idle_add(lambda: (self._lib_kick(), False)[1])
@@ -720,7 +739,7 @@ class Host:
             try:
                 r = emulators.updates()
             except Exception as e:  # noqa: BLE001
-                r = {"error": f"No se pudo consultar Flathub: {e!r}"}
+                r = {"error": f"No se pudo consultar Flathub: {why(e)}"}
             res = (None, "Unsupported", r["error"]) if "error" in r else (r, None, "")
             GLib.idle_add(lambda: (done(*res), False)[1])
         threading.Thread(target=work, daemon=True).start()
@@ -750,7 +769,7 @@ class Host:
                 try:
                     ok += 1 if emulators.update(key, progress_for(key)) else 0
                 except Exception as e:  # noqa: BLE001
-                    progress_for(key)("error", f"No se pudo actualizar: {e!r}")
+                    progress_for(key)("error", f"No se pudo actualizar: {why(e)}")
                 finally:
                     self.emu_busy.discard(key)
             if target == "all":
