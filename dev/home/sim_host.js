@@ -195,7 +195,7 @@ const Bridge = (() => {
       return { root_found: true, owned_known: live, owned_cached: false, logged: live ? 'in' : null, account: true,
         games: list.slice().sort((x, y) => y.installed - x.installed || Math.max(y.last, y.added || 0) - Math.max(x.last, x.added || 0)).map(g => ({
           appid: g.appid, name: g.name, source: g.source, installed: g.installed, updating: !!g.updating, playtime_min: g.min, last_played: g.last,
-          size_bytes: g.size, art: g.source === 'shortcut' && /^3/.test(g.appid) ? { capsule: false, hero: false, header: false } : g.installed || SIM.art || !/noart/.test(location.search) ? { capsule: !g.wide, hero: !g.wide, header: !!g.wide, hero2x: !!(SIM.big && SIM.big[g.appid]) } : { capsule: false, hero: false, header: false },
+          size_bytes: g.size, art: g.source === 'shortcut' && /^3/.test(g.appid) ? { capsule: !!realArt(g.appid, 'capsule'), hero: false, header: false } : g.installed || SIM.art || !/noart/.test(location.search) ? { capsule: !g.wide, hero: !g.wide, header: !!g.wide, hero2x: !!(SIM.big && SIM.big[g.appid]) } : { capsule: false, hero: false, header: false },
           kind: g.rom ? 'rom' : g.emu ? 'emulator' : undefined, system_name: g.rom || undefined, added: g.added || 0,
           launch: g.installed ? 'steam://rungameid/' + g.appid : null })) };
     },
@@ -454,15 +454,16 @@ const Bridge = (() => {
   };
 
   /* covers: a local preview may bring Steam's real art, as window.STONE_SIM_ART = { appid: { capsule, header,
-     hero } } (data: URLs) defined before the page starts; the repository ships none, it is the publishers' art.
+     hero, hero2x } } (addresses) defined before the page starts (build_simulation.py --art, fetched by
+     sim_art.py); the repository ships none, it is the publishers' art.
      Otherwise it is generated here: a landscape in the game's own colours (sky, sun, three ridges, haze),
      like the key art Steam gives each game. Without a name on it: STONE never writes one on a cover. */
   const artCache = {};
+  const realArt = (appid, kind) => (window.STONE_SIM_ART && window.STONE_SIM_ART[appid] && window.STONE_SIM_ART[appid][kind]) || null;
   function artOf(appid, kind) {
     if (/^shot\d+$/.test(kind)) { const g = GAMES[+kind.slice(4) % GAMES.length]; return artOf(g.appid, 'hero'); }
-    if (kind === 'hero2x') return artOf(appid, 'hero');          /* the simulation has one size of each picture */
-    const real = window.STONE_SIM_ART && window.STONE_SIM_ART[appid];
-    if (real && real[kind]) return real[kind];
+    if (kind === 'hero2x') return realArt(appid, 'hero2x') || artOf(appid, 'hero');   /* painted: one size of each picture */
+    if (realArt(appid, kind)) return realArt(appid, kind);
     const k = appid + kind; if (artCache[k]) return artCache[k];
     const g = GAMES.find(x => x.appid === appid) || storeItem(appid);
     const W = { hero: 1920, header: 460, capsule: 300 }[kind] || 300, H = { hero: 620, header: 215, capsule: 450 }[kind] || 450;

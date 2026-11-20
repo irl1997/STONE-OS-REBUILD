@@ -61,6 +61,14 @@ Al moverte por la fila, el fondo y el nombre cambian con cada juego. La elecció
 
 Steam cambió su búsqueda: sin el país de la conexión responde **0 resultados** para cualquier palabra, y por eso salía «no existen juegos». Ahora STONE le pregunta a Steam qué país asigna a la conexión de la consola y lo usa en cada búsqueda. Es el mismo dato con el que Steam ya elige los precios y la moneda, así que no se envía nada nuevo. Comprobado contra la tienda real: «batman» pasa de 0 a 9 resultados.
 
+## Fondos de los juegos nítidos
+
+La imagen grande que Steam da a cada juego mide 1920 × 620, tres veces más ancha que alta. Para cubrir la pantalla, STONE la agrandaba 2,3 veces en un televisor de 2560 × 1440 (3,5 veces en uno 4K) y le recortaba casi la mitad de los lados. Por eso fondos como el de Batman se veían pixelados. Ahora la imagen va arriba, a lo ancho de la pantalla y casi a su tamaño real, y se funde abajo en una copia suave de sí misma. Cuando Steam tiene la versión al doble de tamaño (3840 × 1240), se usa esa. Los juegos que solo tienen carátula (sin imagen grande) muestran sus colores difuminados, en vez de una carátula estirada. La página de un juego en la tienda usa la misma banda. Para Batman: Arkham Asylum y Arkham City, Steam no tiene nada más grande: ni versión doble ni capturas de más de 1280 × 720.
+
+## Carátulas de los juegos de emuladores
+
+El servidor de carátulas de libretro, del que STONE baja las portadas de los juegos de emuladores, está vacío: responde 404 a todas las consolas, así que ningún juego de emulador recibía su portada. Ahora STONE recurre a la copia que libretro mantiene en GitHub (la misma colección de imágenes) cuando el servidor no responde o no lista nada. Una lista vacía que se haya guardado antes se vuelve a pedir. Comprobado contra los servidores reales: «Metroid Prime (GameCube)» recibe su portada.
+
 ## Desinstalar juegos
 
 - **Juegos de Steam:** «Desinstalar» está ahora en la propia página del juego. Antes solo estaba dentro de Propiedades y en Ajustes → Almacenamiento. Para dejarle sitio, «Experiencia» pasa a GRÁFICOS.

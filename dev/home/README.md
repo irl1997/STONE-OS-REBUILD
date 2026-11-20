@@ -9,6 +9,8 @@ Herramientas de diseño y desarrollo. **Nada de esta carpeta entra en la imagen.
 | `home_parts/` | Piezas de producción de la página: transporte al host, biblioteca de Steam, juego, energía, arranque, autotest |
 | `stone_home_devserver.py` | STONE Home en un navegador normal, con el host real por HTTP (127.0.0.1). Usado por la prueba end to end |
 | `make_boot_video.mjs` | Genera el vídeo de arranque de Steam de STONE (`boot/stone-startup.webm`), fotograma a fotograma desde la posición de la línea de Plymouth. Necesita `ffmpeg` con VP9 |
+| `build_simulation.py` | Página autónoma que simula STONE OS con datos simulados (para mirar la interfaz). `--art DIR` usa las carátulas reales que bajó `sim_art.py` |
+| `sim_art.py` | Baja las carátulas reales de los juegos de la simulación (Steam y libretro) a una carpeta local. Son de los editores: nunca se suben al repositorio |
 | `make_assets.mjs` | Dibuja el icono y las carátulas de Steam del acceso directo «STONE» con las fuentes incluidas |
 
 Flujo para cambiar la interfaz: editar el prototipo (y, si toca la parte real, `home_parts/`) → `python3 development/build_home.py` → `scripts/test-all.sh`.
