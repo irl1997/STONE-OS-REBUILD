@@ -293,6 +293,9 @@ function healthRows() {
   rows.push({ l: 'Informe de diagnóstico', s: 'Si algo falla: marca qué y STONE comprueba cada función. Un archivo sin datos personales para el móvil o un USB', v: 'Hacer', act: 'diag' });
   return rows;
 }
+/* rc12: Inicio's two styles (home.js homeHTML, cristal.css #stage.pano) */
+const HOME_STYLES = ['Cristal', 'Panorama'];
+const HOME_STYLE_TXT = ['Portada grande del juego y carátulas verticales', 'El arte del juego a pantalla completa, su nombre en grande y carátulas apaisadas'];
 function catRows() {
   /* Settings Steam already handles open in Steam's own settings; if that fails, STONE says where. */
   const steam = (t, d, where) => ({ l: t, s: d, v: 'Abrir en Steam', act: 'steam', where, sec: STEAM_SEC[CATS[cat]] });
@@ -302,6 +305,7 @@ function catRows() {
       ...displayRows(),
       steam('Resolución y frecuencia', 'Las fija Steam para todo el sistema', 'Botón STEAM → Ajustes → Pantalla'),
       steam('HDR', 'Según el televisor y el juego', 'Botón STEAM → Ajustes → Pantalla'),
+      { l: 'Estilo de inicio', s: HOME_STYLE_TXT[S.homeStyle], v: HOME_STYLES[S.homeStyle], key: 'homestyle' },
       { l: 'Tamaño del texto', s: 'Se aplica a STONE Home', v: SIZES[S.ts], key: 'ts' },
       { l: 'Modo de imagen', s: RENDER_TXT[S.render], v: RENDER[S.render], key: 'render' },
       { l: 'Efectos de cristal', s: S.render === 1 ? 'Sin GPU se usan siempre los ligeros' : 'Paneles translúcidos con desenfoque. «Ligeros» los dibuja sin desenfoque y gasta menos GPU',
@@ -385,7 +389,7 @@ function cu40Dlg(ri) {
       onA: el => { if (el.dataset.b === 'no') return back(); play('select'); closeDlg(); cu40Run(el.dataset.b === 'test' ? 'test' : 'disable', ri); }, onB: back });
   }
   openDlg(`<h2>ACTIVAR 40 CU</h2>${CU40_WARN}<p>Se aplica al reiniciar.</p>
-    <div class="btns"><span class="txt-f" data-f data-b="yes">ACTIVAR</span><span class="txt-f" data-f data-b="no">CANCELAR</span></div>`, {
+    <div class="btns"><span class="txt-f" data-f data-b="yes">ACTIVAR</span><span class="txt-f" data-f data-def data-b="no">CANCELAR</span></div>`, {
     onA: el => { if (el.dataset.b !== 'yes') return back(); play('select'); closeDlg(); cu40Run('enable', ri); }, onB: back });
 }
 async function cu40Run(op, ri) {

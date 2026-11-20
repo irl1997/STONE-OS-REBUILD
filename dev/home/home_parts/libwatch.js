@@ -45,7 +45,9 @@ Bridge.on('art', d => {
   document.querySelectorAll('#home .card[data-g], #library .card[data-g]').forEach(el => {
     const g = G[+el.dataset.g]; if (!g || !ids.has(g.appid)) return;
     const ph = el.querySelector('.ph');
-    if (el.classList.contains('hero')) { const u = heroUrl(g); if (u) { el.style.backgroundImage = `url("${u}")`; if (ph) ph.remove(); } return; }
+    const wide = el.classList.contains('hero') || el.classList.contains('land');
+    if (wide && tallOnly(g)) { el.setAttribute('style', boxBg(g).replace(/&quot;/g, '"') + ';background-color:var(--shale)'); if (ph) ph.remove(); return; }
+    if (wide) { const u = el.classList.contains('land') ? landUrl(g) : heroUrl(g); if (u) { el.style.backgroundImage = `url("${u}")`; if (ph) ph.remove(); } return; }
     el.style.backgroundImage = capUrl(g); el.classList.toggle('hdr', capWide(g));
     if (ph && (g.art.capsule || g.art.header)) ph.remove();
   });

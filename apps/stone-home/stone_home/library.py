@@ -38,6 +38,35 @@ _DIRS = {"capsule": ["library_600x900.jpg", "library_capsule.jpg", "library_600x
 _GRID = {"capsule": ["{a}p.png", "{a}p.jpg"], "hero": ["{a}_hero.png", "{a}_hero.jpg"],
          "logo": ["{a}_logo.png"], "header": ["{a}.png", "{a}.jpg"]}
 MAX_ITEMS = 5000
+# The game file at the end of an emulator shortcut's launch options (roms.entries: `run <id> ... "<path>"`)
+_LAST_QUOTED = re.compile(r'"((?:[^"\\]|\\.)*)"\s*$')
+
+
+def _unq(s):
+    return re.sub(r"\\(.)", r"\1", s)
+
+
+def classify(exe, options, home=None):
+    """What a non-Steam shortcut is (3.1.0-rc12): {"kind": "rom", "system", "system_name", "path"} for an
+    emulator game made by STONE (roms.entries), {"kind": "emulator", "emulator"} for an emulator itself,
+    else {"kind": "shortcut"}. Read from the shortcut alone; nothing is run."""
+    from . import emulators, roms
+    exe = (exe or "").strip().strip('"')
+    opts = (options or "").strip()
+    if os.path.basename(exe) != "flatpak" or not opts.startswith("run "):
+        return {"kind": "shortcut"}
+    fid = opts.split()[1] if len(opts.split()) > 1 else ""
+    emu = next((k for k, (f, _n, _p) in emulators.CATALOG.items() if f == fid), None)
+    m = _LAST_QUOTED.search(opts)
+    if not m:
+        return {"kind": "emulator", "emulator": emu} if emu and opts == f"run {fid}" else {"kind": "shortcut"}
+    path = _unq(m.group(1))
+    base = os.path.join(home or os.path.expanduser("~"), "Emulation", "roms")
+    rel = os.path.relpath(path, base) if os.path.isabs(path) else ".."
+    folder = rel.split(os.sep)[0] if not rel.startswith("..") else None
+    system = next((k for k, v in roms.SYSTEMS.items() if v[0] == folder), None)
+    return {"kind": "rom", "system": system, "system_name": roms.SYSTEMS[system][1] if system else None,
+            "path": path, "emulator": emu}
 
 
 def valid_appid(a):
@@ -149,9 +178,30 @@ def shortcut_games(root):
         aid = vdf.get_ci(v, "appid")
         aid = (_int(aid) & 0xFFFFFFFF) if aid is not None else SC.short_appid(exe, name)
         appid = str(aid)
-        out[appid] = {"appid": appid, "name": name, "source": "shortcut", "installed": True, "updating": False,
-                      "size_bytes": 0, "last_played": _int(vdf.get_ci(v, "LastPlayTime")), "playtime_min": 0}
+        g = {"appid": appid, "name": name, "source": "shortcut", "installed": True, "updating": False,
+             "size_bytes": 0, "last_played": _int(vdf.get_ci(v, "LastPlayTime")), "playtime_min": 0}
+        c = classify(exe, str(vdf.get_ci(v, "LaunchOptions") or ""))
+        if c["kind"] == "rom":
+            # 3.1.0-rc12: an emulator game is listed as one, with its console; a game whose file is gone
+            # (deleted, or on a drive not plugged in) is not listed: it would only fail to open. A game
+            # never played sorts by when its file arrived, so a game copied from a USB drive comes first.
+            try:
+                st = os.stat(c["path"])
+            except OSError:
+                continue
+            g.update(kind="rom", system=c["system"], system_name=c["system_name"], emulator=c["emulator"], path=c["path"],
+                     size_bytes=st.st_size if os.path.isfile(c["path"]) else 0, added=int(st.st_mtime),
+                     name=clean_title(name))
+        elif c["kind"] == "emulator":
+            g.update(kind="emulator", emulator=c["emulator"])
+        out[appid] = g
     return out
+
+
+def clean_title(name):
+    """«Juego (USA) (En,Fr) [!] (PlayStation 2)» -> «Juego (PlayStation 2)» (roms.clean_title)."""
+    from . import roms
+    return roms.clean_title(name)
 
 
 def art_path(root, appid, kind):
@@ -190,7 +240,7 @@ def scan(root=None):
     apply_localconfig(root, games)
     for k, v in shortcut_games(root).items():
         games.setdefault(k, v)
-    items = sorted(games.values(), key=lambda g: (-g["last_played"], g["name"].lower()))[:MAX_ITEMS]
+    items = sorted(games.values(), key=lambda g: (-max(g["last_played"], g.get("added", 0)), g["name"].lower()))[:MAX_ITEMS]
     for g in items:
         g["art"] = {k: art_path(root, g["appid"], k) is not None for k in ("capsule", "hero")}
         g["launch"] = launch_url(g)

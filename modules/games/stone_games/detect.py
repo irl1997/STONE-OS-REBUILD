@@ -17,6 +17,7 @@ and installs OptiScaler in a game; this module just reads what is there, whoever
 import glob
 import hashlib
 import os
+import time
 
 from stone_home import library, vdf
 
@@ -97,11 +98,50 @@ def proton_tool(root, appid):
     return None
 
 
+# 3.1.0-rc12: the folder walk (anti-cheat, injected upscalers: up to MAX_DEPTH levels of a game that can
+# hold tens of thousands of files) was done again for every launch and every look at a game's page. Its
+# result is kept per game for CACHE_S, for the same folder and build; install.py forgets it when STONE
+# installs or removes files in the game.
+CACHE_S = float(os.environ.get("STONE_DETECT_CACHE_S", "120"))
+NO_INJECT_S = min(CACHE_S, 30.0)
+_SCANS = {}
+
+
+def _still_valid(hit, now):
+    """The cached result still holds for upscaler files: the folder they were in is unchanged (the
+    person's own installer, HelixSR's, writes there); with none found it is kept only NO_INJECT_S, so a
+    HelixSR installed by its author's installer shows up within that time."""
+    inj = hit[2].get("injected")
+    if not inj:
+        return now - hit[1] < NO_INJECT_S
+    try:
+        return int(os.stat(inj["dir"]).st_mtime) == hit[3]
+    except OSError:
+        return False
+
+
+def forget(appid=None):
+    if appid is None:
+        _SCANS.clear()
+    else:
+        _SCANS.pop(str(appid), None)
+
+
 def facts(root, appid):
     """Everything above for one Steam game; None fields are unknown."""
     m = manifest(root, appid)
     folder = os.path.join(m["library"], "steamapps", "common", m["installdir"]) if m and m.get("installdir") else None
-    scan = scan_folder(folder)
+    key, now = (folder, m.get("build") if m else None), time.monotonic()
+    hit = _SCANS.get(str(appid))
+    if hit and hit[0] == key and now - hit[1] < CACHE_S and _still_valid(hit, now):
+        scan = hit[2]
+    else:
+        scan = scan_folder(folder)
+        try:
+            mt = int(os.stat(scan["injected"]["dir"]).st_mtime) if scan.get("injected") else None
+        except OSError:
+            mt = None
+        _SCANS[str(appid)] = (key, now, scan, mt)
     return {"appid": str(appid), "installed": bool(folder and os.path.isdir(folder)), "install_dir": folder,
             "build": m.get("build") if m else None, "anti_cheat": scan["anti_cheat"], "injected": scan["injected"],
             "proton": proton_tool(root, appid)}

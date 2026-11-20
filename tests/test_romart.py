@@ -71,5 +71,63 @@ def test_the_cover_is_written_where_steam_keeps_a_shortcuts_artwork():
         shutil.rmtree(t, ignore_errors=True)
 
 
+class Mirror:
+    """libretro's server down (404 for everything) and its GitHub copy answering."""
+    SHA = "41b22bdc" + "0" * 32
+
+    def __init__(self, server_body=None):
+        self.calls, self.server_body = [], server_body
+
+    def __call__(self, url, limit, timeout=30):
+        import json
+        import urllib.error
+        self.calls.append(url)
+        if url.startswith(RA.SERVER):
+            if self.server_body is not None:
+                return self.server_body
+            raise urllib.error.HTTPError(url, 404, "Not Found", {}, None)
+        if url.endswith("/git/trees/master"):
+            return json.dumps({"tree": [{"path": "Named_Boxarts", "type": "tree", "sha": self.SHA},
+                                        {"path": "Named_Snaps", "type": "tree", "sha": "1" * 40}]}).encode()
+        if url.endswith("/git/trees/" + self.SHA):
+            return json.dumps({"tree": [{"path": "Metroid Prime (USA).png", "type": "blob"}, {"path": "Metroid Prime (Japan).png", "type": "blob"},
+                                        {"path": "readme.txt", "type": "blob"}]}).encode()
+        if url.startswith("https://raw.githubusercontent.com/libretro-thumbnails/Nintendo_-_GameCube/master/Named_Boxarts/"):
+            return PNG
+        raise AssertionError(url)
+
+
+def test_without_libretros_server_the_cover_comes_from_its_github_copy():
+    t = tempfile.mkdtemp(prefix="stone-romart-")
+    old = os.environ.get("XDG_CACHE_HOME")
+    os.environ["XDG_CACHE_HOME"] = os.path.join(t, "cache")
+    try:
+        root = os.path.join(t, "Steam")
+        os.makedirs(os.path.join(root, "userdata", "12345678", "config"))
+        for srv in (Mirror(), Mirror(server_body=b"<html>Index of /</html>")):     # 404, or an empty index
+            shutil.rmtree(os.path.join(t, "cache"), ignore_errors=True)
+            assert RA.fetch(root, "3000000010", "Metroid Prime (GameCube)", get=srv) == "Metroid Prime (USA)"
+            assert srv.calls[-1] == ("https://raw.githubusercontent.com/libretro-thumbnails/Nintendo_-_GameCube/master/"
+                                     "Named_Boxarts/Metroid%20Prime%20%28USA%29.png")
+            assert RA.listing("gc", get=srv) == (["Metroid Prime (Japan)", "Metroid Prime (USA)"], "mirror")
+        # a list kept from the server whose pictures are gone: the picture from the copy
+        import json
+        with open(os.path.join(t, "cache", "stone", "romart", "gc.json"), "w") as f:
+            json.dump({"t": __import__("time").time(), "names": ["Metroid Prime (USA)"]}, f)
+        srv = Mirror()
+        assert RA.fetch(root, "3000000011", "Metroid Prime (GameCube)", get=srv) == "Metroid Prime (USA)"
+        assert srv.calls[0].startswith(RA.SERVER) and srv.calls[-1].startswith("https://raw.githubusercontent.com/")
+        # an empty list kept by rc11 is not trusted: asked again
+        with open(os.path.join(t, "cache", "stone", "romart", "gc.json"), "w") as f:
+            json.dump({"t": __import__("time").time(), "names": []}, f)
+        assert RA.listing("gc", get=Mirror())[0] == ["Metroid Prime (Japan)", "Metroid Prime (USA)"]
+    finally:
+        if old is None:
+            os.environ.pop("XDG_CACHE_HOME", None)
+        else:
+            os.environ["XDG_CACHE_HOME"] = old
+        shutil.rmtree(t, ignore_errors=True)
+
+
 if __name__ == "__main__":
     sys.exit(run_module(globals()))

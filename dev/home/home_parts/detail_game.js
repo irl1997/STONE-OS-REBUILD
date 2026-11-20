@@ -7,7 +7,9 @@ function enterDetail(i, opts = {}) {
   const prim = running ? 'REANUDAR' : canPlay ? 'JUGAR' : g.upd ? 'INSTALANDO' : 'INSTALAR';
   /* Five actions at most on one line (they always fit the 1920 stage); the image options live in GRÁFICOS. */
   const sec = [[g.fav ? 'Quitar de favoritos' : 'Favorito', 'fav'], [`Rendimiento: ${g.perf ? profOf(g.perf).n : 'Global'}`, 'perf'], ['Propiedades', 'opt']];
-  if (g.src === 'steam' && g.inst) sec.splice(2, 0, ['Gráficos', 'gfx'], ['Experiencia', 'xp']);
+  /* rc12: DESINSTALAR on the page itself (it was inside Propiedades only); Experiencia moved into GRÁFICOS */
+  if (g.src === 'steam' && g.inst) sec.splice(2, 0, ['Gráficos', 'gfx'], ['Desinstalar', 'rm']);
+  else if (g.kind === 'rom') sec.splice(2, 0, ['Desinstalar', 'rm']);
   if (running) sec[1] = ['Cerrar juego', 'close'];          /* the profile applies at start; while playing it is in the quick menu */
   $('#detail').innerHTML = `
     <div class="col"><div class="origin">${esc(g.o)}</div><h1${g.n.length > 22 ? ' class="long"' : ''}>${esc(g.n)}</h1>
@@ -149,6 +151,7 @@ function detailA(el) {
   if (a === 'ins') { play('select'); return insOpti(g, curG); }
   if (a === 'gfx') { play('select'); return gfxPanel(g); }
   if (a === 'xp') { play('select'); return xpDlg(g); }
+  if (a === 'rm') { play('select'); return uninstallAsk(g); }
   if (a === 'fg') {
     if (!g.fg) { play('error'); return toast('Leyendo…', false); }
     if (!g.fg.available) { play('error'); return toast(g.fg.reason, false); }
@@ -196,8 +199,9 @@ async function launch(g, starter) {
   if (S.launching !== null) return;
   const ok = await (starter ? starter() : sys('launch', g.appid));
   if (!ok) return;
+  if (ok.ok === false) { play('error'); return longToast(ok.error || 'No se pudo abrir', 7000); }   /* rc12: e.g. its emulator is missing */
   S.launching = g.i; S.running = g.i; S.screen = 'transition';
-  recent = [g.i, ...recent.filter(i => i !== g.i)].slice(0, 6);
+  recent = [g.i, ...recent.filter(i => i !== g.i)].slice(0, HOME_N);
   const el = focusEl(), b = el ? stageBox(el) : { x: 960, y: 540, w: 0, h: 0 };
   chrome(false, false); $('#hints').classList.add('hide');
   play('launch');
@@ -290,7 +294,7 @@ function returnHome() {
 function gameMode() {
   ['home', 'library', 'detail', 'settings', 'perf', 'tuning'].forEach(id => { $('#' + id).innerHTML = ''; });
   spreadEls = [];
-  setBg('', 'none'); $('#bgA').style.backgroundImage = 'none'; $('#bgB').style.backgroundImage = 'none'; bgCur = '';
+  bgClear();
   trimArt();
   setTimeout(() => { if (S.screen === 'game') audioSleep(); }, 2500);
 }
@@ -375,7 +379,8 @@ function lookPicker(g) {
   NAV.id = 'dlg'; requestAnimationFrame(() => applyFocus());
 }
 /* GRÁFICOS: the image options of one game in a list, each line with its value; A changes it in place. */
-const GFX = [['img', g => imgLabel(g)], ['pre', g => preLabel(g)], ['look', g => lookLabel(g)], ['fg', g => fgLabel(g)], ['ins', g => optLabel(g)], ['opz', g => optzLabel(g)]];
+const GFX = [['img', g => imgLabel(g)], ['pre', g => preLabel(g)], ['look', g => lookLabel(g)], ['fg', g => fgLabel(g)], ['ins', g => optLabel(g)], ['opz', g => optzLabel(g)],
+  ['xp', () => 'Experiencia: qué usa STONE y por qué']];
 function gfxPanel(g, at = 0) {
   const row = ([k, f]) => { const [l, v] = f(g).split(/: (.*)/s); return `<span class="txt-f sres" data-f data-act="${k}">${esc(l)}<small>${esc(v || '')}</small></span>`; };
   const back = () => { closeDlg(); play('back'); enterDetail(curG, { r: 1, c: 2 }); };
@@ -385,6 +390,7 @@ function gfxPanel(g, at = 0) {
       if (el.dataset.b === 'no') return back();
       const k = el.dataset.act, r = NAV.r;
       if (k === 'opz') { closeDlg(); enterDetail(curG, { r: 1, c: 2 }); return detailA({ dataset: { act: 'opz' } }); }
+      if (k === 'xp') { closeDlg(); enterDetail(curG, { r: 1, c: 2 }); return detailA({ dataset: { act: 'xp' } }); }
       Promise.resolve(detailA({ dataset: { act: k } })).then(() => { if (S.screen === 'dlg' && $('#dlg h2') && $('#dlg h2').textContent === 'GRÁFICOS') gfxPanel(g, r); });
     }, onB: back });
   const d = $('#dlg');
@@ -393,23 +399,42 @@ function gfxPanel(g, at = 0) {
   if (!g.img) imgLoad(g, curG).then(() => { if (S.screen === 'dlg' && $('#dlg h2') && $('#dlg h2').textContent === 'GRÁFICOS') gfxPanel(g, NAV ? NAV.r : 0); });
 }
 /* PROPIEDADES: what STONE knows of the game, and uninstalling it (asked twice, done without Steam's dialog). */
+/* DESINSTALAR (rc12): asked once, plainly, then done without Steam's dialog (Steam games: install.js
+   uninstallGame; emulator games: rom.uninstall deletes the game's files, its saves stay with the emulator). */
+function uninstallAsk(g, back) {
+  back = back || (() => { closeDlg(); play('back');
+    const c = [...$('#detail').querySelectorAll('.second [data-f]')].findIndex(e => e.dataset.act === 'rm');
+    enterDetail(curG, { r: 1, c: Math.max(0, c) }); });
+  if (S.running === g.i) { play('error'); return toast('Cierra el juego antes de desinstalarlo', false); }
+  const rom = g.kind === 'rom';
+  openDlg(`<span class="st-cap">${rom ? esc((g.sys || 'EMULADOR').toUpperCase()) : 'STEAM'}</span><h2>DESINSTALAR</h2>
+    <p>Se borra ${esc(g.n)} de la consola${g.sz && g.sz !== '—' ? ` (${esc(g.sz)})` : ''}. ${rom
+      ? 'Tus partidas guardadas se conservan en el emulador. Para volver a jugarlo, cópialo otra vez (USB o móvil).'
+      : 'Tus partidas en la nube de Steam se conservan. Puedes volver a instalarlo cuando quieras.'}</p>
+    <div class="btns"><span class="txt-f" data-f data-b="no">CANCELAR</span><span class="txt-f" data-f data-b="yes">DESINSTALAR</span></div>`, {
+    onA: el => {
+      if (el.dataset.b !== 'yes') return back();
+      closeDlg(); play('select');
+      S.section = 0; if (NAV) NAV.id = ''; enterHome({ r: 0, c: 0 });
+      const job = rom
+        ? Bridge.call('rom.uninstall', g.appid).then(r => { if (!r || !r.ok) throw new Error((r && r.error) || 'No se pudo borrar'); toast(`${g.n}: desinstalado`, false); })
+        : uninstallGame(g.appid, g.n);
+      Promise.resolve(job).catch(e => { play('error'); toast((e && e.message) || 'No se pudo desinstalar', false); })
+        .then(() => loadLibrary()).then(() => { if (S.screen === 'home') enterHome({ r: 0, c: 0 }); });
+    }, onB: back });
+}
 function propsDlg(g) {
   const back = () => { closeDlg(); play('back'); enterDetail(curG, { r: 1, c: [...$('#detail').querySelectorAll('.second [data-f]')].length - 1 }); };
   const kv = (k, v) => `<span class="sres">${k}<small>${esc(v)}</small></span>`;
-  const canRemove = g.src === 'steam' && g.inst && S.running !== g.i;
-  openDlg(`<h2>PROPIEDADES</h2><div class="slist">${kv('Origen', g.o)}${kv('Tamaño', g.sz || '—')}${kv('Tiempo jugado', playText(g))}${kv('Última sesión', g.last || '—')}${kv('Al iniciarse', g.perf ? profOf(g.perf).n : 'Perfil global')}${g.src === 'steam' ? kv('Steam App ID', g.appid) : ''}</div>
-    <div class="btns">${canRemove ? '<span class="txt-f" data-f data-b="rm">DESINSTALAR</span>' : ''}<span class="txt-f" data-f data-b="no">VOLVER</span></div>`, {
+  /* no DESINSTALAR here (3.1.0-rc12): it is on the game's page, and here it was the first button, the
+     one chosen when the window opens (a press of A too many and the uninstall question came up) */
+  const picked = S.picks && S.picks[g.appid] !== undefined;
+  openDlg(`<h2>PROPIEDADES</h2><div class="slist">${kv('Origen', g.o)}${kv('Tamaño', g.sz || '—')}${kv('Tiempo jugado', playText(g))}${kv('Última sesión', g.last || '—')}${kv('Al iniciarse', g.perf ? profOf(g.perf).n : 'Perfil global')}${g.src === 'steam' ? kv('Steam App ID', g.appid) : ''}${g.sys ? kv('Consola', g.sys) : ''}${picked ? kv('Opción de inicio', 'Guardada (empieza sola)') : ''}</div>
+    <div class="btns">${picked ? '<span class="txt-f" data-f data-b="pick">OLVIDAR OPCIÓN DE INICIO</span>' : ''}<span class="txt-f" data-f data-b="no">VOLVER</span></div>`, {
     onA: el => {
       if (el.dataset.b === 'no') return back();
-      play('select');
-      openDlg(`<h2>DESINSTALAR</h2><p>Se borra ${esc(g.n)} de la consola (${esc(g.sz || 'su tamaño en disco')}). Tus partidas en la nube de Steam se conservan. Puedes volver a instalarlo cuando quieras.</p>
-        <div class="btns"><span class="txt-f" data-f data-b="no">CANCELAR</span><span class="txt-f" data-f data-b="yes">DESINSTALAR</span></div>`, {
-        onA: e2 => {
-          if (e2.dataset.b !== 'yes') { closeDlg(); play('back'); return propsDlg(g); }
-          closeDlg(); play('select');
-          S.section = 0; if (NAV) NAV.id = ''; enterHome({ r: 0, c: 0 });
-          uninstallGame(g.appid, g.n).then(() => loadLibrary()).then(() => { if (S.screen === 'home') enterHome({ r: 0, c: 0 }); });
-        }, onB: () => { closeDlg(); play('back'); propsDlg(g); } });
+      if (el.dataset.b === 'pick') { const p = Object.assign({}, S.picks); delete p[g.appid]; S.picks = p; savePrefs(); play('select'); toast('Steam volverá a preguntar cómo iniciarlo', false); closeDlg(); return propsDlg(g); }
+      return back();
     }, onB: back });
 }
 

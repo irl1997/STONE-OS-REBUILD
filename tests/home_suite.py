@@ -848,6 +848,9 @@ def H04_steam_ui_first_for_games_and_steam_settings_only_known_sections():
             pass
     assert system.clean_prefs({"engine": 1})["engine"] == 1 and system.clean_prefs({"engine": 7})["engine"] == 0
     assert "render" not in system.clean_prefs({"render": 2})
+    # rc12: Inicio's style and the remembered launch options
+    assert system.clean_prefs({"home_style": 1})["home_style"] == 1 and system.clean_prefs({"home_style": 3})["home_style"] == 0
+    assert system.clean_prefs({"launch_pick": {"200260": 0, "x": 1, "35140": 99, "7": True}})["launch_pick"] == {"200260": 0}
 
 
 @test

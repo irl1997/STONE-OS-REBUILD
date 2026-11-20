@@ -73,6 +73,21 @@ def installed_ids(run=_run):
     return out
 
 
+def installed_here(roots=None):
+    """Flatpak app ids installed, read from Flatpak's own folders (an app is installed when its
+    `app/<id>/current` exists, user or system): instant, for the session start, where `flatpak list`
+    (two runs of up to 30 s) would make the console's boot longer (rc12)."""
+    roots = roots or (os.path.join(os.path.expanduser("~"), ".local", "share", "flatpak", "app"), "/var/lib/flatpak/app")
+    out = set()
+    for r in roots:
+        try:
+            names = os.listdir(r)
+        except OSError:
+            continue
+        out.update(n for n in names if os.path.exists(os.path.join(r, n, "current")))
+    return out
+
+
 def installed_versions(run=_run):
     """{Flathub id: version text} of the installed apps (user and system Flatpak)."""
     out = {}

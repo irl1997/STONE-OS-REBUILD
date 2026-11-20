@@ -924,6 +924,16 @@ body.dormant *,body.dormant *::before,body.dormant *::after{animation-play-state
    deeper shade under the text (--bg-dim). Without GPU nothing is filtered. */
 #stage .bg{inset:-16px;filter:blur(var(--bg-blur,0px))}
 #stage.lite .bg{inset:0;filter:none}
+/* A game's big picture as a band (bggame.js setBg): the screen's width at the top, at its own shape
+   (1920 × 620), fading into the soft copy under it */
+.bg::before{content:"";position:absolute;left:0;right:0;top:0;aspect-ratio:1920/620;display:none;
+  background:var(--top,none) center top/100% auto no-repeat;
+  -webkit-mask-image:linear-gradient(180deg,#000 0%,#000 44%,rgba(0,0,0,.62) 64%,rgba(0,0,0,.22) 84%,transparent 98%);
+  mask-image:linear-gradient(180deg,#000 0%,#000 44%,rgba(0,0,0,.62) 64%,rgba(0,0,0,.22) 84%,transparent 98%)}
+.bg.band::before{display:block}
+.bg.box::before{display:block;left:auto;right:calc(9% + 16px);top:calc(13% + 16px);height:58%;aspect-ratio:5/7;
+  background:var(--top,none) center/contain no-repeat;-webkit-mask-image:none;mask-image:none;
+  filter:drop-shadow(0 28px 48px rgb(0 0 0/.6))}
 #veil.home::after,#veil.side::after{content:"";position:absolute;inset:0;pointer-events:none;background:rgb(5 6 10/var(--bg-dim,0))}
 /* Dialogs: room between the buttons (the chosen one's white plate touched its neighbours); the
    technical line of an install that did not start; Steam taking the session shows its veil at once */
@@ -956,6 +966,28 @@ body.dormant *,body.dormant *::before,body.dormant *::after{animation-play-state
 #stage #dlg .sres.look{flex-direction:column;align-items:flex-start;justify-content:flex-start;gap:4px;padding:12px 18px;margin:0 -18px;border-radius:14px}
 #stage #dlg .sres.look .lbl{letter-spacing:.14em;font-size:20px}
 #stage #dlg .sres.look small{white-space:normal;text-align:left;font-size:17px;line-height:24px}
+/* PANORAMA (3.1.0-rc12, Ajustes → Pantalla → Estilo de inicio): Inicio as a big screen. The focused game's
+   art fills the screen, its name sits large over it on the left, and every game is one landscape card in
+   a single row along the lower third; the line of stats goes, the system row stays at the bottom. */
+#stage.pano #home::before{content:"";position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(90deg,rgba(5,6,10,.62) 0%,rgba(5,6,10,.28) 38%,rgba(5,6,10,0) 62%),
+             linear-gradient(0deg,rgba(5,6,10,.82) 0%,rgba(5,6,10,.45) 30%,rgba(5,6,10,0) 55%)}
+#stage.pano #home .clip{height:892px}
+#stage.pano #home .track{height:892px;padding-bottom:34px;gap:28px}
+#stage.pano .card.land{width:420px;height:236px;background-size:cover;background-position:center}
+#stage.pano #home .card.tile{width:236px;height:236px}
+#stage.pano #home .card.wide{width:420px;height:236px}
+#stage.pano #home .st-label.l1{top:574px}
+#stage.pano #home .ctx{top:286px;gap:14px;max-width:1080px}
+#stage.pano #home .ctx-title{font-size:calc(66px * min(var(--ts), 1.25));line-height:1.08;letter-spacing:.06em;white-space:normal;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;max-width:1080px}
+#stage.pano #home .ctx .meta{font-size:calc(23px * min(var(--ts), 1.3));max-width:1000px}
+#stage.pano #home .strata,#stage.pano #home .st-label.l2,#stage.pano #home .horizon{display:none}
+#stage.pano #home .sys{top:996px}
+/* the quick menu's four profiles: equal cells with room inside (3.1.0-rc12: PERFORMANCE filled its
+   cell edge to edge and pushed it wider than the other three) */
+#quick .opts{gap:6px}
+#quick .opts span{flex:1 1 0;min-width:0;padding:12px 4px;font-size:17px;letter-spacing:.04em;white-space:nowrap}
 </style>
 
 <!-- LIQUID GLASS (cristal.css): the lens of the section bar and the status. Chromium bends what is behind them
@@ -1029,7 +1061,10 @@ const S = {
   /* 3.0: who is signed in to Steam ("in", "out", null: not known yet), Steam's own window in front, the session report */
   libLogged: null, libCached: false, libNone: false, steamFront: null, report: true,
   /* CRISTAL: glass with blur (1) or without (0, «Ligeros»; always without GPU) */
-  glass: 1
+  glass: 1,
+  /* rc12: Inicio's style: 0 Cristal (a big first card and portrait covers), 1 Panorama (the game's art over the whole
+     screen, its name large, landscape covers in one row) */
+  homeStyle: 0
 };
 /* Performance profiles: all values stay inside the range documented as stable on every BC-250 (≤ 2000 MHz at 1000 mV, ≤ 85 °C).
    stoned holds the same table (profiles.py) and is the one that applies it; these are for display. */
@@ -1258,14 +1293,15 @@ async function loadLibrary() {
   /* S.running, S.launching and the open game page are positions in G: each one follows its game */
   const idOf = i => i !== null && i !== undefined && G[i] ? G[i].appid : null;
   const run = idOf(S.running), lau = idOf(S.launching), cur = typeof curG === 'number' ? idOf(curG) : null;
-  G = list.map((x, i) => ({ i, appid: x.appid, n: x.name, o: SRC[x.source] || 'Steam', src: x.source, min: x.playtime_min,
+  G = list.map((x, i) => ({ i, appid: x.appid, n: x.name, o: x.kind === 'rom' ? (x.system_name || 'Emulador') : x.kind === 'emulator' ? 'Emulador' : SRC[x.source] || 'Steam',
+    src: x.source, kind: x.kind || null, sys: x.system_name || null, added: x.added || 0, min: x.playtime_min,
     h: Math.round(x.playtime_min / 60), lastT: x.last_played, last: ago(x.last_played), sz: sizeText(x.size_bytes),
     inst: x.installed, upd: x.updating, art: Object.assign({ capsule: false, hero: false, header: false, hero2x: false }, x.art), fav: favs.has(x.appid), perf: null }));
   const at = a => { const k = a === null ? -1 : G.findIndex(g => g.appid === a); return k < 0 ? null : k; };
   S.running = at(run); S.launching = at(lau);
   S.detailGone = cur !== null && at(cur) === null;
   if (cur !== null && at(cur) !== null) curG = at(cur);
-  recent = G.filter(g => g.inst || g.src === 'shortcut').slice(0, 6).map(g => g.i);
+  recent = homeRow();
   /* nothing installed yet (a new console): the account's games take the first row, ready to install */
   S.libNone = !recent.length;
   if (S.libNone) recent = G.slice(0, 6).map(g => g.i);
@@ -1274,10 +1310,30 @@ async function loadLibrary() {
   S.libLogged = r ? r.logged : null; S.libCached = !!(r && r.owned_cached);
   if (S.st) adopt(S.st);
 }
+/* INICIO's row (3.1.0-rc12): the games, Steam's and the emulators', together, most recently played (or
+   arrived, for an emulator game copied and not played yet) first; the emulator apps themselves stay in
+   the Library. Up to HOME_N; when the person has emulator games and none made it into the row, the
+   latest of them take its last places, so they are always on Inicio with the rest. */
+const HOME_N = 8, HOME_ROMS = 2;
+function homeRow() {
+  const play = G.filter(g => (g.inst || g.src === 'shortcut') && g.kind !== 'emulator');
+  const row = play.slice(0, HOME_N);
+  const roms = play.filter(g => g.kind === 'rom');
+  if (roms.length && !row.some(g => g.kind === 'rom')) {
+    const add = roms.slice(0, Math.min(HOME_ROMS, roms.length));
+    row.splice(Math.max(1, row.length - add.length), add.length, ...add);
+  }
+  return row.slice(0, HOME_N).map(g => g.i);
+}
 /* Artwork: Steam's own cache, or what STONE fetched for games Steam had not shown (host artcache).
    A game with only the store's wide picture shows it at the top of its card, the name under it. */
 const capUrl = g => g.art.capsule ? `url("${Bridge.artUrl(g.appid, 'capsule')}")` : g.art.header ? `url("${Bridge.artUrl(g.appid, 'header')}")` : 'none';
 const capWide = g => !g.art.capsule && !!g.art.header;
+/* An emulator game's box art (tall, no wide picture) in a wide card: the whole box in the middle over
+   a dark, enlarged copy of itself, instead of a strip cut out of it (3.1.0-rc12, board 20-11-2026). */
+const tallOnly = g => !g.art.hero && !g.art.hero2x && !g.art.header && !!g.art.capsule;
+const boxBg = g => { const u = Bridge.artUrl(g.appid, 'capsule');
+  return `background-image:url(&quot;${u}&quot;),linear-gradient(rgba(8,9,12,.62),rgba(8,9,12,.62)),url(&quot;${u}&quot;);background-size:contain,cover,cover;background-repeat:no-repeat;background-position:center`; };
 const heroUrl = g => g.art.hero || g.art.capsule || g.art.header ? Bridge.artUrl(g.appid, g.art.hero ? 'hero' : g.art.capsule ? 'capsule' : 'header') : null;
 /* The background of the screen: the picture at twice the size when STONE has it (artcache hero2x) */
 const bgUrl = g => g.art.hero2x ? Bridge.artUrl(g.appid, 'hero2x') : heroUrl(g);
@@ -1295,21 +1351,45 @@ function coverText(g) {
   if (m && ROM_SYS.includes(m[2])) return [m[2].toUpperCase(), m[1]];
   if (m && m[2] === 'Switch 2') return ['SWITCH 2 · PORT', m[1]];
   if (m && m[2] === 'emulador de Switch 2') return ['EMULADOR', m[1]];
+  if (g.kind === 'rom' && g.sys) { const sfx = ` (${g.sys})`; return [g.sys.toUpperCase(), g.n.endsWith(sfx) ? g.n.slice(0, -sfx.length) : g.n]; }
+  if (g.kind === 'emulator') return ['EMULADOR', g.n];
   return [(g.src === 'shortcut' ? 'ACCESO DIRECTO' : g.o || 'STEAM').toUpperCase(), g.n];
 }
 const nameTag = g => { const t = coverText(g); return `<span class="ph">${t ? `<span class="pht"><span class="lbl">${esc(t[0])}</span><em>${esc(t[1])}</em></span>` : ''}</span>`; };
-/* Background blur from a 64×36 copy of the hero: one tiny image scaled up, no live blur filter.
+/* Background blur: a 240 × 135 copy of the game's picture, cut to the screen's shape and blurred once
+   when it is made (no live blur filter). Until 3.1.0-rc12 it was a 64 × 36 copy enlarged 30 times,
+   which showed its pixels as soft blocks (board, 20-11-2026: emulator games' backgrounds "pixeleados").
    A small LRU keeps the last ones; game mode empties it. */
-const BLUR = new Map(), BLUR_MAX = 24;
+const BLUR = new Map(), BLUR_MAX = 24, BLUR_W = 240, BLUR_H = 135;
+function blurPaint(img) {
+  const c = document.createElement('canvas'); c.width = BLUR_W; c.height = BLUR_H;
+  const x = c.getContext('2d'), iw = img.naturalWidth || 1, ih = img.naturalHeight || 1;
+  /* the picture covering the canvas (like the screen), a little larger so the blur has no dark edges */
+  const k = Math.max(BLUR_W / iw, BLUR_H / ih) * 1.12, w = iw * k, h = ih * k;
+  x.imageSmoothingEnabled = true; x.imageSmoothingQuality = 'high';
+  if (typeof x.filter === 'string') {
+    x.filter = 'blur(9px) saturate(1.15)';
+    x.drawImage(img, (BLUR_W - w) / 2, (BLUR_H - h) / 2, w, h);
+    return c;
+  }
+  /* no canvas filter: down to a few pixels, then up again in steps of two (each step smooth) */
+  let s = document.createElement('canvas'); s.width = 30; s.height = 17;
+  const k2 = Math.max(30 / iw, 17 / ih);
+  s.getContext('2d').drawImage(img, (30 - iw * k2) / 2, (17 - ih * k2) / 2, iw * k2, ih * k2);
+  while (s.width * 2 < BLUR_W) {
+    const n = document.createElement('canvas'); n.width = s.width * 2; n.height = s.height * 2;
+    const nx = n.getContext('2d'); nx.imageSmoothingQuality = 'high'; nx.drawImage(s, 0, 0, n.width, n.height); s = n;
+  }
+  x.drawImage(s, 0, 0, BLUR_W, BLUR_H);
+  return c;
+}
 function blurOf(g, cb) {
   if (BLUR.has(g.appid)) { const v = BLUR.get(g.appid); BLUR.delete(g.appid); BLUR.set(g.appid, v); return v; }
   const u = heroUrl(g); if (!u) return null;
   const img = new Image(); img.decoding = 'async';
   img.onload = () => {
     try {
-      const c = document.createElement('canvas'); c.width = 64; c.height = 36;
-      c.getContext('2d').drawImage(img, 0, 0, 64, 36);
-      BLUR.set(g.appid, c.toDataURL('image/png'));
+      BLUR.set(g.appid, blurPaint(img).toDataURL('image/jpeg', .9));
       while (BLUR.size > BLUR_MAX) BLUR.delete(BLUR.keys().next().value);
       if (cb) cb();
     } catch (e) { /* artwork that cannot be read stays sharp-only */ }
@@ -1418,33 +1498,64 @@ function hints(list) {
   hintIdle = setTimeout(() => h.classList.add('hide'), 5000);
 }
 function showHints() { $('#hints').classList.remove('hide'); clearTimeout(hintIdle); hintIdle = setTimeout(() => $('#hints').classList.add('hide'), 5000); }
+/* Two background layers crossfade (bgA, bgB). A layer is one picture covering the screen (css), or,
+   for a game's big picture, a BAND (3.1.0-rc12; board, 19-11-2026: "la imagen de fondo de los juegos
+   (Batman) no está en alta resolución, se ve pixeleada"). Steam's big picture is 1920 × 620, three
+   times wider than tall: covering a 16:9 screen enlarged it 1.74 times in height (2.3 times on the
+   2560 × 1440 television, 3.5 on a 4K one) and cut away almost half of it. As a band it fills the
+   screen's width at the top, at its own size, and fades into a soft copy of itself (css) below. */
 let bgFlip = false, bgCur = '', bgTok = 0;
-function setBg(css, veil, keepFor) {
-  if (!keepFor) S.bgFor = null;
+function bgLayer(el, css, top, shape) {
+  el.style.backgroundImage = css || 'none'; el.style.backgroundColor = css ? '' : 'transparent';
+  el.style.setProperty('--top', top ? `url("${top}")` : 'none');
+  el.classList.toggle('band', !!top && shape !== 'box');
+  el.classList.toggle('box', !!top && shape === 'box');
+}
+/* shape 'box': an emulator game's box art, whole and sharp, on the right of its page (it has no big picture) */
+function setBg(css, veil, keepFor, top, shape) {
+  if (!keepFor) { S.bgFor = null; stage.style.setProperty('--bg-blur', '0px'); stage.style.setProperty('--bg-dim', '0'); }
   $('#veil').className = veil === undefined ? 'none' : veil;
-  if (css === bgCur) return; bgCur = css;
+  const key = `${css}|${top || ''}|${shape || ''}`;
+  if (key === bgCur) return; bgCur = key;
   const a = bgFlip ? $('#bgA') : $('#bgB'), b = bgFlip ? $('#bgB') : $('#bgA');
-  a.style.backgroundImage = css || 'none'; a.style.backgroundColor = css ? '' : 'transparent';
+  /* the same band with its soft copy arrived: only what is under it changes, nothing fades */
+  if (top && b.classList.contains('on') && b.style.getPropertyValue('--top') === `url("${top}")`) { b.style.backgroundImage = css || 'none'; return; }
+  bgLayer(a, css, top, shape);
   a.classList.add('on'); b.classList.remove('on'); bgFlip = !bgFlip;
   /* after the crossfade, the hidden layer lets go of its image so only one full-screen picture stays decoded */
-  const tok = ++bgTok; setTimeout(() => { if (tok === bgTok) b.style.backgroundImage = 'none'; }, S.rm ? 400 : 1000);
+  const tok = ++bgTok; setTimeout(() => { if (tok === bgTok) bgLayer(b, '', null); }, S.rm ? 400 : 1000);
 }
+/* game mode: both layers let go of their pictures at once */
+function bgClear() { setBg('', 'none'); bgLayer($('#bgA'), '', null); bgLayer($('#bgB'), '', null); bgCur = ''; }
+/* The game's background. Its big picture is shown as a band, sharp; a game with only a cover or the
+   store's small picture shows its colours, softened (an enlarged cover is made of blocks). */
 function bgGame(g, sharp, veil) {
   S.bgFor = { i: g.i, sharp, veil };
   accentFor(g);
-  const u = bgUrl(g);
+  const wide = g.art.hero2x || g.art.hero, u = wide ? bgUrl(g) : null;
   bgTune(g, !!u && sharp);
-  if (!u) return setBg(neutralBg, veil, true);
-  if (sharp) { bgWant(g); return setBg(`url("${u}")`, veil, true); }
-  const b = blurOf(g, () => { if (S.bgFor && S.bgFor.i === g.i && !S.bgFor.sharp) setBg(`url(${BLUR.get(g.appid)})`, S.bgFor.veil, true); });
+  if (!heroUrl(g)) return setBg(neutralBg, veil, true);
+  const soft = () => BLUR.has(g.appid) ? `url(${BLUR.get(g.appid)})` : null;
+  const b = blurOf(g, () => {
+    const f = S.bgFor;
+    if (!f || f.i !== g.i) return;
+    if (f.sharp && !u && f.veil === 'side' && tallOnly(g)) return setBg(soft(), f.veil, true, Bridge.artUrl(g.appid, 'capsule'), 'box');
+    setBg(soft(), f.veil, true, f.sharp && u ? u : null);
+  });
+  if (sharp) bgWant(g);
+  if (sharp && u) return setBg(b ? `url(${b})` : neutralBg, veil, true, u);
+  if (sharp && veil === 'side' && tallOnly(g)) {
+    const box = Bridge.artUrl(g.appid, 'capsule');
+    return setBg(b ? `url(${b})` : neutralBg, veil, true, box, 'box');
+  }
   if (b) return setBg(`url(${b})`, veil, true);
   $('#veil').className = veil;
 }
 
 /* THE BACKGROUND AT THE SCREEN'S SIZE (3.1.0-rc4; board, 12-11-2026: "los fondos se ven pixelados").
-   Steam's big picture is 1920 × 620: filling a 4K television it is enlarged 3.5 times. STONE asks for
-   the one at twice the size (when the game has it, artcache hero2x) for the game being looked at, and
-   softens what still has to be enlarged a lot, so it looks out of focus instead of made of blocks.
+   Steam's big picture is 1920 × 620. STONE asks for the one at twice the size (when the game has it,
+   artcache hero2x) for the game being looked at, shows it as a band (setBg) and softens what still has
+   to be enlarged a lot, so it looks out of focus instead of made of blocks.
    Bright art (a white sky) gets a deeper shade under the text (--bg-dim). */
 const BG_SIZE = new Map(), BG_LUM = new Map(), BG_ASKED = new Set();
 let bgWantT = 0;
@@ -1457,9 +1568,10 @@ function bgWant(g) {
 function bgTune(g, shown) {
   let blur = 0, dim = 0;
   if (shown) {
+    /* shown as a band: enlarged only to the screen's width */
     const sz = g.art.hero2x ? [3840, 1240] : BG_SIZE.get(g.appid);
     if (sz) {
-      const up = Math.max(1920 / sz[0], 1080 / sz[1]) * SCALE * (window.devicePixelRatio || 1);
+      const up = 1920 / sz[0] * SCALE * (window.devicePixelRatio || 1);
       blur = Math.max(0, Math.min(4.5, (up - 1.3) * 1.1));
     }
     const lum = BG_LUM.get(g.appid);
@@ -1583,9 +1695,12 @@ function homeHTML() {
   if (S.section === 0) {
     /* Nobody signed in to Steam on this console: the first thing Home offers */
     if (S.libLogged === 'out') cards += `<div class="card wide vein" data-f data-act="login">${cover('login')}<b>Inicia sesión en Steam</b><span>Tus juegos vienen de tu cuenta de Steam</span></div>`;
-    if (G.length && recent.length) {
+    if (G.length && recent.length && S.homeStyle === 1) {
+      /* PANORAMA (rc12): every game the same landscape card (its wide art), the first one too */
+      recent.forEach(i => { const g = G[i], u = landUrl(g); cards += `<div class="card land${g.inst || g.src === 'shortcut' ? '' : ' dim'}" data-f data-g="${i}" style="${tallOnly(g) ? boxBg(g) : `background-image:${u ? `url(&quot;${u}&quot;)` : 'none'}`}">${u ? '' : nameTag(g)}${runTag(i)}</div>`; });
+    } else if (G.length && recent.length) {
       const g0 = G[recent[0]], hu = heroUrl(g0);
-      cards += `<div class="card hero${g0.inst || g0.src === 'shortcut' ? '' : ' dim'}" data-f data-g="${g0.i}" style="background-image:${hu ? `url(&quot;${hu}&quot;)` : 'none'};background-color:var(--shale)">${hu ? '' : nameTag(g0)}${runTag(g0.i)}</div>`;
+      cards += `<div class="card hero${g0.inst || g0.src === 'shortcut' ? '' : ' dim'}" data-f data-g="${g0.i}" style="${tallOnly(g0) ? boxBg(g0) : `background-image:${hu ? `url(&quot;${hu}&quot;)` : 'none'}`};background-color:var(--shale)">${hu ? '' : nameTag(g0)}${runTag(g0.i)}</div>`;
       recent.slice(1).forEach(i => { const g = G[i]; cards += `<div class="card cap${g.inst || g.src === 'shortcut' ? '' : ' dim'}${capWide(g) ? ' hdr' : ''}" data-f data-g="${i}" style="background-image:${capUrl(g).replace(/"/g, '&quot;')}">${g.art.capsule || g.art.header ? '' : nameTag(g)}${runTag(i)}</div>`; });
     } else if (S.libLogged !== 'out') {
       cards += `<div class="card wide" data-f data-act="${S.libReady ? 'store' : 'library'}">${cover(S.libReady ? 'store' : 'library')}<b>${S.libReady ? 'Sin juegos' : 'Biblioteca'}</b><span>${S.libReady ? 'Abre la tienda para conseguir el primero' : 'Leyendo la biblioteca de Steam…'}</span></div>`;
@@ -1594,7 +1709,9 @@ function homeHTML() {
   } else if (S.section === 2) {
     [['Tienda', 'Ofertas, novedades y lo más vendido en Steam', 'store'], ['Buscar juegos', 'Tu biblioteca y la tienda de Steam', 'search'],
       ['Sorpréndeme', 'STONE elige uno de tus juegos instalados', 'surprise'], ['Descargas', 'Descargas y actualizaciones de juegos', 'downloads'], ['Emuladores', 'Juegos de otras consolas', 'emu']]
-      .forEach(([t, s, k]) => { cards += `<div class="card wide" data-f data-act="${k}">${cover(k)}<b>${t}</b><span>${s}</span></div>`; });
+      /* the card says what it is; what it does is written once, under the row (3.1.0-rc12: it was written
+         twice, in the card and under it, and the chosen card's text wrapped) */
+      .forEach(([t, _s, k]) => { cards += `<div class="card wide" data-f data-act="${k}">${cover(k)}<b>${t}</b></div>`; });
   } else {
     if (!SHOTS) loadShots();
     if (SHOTS && SHOTS.length) SHOTS.slice(0, 12).forEach((sh, k) => { cards += `<div class="card cap shot" data-f data-act="shot" data-k="${k}" style="background-image:url(&quot;${Bridge.artUrl(sh.appid === '0' ? '0' : '0', sh.kind)}&quot;)"></div>`; });
@@ -1629,7 +1746,7 @@ function homeContext(el) {
   hm.classList.remove('on'); clearTimeout(metaT);
   const gi = el.dataset.g;
   if (gi !== undefined) {
-    const g = G[+gi], first = el.classList.contains('hero'), playable = g.inst || g.src === 'shortcut';
+    const g = G[+gi], first = el.classList.contains('hero') || (S.homeStyle === 1 && +gi === recent[0]), playable = g.inst || g.src === 'shortcut';
     hk.innerHTML = !playable ? 'EN TU CUENTA · SIN INSTALAR' : first ? `CONTINUAR${S.running === g.i ? ' · <span class="now">EN CURSO</span>' : ''}` : 'RECIENTE';
     ht.textContent = g.n;
     hm.textContent = !playable ? `${g.upd ? 'Instalándose' : 'Pulsa A para instalarlo'} · ${playText(g)}`
@@ -1640,7 +1757,7 @@ function homeContext(el) {
   } else {
     const a = el.dataset.act;
     const label = { login: ['Steam', 'Con el código QR de Steam y tu móvil, sin escribir contraseñas'], store: ['Tienda', 'Ofertas, novedades y lo más vendido en Steam'],
-      surprise: ['Sorpréndeme', 'Para cuando no sabes a qué jugar'], search: ['Buscar', 'Tus juegos y la tienda de Steam (Y)'], library: ['Biblioteca', S.libReady ? `${G.length} juego${G.length === 1 ? '' : 's'}` : 'Leyendo…'], explore: ['Explorar', 'Tienda, descargas y emuladores'], settings: ['Ajustes', 'Pantalla, audio, rendimiento y más'], power: ['Apagar', 'Apagar o reiniciar'],
+      surprise: ['Sorpréndeme', 'STONE elige uno de tus juegos instalados'], search: ['Buscar', 'Tus juegos y la tienda de Steam (Y)'], library: ['Biblioteca', S.libReady ? `${G.length} juego${G.length === 1 ? '' : 's'}` : 'Leyendo…'], explore: ['Explorar', 'Tienda, descargas y emuladores'], settings: ['Ajustes', 'Pantalla, audio, rendimiento y más'], power: ['Apagar', 'Apagar o reiniciar'],
       downloads: ['Descargas', 'Lo que se descarga y el espacio libre'], emu: ['Emuladores', 'Juegos de otras consolas'], noshots: ['Capturas', 'Durante el juego: botón STEAM + R1'],
       shot: (() => { const sh = SHOTS && SHOTS[+el.dataset.k], g = sh && G.find(x => x.appid === sh.appid); return ['Captura', sh ? `${g ? g.n : 'Juego ' + sh.appid} · ${new Date(sh.time * 1000).toLocaleDateString('es-CL')}` : '']; })() }[a] || ['', ''];
     hk.textContent = S.section === 2 ? 'EXPLORAR' : S.section === 3 ? 'MEDIA' : 'SISTEMA';
@@ -1660,6 +1777,9 @@ function focusInPlace() {
   if (el) el.classList.add('f');          /* before any layout read: no transition from "not focused" */
   applyFocus();
 }
+/* PANORAMA's cards: Steam's wide picture of the game (its header, with the game's logo), else its big
+   picture (cut to 16:9), else its cover */
+const landUrl = g => g.art.header ? Bridge.artUrl(g.appid, 'header') : heroUrl(g);
 function enterHome(opts = {}) {
   S.screen = 'home'; S.from = 'home';
   if (S.section === 1 || S.section === 4) S.section = 0;
@@ -1676,7 +1796,7 @@ function enterHome(opts = {}) {
   if (opts.sys) { opts.r = 1; opts.c = Math.max(0, rows[1].findIndex(e => e.dataset.act === opts.sys)); }
   NAV = mkNav(rows, {
     r: opts.r ?? (prev ? prev.r : 0), c: opts.c ?? (prev ? prev.c : 0),
-    place: (el, b, r) => r === 0 ? { x: b.x, y: 668, w: b.w * (S.rm ? 1 : 1.06) } : { x: b.x, y: b.y + b.h + 14, w: b.w },
+    place: (el, b, r) => r === 0 ? { x: b.x, y: S.homeStyle === 1 ? b.y + b.h + 18 : 668, w: b.w * (S.rm ? 1 : 1.06) } : { x: b.x, y: b.y + b.h + 14, w: b.w },
     scroll: el => {
       if (!el.closest('.track')) return;
       let sx = +track.dataset.sx; const l = el.offsetLeft, r = l + el.offsetWidth * 1.06, view = 1728;
@@ -1930,7 +2050,9 @@ function enterStorePage(appid, back, row) {
   Sys.artWant(appid).catch(() => {});
 }
 function storePageBg() {
-  const u = SPG.hero ? Bridge.artUrl(SPG.id, 'hero') : SPG.header ? Bridge.artUrl(SPG.id, 'header') : null;
+  /* the big picture as a band, like a game's page (bggame.js setBg); only the small one: as before */
+  if (SPG.hero) return setBg(neutralBg, 'side', false, Bridge.artUrl(SPG.id, 'hero'));
+  const u = SPG.header ? Bridge.artUrl(SPG.id, 'header') : null;
   setBg(u ? `url("${u}")` : neutralBg, 'side');
 }
 function storePageDraw(opts = {}) {
@@ -2309,7 +2431,9 @@ Bridge.on('art', d => {
   document.querySelectorAll('#home .card[data-g], #library .card[data-g]').forEach(el => {
     const g = G[+el.dataset.g]; if (!g || !ids.has(g.appid)) return;
     const ph = el.querySelector('.ph');
-    if (el.classList.contains('hero')) { const u = heroUrl(g); if (u) { el.style.backgroundImage = `url("${u}")`; if (ph) ph.remove(); } return; }
+    const wide = el.classList.contains('hero') || el.classList.contains('land');
+    if (wide && tallOnly(g)) { el.setAttribute('style', boxBg(g).replace(/&quot;/g, '"') + ';background-color:var(--shale)'); if (ph) ph.remove(); return; }
+    if (wide) { const u = el.classList.contains('land') ? landUrl(g) : heroUrl(g); if (u) { el.style.backgroundImage = `url("${u}")`; if (ph) ph.remove(); } return; }
     el.style.backgroundImage = capUrl(g); el.classList.toggle('hdr', capWide(g));
     if (ph && (g.art.capsule || g.art.header)) ph.remove();
   });
@@ -2679,13 +2803,24 @@ function steamLabel(label, gameName) {
   const k = Object.keys(STEAM_LO).find(x => x.toLowerCase() === m[1].toLowerCase());
   return k ? STEAM_LO[k].replace('%1$s', gameName) : m[1].replace(/_/g, ' ');
 }
-/* list: Steam's choices as rows (the launch options can be long); the buttons below only cancel */
-function lwDlg(g, cap, text, buttons, extra, list) {
+/* list: Steam's choices as rows (the launch options can be long); the buttons below only cancel.
+   remember (rc12): a RECORDAR button, as Steam's «Siempre»: the choice is answered by itself next time. */
+function lwDlg(g, cap, text, buttons, extra, list, remember) {
   play('notify');
+  let keep = false;
   const rows = list ? `<div class="slist">${list.map(([l], i) => `<span class="txt-f sres" data-f data-l="${i}">${esc(l)}</span>`).join('')}</div>` : '';
+  const rem = remember ? '<span class="txt-f" data-f data-r="1">RECORDAR: NO</span>' : '';
   openDlg(`<span class="st-cap">${cap}</span><h2>${esc(g.n.toUpperCase())}</h2>${extra || ''}<p>${esc(text)}</p>${rows}
-    <div class="btns">${buttons.map(([l], i) => `<span class="txt-f" data-f data-i="${i}">${esc(l)}</span>`).join('')}</div>`, {
-    onA: el => { const a = el.dataset.l !== undefined ? list[+el.dataset.l][1] : buttons[+el.dataset.i][1]; closeDlg(); lwAnswer(g, a); },
+    <div class="btns">${rem}${buttons.map(([l], i) => `<span class="txt-f" data-f data-i="${i}">${esc(l)}</span>`).join('')}</div>`, {
+    onA: el => {
+      if (el.dataset.r) { keep = !keep; play('nav'); el.textContent = `RECORDAR: ${keep ? 'SÍ' : 'NO'}`; return; }
+      const a = el.dataset.l !== undefined ? list[+el.dataset.l][1] : buttons[+el.dataset.i][1];
+      if (keep && el.dataset.l !== undefined) {
+        S.picks = Object.assign({}, S.picks, { [g.appid]: +a }); savePrefs();
+        toast('Guardado: la próxima vez empieza solo. Para cambiarlo: Propiedades del juego', false);
+      }
+      closeDlg(); lwAnswer(g, a);
+    },
     onB: () => { closeDlg(); lwAnswer(g, 'cancel'); } });
   if (list) {
     const d = $('#dlg');
@@ -2703,8 +2838,14 @@ function lwAsk(g, st) {
   if (r === 'ShowLaunchOption') {
     const o = st.options || [];
     if (!o.length) return lwAnswer(g, '0');
+    const pick = S.picks && S.picks[g.appid];
+    if (pick !== undefined && o.some(x => x.index === pick)) {
+      const x = o.find(y => y.index === pick);
+      toast(`Iniciando: ${x.label ? steamLabel(x.label, g.n) : 'opción ' + (pick + 1)} (tu elección guardada)`, false);
+      return lwAnswer(g, String(pick));
+    }
     return lwDlg(g, 'OPCIÓN DE INICIO', 'Este juego tiene varias formas de iniciarse. Elige una:', [['CANCELAR', 'cancel']], '',
-      o.slice(0, 6).map(x => [x.label ? steamLabel(x.label, g.n) : `Opción ${x.index + 1}`, String(x.index)]));
+      o.slice(0, 6).map(x => [x.label ? steamLabel(x.label, g.n) : `Opción ${x.index + 1}`, String(x.index)]), true);
   }
   if (r === 'ShowEula') {
     const e = (st.eulas || [])[0], qr = e ? `<div class="qrrow">${qrSvg(e.url, 220)}<div><p class="url">${esc(e.url.slice(8))}</p></div></div>` : '';
@@ -2911,6 +3052,9 @@ Bridge.on('usb', d => {
   if (d.error) { play('error'); toast(d.error, false); }
   else if (d.canceled) toast(`Copia cancelada: ${d.copied} juego${d.copied === 1 ? '' : 's'} copiado${d.copied === 1 ? '' : 's'}`, false);
   else { play('notify'); longToast(`${d.copied} juego${d.copied === 1 ? '' : 's'} copiado${d.copied === 1 ? '' : 's'} y añadido${d.copied === 1 ? '' : 's'} a tu biblioteca. Ya puedes quitar el USB`, 7000); }
+  /* rc12: games of a console whose emulator is not installed wait for it: said, with where to get it */
+  const need = Object.entries(d.need || {});
+  if (need.length) setTimeout(() => longToast(`Para jugar: instala ${need.map(([sys, emu]) => `${emu} (${sys})`).join(', ')} en Ajustes → Emuladores. Los juegos aparecen solos al instalarlo`, 9000), d.error ? 4000 : 7500);
   egScan(true); reloadLibrary();
 });
 /* «Juegos desde el móvil»: the QR code, what arrives, CERRAR adds them to the library */
@@ -3117,7 +3261,7 @@ async function updEnded(u) {
 setTimeout(updWatch, 6000);
 
 /* ---------- LIBRARY ---------- */
-const FILTERS = ['Todos', 'Steam', 'Accesos directos', 'Favoritos', 'Por instalar', 'Sorpréndeme'];
+const FILTERS = ['Todos', 'Steam', 'Emuladores', 'Favoritos', 'Por instalar', 'Sorpréndeme'];
 const FILTER_SURPRISE = FILTERS.length - 1;       /* not a filter: STONE picks a game (surprise()) */
 function libList() {
   const f = S.filter;
@@ -3128,7 +3272,7 @@ function emptyText() {
   if (S.libLogged === 'out') return 'Nadie ha iniciado sesión en Steam en esta consola. En Inicio, elige «Inicia sesión en Steam».';
   if (!S.libFound) return 'Steam todavía no ha creado su biblioteca. Si la consola acaba de encenderse, espera unos segundos.';
   if (S.filter === 3) return 'Aún no hay favoritos. Márcalos desde la ficha de cada juego.';
-  if (S.filter === 2) return 'Sin accesos directos. Los lanzadores y emuladores que añaden sus juegos a Steam aparecen aquí.';
+  if (S.filter === 2) return 'Aún no hay juegos de emuladores. Conecta un USB con tus juegos o añádelos en Ajustes → Emuladores.';
   if (S.filter === 4) return G.length ? 'Todos los juegos de tu cuenta están instalados.' : 'Aún no hay juegos en tu cuenta.';
   return G.length ? 'No hay juegos con este filtro.' : 'Aún no hay juegos. Abre la Tienda (RB) para conseguir el primero.';
 }
@@ -3196,7 +3340,9 @@ function enterDetail(i, opts = {}) {
   const prim = running ? 'REANUDAR' : canPlay ? 'JUGAR' : g.upd ? 'INSTALANDO' : 'INSTALAR';
   /* Five actions at most on one line (they always fit the 1920 stage); the image options live in GRÁFICOS. */
   const sec = [[g.fav ? 'Quitar de favoritos' : 'Favorito', 'fav'], [`Rendimiento: ${g.perf ? profOf(g.perf).n : 'Global'}`, 'perf'], ['Propiedades', 'opt']];
-  if (g.src === 'steam' && g.inst) sec.splice(2, 0, ['Gráficos', 'gfx'], ['Experiencia', 'xp']);
+  /* rc12: DESINSTALAR on the page itself (it was inside Propiedades only); Experiencia moved into GRÁFICOS */
+  if (g.src === 'steam' && g.inst) sec.splice(2, 0, ['Gráficos', 'gfx'], ['Desinstalar', 'rm']);
+  else if (g.kind === 'rom') sec.splice(2, 0, ['Desinstalar', 'rm']);
   if (running) sec[1] = ['Cerrar juego', 'close'];          /* the profile applies at start; while playing it is in the quick menu */
   $('#detail').innerHTML = `
     <div class="col"><div class="origin">${esc(g.o)}</div><h1${g.n.length > 22 ? ' class="long"' : ''}>${esc(g.n)}</h1>
@@ -3338,6 +3484,7 @@ function detailA(el) {
   if (a === 'ins') { play('select'); return insOpti(g, curG); }
   if (a === 'gfx') { play('select'); return gfxPanel(g); }
   if (a === 'xp') { play('select'); return xpDlg(g); }
+  if (a === 'rm') { play('select'); return uninstallAsk(g); }
   if (a === 'fg') {
     if (!g.fg) { play('error'); return toast('Leyendo…', false); }
     if (!g.fg.available) { play('error'); return toast(g.fg.reason, false); }
@@ -3385,8 +3532,9 @@ async function launch(g, starter) {
   if (S.launching !== null) return;
   const ok = await (starter ? starter() : sys('launch', g.appid));
   if (!ok) return;
+  if (ok.ok === false) { play('error'); return longToast(ok.error || 'No se pudo abrir', 7000); }   /* rc12: e.g. its emulator is missing */
   S.launching = g.i; S.running = g.i; S.screen = 'transition';
-  recent = [g.i, ...recent.filter(i => i !== g.i)].slice(0, 6);
+  recent = [g.i, ...recent.filter(i => i !== g.i)].slice(0, HOME_N);
   const el = focusEl(), b = el ? stageBox(el) : { x: 960, y: 540, w: 0, h: 0 };
   chrome(false, false); $('#hints').classList.add('hide');
   play('launch');
@@ -3479,7 +3627,7 @@ function returnHome() {
 function gameMode() {
   ['home', 'library', 'detail', 'settings', 'perf', 'tuning'].forEach(id => { $('#' + id).innerHTML = ''; });
   spreadEls = [];
-  setBg('', 'none'); $('#bgA').style.backgroundImage = 'none'; $('#bgB').style.backgroundImage = 'none'; bgCur = '';
+  bgClear();
   trimArt();
   setTimeout(() => { if (S.screen === 'game') audioSleep(); }, 2500);
 }
@@ -3565,7 +3713,8 @@ function lookPicker(g) {
   NAV.id = 'dlg'; requestAnimationFrame(() => applyFocus());
 }
 /* GRÁFICOS: the image options of one game in a list, each line with its value; A changes it in place. */
-const GFX = [['img', g => imgLabel(g)], ['pre', g => preLabel(g)], ['look', g => lookLabel(g)], ['fg', g => fgLabel(g)], ['ins', g => optLabel(g)], ['opz', g => optzLabel(g)]];
+const GFX = [['img', g => imgLabel(g)], ['pre', g => preLabel(g)], ['look', g => lookLabel(g)], ['fg', g => fgLabel(g)], ['ins', g => optLabel(g)], ['opz', g => optzLabel(g)],
+  ['xp', () => 'Experiencia: qué usa STONE y por qué']];
 function gfxPanel(g, at = 0) {
   const row = ([k, f]) => { const [l, v] = f(g).split(/: (.*)/s); return `<span class="txt-f sres" data-f data-act="${k}">${esc(l)}<small>${esc(v || '')}</small></span>`; };
   const back = () => { closeDlg(); play('back'); enterDetail(curG, { r: 1, c: 2 }); };
@@ -3575,6 +3724,7 @@ function gfxPanel(g, at = 0) {
       if (el.dataset.b === 'no') return back();
       const k = el.dataset.act, r = NAV.r;
       if (k === 'opz') { closeDlg(); enterDetail(curG, { r: 1, c: 2 }); return detailA({ dataset: { act: 'opz' } }); }
+      if (k === 'xp') { closeDlg(); enterDetail(curG, { r: 1, c: 2 }); return detailA({ dataset: { act: 'xp' } }); }
       Promise.resolve(detailA({ dataset: { act: k } })).then(() => { if (S.screen === 'dlg' && $('#dlg h2') && $('#dlg h2').textContent === 'GRÁFICOS') gfxPanel(g, r); });
     }, onB: back });
   const d = $('#dlg');
@@ -3583,23 +3733,42 @@ function gfxPanel(g, at = 0) {
   if (!g.img) imgLoad(g, curG).then(() => { if (S.screen === 'dlg' && $('#dlg h2') && $('#dlg h2').textContent === 'GRÁFICOS') gfxPanel(g, NAV ? NAV.r : 0); });
 }
 /* PROPIEDADES: what STONE knows of the game, and uninstalling it (asked twice, done without Steam's dialog). */
+/* DESINSTALAR (rc12): asked once, plainly, then done without Steam's dialog (Steam games: install.js
+   uninstallGame; emulator games: rom.uninstall deletes the game's files, its saves stay with the emulator). */
+function uninstallAsk(g, back) {
+  back = back || (() => { closeDlg(); play('back');
+    const c = [...$('#detail').querySelectorAll('.second [data-f]')].findIndex(e => e.dataset.act === 'rm');
+    enterDetail(curG, { r: 1, c: Math.max(0, c) }); });
+  if (S.running === g.i) { play('error'); return toast('Cierra el juego antes de desinstalarlo', false); }
+  const rom = g.kind === 'rom';
+  openDlg(`<span class="st-cap">${rom ? esc((g.sys || 'EMULADOR').toUpperCase()) : 'STEAM'}</span><h2>DESINSTALAR</h2>
+    <p>Se borra ${esc(g.n)} de la consola${g.sz && g.sz !== '—' ? ` (${esc(g.sz)})` : ''}. ${rom
+      ? 'Tus partidas guardadas se conservan en el emulador. Para volver a jugarlo, cópialo otra vez (USB o móvil).'
+      : 'Tus partidas en la nube de Steam se conservan. Puedes volver a instalarlo cuando quieras.'}</p>
+    <div class="btns"><span class="txt-f" data-f data-b="no">CANCELAR</span><span class="txt-f" data-f data-b="yes">DESINSTALAR</span></div>`, {
+    onA: el => {
+      if (el.dataset.b !== 'yes') return back();
+      closeDlg(); play('select');
+      S.section = 0; if (NAV) NAV.id = ''; enterHome({ r: 0, c: 0 });
+      const job = rom
+        ? Bridge.call('rom.uninstall', g.appid).then(r => { if (!r || !r.ok) throw new Error((r && r.error) || 'No se pudo borrar'); toast(`${g.n}: desinstalado`, false); })
+        : uninstallGame(g.appid, g.n);
+      Promise.resolve(job).catch(e => { play('error'); toast((e && e.message) || 'No se pudo desinstalar', false); })
+        .then(() => loadLibrary()).then(() => { if (S.screen === 'home') enterHome({ r: 0, c: 0 }); });
+    }, onB: back });
+}
 function propsDlg(g) {
   const back = () => { closeDlg(); play('back'); enterDetail(curG, { r: 1, c: [...$('#detail').querySelectorAll('.second [data-f]')].length - 1 }); };
   const kv = (k, v) => `<span class="sres">${k}<small>${esc(v)}</small></span>`;
-  const canRemove = g.src === 'steam' && g.inst && S.running !== g.i;
-  openDlg(`<h2>PROPIEDADES</h2><div class="slist">${kv('Origen', g.o)}${kv('Tamaño', g.sz || '—')}${kv('Tiempo jugado', playText(g))}${kv('Última sesión', g.last || '—')}${kv('Al iniciarse', g.perf ? profOf(g.perf).n : 'Perfil global')}${g.src === 'steam' ? kv('Steam App ID', g.appid) : ''}</div>
-    <div class="btns">${canRemove ? '<span class="txt-f" data-f data-b="rm">DESINSTALAR</span>' : ''}<span class="txt-f" data-f data-b="no">VOLVER</span></div>`, {
+  /* no DESINSTALAR here (3.1.0-rc12): it is on the game's page, and here it was the first button, the
+     one chosen when the window opens (a press of A too many and the uninstall question came up) */
+  const picked = S.picks && S.picks[g.appid] !== undefined;
+  openDlg(`<h2>PROPIEDADES</h2><div class="slist">${kv('Origen', g.o)}${kv('Tamaño', g.sz || '—')}${kv('Tiempo jugado', playText(g))}${kv('Última sesión', g.last || '—')}${kv('Al iniciarse', g.perf ? profOf(g.perf).n : 'Perfil global')}${g.src === 'steam' ? kv('Steam App ID', g.appid) : ''}${g.sys ? kv('Consola', g.sys) : ''}${picked ? kv('Opción de inicio', 'Guardada (empieza sola)') : ''}</div>
+    <div class="btns">${picked ? '<span class="txt-f" data-f data-b="pick">OLVIDAR OPCIÓN DE INICIO</span>' : ''}<span class="txt-f" data-f data-b="no">VOLVER</span></div>`, {
     onA: el => {
       if (el.dataset.b === 'no') return back();
-      play('select');
-      openDlg(`<h2>DESINSTALAR</h2><p>Se borra ${esc(g.n)} de la consola (${esc(g.sz || 'su tamaño en disco')}). Tus partidas en la nube de Steam se conservan. Puedes volver a instalarlo cuando quieras.</p>
-        <div class="btns"><span class="txt-f" data-f data-b="no">CANCELAR</span><span class="txt-f" data-f data-b="yes">DESINSTALAR</span></div>`, {
-        onA: e2 => {
-          if (e2.dataset.b !== 'yes') { closeDlg(); play('back'); return propsDlg(g); }
-          closeDlg(); play('select');
-          S.section = 0; if (NAV) NAV.id = ''; enterHome({ r: 0, c: 0 });
-          uninstallGame(g.appid, g.n).then(() => loadLibrary()).then(() => { if (S.screen === 'home') enterHome({ r: 0, c: 0 }); });
-        }, onB: () => { closeDlg(); play('back'); propsDlg(g); } });
+      if (el.dataset.b === 'pick') { const p = Object.assign({}, S.picks); delete p[g.appid]; S.picks = p; savePrefs(); play('select'); toast('Steam volverá a preguntar cómo iniciarlo', false); closeDlg(); return propsDlg(g); }
+      return back();
     }, onB: back });
 }
 
@@ -4024,6 +4193,9 @@ function healthRows() {
   rows.push({ l: 'Informe de diagnóstico', s: 'Si algo falla: marca qué y STONE comprueba cada función. Un archivo sin datos personales para el móvil o un USB', v: 'Hacer', act: 'diag' });
   return rows;
 }
+/* rc12: Inicio's two styles (home.js homeHTML, cristal.css #stage.pano) */
+const HOME_STYLES = ['Cristal', 'Panorama'];
+const HOME_STYLE_TXT = ['Portada grande del juego y carátulas verticales', 'El arte del juego a pantalla completa, su nombre en grande y carátulas apaisadas'];
 function catRows() {
   /* Settings Steam already handles open in Steam's own settings; if that fails, STONE says where. */
   const steam = (t, d, where) => ({ l: t, s: d, v: 'Abrir en Steam', act: 'steam', where, sec: STEAM_SEC[CATS[cat]] });
@@ -4033,6 +4205,7 @@ function catRows() {
       ...displayRows(),
       steam('Resolución y frecuencia', 'Las fija Steam para todo el sistema', 'Botón STEAM → Ajustes → Pantalla'),
       steam('HDR', 'Según el televisor y el juego', 'Botón STEAM → Ajustes → Pantalla'),
+      { l: 'Estilo de inicio', s: HOME_STYLE_TXT[S.homeStyle], v: HOME_STYLES[S.homeStyle], key: 'homestyle' },
       { l: 'Tamaño del texto', s: 'Se aplica a STONE Home', v: SIZES[S.ts], key: 'ts' },
       { l: 'Modo de imagen', s: RENDER_TXT[S.render], v: RENDER[S.render], key: 'render' },
       { l: 'Efectos de cristal', s: S.render === 1 ? 'Sin GPU se usan siempre los ligeros' : 'Paneles translúcidos con desenfoque. «Ligeros» los dibuja sin desenfoque y gasta menos GPU',
@@ -4116,7 +4289,7 @@ function cu40Dlg(ri) {
       onA: el => { if (el.dataset.b === 'no') return back(); play('select'); closeDlg(); cu40Run(el.dataset.b === 'test' ? 'test' : 'disable', ri); }, onB: back });
   }
   openDlg(`<h2>ACTIVAR 40 CU</h2>${CU40_WARN}<p>Se aplica al reiniciar.</p>
-    <div class="btns"><span class="txt-f" data-f data-b="yes">ACTIVAR</span><span class="txt-f" data-f data-b="no">CANCELAR</span></div>`, {
+    <div class="btns"><span class="txt-f" data-f data-b="yes">ACTIVAR</span><span class="txt-f" data-f data-def data-b="no">CANCELAR</span></div>`, {
     onA: el => { if (el.dataset.b !== 'yes') return back(); play('select'); closeDlg(); cu40Run('enable', ri); }, onB: back });
 }
 async function cu40Run(op, ri) {
@@ -4252,7 +4425,7 @@ async function cxAct(r, ri) {
     if (!d.paired) return run('bt.action', ['pair', d.mac], `${d.name}: emparejado`, 'bt', 'Bluetooth');
     const back = () => { closeDlg(); play('back'); enterSettings({ pane: true, ri }); };
     return openDlg(`<h2>${esc(d.name)}</h2><p>${d.connected ? 'Conectado' : 'Emparejado, sin conectar'}${d.battery != null ? ` · batería ${d.battery} %` : ''}</p>
-      <div class="btns"><span class="txt-f" data-f data-b="${d.connected ? 'disconnect' : 'connect'}">${d.connected ? 'DESCONECTAR' : 'CONECTAR'}</span><span class="txt-f" data-f data-b="forget">OLVIDAR</span><span class="txt-f" data-f data-b="no">VOLVER</span></div>`, {
+      <div class="btns"><span class="txt-f" data-f data-b="${d.connected ? 'disconnect' : 'connect'}">${d.connected ? 'DESCONECTAR' : 'CONECTAR'}</span><span class="txt-f" data-f data-b="forget">OLVIDAR</span><span class="txt-f" data-f data-def data-b="no">VOLVER</span></div>`, {
       onA: el => { if (el.dataset.b === 'no') return back(); closeDlg(); play('select'); run('bt.action', [el.dataset.b, d.mac], el.dataset.b === 'forget' ? `${d.name}: olvidado` : null, 'bt', 'Bluetooth'); }, onB: back });
   }
 }
@@ -4272,11 +4445,13 @@ function osk(title, done, secret) {
         if (k === '✓') { closeDlg(); return done(text); } if (k === '✕') { closeDlg(); return done(null); }
         if (k === '⌫') text = text.slice(0, -1); else if (k === '⇧') shift = !shift; else if (k === '#') sym = !sym; else if (text.length < 63) text += k;
         const at = [NAV.r, NAV.c]; draw(); NAV.r = Math.min(at[0], NAV.rows.length - 1); NAV.c = Math.min(at[1], NAV.rows[NAV.r].length - 1); applyFocus(); },
-      onB: () => { play('back'); text = text.slice(0, -1); const at = [NAV.r, NAV.c]; draw(); NAV.r = at[0]; NAV.c = Math.min(at[1], NAV.rows[NAV.r].length - 1); applyFocus(); } });
+      /* B erases; with nothing written it closes, like the consoles' keyboards (3.1.0-rc12: it did
+         nothing, and the search could only be left with ✕ on the keyboard's last row) */
+      onB: () => { play('back'); if (!text) { closeDlg(); return done(null); } text = text.slice(0, -1); const at = [NAV.r, NAV.c]; draw(); NAV.r = at[0]; NAV.c = Math.min(at[1], NAV.rows[NAV.r].length - 1); applyFocus(); } });
     const d = $('#dlg');
     NAV = mkNav([...d.querySelectorAll('.krow')].map(r => [...r.querySelectorAll('[data-f]')]), { place: (el, b) => ({ x: b.x, y: b.y + b.h + 4, w: b.w }) });
     NAV.id = 'dlg'; requestAnimationFrame(() => applyFocus());
-    hints([['A', 'Escribir'], ['B', 'Borrar']]);
+    hints([['A', 'Escribir'], ['B', text ? 'Borrar' : 'Salir']]);
   };
   draw();
 }
@@ -4306,7 +4481,7 @@ function storeAct(r, ri) {
   play('select');
   openDlg(`<h2>${esc(g.name)}</h2><p>Juego: <b>${GB(g.size)}</b> · caché de sombreadores: <b>${GB(g.shader_cache)}</b> · datos de Proton: <b>${GB(g.prefix)}</b></p>
     <p>La caché de sombreadores se vuelve a crear sola la próxima vez que juegues (el primer arranque irá algo más lento).</p>
-    <div class="btns"><span class="txt-f" data-f data-b="cache">LIMPIAR CACHÉ</span><span class="txt-f" data-f data-b="uninstall">DESINSTALAR</span><span class="txt-f" data-f data-b="no">VOLVER</span></div>`, {
+    <div class="btns"><span class="txt-f" data-f data-b="cache">LIMPIAR CACHÉ</span><span class="txt-f" data-f data-b="uninstall">DESINSTALAR</span><span class="txt-f" data-f data-def data-b="no">VOLVER</span></div>`, {
     onA: el => {
       if (el.dataset.b === 'no') return back();
       closeDlg(); play('select');
@@ -4399,6 +4574,7 @@ function applyPrefs() {
   stage.classList.toggle('hc', S.hc);
   stage.classList.toggle('rm', S.rm);
   stage.classList.toggle('lite', !S.glass || S.render === 1);
+  stage.classList.toggle('pano', S.homeStyle === 1);
   const k = S.rm ? .3 : 1, r = document.documentElement.style;
   [['--d-step', 220], ['--d-settle', 360], ['--d-exit', 450], ['--d-enter', 600], ['--d-light', 900], ['--d-cer', 1200]].forEach(([n, v]) => r.setProperty(n, Math.round(v * k) + 'ms'));
   r.setProperty('--fscale', S.rm ? 1 : 1.06);
@@ -4417,6 +4593,7 @@ function adjust(key, d, ri) {
   else if (key === 'tech') { S.tech = !S.tech; }
   else if (key === 'report') { S.report = !S.report; }
   else if (key === 'glass') { if (S.render === 1) return toast('Sin GPU se usan siempre los efectos ligeros', false); S.glass = S.glass ? 0 : 1; }
+  else if (key === 'homestyle') { S.homeStyle = S.homeStyle ? 0 : 1; }
   else if (key === 'sysvol') { return setSysVol(d, ri); }
   else if (key === 'frame') { const n = FRAME + d; if (n < 0 || n > 6) return bump(d); FRAME = n; fit(); }
   else if (key === 'render') { S.render = (S.render + d + RENDER.length) % RENDER.length; play('select'); return applyRender(); }
@@ -4743,6 +4920,10 @@ function openDlg(html, handlers, noButtons, solid) {
   const btns = [...d.querySelectorAll('.btns [data-f]')];
   NAV = mkNav(btns.length ? [btns] : [[d.querySelector('.box')]], { place: (el, b) => ({ x: b.x, y: b.y + b.h + 8, w: b.w }) });
   NAV.id = 'dlg';
+  /* the button chosen when the window opens: the first, or the one marked data-def (a window whose
+     first button deletes or changes something opens on the safe one, as the consoles require) */
+  const def = btns.findIndex(b => b.hasAttribute('data-def'));
+  if (def > 0) NAV.c = def;
   if (btns.length) requestAnimationFrame(() => { line.classList.remove('off'); applyFocus(); });
   if (btns.length) hints([['A', 'Elegir'], ...(handlers.onB ? [['B', 'Volver']] : [])]);
 }
@@ -4871,7 +5052,8 @@ let saveT = 0;
 function savePrefs() {
   clearTimeout(saveT);
   saveT = setTimeout(() => Sys.prefsSet({ sound: S.sound, vol: S.vol, hc: S.hc, rm: S.rm, ts: S.ts, safe: S.safe, idle: S.idle,
-    tech: S.tech, adv_ack: S.advAck, engine: S.render, favorites: [...favs], frame: FRAME, wanted: [...WANT], report: S.report, glass: S.glass }).catch(() => {}), 400);
+    tech: S.tech, adv_ack: S.advAck, engine: S.render, favorites: [...favs], frame: FRAME, wanted: [...WANT], report: S.report, glass: S.glass,
+    launch_pick: S.picks || {}, home_style: S.homeStyle }).catch(() => {}), 400);
 }
 function loadPrefs(p) {
   if (!p) return;
@@ -4879,6 +5061,8 @@ function loadPrefs(p) {
   S.tech = p.tech; S.advAck = p.adv_ack; S.render = p.engine === 1 ? 1 : 0; favs.clear(); (p.favorites || []).forEach(a => favs.add(a));
   FRAME = p.frame > 0 && p.frame <= 6 ? p.frame : 0; fit();
   WANT.clear(); (p.wanted || []).forEach(a => WANT.add(a)); S.report = p.report !== false; S.glass = p.glass === 0 ? 0 : 1;
+  S.picks = p.launch_pick && typeof p.launch_pick === 'object' ? Object.assign({}, p.launch_pick) : {};
+  S.homeStyle = p.home_style === 1 ? 1 : 0;
   applyPrefs();
 }
 
@@ -5167,6 +5351,8 @@ function act(a) {
   }
   if (S.screen === 'power') {
     if (a === 'b') return closePower();
+    /* the guide button always reaches Home, as on the consoles (3.1.0-rc12: it did nothing here) */
+    if (a === 'home') { const inGame = powerFrom === 'game'; closePower(); if (inGame) return; if (NAV) NAV.id = ''; return enterHome({ r: 0, c: 0 }); }
     if (dirs.includes(a)) return move(a);
     if (a === 'a') return powerA(focusEl());
     return;
@@ -5177,6 +5363,15 @@ function act(a) {
     if (dirs.includes(a)) return move(a);
     if (a === 'a') return DLG.onA(focusEl());
     if (a === 'b' && DLG.onB) return DLG.onB();
+    /* the guide button: a window that can be closed with B is closed as B would (its cancel), then
+       Home. One that cannot (a question Steam is waiting for, work in progress) stays. */
+    if (a === 'home' && DLG.onB) {
+      const from = dlgPrev && dlgPrev.screen;
+      DLG.onB();
+      if (from === 'game') { if (S.screen === 'dlg') { closeDlg(); S.screen = 'game'; } return; }   /* over a running game: back to it */
+      if (S.screen === 'dlg') closeDlg();
+      if (NAV) NAV.id = ''; return enterHome({ r: 0, c: 0 });
+    }
     return;
   }
   if (S.screen === 'perf') {

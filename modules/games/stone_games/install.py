@@ -194,6 +194,15 @@ def fetch(kind, get_json=None, download=None, log=lambda m: None):
         shutil.rmtree(tmp, ignore_errors=True)
 
 
+def _forget(appid):
+    """detect's folder scan of this game is out of date (STONE changed its files)."""
+    try:
+        from . import detect
+        detect.forget(appid)
+    except ImportError:                       # detect needs stone_home; nothing cached without it
+        pass
+
+
 def _ver(tag):
     return tuple(int(x) for x in re.findall(r"\d+", str(tag or "")))
 
@@ -361,6 +370,7 @@ def install_optiscaler(appid, facts, game):
            "time": int(time.time())}
     with open(_install_path(appid), "w") as f:
         json.dump(rec, f)
+    _forget(appid)
     return {"ok": True, "installed": plan["component"]["tag"], "folder": plan["folder"], "files": len(done)}
 
 
@@ -392,6 +402,7 @@ def uninstall(appid):
     except OSError:
         pass
     os.remove(_install_path(appid))
+    _forget(appid)
     return {"ok": True, "removed": removed}
 
 

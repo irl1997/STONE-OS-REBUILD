@@ -1,3 +1,129 @@
+# STONE OS (rebuild) 3.1.0-rc12
+
+Juegos de emuladores en el Inicio, carga desde USB a prueba de fallos, un sistema de emuladores más robusto y arranques más rápidos. Decisión D-47.
+
+## Los juegos de emuladores, en el Inicio con los demás
+
+- **En el Inicio.** La fila muestra ahora 8 juegos de Steam y de emuladores juntos, ordenados por la última vez que se jugaron. Un juego de emulador que aún no has jugado se ordena por cuándo llegó a la consola, así que lo que acabas de copiar desde un USB aparece primero. Si tienes juegos de emuladores y ninguno entra en la fila, los últimos ocupan sus dos últimos puestos, para que siempre estén en el Inicio. Los emuladores en sí (Dolphin, PCSX2…) siguen en la Biblioteca, que tiene un filtro «Emuladores».
+- **Con su consola.** Cada juego dice de qué consola es («PlayStation 2», «GameCube»…), en su portada y en su ficha, en vez de «Acceso directo». Los nombres van sin las etiquetas de región: «God of War (USA) [!]» aparece como «God of War».
+- **Un juego cuyo archivo ya no está** (borrado, o en un USB desconectado) **deja de aparecer** en vez de fallar al abrirlo, y vuelve si el archivo vuelve.
+
+## Juegos desde un USB: STONE los reconoce y los copia enteros
+
+- **Reconoce las imágenes de disco sueltas por su contenido.** Una `.iso`, `.rvz`, `.wia` o `.gcz` que esté fuera de una carpeta con el nombre de la consola ya no se ignora: STONE lee las marcas de su formato y sabe si es de GameCube, Wii, PS2, PSP, PS3 o Xbox.
+- **Juegos de varios archivos:**
+  - Un `.cue` con sus `.bin` o un `.gdi` de Dreamcast con sus pistas se copian completos. Las pistas ya no aparecen como juegos sueltos.
+  - Un juego en su propia carpeta se copia con todo lo que tiene. Dentro de esa carpeta, STONE elige el archivo que abre el emulador.
+  - En la consola se reconocen igual: `.cue`/`.gdi`/`.m3u` y carpetas.
+- **Una copia que no puede quedar a medias.**
+  - Cada archivo se escribe aparte, se comprueba su tamaño y se graba en disco antes de tomar su nombre definitivo.
+  - Si se desconecta el USB o se corta la luz, lo que quedó a medias se borra antes de la siguiente copia.
+  - Los juegos que sí se copiaron entran en la biblioteca aunque la copia se cortara después.
+  - Un archivo de índice nunca puede señalar fuera de la carpeta del juego.
+- **Si a un juego le falta su emulador, STONE te dice cuál instalar.** Y cuando lo instalas, los juegos que lo esperaban aparecen solos.
+
+## Emuladores más robustos
+
+- **Los juegos aparecen solos.** Los que pones en `~/Emulation/roms` por cualquier vía (el móvil, un USB, el escritorio) se añaden a la biblioteca sin tener que pulsar «Añadir juegos». STONE revisa esa carpeta cada 30 s, fuera de los juegos.
+- **Al cambiar de emulador, los juegos siguen abriéndose.** Si quitas Eden e instalas Ryujinx, tus juegos de Switch pasan al emulador instalado al empezar la siguiente sesión.
+- **JUGAR con el emulador desinstalado** te dice cuál instalar, en vez de que Steam falle sin explicación.
+
+## Más rápido al abrir un juego
+
+- **La carpeta del juego se revisa una sola vez.** STONE recorría toda la carpeta (anti-cheat y OptiScaler, hasta 4 niveles) en cada JUGAR y cada vez que abrías la ficha. Ahora guarda el resultado del mismo juego y la misma versión, y lo descarta cuando instala o quita algo en el juego.
+- **La tabla de color del aspecto se calcula una sola vez.** Antes costaba unos 0,13 s en un Mac en cada JUGAR, y más en la consola. Ahora solo se recalcula si el aspecto cambia, y el resto de veces tarda 0,0001 s.
+- **La pantalla se lee una vez por lanzamiento**, no dos seguidas.
+- **«Opción de inicio» recuerda tu elección.** Con «RECORDAR: SÍ», un juego con varias formas de iniciarse, como Batman: Arkham City, empieza directamente la próxima vez, igual que con el «Siempre» de Steam. Se olvida en Propiedades.
+- **Cada JUGAR anota cuánto tarda STONE antes de pedírselo a Steam**, y el informe muestra cuántos segundos pasan de JUGAR al juego.
+
+## Encendido más rápido
+
+- **STONE se muestra sin esperar a la preparación de Steam.** Antes, la sesión preparaba a Steam primero (sus ajustes y los accesos directos) y solo después abría la pantalla de STONE. Ahora la pantalla se abre primero, y la preparación sigue en paralelo antes de que arranque Steam.
+- **Sin pasos lentos nuevos antes de la pantalla.** La revisión de emuladores lee directamente las carpetas de Flatpak, que es instantáneo, en vez de ejecutar `flatpak list`.
+- **El informe incluye el arranque** («arranque.txt»):
+  - los tiempos de STONE en cada encendido;
+  - lo que mide systemd: firmware, kernel y sistema;
+  - los 40 servicios más lentos y la cadena que esperó.
+
+  Así el próximo informe dirá qué más se puede quitar del arranque, que hoy está fuera de STONE: BIOS, menú de arranque y servicios del sistema base.
+
+## Nuevo estilo de Inicio: «Panorama»
+
+En **Ajustes → Pantalla → Estilo de inicio** se elige entre **Cristal** (el de siempre) y **Panorama**. Panorama convierte el Inicio en una pantalla de cine:
+- el arte del juego que tienes seleccionado ocupa toda la pantalla, con una sombra suave para que se lea lo que hay encima;
+- el nombre del juego aparece en grande a la izquierda;
+- todos los juegos, también los de emuladores, van en una sola fila de carátulas apaisadas en el tercio inferior;
+- se quita la línea de datos, y las pestañas de arriba y la fila del sistema de abajo siguen donde estaban.
+
+Al moverte por la fila, el fondo y el nombre cambian con cada juego. La elección se guarda.
+
+## El buscador de la tienda vuelve a encontrar juegos
+
+Steam cambió su búsqueda: sin el país de la conexión responde **0 resultados** para cualquier palabra, y por eso salía «no existen juegos». Ahora STONE le pregunta a Steam qué país asigna a la conexión de la consola y lo usa en cada búsqueda. Es el mismo dato con el que Steam ya elige los precios y la moneda, así que no se envía nada nuevo. Comprobado contra la tienda real: «batman» pasa de 0 a 9 resultados.
+
+## Fondos de los juegos nítidos
+
+La imagen grande que Steam da a cada juego mide 1920 × 620, tres veces más ancha que alta. Para cubrir la pantalla, STONE la agrandaba 2,3 veces en un televisor de 2560 × 1440 (3,5 veces en uno 4K) y le recortaba casi la mitad de los lados. Por eso fondos como el de Batman se veían pixelados. Ahora la imagen va arriba, a lo ancho de la pantalla y casi a su tamaño real, y se funde abajo en una copia suave de sí misma. Cuando Steam tiene la versión al doble de tamaño (3840 × 1240), se usa esa. Los juegos que solo tienen carátula (sin imagen grande) muestran sus colores difuminados, en vez de una carátula estirada. La página de un juego en la tienda usa la misma banda. Para Batman: Arkham Asylum y Arkham City, Steam no tiene nada más grande: ni versión doble ni capturas de más de 1280 × 720.
+
+## Carátulas de los juegos de emuladores
+
+El servidor de carátulas de libretro, del que STONE baja las portadas de los juegos de emuladores, está vacío: responde 404 a todas las consolas, así que ningún juego de emulador recibía su portada. Ahora STONE recurre a la copia que libretro mantiene en GitHub (la misma colección de imágenes) cuando el servidor no responde o no lista nada. Una lista vacía que se haya guardado antes se vuelve a pedir. Comprobado contra los servidores reales: «Metroid Prime (GameCube)» recibe su portada.
+
+Las portadas de estos juegos son cajas verticales y, en las tarjetas anchas (la primera del Inicio y todas las de Panorama), se recortaba una franja del medio. Ahora la caja se ve entera, centrada sobre una copia oscurecida de sí misma. En la ficha del juego, la caja aparece nítida a la derecha. El fondo difuminado de estos juegos (y de todos los que lo usan) se hacía agrandando 30 veces una copia de 64 × 36 píxeles, y se veían manchas cuadradas. Ahora es una copia de 240 × 135 desenfocada una sola vez al crearla: es suave y no tiene bloques.
+
+## Repaso de la interfaz
+
+Recorrimos cada sección en el simulador (Inicio, Biblioteca, Explorar, Media, Tienda, la ficha de un juego y sus ventanas, y las 15 secciones de Ajustes) y buscamos de forma automática textos cortados o que se salen de la pantalla. No apareció ninguno. Lo que se corrigió:
+
+- **Propiedades** de un juego se abría con «Desinstalar» ya elegido: un A de más llevaba a la pregunta de desinstalar. Ahora tiene solo «Volver» (y «Olvidar opción de inicio» si hay una), porque «Desinstalar» ya está en la página del juego.
+- **Explorar** escribía dos veces qué hace cada tarjeta, en la tarjeta y debajo de la fila, y en la tarjeta elegida el texto se partía en dos líneas. Ahora la tarjeta lleva solo su nombre y la explicación va una vez, debajo.
+- **El fundido de la imagen del juego** con su copia suave dejaba una línea horizontal en algunos juegos (Cyberpunk 2077). Ahora el fundido es más largo y gradual.
+
+## Prueba de uso como consola (QA)
+
+Probamos STONE OS como se prueba una consola antes de certificarla: botones B e Inicio en cada pantalla, que la selección vuelva a su sitio al salir de cada pantalla, 120 pulsaciones al azar seguidas, jugar y volver, y STONE en una consola nueva, sin sesión de Steam y sin internet. Lo que se corrigió:
+
+- **El teclado en pantalla (buscar, contraseñas Wi-Fi) no se podía cerrar con B.** B borraba la última letra y, con el texto ya vacío, no hacía nada. Solo se salía con la tecla ✕ de la última fila. Ahora B con el texto vacío cierra el teclado, y la ayuda de abajo dice «Salir».
+- **El botón Inicio no hacía nada con una ventana abierta**, incluido el menú Apagar. Ahora cierra la ventana como lo haría B y lleva al Inicio. Si la ventana está sobre un juego abierto, vuelve al juego. Las ventanas que no se pueden cerrar con B (una pregunta que Steam espera, un trabajo en curso) siguen igual.
+- **Ventanas que abrían con la opción peligrosa ya elegida:** la de un dispositivo Bluetooth («Olvidar»), la de un juego en Almacenamiento («Limpiar caché») y «Activar 40 CU» («Activar»). Ahora abren en «Volver» o «Cancelar», y los botones mantienen su orden.
+- **Mensajes técnicos en pantalla:** sin internet, la tienda decía «no responde (URLError)». Al instalar o actualizar un emulador se veía el error interno de Python. Ahora se dice qué pasa con palabras («no hay conexión a internet», «no queda espacio en el disco», «tardó demasiado en responder…»), y el error exacto queda en el registro para el informe de diagnóstico.
+- **El menú rápido en el juego:** «PERFORMANCE» llenaba su botón de borde a borde y quedaba más ancho que los otros tres perfiles. Ahora los cuatro botones miden lo mismo y tienen margen.
+
+Lo que funcionó bien en la prueba: B vuelve atrás en todas las pantallas, la selección vuelve a la misma tarjeta al salir de un juego o de Ajustes, el botón Inicio lleva al Inicio desde cualquier sección, jugar → menú rápido → volver al juego, y no apareció ningún error tras las 120 pulsaciones al azar.
+
+## Desinstalar juegos
+
+- **Juegos de Steam:** «Desinstalar» está ahora en la propia página del juego. Antes solo estaba dentro de Propiedades y en Ajustes → Almacenamiento. Para dejarle sitio, «Experiencia» pasa a GRÁFICOS.
+- **Juegos de emuladores:** ahora también se pueden desinstalar. Se borran de la consola con todas sus partes (pistas, carpeta del juego), y solo dentro de la carpeta de juegos de STONE. Tus partidas guardadas se conservan en el emulador.
+
+## Auditoría de esta versión
+
+Se revisó todo el código nuevo de la rc12 y se corrigieron 4 errores reales y 6 detalles:
+- **Una carpeta con varios juegos** (por ejemplo «PS2/Colección/» con varias ISO) se tomaba como un solo juego y solo se veía el más grande. Ahora cada archivo es un juego. Solo cuentan como un único juego las carpetas con un archivo índice (`.cue`, `.gdi` o `.m3u`) y las de Switch, PS3 y Wii U, que traen el juego junto a sus actualizaciones.
+- **Una ISO dañada o cortada** hacía fallar la búsqueda en todo el USB. Ahora esa imagen simplemente no se reconoce, y los demás juegos del USB se ofrecen igual.
+- **Un `.gdi` suelto en la raíz del USB** se copiaba sin sus pistas. Ahora se copia con ellas.
+- **Los juegos copiados a mano justo después de encender** podían no aparecer hasta reiniciar si la interfaz de Steam aún no respondía. Ahora STONE vuelve a intentarlo hasta que Steam responde.
+- **Detalles corregidos:**
+  - Al cambiar de televisor, el siguiente JUGAR vuelve a leer la pantalla.
+  - Un HelixSR instalado con el instalador de su autor se ve en 30 s como mucho.
+  - Si Steam no indica el país, la búsqueda lo dice en vez de responder que no hay juegos.
+  - Al cancelar una desinstalación, el foco vuelve a «Desinstalar».
+  - Al empezar la sesión, las peticiones viejas se descartan antes de abrir STONE.
+  - El informe ya no ejecuta dos veces la misma consulta del arranque.
+
+Comprobado:
+- las 35 baterías de pruebas;
+- el análisis estático de Python (ruff) y el de la página (ESLint);
+- un recorrido completo en el simulador, sin errores de JavaScript: los dos estilos de Inicio, Explorar, Media, la Biblioteca con el filtro de emuladores, las fichas, GRÁFICOS, Propiedades, la búsqueda, la tienda, Ajustes e Informe.
+
+Tres pruebas solo pueden ejecutarse en GitHub (necesitan GTK o un Python más nuevo que el del Mac).
+
+## Además
+
+- **Preferencias que se reiniciaban solas.** Guardar cualquier preferencia (un favorito, el volumen…) devolvía a su valor por defecto «Juegos ven», «Meta de imagen» y STONE OPTIMIZED. Ahora se conservan.
+
+**Todo está probado en software (CODE TESTED) y en el simulador. Nada de esta versión se ha observado todavía en la BC-250.** Pruebas de placa: T-EMU-15 a 19, T-STORE-02, T-HOME-12, T-BOOT-11 y T-PERF-02.
+
 # STONE OS (rebuild) 3.1.0-rc11
 
 Hecha con el **cuarto informe de la consola** (19-11-2026, 22:55) y tus fotos: filtros que se notan más, dos filtros nuevos, menos grano, el error de OptiScaler y el diálogo «Opción de inicio». Decisión D-46.

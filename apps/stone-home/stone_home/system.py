@@ -58,6 +58,15 @@ def _favs(v):
     return out[:500]
 
 
+def _picks(v):
+    """{appid: launch option index}: the choice remembered in Steam's «Opción de inicio» (rc12)."""
+    if not isinstance(v, dict):
+        return None
+    out = {k: n for k, n in v.items() if isinstance(k, str) and k.isdigit() and 0 < len(k) <= 10
+           and isinstance(n, int) and not isinstance(n, bool) and 0 <= n < 32}
+    return dict(list(out.items())[:300])
+
+
 PREFS = {
     "sound": (_bool, True), "vol": (_vol, 0.7), "hc": (_bool, False), "rm": (_bool, False),
     "ts": (_intr(0, 2), 0), "safe": (_intr(0, 8), 5), "idle": (_intr(0, 3), 2), "tech": (_bool, False),
@@ -76,6 +85,8 @@ PREFS = {
     "wanted": (_favs, []),
     "report": (_bool, True),              # PARTE DE SESIÓN: the summary shown when a game ends
     "glass": (_intr(0, 1), 1),            # CRISTAL: glass with blur (1) or without (0, «Ligeros»)
+    "launch_pick": (_picks, {}),
+    "home_style": (_intr(0, 1), 0),       # rc12: Inicio 0 Cristal, 1 Panorama (Ajustes → Pantalla)          # rc12: «Opción de inicio» remembered per game (Steam's «Siempre»)
 }
 
 

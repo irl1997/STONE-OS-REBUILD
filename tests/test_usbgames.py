@@ -90,5 +90,132 @@ def test_only_removable_partitions_with_a_file_system_are_mounted():
     assert ["udisksctl", "mount", "-b", "/dev/sda1", "--no-user-interaction"] in calls and len(calls) == 2
 
 
+def _image(path, at_bytes):
+    """A small file with bytes at given offsets (a disc image's markers)."""
+    size = max(o + len(b) for o, b in at_bytes) + 16
+    buf = bytearray(size)
+    for o, b in at_bytes:
+        buf[o:o + len(b)] = b
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "wb") as f:
+        f.write(bytes(buf))
+    return path
+
+
+def _iso9660(path, names):
+    """A minimal ISO 9660 image whose root folder holds `names`."""
+    pvd = bytearray(2048)
+    pvd[0:6] = b"\x01CD001"
+    rec = bytearray(34)
+    rec[0] = 34
+    rec[2:6] = (20).to_bytes(4, "little")
+    rec[10:14] = (2048).to_bytes(4, "little")
+    pvd[156:190] = rec
+    root = bytearray()
+    for n in names:
+        nb = n.encode()
+        r = bytearray(33 + len(nb) + (1 - len(nb) % 2))
+        r[0] = len(r)
+        r[32] = len(nb)
+        r[33:33 + len(nb)] = nb
+        root += r
+    return _image(path, [(0x8000, bytes(pvd)), (20 * 2048, bytes(root))])
+
+
+def test_loose_disc_images_are_recognised_by_what_is_inside():
+    """rc12: a loose .iso/.rvz/.gcz at the top of the drive was left there; its console is read from it."""
+    t = tempfile.mkdtemp(prefix="stone-usb-")
+    try:
+        d = os.path.join(t, "drive")
+        _image(os.path.join(d, "Zelda TP.iso"), [(0x1C, bytes.fromhex("c2339f3d"))])
+        _image(os.path.join(d, "Mario Galaxy.iso"), [(0x18, bytes.fromhex("5d1c9ea3"))])
+        _image(os.path.join(d, "Metroid.rvz"), [(0, b"RVZ\x01"), (0x48, (1).to_bytes(4, "big"))])
+        _image(os.path.join(d, "Smash.gcz"), [(0, (0xB10BC001).to_bytes(4, "little")), (4, (1).to_bytes(4, "little"))])
+        _image(os.path.join(d, "Halo.iso"), [(0x10000, b"MICROSOFT*XBOX*MEDIA")])
+        _iso9660(os.path.join(d, "God of War.iso"), [".", "..", "SYSTEM.CNF;1", "SLUS_206.47;1"])
+        _iso9660(os.path.join(d, "Patapon.iso"), ["PSP_GAME", "UMD_DATA.BIN;1"])
+        _iso9660(os.path.join(d, "datos.iso"), ["README.TXT;1"])                     # a data disc: left alone
+        got = sorted((g["system"], g["name"]) for g in U.scan_volume(d)["games"])
+        assert got == [("gc", "Metroid"), ("gc", "Zelda TP"), ("ps2", "God of War"), ("psp", "Patapon"),
+                       ("wii", "Mario Galaxy"), ("wii", "Smash"), ("xbox", "Halo")], got
+    finally:
+        shutil.rmtree(t, ignore_errors=True)
+
+
+def test_games_of_several_files_are_copied_whole_and_found_on_the_console():
+    """rc12: a .cue/.bin, a Dreamcast .gdi with its tracks and a game in its own folder; their parts are
+    never games of their own, and the console's library finds each one once."""
+    from stone_home import roms as R
+    t = tempfile.mkdtemp(prefix="stone-usb-")
+    try:
+        d = os.path.join(t, "drive")
+        _put(d, "dreamcast/Shenmue/Shenmue.gdi")
+        with open(os.path.join(d, "dreamcast", "Shenmue", "Shenmue.gdi"), "w") as f:
+            f.write('3\n1 0 4 2352 track01.bin 0\n2 600 0 2352 "track 02.raw" 0\n3 45000 4 2352 track03.bin 0\n')
+        for n, z in (("track01.bin", 700), ("track 02.raw", 300), ("track03.bin", 9000)):
+            _put(d, f"dreamcast/Shenmue/{n}", z)
+        with open(_put(d, "ps2/Ico (USA).cue"), "w") as f:
+            f.write('FILE "Ico (USA).bin" BINARY\n  TRACK 01 MODE2/2352\n    INDEX 01 00:00:00\n')
+        _put(d, "ps2/Ico (USA).bin", 4000)
+        _put(d, "ps2/Okami/Okami.iso", 5000)
+        _put(d, "ps2/Okami/portada.jpg", 50)
+        v = U.scan_volume(d)
+        got = sorted((g["system"], g["name"], len(g["files"])) for g in v["games"])
+        assert got == [("dreamcast", "Shenmue", 4), ("ps2", "Ico", 2), ("ps2", "Okami", 2)], got
+        base = os.path.join(t, "Emulation")
+        r = U.copy(v, lambda *a: None, base=base)
+        assert r["copied"] == 3 and r["error"] is None and r["bytes"] == sum(g["size"] for g in v["games"]), r
+        assert os.path.getsize(os.path.join(base, "roms", "dreamcast", "Shenmue", "track 02.raw")) == 300
+        assert os.path.exists(os.path.join(base, "roms", "ps2", "Okami", "portada.jpg"))
+        dc = R.games_in(os.path.join(base, "roms", "dreamcast"), "dreamcast")
+        ps2 = R.games_in(os.path.join(base, "roms", "ps2"), "ps2")
+        assert [(g["name"], os.path.basename(g["path"])) for g in dc] == [("Shenmue", "Shenmue.gdi")], dc
+        assert [(g["name"], os.path.basename(g["path"])) for g in ps2] == [("Ico", "Ico (USA).bin"), ("Okami", "Okami.iso")], ps2
+        assert U.copy(U.scan_volume(d), lambda *a: None, base=base)["skipped"] == 3            # already there
+        # a half-copied file a power cut left is cleared before copying
+        open(os.path.join(base, "roms", "ps2", "Ico (USA).bin" + R.PART_SUFFIX), "w").close()
+        assert U.leftovers(base) == 1
+        # a sheet never reaches outside its folder
+        with open(os.path.join(d, "ps2", "malo.cue"), "w") as f:
+            f.write('FILE "../../etc/passwd" BINARY\n')
+        assert R.sheet_files(os.path.join(d, "ps2", "malo.cue")) == []
+    finally:
+        shutil.rmtree(t, ignore_errors=True)
+
+
+def test_audit_folders_of_several_games_truncated_images_and_loose_sheets():
+    """Audit (rc12): a «Colección» folder is several games (not the largest one only); a truncated ISO is
+    not recognised, never a failure of the drive; a loose .gdi at the top goes with its tracks; a Switch
+    folder (game + update) stays one game."""
+    from stone_home import roms as R
+    t = tempfile.mkdtemp(prefix="stone-usb-")
+    try:
+        d = os.path.join(t, "drive")
+        _put(d, "PS2/Coleccion/God of War.iso", 900)
+        _put(d, "PS2/Coleccion/Ico.iso", 500)
+        _put(d, "switch/Zelda/Zelda.nsp", 900)
+        _put(d, "switch/Zelda/Zelda update.nsp", 100)
+        with open(_put(d, "Shenmue.gdi"), "w") as f:
+            f.write("2\n1 0 4 2352 track01.bin 0\n2 600 0 2352 track02.raw 0\n")
+        _put(d, "track01.bin", 40)
+        _put(d, "track02.raw", 30)
+        _iso9660(os.path.join(d, "roto.iso"), [])
+        with open(os.path.join(d, "roto.iso"), "r+b") as f:     # a root record cut short at the end
+            f.seek(20 * 2048)
+            f.write(bytes([60]) + bytes(20))
+            f.truncate(20 * 2048 + 21)
+        v = U.scan_volume(d)
+        got = sorted((g["system"], g["name"], len(g["files"])) for g in v["games"])
+        assert got == [("dreamcast", "Shenmue", 3), ("ps2", "God of War", 1), ("ps2", "Ico", 1), ("switch", "Zelda", 2)], got
+        base = os.path.join(t, "Emulation")
+        assert U.copy(v, lambda *a: None, base=base)["copied"] == 4
+        names = sorted(g["name"] for g in R.games_in(os.path.join(base, "roms", "ps2"), "ps2"))
+        assert names == ["God of War", "Ico"], names
+        assert [g["name"] for g in R.games_in(os.path.join(base, "roms", "switch"), "switch")] == ["Zelda"]
+        assert os.path.getsize(os.path.join(base, "roms", "dreamcast", "track02.raw")) == 30
+    finally:
+        shutil.rmtree(t, ignore_errors=True)
+
+
 if __name__ == "__main__":
     sys.exit(run_module(globals()))

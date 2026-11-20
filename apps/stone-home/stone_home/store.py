@@ -5,8 +5,11 @@ from Steam's public store API (no account, no key).
     https://store.steampowered.com/api/featuredcategories/?l=spanish
     https://store.steampowered.com/api/appdetails/?appids=<id>&l=spanish
 
-No country is sent: Steam answers with the prices and the currency of the place the console
-connects from, the same ones the person will see when paying.
+The country: Steam's own, for the place the console connects from (the steamCountry cookie its store sets
+on any visit, from its own location of the connection: the same that picks the prices and currency the
+person will see when paying). Nothing else is sent. 3.1.0-rc12, from the console (20-11-2026: "no me
+aparecen los juegos que busco"): storesearch stopped answering without a country, {"total":0,"items":[]}
+for every word; with cc it answers as before.
 
 Read only. STONE never handles a payment or a password: a paid game is bought in Steam's own
 interface (shown in front by the STONE session) or on the person's phone; a free game and a game
@@ -30,7 +33,13 @@ MAX = 20
 SECTIONS = (("specials", "Ofertas"), ("top_sellers", "Lo más vendido"), ("new_releases", "Novedades"),
             ("coming_soon", "Próximamente"))
 SECTION_MAX = 12
-OFFLINE = "La tienda de Steam no responde ({}): ¿hay conexión a internet?"
+# what the person reads has no exception names (3.1.0-rc12: "no responde (URLError)"); the log keeps it
+OFFLINE = "La tienda de Steam no responde. ¿Hay conexión a internet?"
+
+
+def _offline(e):
+    print(f"[stone] store: Steam did not answer ({e.__class__.__name__}: {e})", flush=True)
+    return {"error": OFFLINE}
 
 
 def _get(url, timeout=10):
@@ -39,6 +48,37 @@ def _get(url, timeout=10):
     req = urllib.request.Request(url, headers={"User-Agent": "STONE-OS"})
     with urllib.request.urlopen(req, timeout=timeout) as r:
         return r.read(2 * 2**20).decode("utf-8", "replace")
+
+
+HOME = "https://store.steampowered.com/"
+_COUNTRY = {}
+
+
+def _head_cookies(url, timeout=8):
+    if os.environ.get("STONE_HOME_NO_FETCH") == "1":
+        raise OSError("fetching is off (STONE_HOME_NO_FETCH)")
+    req = urllib.request.Request(url, method="HEAD", headers={"User-Agent": "STONE-OS"})
+    with urllib.request.urlopen(req, timeout=timeout) as r:
+        return r.headers.get_all("Set-Cookie") or []
+
+
+def country(head=None, now=None):
+    """The two-letter country Steam's store gives this connection (its steamCountry cookie), or None.
+    Asked once and kept for six hours (a console does not move often)."""
+    import time
+    t = now if now is not None else time.time()
+    if _COUNTRY.get("cc") and t - _COUNTRY.get("t", 0) < 6 * 3600:
+        return _COUNTRY["cc"]
+    try:
+        cookies = (head or _head_cookies)(HOME)
+    except OSError:
+        return _COUNTRY.get("cc")
+    for c in cookies:
+        m = re.match(r"\s*steamCountry=([A-Za-z]{2})(%7C|\||;|$)", c)
+        if m:
+            _COUNTRY.update(cc=m.group(1).upper(), t=t)
+            return _COUNTRY["cc"]
+    return _COUNTRY.get("cc")
 
 
 def money(cents, currency):
@@ -70,15 +110,21 @@ def _price(final, initial, currency, discount):
     return now, was, pct if was else 0
 
 
-def search(term, get=None):
+def search(term, get=None, head=None):
     """{"results": [{"appid", "name", "free", "price"}]} or {"error": "..."}."""
     if not isinstance(term, str) or not 1 <= len(term.strip()) <= 60:
         return {"error": "Escribe entre 1 y 60 letras"}
-    url = API + "?" + urllib.parse.urlencode({"term": term.strip(), "l": "spanish"})
+    q = {"term": term.strip(), "l": "spanish"}
+    cc = country(head)
+    if not cc:
+        # without a country storesearch answers nothing at all: said, instead of «no hay juegos» (rc12)
+        return {"error": "La tienda de Steam no dijo en qué país está la consola: revisa la conexión y vuelve a buscar"}
+    q["cc"] = cc
+    url = API + "?" + urllib.parse.urlencode(q)
     try:
         d = json.loads((get or _get)(url))
     except (OSError, ValueError) as e:
-        return {"error": OFFLINE.format(e.__class__.__name__)}
+        return _offline(e)
     out = []
     for it in (d.get("items") or [] if isinstance(d, dict) else []):
         if not isinstance(it, dict) or it.get("type") not in (None, "app") or not isinstance(it.get("id"), int) or it["id"] <= 0:
@@ -112,7 +158,7 @@ def featured(get=None):
     try:
         d = json.loads((get or _get)(FEATURED + "?" + urllib.parse.urlencode({"l": "spanish"})))
     except (OSError, ValueError) as e:
-        return {"error": OFFLINE.format(e.__class__.__name__)}
+        return _offline(e)
     out, seen = [], set()
     for key, title in SECTIONS:
         sec = d.get(key) if isinstance(d, dict) else None
@@ -142,7 +188,7 @@ def details(appid, get=None):
     try:
         d = json.loads((get or _get)(DETAILS + "?" + urllib.parse.urlencode({"appids": appid, "l": "spanish"})))
     except (OSError, ValueError) as e:
-        return {"error": OFFLINE.format(e.__class__.__name__)}
+        return _offline(e)
     node = d.get(appid) if isinstance(d, dict) else None
     data = node.get("data") if isinstance(node, dict) and node.get("success") else None
     if not isinstance(data, dict) or not isinstance(data.get("name"), str):

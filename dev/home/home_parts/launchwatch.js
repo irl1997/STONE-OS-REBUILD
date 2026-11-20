@@ -71,13 +71,24 @@ function steamLabel(label, gameName) {
   const k = Object.keys(STEAM_LO).find(x => x.toLowerCase() === m[1].toLowerCase());
   return k ? STEAM_LO[k].replace('%1$s', gameName) : m[1].replace(/_/g, ' ');
 }
-/* list: Steam's choices as rows (the launch options can be long); the buttons below only cancel */
-function lwDlg(g, cap, text, buttons, extra, list) {
+/* list: Steam's choices as rows (the launch options can be long); the buttons below only cancel.
+   remember (rc12): a RECORDAR button, as Steam's «Siempre»: the choice is answered by itself next time. */
+function lwDlg(g, cap, text, buttons, extra, list, remember) {
   play('notify');
+  let keep = false;
   const rows = list ? `<div class="slist">${list.map(([l], i) => `<span class="txt-f sres" data-f data-l="${i}">${esc(l)}</span>`).join('')}</div>` : '';
+  const rem = remember ? '<span class="txt-f" data-f data-r="1">RECORDAR: NO</span>' : '';
   openDlg(`<span class="st-cap">${cap}</span><h2>${esc(g.n.toUpperCase())}</h2>${extra || ''}<p>${esc(text)}</p>${rows}
-    <div class="btns">${buttons.map(([l], i) => `<span class="txt-f" data-f data-i="${i}">${esc(l)}</span>`).join('')}</div>`, {
-    onA: el => { const a = el.dataset.l !== undefined ? list[+el.dataset.l][1] : buttons[+el.dataset.i][1]; closeDlg(); lwAnswer(g, a); },
+    <div class="btns">${rem}${buttons.map(([l], i) => `<span class="txt-f" data-f data-i="${i}">${esc(l)}</span>`).join('')}</div>`, {
+    onA: el => {
+      if (el.dataset.r) { keep = !keep; play('nav'); el.textContent = `RECORDAR: ${keep ? 'SÍ' : 'NO'}`; return; }
+      const a = el.dataset.l !== undefined ? list[+el.dataset.l][1] : buttons[+el.dataset.i][1];
+      if (keep && el.dataset.l !== undefined) {
+        S.picks = Object.assign({}, S.picks, { [g.appid]: +a }); savePrefs();
+        toast('Guardado: la próxima vez empieza solo. Para cambiarlo: Propiedades del juego', false);
+      }
+      closeDlg(); lwAnswer(g, a);
+    },
     onB: () => { closeDlg(); lwAnswer(g, 'cancel'); } });
   if (list) {
     const d = $('#dlg');
@@ -95,8 +106,14 @@ function lwAsk(g, st) {
   if (r === 'ShowLaunchOption') {
     const o = st.options || [];
     if (!o.length) return lwAnswer(g, '0');
+    const pick = S.picks && S.picks[g.appid];
+    if (pick !== undefined && o.some(x => x.index === pick)) {
+      const x = o.find(y => y.index === pick);
+      toast(`Iniciando: ${x.label ? steamLabel(x.label, g.n) : 'opción ' + (pick + 1)} (tu elección guardada)`, false);
+      return lwAnswer(g, String(pick));
+    }
     return lwDlg(g, 'OPCIÓN DE INICIO', 'Este juego tiene varias formas de iniciarse. Elige una:', [['CANCELAR', 'cancel']], '',
-      o.slice(0, 6).map(x => [x.label ? steamLabel(x.label, g.n) : `Opción ${x.index + 1}`, String(x.index)]));
+      o.slice(0, 6).map(x => [x.label ? steamLabel(x.label, g.n) : `Opción ${x.index + 1}`, String(x.index)]), true);
   }
   if (r === 'ShowEula') {
     const e = (st.eulas || [])[0], qr = e ? `<div class="qrrow">${qrSvg(e.url, 220)}<div><p class="url">${esc(e.url.slice(8))}</p></div></div>` : '';

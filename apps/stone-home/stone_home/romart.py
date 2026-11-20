@@ -10,6 +10,11 @@ is matched on its words (regions, discs and punctuation left out; a close match 
 The cover is written where Steam itself keeps a shortcut's artwork, <account>/config/grid/<appid>p.png,
 so Steam and STONE both show it. Only PNG files, of a sane size, are written; nothing is executed.
 Nintendo Switch has no folder on that server: those games keep STONE's own cover.
+
+The same pictures are kept in libretro's repositories on GitHub (libretro-thumbnails/<system with _>).
+When the server does not answer or lists nothing (20-11-2026: its index was empty and every system's
+folder answered 404, so no emulator game got a cover), the names come from GitHub's list of that
+repository's Named_Boxarts folder and the picture from its raw files.
 """
 
 import difflib
@@ -29,8 +34,11 @@ DIRS = {"gc": "Nintendo - GameCube", "wii": "Nintendo - Wii", "ps2": "Sony - Pla
         "psp": "Sony - PlayStation Portable", "ps3": "Sony - PlayStation 3", "wiiu": "Nintendo - Wii U",
         "3ds": "Nintendo - Nintendo 3DS", "nds": "Nintendo - Nintendo DS", "gba": "Nintendo - Game Boy Advance",
         "dreamcast": "Sega - Dreamcast", "xbox": "Microsoft - Xbox"}
+MIRROR = "https://raw.githubusercontent.com/libretro-thumbnails/{repo}/master/Named_Boxarts/{name}.png"
+TREE = "https://api.github.com/repos/libretro-thumbnails/{repo}/git/trees/{ref}"
 LIST_TTL_S = 14 * 86400
 MAX_LIST = 8 * 2**20
+MAX_TREE = 24 * 2**20            # GitHub's list of a large system (PlayStation 2) is several MB of JSON
 MAX_PNG = 8 * 2**20
 REGIONS = ("usa", "world", "europe", "spain", "japan")          # preferred when names tie
 PNG = b"\x89PNG\r\n\x1a\n"
@@ -72,26 +80,61 @@ def system_of(display_name):
     return None
 
 
-def listing(system, get=_get, now=time.time):
-    """Names (without .png) of the box arts libretro has for a system, cached."""
-    if system not in DIRS:
+def repo(system):
+    """libretro's GitHub repository of a system: "Nintendo - GameCube" -> "Nintendo_-_GameCube"."""
+    return DIRS[system].replace(" ", "_")
+
+
+def _server_names(system, get):
+    html = get(SERVER + urllib.parse.quote(DIRS[system]) + "/Named_Boxarts/", MAX_LIST).decode("utf-8", "replace")
+    return sorted({urllib.parse.unquote(h)[:-4] for h in HREF.findall(html)})
+
+
+def _mirror_names(system, get):
+    def tree(ref):
+        d = json.loads(get(TREE.format(repo=repo(system), ref=ref), MAX_TREE).decode("utf-8", "replace"))
+        return d.get("tree") if isinstance(d, dict) and isinstance(d.get("tree"), list) else []
+    box = [e.get("sha") for e in tree("master") if isinstance(e, dict) and e.get("path") == "Named_Boxarts" and e.get("type") == "tree"]
+    if not box or not isinstance(box[0], str) or not re.fullmatch(r"[0-9a-f]{40}", box[0]):
         return []
+    return sorted({e["path"][:-4] for e in tree(box[0]) if isinstance(e, dict) and isinstance(e.get("path"), str)
+                   and e["path"].endswith(".png") and "/" not in e["path"]})
+
+
+def listing(system, get=_get, now=time.time):
+    """Names (without .png) of the box arts libretro has for a system, cached; and where they are:
+    (names, "server" | "mirror")."""
+    if system not in DIRS:
+        return [], "server"
     path = os.path.join(cache_dir(), system + ".json")
     try:
         with open(path) as f:
             d = json.load(f)
-        if now() - d.get("t", 0) < LIST_TTL_S and isinstance(d.get("names"), list):
-            return d["names"]
+        # an empty list (kept by 3.1.0-rc11 when the server answered with nothing) is asked again
+        if now() - d.get("t", 0) < LIST_TTL_S and isinstance(d.get("names"), list) and d["names"]:
+            return d["names"], d.get("src") if d.get("src") in ("server", "mirror") else "server"
     except (OSError, ValueError):
         pass
-    html = get(SERVER + urllib.parse.quote(DIRS[system]) + "/Named_Boxarts/", MAX_LIST).decode("utf-8", "replace")
-    names = sorted({urllib.parse.unquote(h)[:-4] for h in HREF.findall(html)})
+    try:
+        names, src = _server_names(system, get), "server"
+    except (OSError, ValueError):
+        names, src = [], "server"
+    if not names:                                       # the server is down or empty: libretro's GitHub copy
+        names, src = _mirror_names(system, get), "mirror"
+    if not names:
+        return [], src                                  # nothing to keep: asked again next time
     os.makedirs(cache_dir(), exist_ok=True)
     tmp = path + ".tmp"
     with open(tmp, "w") as f:
-        json.dump({"t": now(), "names": names}, f)
+        json.dump({"t": now(), "names": names, "src": src}, f)
     os.replace(tmp, path)
-    return names
+    return names, src
+
+
+def cover_url(system, name, src="server"):
+    if src == "mirror":
+        return MIRROR.format(repo=repo(system), name=urllib.parse.quote(name))
+    return SERVER + urllib.parse.quote(DIRS[system]) + "/Named_Boxarts/" + urllib.parse.quote(name + ".png")
 
 
 def best(title, names):
@@ -132,11 +175,16 @@ def fetch(root, appid, display_name, get=_get):
     if not sg or not str(appid).isdigit():
         return None
     title, system = sg
-    name = best(title, listing(system, get=get))
+    names, src = listing(system, get=get)
+    name = best(title, names)
     if not name:
         return None
-    url = SERVER + urllib.parse.quote(DIRS[system]) + "/Named_Boxarts/" + urllib.parse.quote(name + ".png")
-    data = get(url, MAX_PNG)
+    try:
+        data = get(cover_url(system, name, src), MAX_PNG)
+    except (OSError, ValueError):
+        if src != "server":
+            raise
+        data = get(cover_url(system, name, "mirror"), MAX_PNG)    # the server's list was kept, its pictures are gone
     if not data.startswith(PNG):
         return None
     written = False

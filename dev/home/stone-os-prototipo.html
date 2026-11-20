@@ -1890,6 +1890,10 @@ function openDlg(html, handlers, noButtons, solid) {
   const btns = [...d.querySelectorAll('.btns [data-f]')];
   NAV = mkNav(btns.length ? [btns] : [[d.querySelector('.box')]], { place: (el, b) => ({ x: b.x, y: b.y + b.h + 8, w: b.w }) });
   NAV.id = 'dlg';
+  /* the button chosen when the window opens: the first, or the one marked data-def (a window whose
+     first button deletes or changes something opens on the safe one, as the consoles require) */
+  const def = btns.findIndex(b => b.hasAttribute('data-def'));
+  if (def > 0) NAV.c = def;
   if (btns.length) requestAnimationFrame(() => { line.classList.remove('off'); applyFocus(); });
   if (btns.length) hints([['A', 'Elegir'], ...(handlers.onB ? [['B', 'Volver']] : [])]);
 }
@@ -2013,6 +2017,8 @@ function act(a) {
   }
   if (S.screen === 'power') {
     if (a === 'b') return closePower();
+    /* the guide button always reaches Home, as on the consoles (3.1.0-rc12: it did nothing here) */
+    if (a === 'home') { const inGame = powerFrom === 'game'; closePower(); if (inGame) return; if (NAV) NAV.id = ''; return enterHome({ r: 0, c: 0 }); }
     if (dirs.includes(a)) return move(a);
     if (a === 'a') return powerA(focusEl());
     return;
@@ -2022,6 +2028,15 @@ function act(a) {
     if (dirs.includes(a)) return move(a);
     if (a === 'a') return DLG.onA(focusEl());
     if (a === 'b' && DLG.onB) return DLG.onB();
+    /* the guide button: a window that can be closed with B is closed as B would (its cancel), then
+       Home. One that cannot (a question Steam is waiting for, work in progress) stays. */
+    if (a === 'home' && DLG.onB) {
+      const from = dlgPrev && dlgPrev.screen;
+      DLG.onB();
+      if (from === 'game') { if (S.screen === 'dlg') { closeDlg(); S.screen = 'game'; } return; }   /* over a running game: back to it */
+      if (S.screen === 'dlg') closeDlg();
+      if (NAV) NAV.id = ''; return enterHome({ r: 0, c: 0 });
+    }
     return;
   }
   if (S.screen === 'perf') {

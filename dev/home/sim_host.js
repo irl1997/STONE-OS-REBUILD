@@ -17,6 +17,7 @@ const Bridge = (() => {
   /* ?ts=2: text at 1.5× · ?hc: high contrast (to look at the accessibility settings) · ?lite: glass without blur */
   let prefs = { sound: true, vol: 0.7, hc: /[?&]hc/.test(location.search), rm: false, ts: Math.max(0, Math.min(2, +(new URLSearchParams(location.search).get('ts') || 0))), safe: 5, idle: 2, tech: false, adv_ack: false, favorites: ['1091500'],
     engine: 0, game_res: 0, display_goal: 'fluid', optimized: 1, wanted: [], report: true, glass: /[?&]lite/.test(location.search) ? 0 : 1 };
+  if (/[?&]pano/.test(location.search)) prefs.home_style = 1;        /* ?pano: the PANORAMA home style */
 
   /* ---- library (simulated; covers are painted here unless the page brings Steam's real art, see artOf) ---- */
   const DAY = 86400, now = Date.now() / 1000;
@@ -31,7 +32,10 @@ const Bridge = (() => {
     { appid: '367520', name: 'Hollow Knight', source: 'steam', installed: true, last: now - DAY * 45, min: 1500, size: 2.1e9, kind: 'plain' },
     { appid: '2668430', name: 'The Legend of Heroes: Trails through Daybreak II · Deluxe Edition', source: 'steam', installed: true, last: now - DAY * 1, min: 1500, size: 2.1e9, kind: 'plain' },
     { appid: '1086940', name: "Baldur's Gate 3", source: 'steam', installed: false, last: 0, min: 0, size: 150e9, kind: 'upscaler' },
-    { appid: '620', name: 'Portal 2', source: 'steam', installed: false, last: now - DAY * 200, min: 600, size: 12e9, kind: 'plain' }
+    { appid: '620', name: 'Portal 2', source: 'steam', installed: false, last: now - DAY * 200, min: 600, size: 12e9, kind: 'plain' },
+    /* rc12: emulator games (Steam shortcuts made by STONE) and an emulator itself */
+    { appid: '3100000100', name: 'Metroid Prime (GameCube)', source: 'shortcut', installed: true, last: now - DAY * 90, min: 300, size: 1.4e9, kind: 'plain', rom: 'GameCube', added: now - DAY * 120 },
+    { appid: '3100000101', name: 'Dolphin', source: 'shortcut', installed: true, last: now - DAY * 3, min: 0, size: 0, kind: 'plain', emu: true }
   ];
   function simFinish(g) {
     const left = Math.max(0, 24000 - (Date.now() - g.dl.at));
@@ -190,9 +194,10 @@ const Bridge = (() => {
       const live = !(/late/.test(location.search)) || Date.now() - SIM.t0 > 6000;
       const list = GAMES.filter(g => (live || g.installed) && !g.hidden);
       return { root_found: true, owned_known: live, owned_cached: false, logged: live ? 'in' : null, account: true,
-        games: list.slice().sort((x, y) => y.installed - x.installed || y.last - x.last).map(g => ({
+        games: list.slice().sort((x, y) => y.installed - x.installed || Math.max(y.last, y.added || 0) - Math.max(x.last, x.added || 0)).map(g => ({
           appid: g.appid, name: g.name, source: g.source, installed: g.installed, updating: !!g.updating, playtime_min: g.min, last_played: g.last,
-          size_bytes: g.size, art: g.source === 'shortcut' && /^3/.test(g.appid) ? { capsule: false, hero: false, header: false } : g.installed || SIM.art || !/noart/.test(location.search) ? { capsule: !g.wide, hero: !g.wide, header: !!g.wide, hero2x: !!(SIM.big && SIM.big[g.appid]) } : { capsule: false, hero: false, header: false },
+          size_bytes: g.size, art: g.source === 'shortcut' && /^3/.test(g.appid) ? { capsule: !!realArt(g.appid, 'capsule'), hero: false, header: false } : g.installed || SIM.art || !/noart/.test(location.search) ? { capsule: !g.wide, hero: !g.wide, header: !!g.wide, hero2x: !!(SIM.big && SIM.big[g.appid]) } : { capsule: false, hero: false, header: false },
+          kind: g.rom ? 'rom' : g.emu ? 'emulator' : undefined, system_name: g.rom || undefined, added: g.added || 0,
           launch: g.installed ? 'steam://rungameid/' + g.appid : null })) };
     },
     /* starting (Steam's steps): ?askcloud / ?askopt / ?launcherr make Steam ask about the cloud, a launch option, or fail */
@@ -248,10 +253,10 @@ const Bridge = (() => {
     },
     openSteam: async () => ({ ok: true }), openSteamSettings: async () => ({ ok: true }), restart: async () => ({ ok: true }),
     power: async ([a]) => { toast(`Simulación: «${a === 'off' ? 'Apagar' : 'Reiniciar'}» no hace nada aquí`, false); return { ok: true }; },
-    systemInfo: () => ({ session: 'stone', release: { STONE_VERSION: '3.1.0-rc11 (simulación)', STONE_BASE_IMAGE: 'bazzite-deck', STONE_KERNEL: 'simulado', STONE_MESA: 'simulado', STONE_GOVERNOR_VERSION: 'simulado' },
+    systemInfo: () => ({ session: 'stone', release: { STONE_VERSION: '3.1.0-rc12 (simulación)', STONE_BASE_IMAGE: 'bazzite-deck', STONE_KERNEL: 'simulado', STONE_MESA: 'simulado', STONE_GOVERNOR_VERSION: 'simulado' },
       boot_time: Math.round(now - 3600),
-      deployments: { booted: { image: 'simulación', version: '3.1.0-rc11', timestamp: now },
-        staged: SIM.updUntil && Date.now() > SIM.updUntil ? { image: 'simulación', version: '3.1.0-rc11', timestamp: now } : null,
+      deployments: { booted: { image: 'simulación', version: '3.1.0-rc12', timestamp: now },
+        staged: SIM.updUntil && Date.now() > SIM.updUntil ? { image: 'simulación', version: '3.1.0-rc12', timestamp: now } : null,
         rollback: { image: 'simulación', version: '3.0.0-rc1', timestamp: now - 86400 } },
       updates: { unit: 'uupd.timer', enabled: true, last: Math.round(now - 3600 * 15), next: Math.round(now + 3600 * 9) },
       updating: { unit: 'uupd-manual.service', running: !!SIM.updUntil && Date.now() < SIM.updUntil, result: 'success' } }),
@@ -268,6 +273,8 @@ const Bridge = (() => {
       ['retro', 'RETRO', 'Cálido y desvaído, para juegos antiguos y emuladores'], ['nextgen', 'NEXT-GEN', 'Aspecto de nueva generación: luces suaves, sombras profundas, color rico y bordes limpios'],
       ['realistic', 'REALISTA', 'Fotográfico: colores naturales, contraste de cámara y detalle limpio'], ['clean', 'SIN GRANO', 'Para juegos que se ven granulados: quita ruido y bandas, sin tocar el color']]
       .map(([key, label, description]) => ({ key, label, description })) }),
+    'rom.uninstall': ([appid]) => { const k = GAMES.findIndex(g => g.appid === appid && g.rom); if (k < 0) return { ok: false, error: 'No es un juego de emulador' };
+      GAMES.splice(k, 1); emit('library', { reason: 'rom removed' }); return { ok: true, removed: 1, bytes: 0 }; },
     'game.setLook': ([, k]) => { SIM.look = k; return { ok: true, look: k }; },
     'game.frameGen': () => ({ available: false, reason: 'Solo con FSR (OptiScaler) instalado por STONE en este juego', on: false, experimental: true }), 'game.setFrameGen': ([, on]) => ({ ok: true, on }),
     'audio.status': () => ({ outputs: [{ id: 51, name: 'HDMI · Televisor', default: true }, { id: 52, name: 'Auriculares USB', default: false }], volume: 0.6, muted: false }),
@@ -292,7 +299,7 @@ const Bridge = (() => {
     'usb.copy': () => { const total = 5.2 * 2 ** 30, t0 = Date.now(); const names = ['Shadow of the Colossus.iso', 'God of War II.iso', 'Metroid Fusion.gba'];
       const tick = () => { const f = Math.min(1, (Date.now() - t0) / 9000);
         if (f < 1) { emit('usb', { state: 'copying', done: f * total, total, name: names[Math.min(2, Math.floor(f * 3))] }); setTimeout(tick, 500); }
-        else { SIM.usbDone = true; ['Shadow of the Colossus (PlayStation 2)', 'God of War II (PlayStation 2)', 'Metroid Fusion (Game Boy Advance)'].forEach((n, k) => GAMES.push({ appid: String(3100000000 + k), name: n, source: 'shortcut', installed: true, last: 0, min: 0, size: 0, kind: 'plain', wide: false }));
+        else { SIM.usbDone = true; ['Shadow of the Colossus (PlayStation 2)', 'God of War II (PlayStation 2)', 'Metroid Fusion (Game Boy Advance)'].forEach((n, k) => GAMES.push({ appid: String(3100000000 + k), name: n, source: 'shortcut', installed: true, last: 0, min: 0, size: 0, kind: 'plain', wide: false, rom: /\(([^()]+)\)$/.exec(n)[1], added: Date.now() / 1000 }));
           emit('usb', { state: 'done', copied: 3, skipped: 0, error: null }); emit('library', { reason: 'changed' }); } };
       setTimeout(tick, 300); return { ok: true }; },
     'usb.cancel': () => ({ ok: true }),
@@ -309,7 +316,7 @@ const Bridge = (() => {
         { id: 'controllers', name: 'Mandos', status: 'ok', detail: '1 mando conectado.' },
         { id: 'network', name: 'Wi-Fi e internet', status: 'ok', detail: 'Conectado y con internet.' },
         { id: 'emulators', name: 'Emuladores', status: 'nodata', detail: 'No hay emuladores instalados.' }].map(c => ({ ...c, symptom: tie(c.id) }));
-      return { name: 'stone-informe-20261114-1830.zip', size: 412000, summary: { version: '3.1.0-rc11 (simulación)', errors: 3,
+      return { name: 'stone-informe-20261114-1830.zip', size: 412000, summary: { version: '3.1.0-rc12 (simulación)', errors: 3,
         previous_boot_errors: 0, failed_services: [], steam_functions: { have: 27, missing: [] }, findings: [], last_errors: [], checks,
         symptoms: (symptoms || []).map(k => sym[k] || k), failing: 1 } };
     },
@@ -339,9 +346,9 @@ const Bridge = (() => {
     'storage.status': async () => { await wait(400); return { libraries: [{ path: '/var/home/stone/.local/share/Steam', free: 412 * 2 ** 30, total: 476 * 2 ** 30, low: false }],
       downloads: [{ appid: '1091500', name: 'Cyberpunk 2077', downloaded: 3.2 * 2 ** 30, total: 12 * 2 ** 30, progress: 0.27, installed: true }],
       games: [{ appid: '1091500', name: 'Cyberpunk 2077', size: 71 * 2 ** 30, shader_cache: 1.4 * 2 ** 30, prefix: 0.3 * 2 ** 30 }], alerts: [] }; },
-    'store.search': async ([q]) => { await wait(700); if (/offline/.test(location.search)) bad('Unsupported', 'La tienda de Steam no responde (URLError): ¿hay conexión a internet?');
+    'store.search': async ([q]) => { await wait(700); if (/offline/.test(location.search)) bad('Unsupported', 'La tienda de Steam no responde. ¿Hay conexión a internet?');
       const w = q.toLowerCase(); return { results: STORE_ALL.filter(i => i.name.toLowerCase().includes(w)).concat(STORE_ALL.filter(i => !i.name.toLowerCase().includes(w)).slice(0, 2)).slice(0, 8).map(storeRow) }; },
-    'store.featured': async () => { await wait(600); if (/offline/.test(location.search)) bad('Unsupported', 'La tienda de Steam no responde (URLError): ¿hay conexión a internet?');
+    'store.featured': async () => { await wait(600); if (/offline/.test(location.search)) bad('Unsupported', 'La tienda de Steam no responde. ¿Hay conexión a internet?');
       return { sections: STORE_SECTIONS.map(([key, title, ids]) => ({ key, title, items: ids.map(id => storeRow(storeItem(id))) })) }; },
     'store.details': async ([appid]) => { await wait(500); const it = storeItem(appid); if (!it) bad('Unsupported', 'Steam no tiene ficha de tienda para este juego en tu región.');
       setTimeout(() => emit('art', { art: { [appid]: { capsule: false, hero: true, header: true } } }), 1200);
@@ -364,7 +371,7 @@ const Bridge = (() => {
     'steam.hide': () => { if (!SIM.front) return { managed: false }; endFront('closed'); return { managed: true }; },
     'steam.full': async ([why]) => { setTimeout(() => { toast('Simulación: aquí Steam ocuparía la pantalla y STONE volvería después', false); emit('steam', { front: false, why: 'closed', what: why }); }, 2500); return { ok: true }; },
     'steam.status': () => ({ session: 'stone', interface: true, account: SIM.signed, logged: SIM.signed ? 'in' : 'out', owned_known: true, owned_cached: false, front: !!SIM.front, root_found: true }),
-    'roms.scan': async () => { await wait(300); return { base: '/var/home/stone/Emulation', systems: [{ key: 'ps2', name: 'PlayStation 2', emulator: 'PCSX2', emulator_key: 'pcsx2', installed: true, games: [{ name: 'Juego de ejemplo', path: '/x.iso' }] }] }; },
+    'roms.scan': async () => { await wait(300); return { base: '/var/home/stone/Emulation', systems: [{ key: 'gc', name: 'GameCube', emulator: 'Dolphin', emulator_key: 'dolphin', installed: true, games: [{ name: 'Metroid Prime', path: '/var/home/stone/Emulation/roms/gc/Metroid Prime.rvz' }] }] }; },   /* the library's emulator game */
     'roms.folders': () => ({ base: '/var/home/stone/Emulation' }), 'roms.add': async () => { await wait(500); return { found: 1, new: 1, added: 1, queued: 0 }; },
     'storage.clearShaderCache': () => ({ ok: true, freed: 1.4 * 2 ** 30 }), 'storage.uninstall': async () => { await wait(1200); return { ok: true, state: 'removed' }; },
     'game.experience': () => ({ confidence: { level: 'medium', text: 'Medido en esta consola', detail: '2 mediciones limpias' }, last: { avg_fps: 58.4, low1_fps: 41.2, stutters_per_min: 0.6, verdict: 'fluido', gpu_temp_max: 74, config: 'x' }, regression: [], autopilot: { quality: 'a', balanced: 'b', fluid: 'c' } }),
@@ -448,15 +455,16 @@ const Bridge = (() => {
   };
 
   /* covers: a local preview may bring Steam's real art, as window.STONE_SIM_ART = { appid: { capsule, header,
-     hero } } (data: URLs) defined before the page starts; the repository ships none, it is the publishers' art.
+     hero, hero2x } } (addresses) defined before the page starts (build_simulation.py --art, fetched by
+     sim_art.py); the repository ships none, it is the publishers' art.
      Otherwise it is generated here: a landscape in the game's own colours (sky, sun, three ridges, haze),
      like the key art Steam gives each game. Without a name on it: STONE never writes one on a cover. */
   const artCache = {};
+  const realArt = (appid, kind) => (window.STONE_SIM_ART && window.STONE_SIM_ART[appid] && window.STONE_SIM_ART[appid][kind]) || null;
   function artOf(appid, kind) {
     if (/^shot\d+$/.test(kind)) { const g = GAMES[+kind.slice(4) % GAMES.length]; return artOf(g.appid, 'hero'); }
-    if (kind === 'hero2x') return artOf(appid, 'hero');          /* the simulation has one size of each picture */
-    const real = window.STONE_SIM_ART && window.STONE_SIM_ART[appid];
-    if (real && real[kind]) return real[kind];
+    if (kind === 'hero2x') return realArt(appid, 'hero2x') || artOf(appid, 'hero');   /* painted: one size of each picture */
+    if (realArt(appid, kind)) return realArt(appid, kind);
     const k = appid + kind; if (artCache[k]) return artCache[k];
     const g = GAMES.find(x => x.appid === appid) || storeItem(appid);
     const W = { hero: 1920, header: 460, capsule: 300 }[kind] || 300, H = { hero: 620, header: 215, capsule: 450 }[kind] || 450;

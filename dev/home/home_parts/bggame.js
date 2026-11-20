@@ -1,19 +1,61 @@
+/* Two background layers crossfade (bgA, bgB). A layer is one picture covering the screen (css), or,
+   for a game's big picture, a BAND (3.1.0-rc12; board, 19-11-2026: "la imagen de fondo de los juegos
+   (Batman) no está en alta resolución, se ve pixeleada"). Steam's big picture is 1920 × 620, three
+   times wider than tall: covering a 16:9 screen enlarged it 1.74 times in height (2.3 times on the
+   2560 × 1440 television, 3.5 on a 4K one) and cut away almost half of it. As a band it fills the
+   screen's width at the top, at its own size, and fades into a soft copy of itself (css) below. */
+let bgFlip = false, bgCur = '', bgTok = 0;
+function bgLayer(el, css, top, shape) {
+  el.style.backgroundImage = css || 'none'; el.style.backgroundColor = css ? '' : 'transparent';
+  el.style.setProperty('--top', top ? `url("${top}")` : 'none');
+  el.classList.toggle('band', !!top && shape !== 'box');
+  el.classList.toggle('box', !!top && shape === 'box');
+}
+/* shape 'box': an emulator game's box art, whole and sharp, on the right of its page (it has no big picture) */
+function setBg(css, veil, keepFor, top, shape) {
+  if (!keepFor) { S.bgFor = null; stage.style.setProperty('--bg-blur', '0px'); stage.style.setProperty('--bg-dim', '0'); }
+  $('#veil').className = veil === undefined ? 'none' : veil;
+  const key = `${css}|${top || ''}|${shape || ''}`;
+  if (key === bgCur) return; bgCur = key;
+  const a = bgFlip ? $('#bgA') : $('#bgB'), b = bgFlip ? $('#bgB') : $('#bgA');
+  /* the same band with its soft copy arrived: only what is under it changes, nothing fades */
+  if (top && b.classList.contains('on') && b.style.getPropertyValue('--top') === `url("${top}")`) { b.style.backgroundImage = css || 'none'; return; }
+  bgLayer(a, css, top, shape);
+  a.classList.add('on'); b.classList.remove('on'); bgFlip = !bgFlip;
+  /* after the crossfade, the hidden layer lets go of its image so only one full-screen picture stays decoded */
+  const tok = ++bgTok; setTimeout(() => { if (tok === bgTok) bgLayer(b, '', null); }, S.rm ? 400 : 1000);
+}
+/* game mode: both layers let go of their pictures at once */
+function bgClear() { setBg('', 'none'); bgLayer($('#bgA'), '', null); bgLayer($('#bgB'), '', null); bgCur = ''; }
+/* The game's background. Its big picture is shown as a band, sharp; a game with only a cover or the
+   store's small picture shows its colours, softened (an enlarged cover is made of blocks). */
 function bgGame(g, sharp, veil) {
   S.bgFor = { i: g.i, sharp, veil };
   accentFor(g);
-  const u = bgUrl(g);
+  const wide = g.art.hero2x || g.art.hero, u = wide ? bgUrl(g) : null;
   bgTune(g, !!u && sharp);
-  if (!u) return setBg(neutralBg, veil, true);
-  if (sharp) { bgWant(g); return setBg(`url("${u}")`, veil, true); }
-  const b = blurOf(g, () => { if (S.bgFor && S.bgFor.i === g.i && !S.bgFor.sharp) setBg(`url(${BLUR.get(g.appid)})`, S.bgFor.veil, true); });
+  if (!heroUrl(g)) return setBg(neutralBg, veil, true);
+  const soft = () => BLUR.has(g.appid) ? `url(${BLUR.get(g.appid)})` : null;
+  const b = blurOf(g, () => {
+    const f = S.bgFor;
+    if (!f || f.i !== g.i) return;
+    if (f.sharp && !u && f.veil === 'side' && tallOnly(g)) return setBg(soft(), f.veil, true, Bridge.artUrl(g.appid, 'capsule'), 'box');
+    setBg(soft(), f.veil, true, f.sharp && u ? u : null);
+  });
+  if (sharp) bgWant(g);
+  if (sharp && u) return setBg(b ? `url(${b})` : neutralBg, veil, true, u);
+  if (sharp && veil === 'side' && tallOnly(g)) {
+    const box = Bridge.artUrl(g.appid, 'capsule');
+    return setBg(b ? `url(${b})` : neutralBg, veil, true, box, 'box');
+  }
   if (b) return setBg(`url(${b})`, veil, true);
   $('#veil').className = veil;
 }
 
 /* THE BACKGROUND AT THE SCREEN'S SIZE (3.1.0-rc4; board, 12-11-2026: "los fondos se ven pixelados").
-   Steam's big picture is 1920 × 620: filling a 4K television it is enlarged 3.5 times. STONE asks for
-   the one at twice the size (when the game has it, artcache hero2x) for the game being looked at, and
-   softens what still has to be enlarged a lot, so it looks out of focus instead of made of blocks.
+   Steam's big picture is 1920 × 620. STONE asks for the one at twice the size (when the game has it,
+   artcache hero2x) for the game being looked at, shows it as a band (setBg) and softens what still has
+   to be enlarged a lot, so it looks out of focus instead of made of blocks.
    Bright art (a white sky) gets a deeper shade under the text (--bg-dim). */
 const BG_SIZE = new Map(), BG_LUM = new Map(), BG_ASKED = new Set();
 let bgWantT = 0;
@@ -26,9 +68,10 @@ function bgWant(g) {
 function bgTune(g, shown) {
   let blur = 0, dim = 0;
   if (shown) {
+    /* shown as a band: enlarged only to the screen's width */
     const sz = g.art.hero2x ? [3840, 1240] : BG_SIZE.get(g.appid);
     if (sz) {
-      const up = Math.max(1920 / sz[0], 1080 / sz[1]) * SCALE * (window.devicePixelRatio || 1);
+      const up = 1920 / sz[0] * SCALE * (window.devicePixelRatio || 1);
       blur = Math.max(0, Math.min(4.5, (up - 1.3) * 1.1));
     }
     const lum = BG_LUM.get(g.appid);

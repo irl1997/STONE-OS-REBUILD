@@ -6,9 +6,12 @@ function homeHTML() {
   if (S.section === 0) {
     /* Nobody signed in to Steam on this console: the first thing Home offers */
     if (S.libLogged === 'out') cards += `<div class="card wide vein" data-f data-act="login">${cover('login')}<b>Inicia sesión en Steam</b><span>Tus juegos vienen de tu cuenta de Steam</span></div>`;
-    if (G.length && recent.length) {
+    if (G.length && recent.length && S.homeStyle === 1) {
+      /* PANORAMA (rc12): every game the same landscape card (its wide art), the first one too */
+      recent.forEach(i => { const g = G[i], u = landUrl(g); cards += `<div class="card land${g.inst || g.src === 'shortcut' ? '' : ' dim'}" data-f data-g="${i}" style="${tallOnly(g) ? boxBg(g) : `background-image:${u ? `url(&quot;${u}&quot;)` : 'none'}`}">${u ? '' : nameTag(g)}${runTag(i)}</div>`; });
+    } else if (G.length && recent.length) {
       const g0 = G[recent[0]], hu = heroUrl(g0);
-      cards += `<div class="card hero${g0.inst || g0.src === 'shortcut' ? '' : ' dim'}" data-f data-g="${g0.i}" style="background-image:${hu ? `url(&quot;${hu}&quot;)` : 'none'};background-color:var(--shale)">${hu ? '' : nameTag(g0)}${runTag(g0.i)}</div>`;
+      cards += `<div class="card hero${g0.inst || g0.src === 'shortcut' ? '' : ' dim'}" data-f data-g="${g0.i}" style="${tallOnly(g0) ? boxBg(g0) : `background-image:${hu ? `url(&quot;${hu}&quot;)` : 'none'}`};background-color:var(--shale)">${hu ? '' : nameTag(g0)}${runTag(g0.i)}</div>`;
       recent.slice(1).forEach(i => { const g = G[i]; cards += `<div class="card cap${g.inst || g.src === 'shortcut' ? '' : ' dim'}${capWide(g) ? ' hdr' : ''}" data-f data-g="${i}" style="background-image:${capUrl(g).replace(/"/g, '&quot;')}">${g.art.capsule || g.art.header ? '' : nameTag(g)}${runTag(i)}</div>`; });
     } else if (S.libLogged !== 'out') {
       cards += `<div class="card wide" data-f data-act="${S.libReady ? 'store' : 'library'}">${cover(S.libReady ? 'store' : 'library')}<b>${S.libReady ? 'Sin juegos' : 'Biblioteca'}</b><span>${S.libReady ? 'Abre la tienda para conseguir el primero' : 'Leyendo la biblioteca de Steam…'}</span></div>`;
@@ -17,7 +20,9 @@ function homeHTML() {
   } else if (S.section === 2) {
     [['Tienda', 'Ofertas, novedades y lo más vendido en Steam', 'store'], ['Buscar juegos', 'Tu biblioteca y la tienda de Steam', 'search'],
       ['Sorpréndeme', 'STONE elige uno de tus juegos instalados', 'surprise'], ['Descargas', 'Descargas y actualizaciones de juegos', 'downloads'], ['Emuladores', 'Juegos de otras consolas', 'emu']]
-      .forEach(([t, s, k]) => { cards += `<div class="card wide" data-f data-act="${k}">${cover(k)}<b>${t}</b><span>${s}</span></div>`; });
+      /* the card says what it is; what it does is written once, under the row (3.1.0-rc12: it was written
+         twice, in the card and under it, and the chosen card's text wrapped) */
+      .forEach(([t, _s, k]) => { cards += `<div class="card wide" data-f data-act="${k}">${cover(k)}<b>${t}</b></div>`; });
   } else {
     if (!SHOTS) loadShots();
     if (SHOTS && SHOTS.length) SHOTS.slice(0, 12).forEach((sh, k) => { cards += `<div class="card cap shot" data-f data-act="shot" data-k="${k}" style="background-image:url(&quot;${Bridge.artUrl(sh.appid === '0' ? '0' : '0', sh.kind)}&quot;)"></div>`; });
@@ -52,7 +57,7 @@ function homeContext(el) {
   hm.classList.remove('on'); clearTimeout(metaT);
   const gi = el.dataset.g;
   if (gi !== undefined) {
-    const g = G[+gi], first = el.classList.contains('hero'), playable = g.inst || g.src === 'shortcut';
+    const g = G[+gi], first = el.classList.contains('hero') || (S.homeStyle === 1 && +gi === recent[0]), playable = g.inst || g.src === 'shortcut';
     hk.innerHTML = !playable ? 'EN TU CUENTA · SIN INSTALAR' : first ? `CONTINUAR${S.running === g.i ? ' · <span class="now">EN CURSO</span>' : ''}` : 'RECIENTE';
     ht.textContent = g.n;
     hm.textContent = !playable ? `${g.upd ? 'Instalándose' : 'Pulsa A para instalarlo'} · ${playText(g)}`
@@ -63,7 +68,7 @@ function homeContext(el) {
   } else {
     const a = el.dataset.act;
     const label = { login: ['Steam', 'Con el código QR de Steam y tu móvil, sin escribir contraseñas'], store: ['Tienda', 'Ofertas, novedades y lo más vendido en Steam'],
-      surprise: ['Sorpréndeme', 'Para cuando no sabes a qué jugar'], search: ['Buscar', 'Tus juegos y la tienda de Steam (Y)'], library: ['Biblioteca', S.libReady ? `${G.length} juego${G.length === 1 ? '' : 's'}` : 'Leyendo…'], explore: ['Explorar', 'Tienda, descargas y emuladores'], settings: ['Ajustes', 'Pantalla, audio, rendimiento y más'], power: ['Apagar', 'Apagar o reiniciar'],
+      surprise: ['Sorpréndeme', 'STONE elige uno de tus juegos instalados'], search: ['Buscar', 'Tus juegos y la tienda de Steam (Y)'], library: ['Biblioteca', S.libReady ? `${G.length} juego${G.length === 1 ? '' : 's'}` : 'Leyendo…'], explore: ['Explorar', 'Tienda, descargas y emuladores'], settings: ['Ajustes', 'Pantalla, audio, rendimiento y más'], power: ['Apagar', 'Apagar o reiniciar'],
       downloads: ['Descargas', 'Lo que se descarga y el espacio libre'], emu: ['Emuladores', 'Juegos de otras consolas'], noshots: ['Capturas', 'Durante el juego: botón STEAM + R1'],
       shot: (() => { const sh = SHOTS && SHOTS[+el.dataset.k], g = sh && G.find(x => x.appid === sh.appid); return ['Captura', sh ? `${g ? g.n : 'Juego ' + sh.appid} · ${new Date(sh.time * 1000).toLocaleDateString('es-CL')}` : '']; })() }[a] || ['', ''];
     hk.textContent = S.section === 2 ? 'EXPLORAR' : S.section === 3 ? 'MEDIA' : 'SISTEMA';
@@ -83,6 +88,9 @@ function focusInPlace() {
   if (el) el.classList.add('f');          /* before any layout read: no transition from "not focused" */
   applyFocus();
 }
+/* PANORAMA's cards: Steam's wide picture of the game (its header, with the game's logo), else its big
+   picture (cut to 16:9), else its cover */
+const landUrl = g => g.art.header ? Bridge.artUrl(g.appid, 'header') : heroUrl(g);
 function enterHome(opts = {}) {
   S.screen = 'home'; S.from = 'home';
   if (S.section === 1 || S.section === 4) S.section = 0;
@@ -99,7 +107,7 @@ function enterHome(opts = {}) {
   if (opts.sys) { opts.r = 1; opts.c = Math.max(0, rows[1].findIndex(e => e.dataset.act === opts.sys)); }
   NAV = mkNav(rows, {
     r: opts.r ?? (prev ? prev.r : 0), c: opts.c ?? (prev ? prev.c : 0),
-    place: (el, b, r) => r === 0 ? { x: b.x, y: 668, w: b.w * (S.rm ? 1 : 1.06) } : { x: b.x, y: b.y + b.h + 14, w: b.w },
+    place: (el, b, r) => r === 0 ? { x: b.x, y: S.homeStyle === 1 ? b.y + b.h + 18 : 668, w: b.w * (S.rm ? 1 : 1.06) } : { x: b.x, y: b.y + b.h + 14, w: b.w },
     scroll: el => {
       if (!el.closest('.track')) return;
       let sx = +track.dataset.sx; const l = el.offsetLeft, r = l + el.offsetWidth * 1.06, view = 1728;

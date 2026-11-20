@@ -162,20 +162,37 @@ def conf(look, lut_path=None):
     return "\n".join(head + lines) + "\n"
 
 
+def _key(look, lut_path):
+    """What a look's files depend on: when it is the same, the files written before are used as they are."""
+    import hashlib
+    return hashlib.sha1(repr((look, LUT_SIZE, GRADE.get(look), FX[look], lut_path)).encode()).hexdigest()[:16]
+
+
 def write(look, directory=None):
-    """Write (or refresh) a look's files; returns the config path."""
+    """Write (or refresh) a look's files; returns the config path. rc12: the 33³ LUT (a third of a second of
+    Python on the console) is computed only when the look itself changed (a new STONE version), not for
+    every launch: its key is the config's first line."""
     if look not in LOOKS:
         raise ValueError("look")
     d = directory or state_dir()
     os.makedirs(d, exist_ok=True)
-    lut = None
-    if any(name == "lut" for name, _o in FX[look]):
-        lut = os.path.join(d, f"{look}.cube")
-        with open(lut, "w") as f:
-            f.write(cube(look))
+    lut = os.path.join(d, f"{look}.cube") if any(name == "lut" for name, _o in FX[look]) else None
     path = os.path.join(d, f"{look}.conf")
-    with open(path, "w") as f:
-        f.write(conf(look, lut))
+    key = f"# key {_key(look, lut)}"
+    try:
+        with open(path) as f:
+            same = f.readline().strip() == key
+        if same and (lut is None or os.path.getsize(lut) > 0):
+            return path
+    except OSError:
+        pass
+    if lut:
+        with open(lut + ".tmp", "w") as f:
+            f.write(cube(look))
+        os.replace(lut + ".tmp", lut)
+    with open(path + ".tmp", "w") as f:
+        f.write(key + "\n" + conf(look, lut))
+    os.replace(path + ".tmp", path)
     return path
 
 

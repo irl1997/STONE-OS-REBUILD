@@ -9,7 +9,10 @@ const S = {
   /* 3.0: who is signed in to Steam ("in", "out", null: not known yet), Steam's own window in front, the session report */
   libLogged: null, libCached: false, libNone: false, steamFront: null, report: true,
   /* CRISTAL: glass with blur (1) or without (0, «Ligeros»; always without GPU) */
-  glass: 1
+  glass: 1,
+  /* rc12: Inicio's style: 0 Cristal (a big first card and portrait covers), 1 Panorama (the game's art over the whole
+     screen, its name large, landscape covers in one row) */
+  homeStyle: 0
 };
 /* Performance profiles: all values stay inside the range documented as stable on every BC-250 (≤ 2000 MHz at 1000 mV, ≤ 85 °C).
    stoned holds the same table (profiles.py) and is the one that applies it; these are for display. */

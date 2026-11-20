@@ -409,9 +409,15 @@ def prepare_session(root=None, proc="/proc"):
     extra = emulators.pending_entries()
     accts = accounts(root)
     fixed = []
+    try:
+        ids = emulators.installed_here()          # instant: this runs before STONE Home is on screen
+    except Exception:  # noqa: BLE001
+        ids = None
     for a in accts:
         try:
             fixed += repair_emulator_shortcuts(a)
+            if ids:
+                fixed += repair_rom_shortcuts(a, ids)
         except (OSError, vdf.VDFError):
             pass
     if fixed:
@@ -428,6 +434,47 @@ def prepare_session(root=None, proc="/proc"):
                 pass
         out["shortcuts_added"] = sorted(set(added))
     return out
+
+
+def repair_rom_shortcuts(acct, installed_ids):
+    """3.1.0-rc12: an emulator game whose emulator is no longer installed, when the other emulator for its
+    system is (Switch: Eden removed, Ryujinx installed), is pointed at the installed one, with that
+    emulator's arguments. Only shortcuts STONE made (roms.entries' form). Steam must be closed."""
+    from . import emulators, library, roms
+    path = os.path.join(acct, "config", "shortcuts.vdf")
+    if not os.path.exists(path):
+        return []
+    with open(path, "rb") as f:
+        data = vdf.binary_loads(f.read())
+    items = data.get("shortcuts") if isinstance(data, dict) else None
+    if not isinstance(items, dict):
+        return []
+    fixed = []
+    for v in items.values():
+        if not isinstance(v, dict):
+            continue
+        exe, opts = str(vdf.get_ci(v, "Exe") or ""), str(vdf.get_ci(v, "LaunchOptions") or "")
+        c = library.classify(exe, opts)
+        if c["kind"] != "rom" or not c["system"] or not c["emulator"]:
+            continue
+        if emulators.CATALOG[c["emulator"]][0] in installed_ids:
+            continue
+        system = c["system"]
+        choices = [(roms.SYSTEMS[system][2], roms.SYSTEMS[system][4])] + list(roms.ALTERNATES.get(system, []))
+        alt = next(((k, args) for k, args in choices if emulators.CATALOG[k][0] in installed_ids), None)
+        if not alt:
+            continue
+        new = " ".join(["run", emulators.CATALOG[alt[0]][0], *alt[1], roms._dq(c["path"])])
+        for k in list(v):
+            if k.lower() == "launchoptions":
+                del v[k]
+        v["LaunchOptions"] = new
+        fixed.append(str(vdf.get_ci(v, "AppName") or ""))
+    if fixed:
+        if not os.path.exists(path + ".stone-backup"):
+            shutil.copy2(path, path + ".stone-backup")
+        _write_atomic(path, vdf.binary_dumps(data))
+    return fixed
 
 
 def repair_emulator_shortcuts(acct):

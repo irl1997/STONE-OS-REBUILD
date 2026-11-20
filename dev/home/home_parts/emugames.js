@@ -49,6 +49,9 @@ Bridge.on('usb', d => {
   if (d.error) { play('error'); toast(d.error, false); }
   else if (d.canceled) toast(`Copia cancelada: ${d.copied} juego${d.copied === 1 ? '' : 's'} copiado${d.copied === 1 ? '' : 's'}`, false);
   else { play('notify'); longToast(`${d.copied} juego${d.copied === 1 ? '' : 's'} copiado${d.copied === 1 ? '' : 's'} y añadido${d.copied === 1 ? '' : 's'} a tu biblioteca. Ya puedes quitar el USB`, 7000); }
+  /* rc12: games of a console whose emulator is not installed wait for it: said, with where to get it */
+  const need = Object.entries(d.need || {});
+  if (need.length) setTimeout(() => longToast(`Para jugar: instala ${need.map(([sys, emu]) => `${emu} (${sys})`).join(', ')} en Ajustes → Emuladores. Los juegos aparecen solos al instalarlo`, 9000), d.error ? 4000 : 7500);
   egScan(true); reloadLibrary();
 });
 /* «Juegos desde el móvil»: the QR code, what arrives, CERRAR adds them to the library */
