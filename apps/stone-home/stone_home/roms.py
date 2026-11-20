@@ -233,6 +233,56 @@ def entries(scanned):
     return out
 
 
+def game_files(path, base=None):
+    """What uninstalling an emulator game deletes (rc12): its own folder when it has one under
+    roms/<system>/, else the file with the sheets that name it and their parts. Only paths inside
+    ~/Emulation/roms; [] for anything else."""
+    base = os.path.realpath(os.path.join(base or base_dir(), "roms"))
+    p = os.path.realpath(path)
+    if not p.startswith(base + os.sep):
+        return []
+    rel = os.path.relpath(p, base).split(os.sep)
+    if len(rel) < 2 or rel[0] not in {v[0] for v in SYSTEMS.values()}:
+        return []
+    sysdir = os.path.join(base, rel[0])
+    if len(rel) > 2:                                   # roms/<system>/<game folder>/...
+        return [os.path.join(sysdir, rel[1])]
+    out = [p]
+    try:
+        names = os.listdir(sysdir)
+    except OSError:
+        names = []
+    for n in names:                                    # sheets naming it, and their other parts
+        if os.path.splitext(n)[1].lower() in SHEETS:
+            sheet = os.path.join(sysdir, n)
+            refs = sheet_files(sheet)
+            if p == sheet or p in refs:
+                out += [sheet] + refs
+    return sorted(set(out))
+
+
+def remove_game(path, base=None):
+    """Delete an emulator game's files (game_files). {"ok", "removed", "bytes"}."""
+    import shutil as _sh
+    files = game_files(path, base)
+    if not files:
+        return {"ok": False, "error": "No es un juego de la carpeta de emuladores de STONE"}
+    n = size = 0
+    for f in files:
+        try:
+            if os.path.isdir(f):
+                for d, _ds, fs in os.walk(f):
+                    size += sum(os.path.getsize(os.path.join(d, x)) for x in fs if os.path.isfile(os.path.join(d, x)))
+                _sh.rmtree(f)
+            else:
+                size += os.path.getsize(f)
+                os.remove(f)
+            n += 1
+        except OSError:
+            pass
+    return {"ok": n > 0, "removed": n, "bytes": size}
+
+
 def signature(base=None):
     """What changes when games are added or removed in ~/Emulation/roms (cheap: the folders' times and
     names, no reading of files). Compared by the host to add new games by themselves (rc12)."""

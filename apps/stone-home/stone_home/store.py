@@ -5,8 +5,11 @@ from Steam's public store API (no account, no key).
     https://store.steampowered.com/api/featuredcategories/?l=spanish
     https://store.steampowered.com/api/appdetails/?appids=<id>&l=spanish
 
-No country is sent: Steam answers with the prices and the currency of the place the console
-connects from, the same ones the person will see when paying.
+The country: Steam's own, for the place the console connects from (the steamCountry cookie its store sets
+on any visit, from its own location of the connection: the same that picks the prices and currency the
+person will see when paying). Nothing else is sent. 3.1.0-rc12, from the console (20-11-2026: "no me
+aparecen los juegos que busco"): storesearch stopped answering without a country, {"total":0,"items":[]}
+for every word; with cc it answers as before.
 
 Read only. STONE never handles a payment or a password: a paid game is bought in Steam's own
 interface (shown in front by the STONE session) or on the person's phone; a free game and a game
@@ -41,6 +44,37 @@ def _get(url, timeout=10):
         return r.read(2 * 2**20).decode("utf-8", "replace")
 
 
+HOME = "https://store.steampowered.com/"
+_COUNTRY = {}
+
+
+def _head_cookies(url, timeout=8):
+    if os.environ.get("STONE_HOME_NO_FETCH") == "1":
+        raise OSError("fetching is off (STONE_HOME_NO_FETCH)")
+    req = urllib.request.Request(url, method="HEAD", headers={"User-Agent": "STONE-OS"})
+    with urllib.request.urlopen(req, timeout=timeout) as r:
+        return r.headers.get_all("Set-Cookie") or []
+
+
+def country(head=None, now=None):
+    """The two-letter country Steam's store gives this connection (its steamCountry cookie), or None.
+    Asked once and kept for six hours (a console does not move often)."""
+    import time
+    t = now if now is not None else time.time()
+    if _COUNTRY.get("cc") and t - _COUNTRY.get("t", 0) < 6 * 3600:
+        return _COUNTRY["cc"]
+    try:
+        cookies = (head or _head_cookies)(HOME)
+    except OSError:
+        return _COUNTRY.get("cc")
+    for c in cookies:
+        m = re.match(r"\s*steamCountry=([A-Za-z]{2})(%7C|\||;|$)", c)
+        if m:
+            _COUNTRY.update(cc=m.group(1).upper(), t=t)
+            return _COUNTRY["cc"]
+    return _COUNTRY.get("cc")
+
+
 def money(cents, currency):
     """'12,99 USD' / '2.604 CLP' from Steam's hundredths; None when it is not a price."""
     if not isinstance(cents, int) or isinstance(cents, bool) or cents < 0 \
@@ -70,11 +104,15 @@ def _price(final, initial, currency, discount):
     return now, was, pct if was else 0
 
 
-def search(term, get=None):
+def search(term, get=None, head=None):
     """{"results": [{"appid", "name", "free", "price"}]} or {"error": "..."}."""
     if not isinstance(term, str) or not 1 <= len(term.strip()) <= 60:
         return {"error": "Escribe entre 1 y 60 letras"}
-    url = API + "?" + urllib.parse.urlencode({"term": term.strip(), "l": "spanish"})
+    q = {"term": term.strip(), "l": "spanish"}
+    cc = country(head)
+    if cc:
+        q["cc"] = cc
+    url = API + "?" + urllib.parse.urlencode(q)
     try:
         d = json.loads((get or _get)(url))
     except (OSError, ValueError) as e:

@@ -272,6 +272,8 @@ const Bridge = (() => {
       ['retro', 'RETRO', 'Cálido y desvaído, para juegos antiguos y emuladores'], ['nextgen', 'NEXT-GEN', 'Aspecto de nueva generación: luces suaves, sombras profundas, color rico y bordes limpios'],
       ['realistic', 'REALISTA', 'Fotográfico: colores naturales, contraste de cámara y detalle limpio'], ['clean', 'SIN GRANO', 'Para juegos que se ven granulados: quita ruido y bandas, sin tocar el color']]
       .map(([key, label, description]) => ({ key, label, description })) }),
+    'rom.uninstall': ([appid]) => { const k = GAMES.findIndex(g => g.appid === appid && g.rom); if (k < 0) return { ok: false, error: 'No es un juego de emulador' };
+      GAMES.splice(k, 1); emit('library', { reason: 'rom removed' }); return { ok: true, removed: 1, bytes: 0 }; },
     'game.setLook': ([, k]) => { SIM.look = k; return { ok: true, look: k }; },
     'game.frameGen': () => ({ available: false, reason: 'Solo con FSR (OptiScaler) instalado por STONE en este juego', on: false, experimental: true }), 'game.setFrameGen': ([, on]) => ({ ok: true, on }),
     'audio.status': () => ({ outputs: [{ id: 51, name: 'HDMI · Televisor', default: true }, { id: 52, name: 'Auriculares USB', default: false }], volume: 0.6, muted: false }),

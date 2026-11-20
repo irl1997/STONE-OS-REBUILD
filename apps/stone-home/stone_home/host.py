@@ -186,6 +186,28 @@ class Host:
         threading.Thread(target=work, daemon=True).start()
         return True
 
+    def m_rom_uninstall(self, args, done):
+        """rom.uninstall(appid): delete an emulator game from the console (its file, its sheets and parts,
+        or its folder, only inside ~/Emulation/roms) and its Steam shortcut. The emulator's saves stay:
+        they live in the emulator's own folder. {"ok", "removed", "bytes"} (rc12)."""
+        last = self.lib_last[1] if getattr(self, "lib_last", None) else {}
+        g = next((x for x in (last.get("games") or []) if isinstance(args, list) and len(args) == 1 and x.get("appid") == args[0]), None)
+        if not g or g.get("kind") != "rom":
+            return done(None, "InvalidValue", "not an emulator game")
+
+        def work():
+            r = roms.remove_game(g.get("path") or "")
+            if r.get("ok"):
+                try:
+                    r["shortcut_removed"] = bool(self.steam_ui.remove_shortcut(int(g["appid"])))
+                except Exception:  # noqa: BLE001  (hidden anyway: the library leaves out games without a file)
+                    r["shortcut_removed"] = False
+                self._roms_sig = None
+                GLib.idle_add(lambda: (self._lib_kick(), self.emit("library", {"reason": "rom removed"}), False)[2])
+            print(f"[stone] emulators: {g.get('name')} removed: {r}", flush=True)
+            return r
+        self._bg(done, work, "rom")
+
     def emulator_missing(self, appid):
         """The emulator an emulator game needs when it is not installed: (name) or None (rc12)."""
         last = self.lib_last[1] if getattr(self, "lib_last", None) else {}

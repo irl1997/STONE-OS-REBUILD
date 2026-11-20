@@ -239,6 +239,33 @@ def test_rc12_emulator_games_in_the_library_with_their_console_and_repaired_when
         assert SC.repair_rom_shortcuts(acct.rsplit(os.sep, 1)[0], {"io.github.ryubing.Ryujinx", "net.pcsx2.PCSX2"}) == []
 
 
+def test_rc12_uninstalling_an_emulator_game_deletes_its_files_and_nothing_else():
+    with Box():
+        base = os.path.join(os.environ["HOME"], "Emulation")
+        r = os.path.join(base, "roms")
+        def put(rel, text="x" * 20):
+            p = os.path.join(r, rel)
+            os.makedirs(os.path.dirname(p), exist_ok=True)
+            open(p, "w").write(text)
+            return p
+        ico = put("ps2/Ico (USA).bin")
+        put("ps2/Ico (USA).cue", 'FILE "Ico (USA).bin" BINARY\n')
+        okami = put("ps2/Okami/Okami.iso")
+        put("ps2/Okami/portada.jpg")
+        gow = put("ps2/God of War.iso")
+        assert R.game_files(ico, base) == sorted([os.path.realpath(ico), os.path.realpath(os.path.join(r, "ps2", "Ico (USA).cue"))])
+        assert R.game_files(okami, base) == [os.path.join(os.path.realpath(r), "ps2", "Okami")]
+        res = R.remove_game(ico, base)
+        assert res["ok"] and res["removed"] == 2 and not os.path.exists(ico)
+        assert R.remove_game(okami, base)["ok"] and not os.path.exists(os.path.join(r, "ps2", "Okami"))
+        assert os.path.exists(gow)                                                   # the others stay
+        outside = os.path.join(os.environ["HOME"], "Documentos", "tesis.iso")
+        os.makedirs(os.path.dirname(outside))
+        open(outside, "w").write("mio")
+        assert R.game_files(outside, base) == [] and not R.remove_game(outside, base)["ok"] and os.path.exists(outside)
+        assert R.game_files(os.path.join(r, "ps2"), base) == []                       # never a whole system folder
+
+
 def test_prepare_session_flags_steam_and_waits_for_the_first_sign_in():
     with Box() as b:
         EM.queue_entries([{"name": "X", "exe": '"/usr/bin/flatpak"', "start": '"/"', "options": "run a.b"}])

@@ -47,11 +47,20 @@ Juegos de emuladores en el Inicio, carga desde USB a prueba de fallos, un sistem
 
   Así el próximo informe dirá qué más se puede quitar del arranque, que hoy está fuera de STONE: BIOS, menú de arranque y servicios del sistema base.
 
+## El buscador de la tienda vuelve a encontrar juegos
+
+Steam cambió su búsqueda: sin el país de la conexión responde **0 resultados** para cualquier palabra, y por eso salía «no existen juegos». Ahora STONE le pregunta a Steam qué país asigna a la conexión de la consola y lo usa en cada búsqueda. Es el mismo dato con el que Steam ya elige los precios y la moneda, así que no se envía nada nuevo. Comprobado contra la tienda real: «batman» pasa de 0 a 9 resultados.
+
+## Desinstalar juegos
+
+- **Juegos de Steam:** «Desinstalar» está ahora en la propia página del juego. Antes solo estaba dentro de Propiedades y en Ajustes → Almacenamiento. Para dejarle sitio, «Experiencia» pasa a GRÁFICOS.
+- **Juegos de emuladores:** ahora también se pueden desinstalar. Se borran de la consola con todas sus partes (pistas, carpeta del juego), y solo dentro de la carpeta de juegos de STONE. Tus partidas guardadas se conservan en el emulador.
+
 ## Además
 
 - **Preferencias que se reiniciaban solas.** Guardar cualquier preferencia (un favorito, el volumen…) devolvía a su valor por defecto «Juegos ven», «Meta de imagen» y STONE OPTIMIZED. Ahora se conservan.
 
-**Todo está probado en software (CODE TESTED) y en el simulador. Nada de esta versión se ha observado todavía en la BC-250.** Pruebas de placa: T-EMU-15 a 18, T-BOOT-11 y T-PERF-02.
+**Todo está probado en software (CODE TESTED) y en el simulador. Nada de esta versión se ha observado todavía en la BC-250.** Pruebas de placa: T-EMU-15 a 19, T-STORE-02, T-BOOT-11 y T-PERF-02.
 
 # STONE OS (rebuild) 3.1.0-rc11
 

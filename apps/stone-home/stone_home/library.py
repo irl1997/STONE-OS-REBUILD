@@ -189,7 +189,7 @@ def shortcut_games(root):
                 st = os.stat(c["path"])
             except OSError:
                 continue
-            g.update(kind="rom", system=c["system"], system_name=c["system_name"], emulator=c["emulator"],
+            g.update(kind="rom", system=c["system"], system_name=c["system_name"], emulator=c["emulator"], path=c["path"],
                      size_bytes=st.st_size if os.path.isfile(c["path"]) else 0, added=int(st.st_mtime),
                      name=clean_title(name))
         elif c["kind"] == "emulator":

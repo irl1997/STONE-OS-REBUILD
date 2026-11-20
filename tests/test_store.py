@@ -26,11 +26,19 @@ def test_store_search_parses_free_and_paid_and_refuses_bad_terms():
             {"type": "app", "name": "Juego de pago", "id": 1245620, "price": {"currency": "USD", "initial": 5999, "final": 5999}},
             {"type": "sub", "name": "Paquete", "id": 9},
             {"type": "app", "name": "", "id": 11}]})
-    r = ST.search("  dota ", get=get)
+    ST._COUNTRY.clear()
+    head = lambda url: ["browserid=1; path=/", "steamCountry=CL%7Cdf097ae837ebcdda74eccbc3184d2e4c; path=/; secure"]
+    r = ST.search("  dota ", get=get, head=head)
     assert r == {"results": [{"appid": "570", "name": "Dota 2", "free": True, "price": None},
                              {"appid": "1245620", "name": "Juego de pago", "free": False, "price": "59,99 USD"}]}
     assert "term=dota" in seen[0] and "l=spanish" in seen[0] and seen[0].startswith(ST.API)
-    assert "cc=" not in seen[0]                        # no country: Steam answers with the console's own prices
+    # rc12 (the console, 20-11-2026): without a country storesearch answers nothing; Steam's own one is sent
+    assert "cc=CL" in seen[0]
+    assert ST.country(head=lambda url: (_ for _ in ()).throw(AssertionError("asked again"))) == "CL"   # kept
+    ST._COUNTRY.clear()
+    assert ST.country(head=lambda url: []) is None                                       # no cookie: no country
+    ST.search("dota", get=get, head=lambda url: (_ for _ in ()).throw(OSError("offline")))
+    assert "cc=" not in seen[-1]
     assert "error" in ST.search("", get=get) and "error" in ST.search("x" * 61, get=get)
     assert "no responde" in ST.search("dota", get=lambda u: (_ for _ in ()).throw(OSError("offline")))["error"]
     assert ST.search("dota", get=lambda u: "not json").get("error")
