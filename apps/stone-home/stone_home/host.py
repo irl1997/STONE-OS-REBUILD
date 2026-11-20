@@ -766,6 +766,11 @@ class Host:
             except Exception:  # noqa: BLE001
                 ok = None
             print(f"[stone] launch {args[0]}: answer {args[1]!r} -> {ok}", flush=True)
+            if args[1] == "cancel":
+                try:
+                    self.optimized.cancel(args[0])     # cleaned up at the next tick, not a failure (rc11)
+                except Exception as e:  # noqa: BLE001
+                    print(f"[stone] optimized: cancel {args[0]}: {e!r}", flush=True)
             GLib.idle_add(lambda: (done({"ok": bool(ok)}), False)[1])
         threading.Thread(target=work, daemon=True).start()
 

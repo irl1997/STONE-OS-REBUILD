@@ -39,6 +39,7 @@ ABNORMAL_S = 60          # a game gone this soon after it appeared did not end n
 LOOK_CRASH_S = 20        # a look is only blamed for a game gone this soon, twice in a row (3.1.0-rc8)
 LOOK_CRASHES = 2
 PROBE_AFTER_S = 25       # EFFECTS PROBE: this long after the game appeared, look inside its processes
+PROBE_AGAIN_S = (60, 120)  # and again while the game has not reached Vulkan yet (its launcher, rc11)
 SUSPECT_AFTER = 2        # abnormal exits before a configuration is suspect
 START_TIMEOUT_S = 180    # Steam did not start the game: clean up
 FALLBACK = {"helixsr": ["game_upscaler", "native"], "optiscaler": ["game_upscaler", "native"],
@@ -604,19 +605,31 @@ class Engine:
             self.log(f"[stone] optimized: {s['appid']} started with {s['key']}")
             self._event("game_started", appid=s["appid"], look=s.get("look"), path=s["config"]["graphics"]["path"])
             return "started"
-        if running and s.get("t_started") and not s.get("probed") and now - s["t_started"] >= PROBE_AFTER_S:
+        due = (PROBE_AFTER_S,) + PROBE_AGAIN_S
+        n = int(s.get("probe_n") or 0)
+        again = n < len(due) and (not s.get("probed") or (isinstance(s["probed"], dict) and s["probed"].get("processes")
+                                                          and not s["probed"].get("vulkan_loaded")))
+        if running and s.get("t_started") and again and now - s["t_started"] >= due[n]:
+            # rc11: a game still on its launcher at 25 s (Cyberpunk 2077 on the console, 19-11-2026: 14
+            # processes, no Vulkan yet) is looked at again at 60 s and 120 s; the last look is the one recorded.
             # EFFECTS PROBE (3.1.0-rc8): did what STONE put in the launch options reach the game, and
             # is vkBasalt really loaded in it? The diagnostic report says "works" or "fails" from this.
             try:
                 pr = self.probe(s["appid"])
             except Exception as e:  # noqa: BLE001  (a probe never disturbs the game)
                 pr = {"error": repr(e)[:200]}
-            s["probed"] = pr
+            s["probed"], s["probe_n"] = pr, n + 1
+            last = not (pr.get("processes") and not pr.get("vulkan_loaded") and n + 1 < len(due))
+            s["probe_rec"] = last
             self._save_session(s)
+            if not last:
+                return None                      # not recorded yet: looked at again later
             self._event("game_effects", appid=s["appid"], look=s.get("look"), **{k: v for k, v in pr.items() if k != "appid"})
             return None
         if not running and s.get("t_started"):
             return self.finish(s["appid"], reason="exit")
+        if not running and not s.get("t_started") and s.get("cancelled"):
+            return self.finish(s["appid"], reason="cancelled")
         if not running and not s.get("t_started") and now - s["t_prepared"] > START_TIMEOUT_S:
             return self.finish(s["appid"], reason="not started")
         return None
@@ -686,6 +699,8 @@ class Engine:
             result["performance_restored"] = ok if ok else f"error: {err}"
         # CLEAN GRAPHICS OVERRIDES
         result["graphics_restored"] = self.ov.restore(s["appid"])
+        if isinstance(s.get("probed"), dict) and not s.get("probe_rec"):     # ended before the next look
+            self._event("game_effects", appid=s["appid"], look=s.get("look"), **{k: v for k, v in s["probed"].items() if k != "appid"})
         self._save_session(None)
         self._event("game_end", appid=s["appid"], reason=reason, seconds=result["seconds"], abnormal=abnormal,
                     look=s.get("look"), healed=result.get("healed"), probed=bool(s.get("probed")),
@@ -693,6 +708,17 @@ class Engine:
         self.log(f"[stone] optimized: {s['appid']} {reason}{' (abnormal)' if abnormal else ''}: "
                  f"graphics {result['graphics_restored']}")
         return result
+
+    def cancel(self, appid):
+        """The person cancelled the start in what Steam asked (launch.answer "cancel"): the next tick
+        cleans up at once instead of waiting START_TIMEOUT_S, and it is not counted as a failure
+        (the console's report, 19-11-2026: a cancelled launch option showed as "Steam no llegó a abrir")."""
+        s = self._session()
+        if s and s["appid"] == str(appid) and not s.get("t_started"):
+            s["cancelled"] = True
+            self._save_session(s)
+            return True
+        return False
 
     def _look_crashes(self, appid, lk, step):
         """Consecutive early ends of a game with a look on: +1, or None to forget. Returns the count."""
@@ -730,7 +756,7 @@ class Engine:
         s = self._session()
         out = {}
         if s and not self.watch.running(s["appid"]):
-            out["session"] = self.finish(s["appid"], reason="lost" if s.get("t_started") else "not started")
+            out["session"] = self.finish(s["appid"], reason="lost" if s.get("t_started") else "cancelled" if s.get("cancelled") else "not started")
         left = self.ov.restore_all()
         if left:
             out["overrides"] = left

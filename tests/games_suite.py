@@ -933,6 +933,41 @@ def G27_optiscaler_goes_next_to_the_game_never_in_an_installer_folder():
 
 
 @test
+def G28_cancelled_launch_and_probe_again_after_the_launcher():
+    """The console's report (19-11-2026, 23:22): a launch option cancelled by the person showed as
+    "Steam no llegó a abrir" three minutes later; Cyberpunk was probed on its launcher (no Vulkan yet)."""
+    with World() as w:
+        rows = []
+        w.e.events = lambda kind, **d: rows.append(dict(d, kind=kind))
+        w.e.prepare(CP)
+        assert w.e.cancel(CP) is True
+        w.now += 3
+        res = w.e.tick()
+        assert res["reason"] == "cancelled" and not res["abnormal"] and w.e._session() is None
+        assert [e["reason"] for e in rows if e["kind"] == "game_end"] == ["cancelled"]
+        # probe: on the launcher at 25 s, in the game at 60 s: only the second is recorded
+        seen = iter([{"processes": 14, "vulkan_loaded": False, "vkbasalt_loaded": False},
+                     {"processes": 24, "vulkan_loaded": True, "vkbasalt_loaded": True}])
+        w.e.probe = lambda appid: next(seen)
+        w.e.prepare(CP)
+        w.running_set.add(CP)
+        w.now += 5
+        assert w.e.tick() == "started"
+        w.now += optimizer.PROBE_AFTER_S + 1
+        w.e.tick()
+        assert not [e for e in rows if e["kind"] == "game_effects"]
+        w.now += optimizer.PROBE_AGAIN_S[0]
+        w.e.tick()
+        eff = [e for e in rows if e["kind"] == "game_effects"]
+        assert len(eff) == 1 and eff[0]["vulkan_loaded"] is True
+        w.now += 600
+        w.e.tick()
+        assert len([e for e in rows if e["kind"] == "game_effects"]) == 1     # never again once in the game
+        w.running_set.discard(CP)
+        assert w.e.tick()["reason"] == "exit"
+
+
+@test
 def G25_optiscaler_release_names_in_any_letter_case():
     """3.1.0-rc8 on the console: OptiScaler v0.9.4 publishes "Optiscaler_0.9.4-final.20260718._MM.7z"
     (small s) and STONE said "the latest release has no file I recognise"."""

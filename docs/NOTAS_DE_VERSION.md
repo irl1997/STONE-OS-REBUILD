@@ -24,10 +24,12 @@ Hecha con el **cuarto informe de la consola** (19-11-2026, 22:55) y tus fotos: f
 - Salía **«#STEAM_LAUNCHOPTION_GAME»**, que es una clave interna de Steam y no un texto, y el botón «CANCELAR» se salía del cuadro. Ahora las opciones usan los **textos en español de la propia Steam**, sacados de su archivo de traducción (por ejemplo «Jugar a «Batman: Arkham City GOTY»»). Se muestran como una lista y debajo solo queda CANCELAR.
 - En cualquier diálogo, los botones que no caben pasan a la línea siguiente en vez de salirse del cuadro.
 
-## El informe
+## El informe (y lo que mostró el de las 23:22)
 
 - Ya no avisa de un aspecto que STONE apagó hace días si después volviste a jugar con aspecto.
 - Un «no se abrió» que Steam reintentó y abrió enseguida ya no cuenta como fallo.
+- **Cancelar no es un fallo.** El fallo que marcó el informe (Batman: Arkham City a las 22:54) fue el diálogo de la foto: se respondió CANCELAR, pero STONE esperó tres minutos y lo apuntó como «Steam no llegó a abrir». Ahora, al cancelar, STONE deja las opciones del juego como estaban en el siguiente segundo, y el informe no lo cuenta como fallo.
+- **El filtro se comprueba ya dentro del juego, no en su lanzador.** A los 27 s, Cyberpunk seguía en su lanzador y todavía no usaba Vulkan, así que el informe habría dicho «no usa Vulkan». Ahora, si el juego aún no ha llegado a Vulkan, STONE vuelve a mirar a los 60 s y a los 2 minutos, y anota lo que ve dentro del juego.
 
 **Todo está probado en software (CODE TESTED) y en el simulador. Nada de esta versión se ha observado todavía en la BC-250.** Pruebas de placa: T-LOOK-05, T-DL-05 y T-HOME-11.
 
