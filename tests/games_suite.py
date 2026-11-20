@@ -791,6 +791,19 @@ def G20_components_download_verify_install_uninstall():
         assert not os.path.exists(os.path.join(gdir, "winmm.dll")) and not os.path.exists(os.path.join(gdir, "D3D12_Optiscaler"))
         assert os.path.isfile(os.path.join(gdir, "Cyberpunk2077.exe"))              # the game's own files untouched
         assert not w.e.uninstall_image(CP)["ok"]
+        # the game's own upscaler libraries stay (Cyberpunk ships libxess*.dll); they are not copied over nor removed
+        opti2 = dict(opti, **{"OptiScaler/libxess.dll": b"MZnew", "OptiScaler/libxess_fg.dll": b"MZnew"})
+        gj2, dl2 = _fake_net("optiscaler", opti2, tag="v9.9.10")
+        install.fetch("optiscaler", gj2, dl2)
+        for n in ("libxess.dll", "libxess_fg.dll"):
+            with open(os.path.join(gdir, n), "wb") as f:
+                f.write(b"MZgame")
+        plan = w.e.install_plan(CP, "optiscaler")
+        assert plan["ok"] and plan["kept"] == ["libxess.dll", "libxess_fg.dll"] and plan["upscalers"] == ["libxess.dll"], plan
+        assert w.e.install_image(CP)["ok"] and open(os.path.join(gdir, "libxess.dll"), "rb").read() == b"MZgame"
+        assert w.e.uninstall_image(CP)["ok"] and open(os.path.join(gdir, "libxess_fg.dll"), "rb").read() == b"MZgame"
+        for n in ("libxess.dll", "libxess_fg.dll"):
+            os.remove(os.path.join(gdir, n))
         # never over existing files
         os.makedirs(os.path.join(gdir, "D3D12_Optiscaler"))
         with open(os.path.join(gdir, "D3D12_Optiscaler", "D3D12Core.dll"), "w") as f:

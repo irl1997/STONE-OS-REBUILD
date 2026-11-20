@@ -118,7 +118,13 @@ def check_filters(ev, logs, home, prefs, names, root="/"):
         return _check("filters", name, FAIL, "La capa de vkBasalt está declarada pero su biblioteca no existe: los juegos no la cargan.", evidence)
     if prefs.get("optimized", 1) == 0:
         return _check("filters", name, FAIL, "STONE OPTIMIZED está desactivado: JUGAR lanza el juego tal cual y los aspectos no se aplican.", evidence)
-    healed = [e for e in ev if e.get("kind") == "game_end" and e.get("healed")]
+    # a look turned off counts only if that game was not played with a look since (rc11: the fourth report
+    # still warned about one turned off four days earlier by rc9's rule)
+    last_fx = {}
+    for e in ev:
+        if e.get("kind") == "game_effects" and e.get("look"):
+            last_fx[e.get("appid")] = e.get("t") or 0
+    healed = [e for e in ev if e.get("kind") == "game_end" and e.get("healed") and (e.get("t") or 0) >= last_fx.get(e.get("appid"), 0)]
     healed_old = [m.group(1) for m in _HEALED_OLD.finditer(logs)]
     for e in healed:
         evidence.append(f"STONE apagó el aspecto {e.get('look')} de {_game(names, e.get('appid'))} tras cerrarse el juego a los {e.get('seconds')} s")
@@ -224,6 +230,10 @@ def check_games(ev, logs, names):
             t0 = prep.get(e.get("appid"))
             if t0 is None or e.get("t") is None or e.get("t") - t0 < 600:
                 not_started.append(e)
+    # Steam retried and the game opened within two minutes: not a failure (fourth report, Arkham Knight)
+    not_started = [e for e in not_started if not any(x.get("kind") == "game_started" and x.get("appid") == e.get("appid")
+                                                     and x.get("t") is not None and e.get("t") is not None and 0 < x["t"] - e["t"] < 120
+                                                     for x in ev)]
     early = [e for e in ends if e.get("abnormal") and e.get("reason") == "exit"]
     errs = [m.group(0) for m in _LAUNCH_ERR.finditer(logs)]
     evidence = [f"{_game(names, e.get('appid'))}: {e.get('reason')} a los {e.get('seconds')} s" for e in ends[-6:]] + errs[-4:]

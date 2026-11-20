@@ -1,3 +1,36 @@
+# STONE OS (rebuild) 3.1.0-rc11
+
+Hecha con el **cuarto informe de la consola** (19-11-2026, 22:55) y tus fotos: filtros que se notan más, dos filtros nuevos, menos grano, el error de OptiScaler y el diálogo «Opción de inicio». Decisión D-46.
+
+## Filtros de imagen (Aspecto): más notables, nuevos y sin grano
+
+- **El grano.** Todos los filtros afilaban la imagen con CAS, que también afila el ruido: el parpadeo del TAA y del FSR y el grano de película de algunos juegos. Ahora usan **DLS**, la nitidez de vkBasalt que se contiene donde hay ruido, y la mayoría suavizan además las **bandas** de cielos y nieblas. Las dos cosas están en la versión de vkBasalt de la imagen (0.3.2.10), según su código fuente.
+- **Se notan más.** Los cambios de color son más marcados: VIVID, el doble; CINEMA, la mitad más. La tabla de color tiene ahora 33³ puntos en vez de 17³, así que los degradados quedan más suaves.
+- **Tres aspectos nuevos:**
+  - **NEXT-GEN:** luces que se suavizan en vez de quemarse, sombras profundas sin perder detalle, color más rico, bordes suavizados (SMAA) y detalle fino. Pensado para que los juegos antiguos parezcan de una generación nueva.
+  - **REALISTA:** aspecto fotográfico. Contraste de cámara, calma los colores chillones sin tocar la piel ni la naturaleza, sombras algo más frías y detalle limpio.
+  - **SIN GRANO:** para juegos que se ven granulados. Quita ruido y bandas sin tocar el color.
+- **Elegir el aspecto** ya no es pasar uno por uno con A. Ahora se abre una lista con los 9 (Original y los 8 aspectos), cada uno con lo que hace, y el elegido lleva una marca.
+- Si los juegos se siguen viendo granulados con SIN GRANO, hay dos causas más que conviene saber:
+  - **La resolución de la imagen.** Con «Imagen: STONE decide» o FSR, el juego dibuja al 67 % y luego escala la imagen. Prueba «Imagen: Nativa».
+  - **El adaptador DisplayPort → HDMI.** No pasa de 1440p a 60 Hz, así que el televisor escala esa señal a 4K y además le aplica su propia nitidez.
+
+## OptiScaler
+
+- En la foto salía: «files with the same name already exist in the game folder: libxess_fg.dll, libxess_dx11.dll, libxess.dll». Cyberpunk 2077 trae sus propias bibliotecas de XeSS, y OptiScaler también las incluye. Ahora STONE **conserva las del juego**: no las sobrescribe al instalar ni las borra al quitar OptiScaler, que usa las que encuentre. Al confirmar, STONE te dice qué archivos se conservan.
+
+## El diálogo «Opción de inicio»
+
+- Salía **«#STEAM_LAUNCHOPTION_GAME»**, que es una clave interna de Steam y no un texto, y el botón «CANCELAR» se salía del cuadro. Ahora las opciones usan los **textos en español de la propia Steam**, sacados de su archivo de traducción (por ejemplo «Jugar a «Batman: Arkham City GOTY»»). Se muestran como una lista y debajo solo queda CANCELAR.
+- En cualquier diálogo, los botones que no caben pasan a la línea siguiente en vez de salirse del cuadro.
+
+## El informe
+
+- Ya no avisa de un aspecto que STONE apagó hace días si después volviste a jugar con aspecto.
+- Un «no se abrió» que Steam reintentó y abrió enseguida ya no cuenta como fallo.
+
+**Todo está probado en software (CODE TESTED) y en el simulador. Nada de esta versión se ha observado todavía en la BC-250.** Pruebas de placa: T-LOOK-05, T-DL-05 y T-HOME-11.
+
 # STONE OS (rebuild) 3.1.0-rc10
 
 Hecha con el **tercer informe de la consola** (15-11-2026, 17:04) y con lo que pediste: que no parpadee, que se vea cuándo STONE está trabajando y que los cuadros de diálogo estén bien encuadrados. Además se hizo una auditoría con el informe y el código. Decisión D-45.

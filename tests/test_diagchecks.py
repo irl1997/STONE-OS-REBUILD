@@ -215,6 +215,18 @@ def test_third_report_hdr_now_and_launches_across_a_sleep():
     assert C.check_games(live, "", {})["status"] == C.FAIL
 
 
+def test_fourth_report_old_heals_and_retried_launches():
+    with Box() as b:
+        b.looks({"620": "vivid"})
+        ev = [{"kind": "game_end", "appid": "620", "healed": "look cinema turned off", "seconds": 6, "t": 100.0},
+              effects(t=5000.0)]
+        assert b.filters(ev)["status"] == C.OK                                 # played with a look since: old news
+    retried = [{"kind": "game_prepare", "appid": "208650", "t": 1000.0},
+               {"kind": "game_end", "appid": "208650", "reason": "not started", "t": 1004.0},
+               {"kind": "game_started", "appid": "208650", "t": 1015.0}]
+    assert C.check_games(retried, "", {})["status"] == C.OK
+
+
 def test_events_are_kept_small_and_never_fail():
     t = tempfile.mkdtemp(prefix="stone-ev-")
     try:

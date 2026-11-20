@@ -1,36 +1,66 @@
-"""STONE IMAGE (M17): a light post-processing look per game, through the vkBasalt Vulkan layer.
+"""STONE IMAGE (M17): a post-processing look per game, through the vkBasalt Vulkan layer.
 
-  NATURAL   a touch of contrast-adaptive sharpening (AMD CAS), nothing else
-  CLARITY   stronger sharpening, for games that look soft (upscaled or TAA)
-  CINEMA    soft S-curve, slightly warmer and less saturated, deeper blacks; light sharpening
-  VIVID     more colour and a little more contrast; light sharpening
-  RETRO     warm and slightly faded, for older and emulated games; no sharpening
+  NATURAL    the game as it is, cleaner: light sharpening that does not sharpen grain, bands smoothed
+  CLARITY    stronger detail for games that look soft (upscaled or with heavy TAA)
+  CINEMA     film: S-curve, deeper blacks, teal shadows and warm highlights, a little less colour
+  VIVID      more colour (above all where there was little) and more contrast
+  RETRO      warm and faded, lifted blacks, for older and emulated games
+  NEXT-GEN   (3.1.0-rc11) a newer-generation look: filmic highlights that roll off instead of clipping,
+             deep but not crushed shadows, richer colour, edges smoothed (SMAA) and fine detail brought out
+  REALISTA   (3.1.0-rc11) photographic: neutral filmic curve, over-saturated colours calmed (skin and
+             nature stay), slightly cooler shadows, clean detail
+  SIN GRANO  (3.1.0-rc11) for grainy or noisy pictures: denoise and debanding, colours untouched
 
-Each look is a vkBasalt config (CAS sharpening and/or a colour LUT written here as a .cube file)
-in ~/.local/state/stone/looks/. A game launched with a look gets ENABLE_VKBASALT=1 and
-VKBASALT_CONFIG_FILE=<that file> in its launch options, through the same crash-safe overrides as
-the graphics paths (graphics.Overrides). Off by default for every game.
+Each look is a vkBasalt config in ~/.local/state/stone/looks/ (and a 33³ colour LUT, a .cube file, for the
+ones that change colour). A game launched with a look gets ENABLE_VKBASALT=1 and VKBASALT_CONFIG_FILE in its
+launch options, through the same crash-safe overrides as the graphics paths (graphics.Overrides). Off by
+default for every game.
+
+3.1.0-rc11, from the console (19-11-2026: "los filtros no se notan tanto" and "los juegos se ven un poco
+granulados"): every look sharpened with CAS, which sharpens noise too (TAA and upscaler shimmer, film
+grain); now DLS (vkBasalt's Denoised Luma Sharpening: dlsSharpness, dlsDenoise) with a denoise amount per
+look, and deband where gradients matter. The colour changes are stronger than rc10's (mean change over the cube, rc10 -> rc11: cinema 0.035 -> 0.052,
+vivid 0.029 -> 0.057, retro 0.069 -> 0.113; nextgen 0.061, realistic 0.056) and the
+LUT went from 17³ to 33³ points (smoother gradients). Effects and options are vkBasalt 0.3.2.10's own
+(src/basalt.cpp: cas, dls, fxaa, smaa, deband, lut; config/vkBasalt.conf), the version in the image.
 
 Never applied: when vkBasalt is not installed (available() says why), to games with anti-cheat or
-online-only games (a Vulkan layer can be flagged), or during a measurement (numbers stay clean).
-Debanding and HDR tone mapping are not offered: vkBasalt has no such effect (D-18: nothing is
-claimed that the layer cannot do).
+online-only games (a Vulkan layer can be flagged), or during a measurement (numbers stay clean). HDR tone
+mapping is not offered: vkBasalt works on the game's SDR image (D-18: nothing claimed the layer cannot do).
 """
 
 import json
 import os
 
-LOOKS = ("natural", "clarity", "cinema", "vivid", "retro")
-LABELS = {"natural": "NATURAL", "clarity": "CLARITY", "cinema": "CINEMA", "vivid": "VIVID", "retro": "RETRO"}
-DESCRIPTIONS = {"natural": "Un poco más de nitidez, nada más",
-                "clarity": "Más nitidez para juegos que se ven blandos",
-                "cinema": "Contraste suave, tono cálido, negros más profundos",
-                "vivid": "Más color y algo más de contraste",
-                "retro": "Cálido y algo desvaído, para juegos antiguos y emuladores"}
-CAS = {"natural": 0.35, "clarity": 0.75, "cinema": 0.25, "vivid": 0.35, "retro": None}
+LOOKS = ("natural", "clarity", "cinema", "vivid", "retro", "nextgen", "realistic", "clean")
+LABELS = {"natural": "NATURAL", "clarity": "CLARITY", "cinema": "CINEMA", "vivid": "VIVID", "retro": "RETRO",
+          "nextgen": "NEXT-GEN", "realistic": "REALISTA", "clean": "SIN GRANO"}
+DESCRIPTIONS = {"natural": "El juego tal cual, más limpio: nitidez sin realzar el grano",
+                "clarity": "Más detalle para juegos que se ven blandos",
+                "cinema": "Película: más contraste, negros profundos, sombras frías y luces cálidas",
+                "vivid": "Mucho más color y más contraste",
+                "retro": "Cálido y desvaído, para juegos antiguos y emuladores",
+                "nextgen": "Aspecto de nueva generación: luces suaves, sombras profundas, color rico y bordes limpios",
+                "realistic": "Fotográfico: colores naturales, contraste de cámara y detalle limpio",
+                "clean": "Para juegos que se ven granulados: quita ruido y bandas, sin tocar el color"}
+# vkBasalt effects per look, in the order they run: (name, {option: value}). DLS sharpens luma only and
+# holds back where the picture is noisy (dlsDenoise); deband smooths 8-bit steps in skies and fog.
+FX = {
+    "natural": [("deband", {}), ("dls", {"dlsSharpness": 0.35, "dlsDenoise": 0.30})],
+    "clarity": [("dls", {"dlsSharpness": 0.70, "dlsDenoise": 0.25})],
+    "cinema": [("deband", {}), ("dls", {"dlsSharpness": 0.25, "dlsDenoise": 0.35}), ("lut", {})],
+    "vivid": [("dls", {"dlsSharpness": 0.40, "dlsDenoise": 0.25}), ("lut", {})],
+    "retro": [("lut", {})],
+    "nextgen": [("deband", {}), ("smaa", {"smaaEdgeDetection": "luma", "smaaThreshold": 0.05, "smaaMaxSearchSteps": 24,
+                                          "smaaMaxSearchStepsDiag": 8, "smaaCornerRounding": 25}),
+                ("dls", {"dlsSharpness": 0.55, "dlsDenoise": 0.30}), ("lut", {})],
+    "realistic": [("deband", {}), ("dls", {"dlsSharpness": 0.30, "dlsDenoise": 0.40}), ("lut", {})],
+    "clean": [("deband", {"debandAvgdiff": 3.4, "debandMaxdiff": 6.8, "debandMiddiff": 3.3, "debandRange": 16.0,
+                          "debandIterations": 4}), ("dls", {"dlsSharpness": 0.10, "dlsDenoise": 1.0})],
+}
 LAYER_JSONS = ("/usr/share/vulkan/implicit_layer.d/vkBasalt.json", "/usr/share/vulkan/implicit_layer.d/vkBasalt.x86_64.json",
                "/etc/vulkan/implicit_layer.d/vkBasalt.json")
-LUT_SIZE = 17
+LUT_SIZE = 33
 
 
 def state_dir():
@@ -54,20 +84,54 @@ def _clamp(x):
     return 0.0 if x < 0 else 1.0 if x > 1 else x
 
 
+# Colour per look (rc11). sat: saturation; vib: vibrance (more where colour is low); calm: lowers only the
+# most saturated colours (photographic); curve: S-curve amount; toe/shoulder: filmic roll-off of shadows and
+# highlights; black/white: output levels; warm: white balance (+ warmer); shadows/highlights: split toning.
+GRADE = {
+    "cinema": {"sat": 0.78, "curve": 0.50, "black": 0.045, "warm": 0.035, "shadows": (-0.05, 0.0, 0.06), "highlights": (0.06, 0.025, -0.05)},
+    "vivid": {"sat": 1.35, "vib": 0.45, "curve": 0.30},
+    "retro": {"sat": 0.68, "curve": -0.10, "black": -0.07, "white": 0.93, "warm": 0.07, "highlights": (0.04, 0.02, -0.05)},
+    "nextgen": {"sat": 1.16, "vib": 0.35, "toe": 0.40, "shoulder": 0.45, "curve": 0.28, "black": 0.025,
+                "shadows": (-0.03, 0.0, 0.04), "highlights": (0.03, 0.012, -0.02)},
+    "realistic": {"sat": 0.96, "calm": 0.30, "curve": 0.22, "shoulder": 0.30, "black": 0.015, "warm": -0.012,
+                  "shadows": (-0.02, 0.0, 0.025)},
+}
+
+
+def _s(x, k):
+    """S-curve around mid grey (k > 0 more contrast, k < 0 less), fixed at 0 and 1."""
+    return x + k * (x - 0.5) * (1 - abs(2 * x - 1))
+
+
+def _filmic(x, toe, shoulder):
+    """Shadows pressed down (toe: a power curve below mid grey) and highlights rolled off instead of
+    clipped (shoulder: a soft knee above it). Both keep 0, 0.5 and 1 where they are."""
+    if x < 0.5 and toe:
+        x = 0.5 * (2 * x) ** (1 + toe)
+    elif x > 0.5 and shoulder:
+        t = (x - 0.5) * 2
+        x = 0.5 + 0.5 * (t * (1 + shoulder) / (1 + shoulder * t))
+    return x
+
+
 def _grade(look, r, g, b):
+    p = GRADE.get(look)
+    if not p:
+        return r, g, b
+    w = p.get("warm", 0.0)
+    r, g, b = r * (1 + w), g, b * (1 - w)
     lum = 0.2126 * r + 0.7152 * g + 0.0722 * b
-    if look == "cinema":
-        def s(x):                                  # gentle S-curve around mid grey
-            return x + 0.18 * (x - 0.5) * (1 - abs(2 * x - 1))
-        r, g, b = (lum + 0.85 * (c - lum) for c in (r, g, b))       # 15 % less saturation
-        r, g, b = s(r) * 1.02, s(g), s(b) * 0.96                    # slightly warmer
-        r, g, b = (max(0.0, c - 0.02) / 0.98 for c in (r, g, b))     # deeper blacks
-    elif look == "vivid":
-        r, g, b = (lum + 1.2 * (c - lum) for c in (r, g, b))        # 20 % more saturation
-        r, g, b = (0.5 + 1.06 * (c - 0.5) for c in (r, g, b))       # a little more contrast
-    elif look == "retro":
-        r, g, b = (lum + 0.75 * (c - lum) for c in (r, g, b))
-        r, g, b = r * 1.04 + 0.02, g * 1.0 + 0.015, b * 0.92 + 0.01  # warm, lifted blacks
+    chroma = max(r, g, b) - min(r, g, b)
+    k = p.get("sat", 1.0) * (1 + p.get("vib", 0.0) * (1 - min(1.0, chroma * 2))) * (1 - p.get("calm", 0.0) * chroma)
+    r, g, b = (lum + k * (c - lum) for c in (r, g, b))
+    r, g, b = (_filmic(_clamp(c), p.get("toe", 0.0), p.get("shoulder", 0.0)) for c in (r, g, b))
+    r, g, b = (_s(_clamp(c), p.get("curve", 0.0)) for c in (r, g, b))
+    lum = _clamp(0.2126 * r + 0.7152 * g + 0.0722 * b)
+    sh, hi = p.get("shadows", (0, 0, 0)), p.get("highlights", (0, 0, 0))
+    ws, wh = (1 - lum) ** 2, lum ** 2
+    r, g, b = (c + sh[i] * ws + hi[i] * wh for i, c in enumerate((r, g, b)))
+    lo, top = p.get("black", 0.0), p.get("white", 1.0)
+    r, g, b = ((c - lo) / (1 - lo) * top if lo >= 0 else (-lo) + c * (top + lo) for c in (r, g, b))
     return _clamp(r), _clamp(g), _clamp(b)
 
 
@@ -86,14 +150,15 @@ def cube(look, size=LUT_SIZE):
 def conf(look, lut_path=None):
     """The vkBasalt config text of a look."""
     effects, lines = [], []
-    if CAS[look] is not None:
-        effects.append("cas")
-        lines.append(f"casSharpness = {CAS[look]}")
-    if lut_path:
-        effects.append("lut")
-        lines.append(f"lutFile = {lut_path}")
+    for name, opts in FX[look]:
+        if name == "lut":
+            if not lut_path:
+                continue
+            opts = {"lutFile": lut_path}
+        effects.append(name)
+        lines += [f"{k} = {v}" for k, v in opts.items()]
     head = [f"# STONE IMAGE · {LABELS[look]} (written by STONE; edits are replaced)", f"effects = {':'.join(effects)}",
-            "reshadeTexturePath = /dev/null", "reshadeIncludePath = /dev/null", "toggleKey = Home"]
+            "reshadeTexturePath = /dev/null", "reshadeIncludePath = /dev/null", "toggleKey = Home", "enableOnLaunch = True"]
     return "\n".join(head + lines) + "\n"
 
 
@@ -104,7 +169,7 @@ def write(look, directory=None):
     d = directory or state_dir()
     os.makedirs(d, exist_ok=True)
     lut = None
-    if look in ("cinema", "vivid", "retro"):
+    if any(name == "lut" for name, _o in FX[look]):
         lut = os.path.join(d, f"{look}.cube")
         with open(lut, "w") as f:
             f.write(cube(look))

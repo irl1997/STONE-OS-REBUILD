@@ -228,6 +228,13 @@ UPSCALER_DLLS = ("nvngx_dlss.dll", "nvngx_dlssg.dll", "sl.interposer.dll", "libx
                  "ffx_fsr2_api_x64.dll", "ffx_fsr2_api_dx12_x64.dll", "ffx_fsr2_api_vk_x64.dll", "ffx_fsr3upscaler_x64.dll")
 
 
+# Upscaler libraries a game may already ship next to its .exe (Cyberpunk 2077: libxess.dll, libxess_dx11.dll,
+# libxess_fg.dll). OptiScaler's release carries its own copies; the game's are kept (never overwritten, never
+# removed by "Quitar"): OptiScaler loads whichever is in the folder. The console, 19-11-2026: "files with
+# the same name already exist in the game folder: libxess_fg.dll, libxess_dx11.dll, libxess.dll".
+KEEP_GAMES_OWN = re.compile(r"^(libxess[^/]*|amd_fidelityfx_[^/]*|nvngx_[^/]*|ffx_[^/]*|sl\.[^/]*)\.dll$", re.I)
+
+
 def game_upscalers(folder, limit=40000):
     """The upscaler libraries found in the game's folder (names, lower case)."""
     found, n = set(), 0
@@ -309,6 +316,8 @@ def install_plan(appid, facts, game):
             if SKIP_FILES.match(rel.replace(os.sep, "/")):
                 continue
             pairs.append((os.path.join(d, f), PROXY_NAME if rel.lower() == "optiscaler.dll" else rel))
+    kept = [f for _o, f in pairs if KEEP_GAMES_OWN.match(f.replace(os.sep, "/")) and os.path.lexists(os.path.join(exe_dir, f))]
+    pairs = [p for p in pairs if p[1] not in kept]
     files = [p[1] for p in pairs]
     clash = [f for f in files if os.path.lexists(os.path.join(exe_dir, f))]
     if clash:
@@ -316,7 +325,7 @@ def install_plan(appid, facts, game):
     rel_dir = os.path.relpath(exe_dir, facts["install_dir"])
     ups = game_upscalers(facts["install_dir"])
     return {"ok": True, "component": {"tag": comp["tag"]}, "exe": exe, "folder": rel_dir if rel_dir != "." else "(carpeta del juego)",
-            "files": len(files), "upscalers": ups, "no_upscaler": not ups, "_pairs": pairs, "_exe_dir": exe_dir}
+            "files": len(files), "kept": sorted(kept), "upscalers": ups, "no_upscaler": not ups, "_pairs": pairs, "_exe_dir": exe_dir}
 
 
 def install_optiscaler(appid, facts, game):
