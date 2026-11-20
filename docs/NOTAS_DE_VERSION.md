@@ -69,6 +69,8 @@ La imagen grande que Steam da a cada juego mide 1920 × 620, tres veces más anc
 
 El servidor de carátulas de libretro, del que STONE baja las portadas de los juegos de emuladores, está vacío: responde 404 a todas las consolas, así que ningún juego de emulador recibía su portada. Ahora STONE recurre a la copia que libretro mantiene en GitHub (la misma colección de imágenes) cuando el servidor no responde o no lista nada. Una lista vacía que se haya guardado antes se vuelve a pedir. Comprobado contra los servidores reales: «Metroid Prime (GameCube)» recibe su portada.
 
+Las portadas de estos juegos son cajas verticales y, en las tarjetas anchas (la primera del Inicio y todas las de Panorama), se recortaba una franja del medio. Ahora la caja se ve entera, centrada sobre una copia oscurecida de sí misma. En la ficha del juego, la caja aparece nítida a la derecha. El fondo difuminado de estos juegos (y de todos los que lo usan) se hacía agrandando 30 veces una copia de 64 × 36 píxeles, y se veían manchas cuadradas. Ahora es una copia de 240 × 135 desenfocada una sola vez al crearla: es suave y no tiene bloques.
+
 ## Desinstalar juegos
 
 - **Juegos de Steam:** «Desinstalar» está ahora en la propia página del juego. Antes solo estaba dentro de Propiedades y en Ajustes → Almacenamiento. Para dejarle sitio, «Experiencia» pasa a GRÁFICOS.

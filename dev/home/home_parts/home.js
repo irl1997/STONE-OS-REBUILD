@@ -8,10 +8,10 @@ function homeHTML() {
     if (S.libLogged === 'out') cards += `<div class="card wide vein" data-f data-act="login">${cover('login')}<b>Inicia sesión en Steam</b><span>Tus juegos vienen de tu cuenta de Steam</span></div>`;
     if (G.length && recent.length && S.homeStyle === 1) {
       /* PANORAMA (rc12): every game the same landscape card (its wide art), the first one too */
-      recent.forEach(i => { const g = G[i], u = landUrl(g); cards += `<div class="card land${g.inst || g.src === 'shortcut' ? '' : ' dim'}" data-f data-g="${i}" style="background-image:${u ? `url(&quot;${u}&quot;)` : 'none'}">${u ? '' : nameTag(g)}${runTag(i)}</div>`; });
+      recent.forEach(i => { const g = G[i], u = landUrl(g); cards += `<div class="card land${g.inst || g.src === 'shortcut' ? '' : ' dim'}" data-f data-g="${i}" style="${tallOnly(g) ? boxBg(g) : `background-image:${u ? `url(&quot;${u}&quot;)` : 'none'}`}">${u ? '' : nameTag(g)}${runTag(i)}</div>`; });
     } else if (G.length && recent.length) {
       const g0 = G[recent[0]], hu = heroUrl(g0);
-      cards += `<div class="card hero${g0.inst || g0.src === 'shortcut' ? '' : ' dim'}" data-f data-g="${g0.i}" style="background-image:${hu ? `url(&quot;${hu}&quot;)` : 'none'};background-color:var(--shale)">${hu ? '' : nameTag(g0)}${runTag(g0.i)}</div>`;
+      cards += `<div class="card hero${g0.inst || g0.src === 'shortcut' ? '' : ' dim'}" data-f data-g="${g0.i}" style="${tallOnly(g0) ? boxBg(g0) : `background-image:${hu ? `url(&quot;${hu}&quot;)` : 'none'}`};background-color:var(--shale)">${hu ? '' : nameTag(g0)}${runTag(g0.i)}</div>`;
       recent.slice(1).forEach(i => { const g = G[i]; cards += `<div class="card cap${g.inst || g.src === 'shortcut' ? '' : ' dim'}${capWide(g) ? ' hdr' : ''}" data-f data-g="${i}" style="background-image:${capUrl(g).replace(/"/g, '&quot;')}">${g.art.capsule || g.art.header ? '' : nameTag(g)}${runTag(i)}</div>`; });
     } else if (S.libLogged !== 'out') {
       cards += `<div class="card wide" data-f data-act="${S.libReady ? 'store' : 'library'}">${cover(S.libReady ? 'store' : 'library')}<b>${S.libReady ? 'Sin juegos' : 'Biblioteca'}</b><span>${S.libReady ? 'Abre la tienda para conseguir el primero' : 'Leyendo la biblioteca de Steam…'}</span></div>`;

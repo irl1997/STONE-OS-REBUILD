@@ -5,20 +5,22 @@
    2560 × 1440 television, 3.5 on a 4K one) and cut away almost half of it. As a band it fills the
    screen's width at the top, at its own size, and fades into a soft copy of itself (css) below. */
 let bgFlip = false, bgCur = '', bgTok = 0;
-function bgLayer(el, css, top) {
+function bgLayer(el, css, top, shape) {
   el.style.backgroundImage = css || 'none'; el.style.backgroundColor = css ? '' : 'transparent';
   el.style.setProperty('--top', top ? `url("${top}")` : 'none');
-  el.classList.toggle('band', !!top);
+  el.classList.toggle('band', !!top && shape !== 'box');
+  el.classList.toggle('box', !!top && shape === 'box');
 }
-function setBg(css, veil, keepFor, top) {
+/* shape 'box': an emulator game's box art, whole and sharp, on the right of its page (it has no big picture) */
+function setBg(css, veil, keepFor, top, shape) {
   if (!keepFor) { S.bgFor = null; stage.style.setProperty('--bg-blur', '0px'); stage.style.setProperty('--bg-dim', '0'); }
   $('#veil').className = veil === undefined ? 'none' : veil;
-  const key = `${css}|${top || ''}`;
+  const key = `${css}|${top || ''}|${shape || ''}`;
   if (key === bgCur) return; bgCur = key;
   const a = bgFlip ? $('#bgA') : $('#bgB'), b = bgFlip ? $('#bgB') : $('#bgA');
   /* the same band with its soft copy arrived: only what is under it changes, nothing fades */
   if (top && b.classList.contains('on') && b.style.getPropertyValue('--top') === `url("${top}")`) { b.style.backgroundImage = css || 'none'; return; }
-  bgLayer(a, css, top);
+  bgLayer(a, css, top, shape);
   a.classList.add('on'); b.classList.remove('on'); bgFlip = !bgFlip;
   /* after the crossfade, the hidden layer lets go of its image so only one full-screen picture stays decoded */
   const tok = ++bgTok; setTimeout(() => { if (tok === bgTok) bgLayer(b, '', null); }, S.rm ? 400 : 1000);
@@ -36,10 +38,16 @@ function bgGame(g, sharp, veil) {
   const soft = () => BLUR.has(g.appid) ? `url(${BLUR.get(g.appid)})` : null;
   const b = blurOf(g, () => {
     const f = S.bgFor;
-    if (f && f.i === g.i) setBg(soft(), f.veil, true, f.sharp && u ? u : null);
+    if (!f || f.i !== g.i) return;
+    if (f.sharp && !u && f.veil === 'side' && tallOnly(g)) return setBg(soft(), f.veil, true, Bridge.artUrl(g.appid, 'capsule'), 'box');
+    setBg(soft(), f.veil, true, f.sharp && u ? u : null);
   });
   if (sharp) bgWant(g);
   if (sharp && u) return setBg(b ? `url(${b})` : neutralBg, veil, true, u);
+  if (sharp && veil === 'side' && tallOnly(g)) {
+    const box = Bridge.artUrl(g.appid, 'capsule');
+    return setBg(b ? `url(${b})` : neutralBg, veil, true, box, 'box');
+  }
   if (b) return setBg(`url(${b})`, veil, true);
   $('#veil').className = veil;
 }

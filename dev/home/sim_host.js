@@ -17,6 +17,7 @@ const Bridge = (() => {
   /* ?ts=2: text at 1.5× · ?hc: high contrast (to look at the accessibility settings) · ?lite: glass without blur */
   let prefs = { sound: true, vol: 0.7, hc: /[?&]hc/.test(location.search), rm: false, ts: Math.max(0, Math.min(2, +(new URLSearchParams(location.search).get('ts') || 0))), safe: 5, idle: 2, tech: false, adv_ack: false, favorites: ['1091500'],
     engine: 0, game_res: 0, display_goal: 'fluid', optimized: 1, wanted: [], report: true, glass: /[?&]lite/.test(location.search) ? 0 : 1 };
+  if (/[?&]pano/.test(location.search)) prefs.home_style = 1;        /* ?pano: the PANORAMA home style */
 
   /* ---- library (simulated; covers are painted here unless the page brings Steam's real art, see artOf) ---- */
   const DAY = 86400, now = Date.now() / 1000;

@@ -931,6 +931,9 @@ body.dormant *,body.dormant *::before,body.dormant *::after{animation-play-state
   -webkit-mask-image:linear-gradient(180deg,#000 0%,#000 58%,rgba(0,0,0,.55) 80%,transparent 100%);
   mask-image:linear-gradient(180deg,#000 0%,#000 58%,rgba(0,0,0,.55) 80%,transparent 100%)}
 .bg.band::before{display:block}
+.bg.box::before{display:block;left:auto;right:calc(9% + 16px);top:calc(13% + 16px);height:58%;aspect-ratio:5/7;
+  background:var(--top,none) center/contain no-repeat;-webkit-mask-image:none;mask-image:none;
+  filter:drop-shadow(0 28px 48px rgb(0 0 0/.6))}
 #veil.home::after,#veil.side::after{content:"";position:absolute;inset:0;pointer-events:none;background:rgb(5 6 10/var(--bg-dim,0))}
 /* Dialogs: room between the buttons (the chosen one's white plate touched its neighbours); the
    technical line of an install that did not start; Steam taking the session shows its veil at once */
@@ -1322,6 +1325,11 @@ function homeRow() {
    A game with only the store's wide picture shows it at the top of its card, the name under it. */
 const capUrl = g => g.art.capsule ? `url("${Bridge.artUrl(g.appid, 'capsule')}")` : g.art.header ? `url("${Bridge.artUrl(g.appid, 'header')}")` : 'none';
 const capWide = g => !g.art.capsule && !!g.art.header;
+/* An emulator game's box art (tall, no wide picture) in a wide card: the whole box in the middle over
+   a dark, enlarged copy of itself, instead of a strip cut out of it (3.1.0-rc12, board 20-11-2026). */
+const tallOnly = g => !g.art.hero && !g.art.hero2x && !g.art.header && !!g.art.capsule;
+const boxBg = g => { const u = Bridge.artUrl(g.appid, 'capsule');
+  return `background-image:url(&quot;${u}&quot;),linear-gradient(rgba(8,9,12,.62),rgba(8,9,12,.62)),url(&quot;${u}&quot;);background-size:contain,cover,cover;background-repeat:no-repeat;background-position:center`; };
 const heroUrl = g => g.art.hero || g.art.capsule || g.art.header ? Bridge.artUrl(g.appid, g.art.hero ? 'hero' : g.art.capsule ? 'capsule' : 'header') : null;
 /* The background of the screen: the picture at twice the size when STONE has it (artcache hero2x) */
 const bgUrl = g => g.art.hero2x ? Bridge.artUrl(g.appid, 'hero2x') : heroUrl(g);
@@ -1344,18 +1352,40 @@ function coverText(g) {
   return [(g.src === 'shortcut' ? 'ACCESO DIRECTO' : g.o || 'STEAM').toUpperCase(), g.n];
 }
 const nameTag = g => { const t = coverText(g); return `<span class="ph">${t ? `<span class="pht"><span class="lbl">${esc(t[0])}</span><em>${esc(t[1])}</em></span>` : ''}</span>`; };
-/* Background blur from a 64×36 copy of the hero: one tiny image scaled up, no live blur filter.
+/* Background blur: a 240 × 135 copy of the game's picture, cut to the screen's shape and blurred once
+   when it is made (no live blur filter). Until 3.1.0-rc12 it was a 64 × 36 copy enlarged 30 times,
+   which showed its pixels as soft blocks (board, 20-11-2026: emulator games' backgrounds "pixeleados").
    A small LRU keeps the last ones; game mode empties it. */
-const BLUR = new Map(), BLUR_MAX = 24;
+const BLUR = new Map(), BLUR_MAX = 24, BLUR_W = 240, BLUR_H = 135;
+function blurPaint(img) {
+  const c = document.createElement('canvas'); c.width = BLUR_W; c.height = BLUR_H;
+  const x = c.getContext('2d'), iw = img.naturalWidth || 1, ih = img.naturalHeight || 1;
+  /* the picture covering the canvas (like the screen), a little larger so the blur has no dark edges */
+  const k = Math.max(BLUR_W / iw, BLUR_H / ih) * 1.12, w = iw * k, h = ih * k;
+  x.imageSmoothingEnabled = true; x.imageSmoothingQuality = 'high';
+  if (typeof x.filter === 'string') {
+    x.filter = 'blur(9px) saturate(1.15)';
+    x.drawImage(img, (BLUR_W - w) / 2, (BLUR_H - h) / 2, w, h);
+    return c;
+  }
+  /* no canvas filter: down to a few pixels, then up again in steps of two (each step smooth) */
+  let s = document.createElement('canvas'); s.width = 30; s.height = 17;
+  const k2 = Math.max(30 / iw, 17 / ih);
+  s.getContext('2d').drawImage(img, (30 - iw * k2) / 2, (17 - ih * k2) / 2, iw * k2, ih * k2);
+  while (s.width * 2 < BLUR_W) {
+    const n = document.createElement('canvas'); n.width = s.width * 2; n.height = s.height * 2;
+    const nx = n.getContext('2d'); nx.imageSmoothingQuality = 'high'; nx.drawImage(s, 0, 0, n.width, n.height); s = n;
+  }
+  x.drawImage(s, 0, 0, BLUR_W, BLUR_H);
+  return c;
+}
 function blurOf(g, cb) {
   if (BLUR.has(g.appid)) { const v = BLUR.get(g.appid); BLUR.delete(g.appid); BLUR.set(g.appid, v); return v; }
   const u = heroUrl(g); if (!u) return null;
   const img = new Image(); img.decoding = 'async';
   img.onload = () => {
     try {
-      const c = document.createElement('canvas'); c.width = 64; c.height = 36;
-      c.getContext('2d').drawImage(img, 0, 0, 64, 36);
-      BLUR.set(g.appid, c.toDataURL('image/png'));
+      BLUR.set(g.appid, blurPaint(img).toDataURL('image/jpeg', .9));
       while (BLUR.size > BLUR_MAX) BLUR.delete(BLUR.keys().next().value);
       if (cb) cb();
     } catch (e) { /* artwork that cannot be read stays sharp-only */ }
@@ -1471,20 +1501,22 @@ function showHints() { $('#hints').classList.remove('hide'); clearTimeout(hintId
    2560 × 1440 television, 3.5 on a 4K one) and cut away almost half of it. As a band it fills the
    screen's width at the top, at its own size, and fades into a soft copy of itself (css) below. */
 let bgFlip = false, bgCur = '', bgTok = 0;
-function bgLayer(el, css, top) {
+function bgLayer(el, css, top, shape) {
   el.style.backgroundImage = css || 'none'; el.style.backgroundColor = css ? '' : 'transparent';
   el.style.setProperty('--top', top ? `url("${top}")` : 'none');
-  el.classList.toggle('band', !!top);
+  el.classList.toggle('band', !!top && shape !== 'box');
+  el.classList.toggle('box', !!top && shape === 'box');
 }
-function setBg(css, veil, keepFor, top) {
+/* shape 'box': an emulator game's box art, whole and sharp, on the right of its page (it has no big picture) */
+function setBg(css, veil, keepFor, top, shape) {
   if (!keepFor) { S.bgFor = null; stage.style.setProperty('--bg-blur', '0px'); stage.style.setProperty('--bg-dim', '0'); }
   $('#veil').className = veil === undefined ? 'none' : veil;
-  const key = `${css}|${top || ''}`;
+  const key = `${css}|${top || ''}|${shape || ''}`;
   if (key === bgCur) return; bgCur = key;
   const a = bgFlip ? $('#bgA') : $('#bgB'), b = bgFlip ? $('#bgB') : $('#bgA');
   /* the same band with its soft copy arrived: only what is under it changes, nothing fades */
   if (top && b.classList.contains('on') && b.style.getPropertyValue('--top') === `url("${top}")`) { b.style.backgroundImage = css || 'none'; return; }
-  bgLayer(a, css, top);
+  bgLayer(a, css, top, shape);
   a.classList.add('on'); b.classList.remove('on'); bgFlip = !bgFlip;
   /* after the crossfade, the hidden layer lets go of its image so only one full-screen picture stays decoded */
   const tok = ++bgTok; setTimeout(() => { if (tok === bgTok) bgLayer(b, '', null); }, S.rm ? 400 : 1000);
@@ -1502,10 +1534,16 @@ function bgGame(g, sharp, veil) {
   const soft = () => BLUR.has(g.appid) ? `url(${BLUR.get(g.appid)})` : null;
   const b = blurOf(g, () => {
     const f = S.bgFor;
-    if (f && f.i === g.i) setBg(soft(), f.veil, true, f.sharp && u ? u : null);
+    if (!f || f.i !== g.i) return;
+    if (f.sharp && !u && f.veil === 'side' && tallOnly(g)) return setBg(soft(), f.veil, true, Bridge.artUrl(g.appid, 'capsule'), 'box');
+    setBg(soft(), f.veil, true, f.sharp && u ? u : null);
   });
   if (sharp) bgWant(g);
   if (sharp && u) return setBg(b ? `url(${b})` : neutralBg, veil, true, u);
+  if (sharp && veil === 'side' && tallOnly(g)) {
+    const box = Bridge.artUrl(g.appid, 'capsule');
+    return setBg(b ? `url(${b})` : neutralBg, veil, true, box, 'box');
+  }
   if (b) return setBg(`url(${b})`, veil, true);
   $('#veil').className = veil;
 }
@@ -1655,10 +1693,10 @@ function homeHTML() {
     if (S.libLogged === 'out') cards += `<div class="card wide vein" data-f data-act="login">${cover('login')}<b>Inicia sesión en Steam</b><span>Tus juegos vienen de tu cuenta de Steam</span></div>`;
     if (G.length && recent.length && S.homeStyle === 1) {
       /* PANORAMA (rc12): every game the same landscape card (its wide art), the first one too */
-      recent.forEach(i => { const g = G[i], u = landUrl(g); cards += `<div class="card land${g.inst || g.src === 'shortcut' ? '' : ' dim'}" data-f data-g="${i}" style="background-image:${u ? `url(&quot;${u}&quot;)` : 'none'}">${u ? '' : nameTag(g)}${runTag(i)}</div>`; });
+      recent.forEach(i => { const g = G[i], u = landUrl(g); cards += `<div class="card land${g.inst || g.src === 'shortcut' ? '' : ' dim'}" data-f data-g="${i}" style="${tallOnly(g) ? boxBg(g) : `background-image:${u ? `url(&quot;${u}&quot;)` : 'none'}`}">${u ? '' : nameTag(g)}${runTag(i)}</div>`; });
     } else if (G.length && recent.length) {
       const g0 = G[recent[0]], hu = heroUrl(g0);
-      cards += `<div class="card hero${g0.inst || g0.src === 'shortcut' ? '' : ' dim'}" data-f data-g="${g0.i}" style="background-image:${hu ? `url(&quot;${hu}&quot;)` : 'none'};background-color:var(--shale)">${hu ? '' : nameTag(g0)}${runTag(g0.i)}</div>`;
+      cards += `<div class="card hero${g0.inst || g0.src === 'shortcut' ? '' : ' dim'}" data-f data-g="${g0.i}" style="${tallOnly(g0) ? boxBg(g0) : `background-image:${hu ? `url(&quot;${hu}&quot;)` : 'none'}`};background-color:var(--shale)">${hu ? '' : nameTag(g0)}${runTag(g0.i)}</div>`;
       recent.slice(1).forEach(i => { const g = G[i]; cards += `<div class="card cap${g.inst || g.src === 'shortcut' ? '' : ' dim'}${capWide(g) ? ' hdr' : ''}" data-f data-g="${i}" style="background-image:${capUrl(g).replace(/"/g, '&quot;')}">${g.art.capsule || g.art.header ? '' : nameTag(g)}${runTag(i)}</div>`; });
     } else if (S.libLogged !== 'out') {
       cards += `<div class="card wide" data-f data-act="${S.libReady ? 'store' : 'library'}">${cover(S.libReady ? 'store' : 'library')}<b>${S.libReady ? 'Sin juegos' : 'Biblioteca'}</b><span>${S.libReady ? 'Abre la tienda para conseguir el primero' : 'Leyendo la biblioteca de Steam…'}</span></div>`;
@@ -2387,7 +2425,9 @@ Bridge.on('art', d => {
   document.querySelectorAll('#home .card[data-g], #library .card[data-g]').forEach(el => {
     const g = G[+el.dataset.g]; if (!g || !ids.has(g.appid)) return;
     const ph = el.querySelector('.ph');
-    if (el.classList.contains('hero')) { const u = heroUrl(g); if (u) { el.style.backgroundImage = `url("${u}")`; if (ph) ph.remove(); } return; }
+    const wide = el.classList.contains('hero') || el.classList.contains('land');
+    if (wide && tallOnly(g)) { el.setAttribute('style', boxBg(g).replace(/&quot;/g, '"') + ';background-color:var(--shale)'); if (ph) ph.remove(); return; }
+    if (wide) { const u = el.classList.contains('land') ? landUrl(g) : heroUrl(g); if (u) { el.style.backgroundImage = `url("${u}")`; if (ph) ph.remove(); } return; }
     el.style.backgroundImage = capUrl(g); el.classList.toggle('hdr', capWide(g));
     if (ph && (g.art.capsule || g.art.header)) ph.remove();
   });
