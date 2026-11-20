@@ -294,7 +294,7 @@ function returnHome() {
 function gameMode() {
   ['home', 'library', 'detail', 'settings', 'perf', 'tuning'].forEach(id => { $('#' + id).innerHTML = ''; });
   spreadEls = [];
-  setBg('', 'none'); $('#bgA').style.backgroundImage = 'none'; $('#bgB').style.backgroundImage = 'none'; bgCur = '';
+  bgClear();
   trimArt();
   setTimeout(() => { if (S.screen === 'game') audioSleep(); }, 2500);
 }

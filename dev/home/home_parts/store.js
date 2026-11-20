@@ -129,7 +129,9 @@ function enterStorePage(appid, back, row) {
   Sys.artWant(appid).catch(() => {});
 }
 function storePageBg() {
-  const u = SPG.hero ? Bridge.artUrl(SPG.id, 'hero') : SPG.header ? Bridge.artUrl(SPG.id, 'header') : null;
+  /* the big picture as a band, like a game's page (bggame.js setBg); only the small one: as before */
+  if (SPG.hero) return setBg(neutralBg, 'side', false, Bridge.artUrl(SPG.id, 'hero'));
+  const u = SPG.header ? Bridge.artUrl(SPG.id, 'header') : null;
   setBg(u ? `url("${u}")` : neutralBg, 'side');
 }
 function storePageDraw(opts = {}) {

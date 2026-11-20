@@ -924,6 +924,13 @@ body.dormant *,body.dormant *::before,body.dormant *::after{animation-play-state
    deeper shade under the text (--bg-dim). Without GPU nothing is filtered. */
 #stage .bg{inset:-16px;filter:blur(var(--bg-blur,0px))}
 #stage.lite .bg{inset:0;filter:none}
+/* A game's big picture as a band (bggame.js setBg): the screen's width at the top, at its own shape
+   (1920 × 620), fading into the soft copy under it */
+.bg::before{content:"";position:absolute;left:0;right:0;top:0;aspect-ratio:1920/620;display:none;
+  background:var(--top,none) center top/100% auto no-repeat;
+  -webkit-mask-image:linear-gradient(180deg,#000 0%,#000 58%,rgba(0,0,0,.55) 80%,transparent 100%);
+  mask-image:linear-gradient(180deg,#000 0%,#000 58%,rgba(0,0,0,.55) 80%,transparent 100%)}
+.bg.band::before{display:block}
 #veil.home::after,#veil.side::after{content:"";position:absolute;inset:0;pointer-events:none;background:rgb(5 6 10/var(--bg-dim,0))}
 /* Dialogs: room between the buttons (the chosen one's white plate touched its neighbours); the
    technical line of an install that did not start; Steam taking the session shows its veil at once */
@@ -1457,33 +1464,56 @@ function hints(list) {
   hintIdle = setTimeout(() => h.classList.add('hide'), 5000);
 }
 function showHints() { $('#hints').classList.remove('hide'); clearTimeout(hintIdle); hintIdle = setTimeout(() => $('#hints').classList.add('hide'), 5000); }
+/* Two background layers crossfade (bgA, bgB). A layer is one picture covering the screen (css), or,
+   for a game's big picture, a BAND (3.1.0-rc12; board, 19-11-2026: "la imagen de fondo de los juegos
+   (Batman) no está en alta resolución, se ve pixeleada"). Steam's big picture is 1920 × 620, three
+   times wider than tall: covering a 16:9 screen enlarged it 1.74 times in height (2.3 times on the
+   2560 × 1440 television, 3.5 on a 4K one) and cut away almost half of it. As a band it fills the
+   screen's width at the top, at its own size, and fades into a soft copy of itself (css) below. */
 let bgFlip = false, bgCur = '', bgTok = 0;
-function setBg(css, veil, keepFor) {
-  if (!keepFor) S.bgFor = null;
+function bgLayer(el, css, top) {
+  el.style.backgroundImage = css || 'none'; el.style.backgroundColor = css ? '' : 'transparent';
+  el.style.setProperty('--top', top ? `url("${top}")` : 'none');
+  el.classList.toggle('band', !!top);
+}
+function setBg(css, veil, keepFor, top) {
+  if (!keepFor) { S.bgFor = null; stage.style.setProperty('--bg-blur', '0px'); stage.style.setProperty('--bg-dim', '0'); }
   $('#veil').className = veil === undefined ? 'none' : veil;
-  if (css === bgCur) return; bgCur = css;
+  const key = `${css}|${top || ''}`;
+  if (key === bgCur) return; bgCur = key;
   const a = bgFlip ? $('#bgA') : $('#bgB'), b = bgFlip ? $('#bgB') : $('#bgA');
-  a.style.backgroundImage = css || 'none'; a.style.backgroundColor = css ? '' : 'transparent';
+  /* the same band with its soft copy arrived: only what is under it changes, nothing fades */
+  if (top && b.classList.contains('on') && b.style.getPropertyValue('--top') === `url("${top}")`) { b.style.backgroundImage = css || 'none'; return; }
+  bgLayer(a, css, top);
   a.classList.add('on'); b.classList.remove('on'); bgFlip = !bgFlip;
   /* after the crossfade, the hidden layer lets go of its image so only one full-screen picture stays decoded */
-  const tok = ++bgTok; setTimeout(() => { if (tok === bgTok) b.style.backgroundImage = 'none'; }, S.rm ? 400 : 1000);
+  const tok = ++bgTok; setTimeout(() => { if (tok === bgTok) bgLayer(b, '', null); }, S.rm ? 400 : 1000);
 }
+/* game mode: both layers let go of their pictures at once */
+function bgClear() { setBg('', 'none'); bgLayer($('#bgA'), '', null); bgLayer($('#bgB'), '', null); bgCur = ''; }
+/* The game's background. Its big picture is shown as a band, sharp; a game with only a cover or the
+   store's small picture shows its colours, softened (an enlarged cover is made of blocks). */
 function bgGame(g, sharp, veil) {
   S.bgFor = { i: g.i, sharp, veil };
   accentFor(g);
-  const u = bgUrl(g);
+  const wide = g.art.hero2x || g.art.hero, u = wide ? bgUrl(g) : null;
   bgTune(g, !!u && sharp);
-  if (!u) return setBg(neutralBg, veil, true);
-  if (sharp) { bgWant(g); return setBg(`url("${u}")`, veil, true); }
-  const b = blurOf(g, () => { if (S.bgFor && S.bgFor.i === g.i && !S.bgFor.sharp) setBg(`url(${BLUR.get(g.appid)})`, S.bgFor.veil, true); });
+  if (!heroUrl(g)) return setBg(neutralBg, veil, true);
+  const soft = () => BLUR.has(g.appid) ? `url(${BLUR.get(g.appid)})` : null;
+  const b = blurOf(g, () => {
+    const f = S.bgFor;
+    if (f && f.i === g.i) setBg(soft(), f.veil, true, f.sharp && u ? u : null);
+  });
+  if (sharp) bgWant(g);
+  if (sharp && u) return setBg(b ? `url(${b})` : neutralBg, veil, true, u);
   if (b) return setBg(`url(${b})`, veil, true);
   $('#veil').className = veil;
 }
 
 /* THE BACKGROUND AT THE SCREEN'S SIZE (3.1.0-rc4; board, 12-11-2026: "los fondos se ven pixelados").
-   Steam's big picture is 1920 × 620: filling a 4K television it is enlarged 3.5 times. STONE asks for
-   the one at twice the size (when the game has it, artcache hero2x) for the game being looked at, and
-   softens what still has to be enlarged a lot, so it looks out of focus instead of made of blocks.
+   Steam's big picture is 1920 × 620. STONE asks for the one at twice the size (when the game has it,
+   artcache hero2x) for the game being looked at, shows it as a band (setBg) and softens what still has
+   to be enlarged a lot, so it looks out of focus instead of made of blocks.
    Bright art (a white sky) gets a deeper shade under the text (--bg-dim). */
 const BG_SIZE = new Map(), BG_LUM = new Map(), BG_ASKED = new Set();
 let bgWantT = 0;
@@ -1496,9 +1526,10 @@ function bgWant(g) {
 function bgTune(g, shown) {
   let blur = 0, dim = 0;
   if (shown) {
+    /* shown as a band: enlarged only to the screen's width */
     const sz = g.art.hero2x ? [3840, 1240] : BG_SIZE.get(g.appid);
     if (sz) {
-      const up = Math.max(1920 / sz[0], 1080 / sz[1]) * SCALE * (window.devicePixelRatio || 1);
+      const up = 1920 / sz[0] * SCALE * (window.devicePixelRatio || 1);
       blur = Math.max(0, Math.min(4.5, (up - 1.3) * 1.1));
     }
     const lum = BG_LUM.get(g.appid);
@@ -1975,7 +2006,9 @@ function enterStorePage(appid, back, row) {
   Sys.artWant(appid).catch(() => {});
 }
 function storePageBg() {
-  const u = SPG.hero ? Bridge.artUrl(SPG.id, 'hero') : SPG.header ? Bridge.artUrl(SPG.id, 'header') : null;
+  /* the big picture as a band, like a game's page (bggame.js setBg); only the small one: as before */
+  if (SPG.hero) return setBg(neutralBg, 'side', false, Bridge.artUrl(SPG.id, 'hero'));
+  const u = SPG.header ? Bridge.artUrl(SPG.id, 'header') : null;
   setBg(u ? `url("${u}")` : neutralBg, 'side');
 }
 function storePageDraw(opts = {}) {
@@ -3548,7 +3581,7 @@ function returnHome() {
 function gameMode() {
   ['home', 'library', 'detail', 'settings', 'perf', 'tuning'].forEach(id => { $('#' + id).innerHTML = ''; });
   spreadEls = [];
-  setBg('', 'none'); $('#bgA').style.backgroundImage = 'none'; $('#bgB').style.backgroundImage = 'none'; bgCur = '';
+  bgClear();
   trimArt();
   setTimeout(() => { if (S.screen === 'game') audioSleep(); }, 2500);
 }

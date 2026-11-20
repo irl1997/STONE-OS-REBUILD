@@ -470,6 +470,13 @@
    deeper shade under the text (--bg-dim). Without GPU nothing is filtered. */
 #stage .bg{inset:-16px;filter:blur(var(--bg-blur,0px))}
 #stage.lite .bg{inset:0;filter:none}
+/* A game's big picture as a band (bggame.js setBg): the screen's width at the top, at its own shape
+   (1920 × 620), fading into the soft copy under it */
+.bg::before{content:"";position:absolute;left:0;right:0;top:0;aspect-ratio:1920/620;display:none;
+  background:var(--top,none) center top/100% auto no-repeat;
+  -webkit-mask-image:linear-gradient(180deg,#000 0%,#000 58%,rgba(0,0,0,.55) 80%,transparent 100%);
+  mask-image:linear-gradient(180deg,#000 0%,#000 58%,rgba(0,0,0,.55) 80%,transparent 100%)}
+.bg.band::before{display:block}
 #veil.home::after,#veil.side::after{content:"";position:absolute;inset:0;pointer-events:none;background:rgb(5 6 10/var(--bg-dim,0))}
 /* Dialogs: room between the buttons (the chosen one's white plate touched its neighbours); the
    technical line of an install that did not start; Steam taking the session shows its veil at once */

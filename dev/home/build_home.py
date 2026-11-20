@@ -77,7 +77,7 @@ def build(src):
     t = replace_once(t, "${m.simulated ? ' · lecturas simuladas' : ''}", "", "readings simulated")
     t = replace_once(t, " + (m.simulated ? '<div class=\"kv\"><span>Datos</span><span>simulados</span></div>' : '')", "", "tuning simulated")
     t = replace_span(t, "/* ---------- Example library ---------- */", "/* ---------- Sound ----------", part("library.js") + "\n\n", "library")
-    t = replace_span(t, "function bgGame(g, sharp, veil) {", "const neutralBg", part("bggame.js") + "\n", "bgGame")
+    t = replace_span(t, "let bgFlip = false, bgCur = '', bgTok = 0;", "const neutralBg", part("bggame.js") + "\n", "bgGame")
     # HOME, then what 3.0 adds next to it: the store and a game's store page, the QR code for the
     # phone, Steam's own window in front (D-34), the library following Steam, and the sections' covers.
     t = replace_span(t, "/* ---------- HOME ---------- */", "/* ---------- LIBRARY ---------- */",
