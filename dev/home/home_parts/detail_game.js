@@ -402,7 +402,9 @@ function gfxPanel(g, at = 0) {
 /* DESINSTALAR (rc12): asked once, plainly, then done without Steam's dialog (Steam games: install.js
    uninstallGame; emulator games: rom.uninstall deletes the game's files, its saves stay with the emulator). */
 function uninstallAsk(g, back) {
-  back = back || (() => { closeDlg(); play('back'); enterDetail(curG, { r: 1, c: 3 }); });
+  back = back || (() => { closeDlg(); play('back');
+    const c = [...$('#detail').querySelectorAll('.second [data-f]')].findIndex(e => e.dataset.act === 'rm');
+    enterDetail(curG, { r: 1, c: Math.max(0, c) }); });
   if (S.running === g.i) { play('error'); return toast('Cierra el juego antes de desinstalarlo', false); }
   const rom = g.kind === 'rom';
   openDlg(`<span class="st-cap">${rom ? esc((g.sys || 'EMULADOR').toUpperCase()) : 'STEAM'}</span><h2>DESINSTALAR</h2>

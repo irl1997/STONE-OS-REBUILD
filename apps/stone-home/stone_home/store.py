@@ -110,8 +110,10 @@ def search(term, get=None, head=None):
         return {"error": "Escribe entre 1 y 60 letras"}
     q = {"term": term.strip(), "l": "spanish"}
     cc = country(head)
-    if cc:
-        q["cc"] = cc
+    if not cc:
+        # without a country storesearch answers nothing at all: said, instead of «no hay juegos» (rc12)
+        return {"error": "La tienda de Steam no dijo en qué país está la consola: revisa la conexión y vuelve a buscar"}
+    q["cc"] = cc
     url = API + "?" + urllib.parse.urlencode(q)
     try:
         d = json.loads((get or _get)(url))

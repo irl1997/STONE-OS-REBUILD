@@ -37,8 +37,9 @@ def test_store_search_parses_free_and_paid_and_refuses_bad_terms():
     assert ST.country(head=lambda url: (_ for _ in ()).throw(AssertionError("asked again"))) == "CL"   # kept
     ST._COUNTRY.clear()
     assert ST.country(head=lambda url: []) is None                                       # no cookie: no country
-    ST.search("dota", get=get, head=lambda url: (_ for _ in ()).throw(OSError("offline")))
-    assert "cc=" not in seen[-1]
+    n = len(seen)
+    r = ST.search("dota", get=get, head=lambda url: (_ for _ in ()).throw(OSError("offline")))
+    assert "país" in r["error"] and len(seen) == n                     # nothing asked: it would answer nothing
     assert "error" in ST.search("", get=get) and "error" in ST.search("x" * 61, get=get)
     assert "no responde" in ST.search("dota", get=lambda u: (_ for _ in ()).throw(OSError("offline")))["error"]
     assert ST.search("dota", get=lambda u: "not json").get("error")

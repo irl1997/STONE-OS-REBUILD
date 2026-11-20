@@ -183,5 +183,39 @@ def test_games_of_several_files_are_copied_whole_and_found_on_the_console():
         shutil.rmtree(t, ignore_errors=True)
 
 
+def test_audit_folders_of_several_games_truncated_images_and_loose_sheets():
+    """Audit (rc12): a «Colección» folder is several games (not the largest one only); a truncated ISO is
+    not recognised, never a failure of the drive; a loose .gdi at the top goes with its tracks; a Switch
+    folder (game + update) stays one game."""
+    from stone_home import roms as R
+    t = tempfile.mkdtemp(prefix="stone-usb-")
+    try:
+        d = os.path.join(t, "drive")
+        _put(d, "PS2/Coleccion/God of War.iso", 900)
+        _put(d, "PS2/Coleccion/Ico.iso", 500)
+        _put(d, "switch/Zelda/Zelda.nsp", 900)
+        _put(d, "switch/Zelda/Zelda update.nsp", 100)
+        with open(_put(d, "Shenmue.gdi"), "w") as f:
+            f.write("2\n1 0 4 2352 track01.bin 0\n2 600 0 2352 track02.raw 0\n")
+        _put(d, "track01.bin", 40)
+        _put(d, "track02.raw", 30)
+        _iso9660(os.path.join(d, "roto.iso"), [])
+        with open(os.path.join(d, "roto.iso"), "r+b") as f:     # a root record cut short at the end
+            f.seek(20 * 2048)
+            f.write(bytes([60]) + bytes(20))
+            f.truncate(20 * 2048 + 21)
+        v = U.scan_volume(d)
+        got = sorted((g["system"], g["name"], len(g["files"])) for g in v["games"])
+        assert got == [("dreamcast", "Shenmue", 3), ("ps2", "God of War", 1), ("ps2", "Ico", 1), ("switch", "Zelda", 2)], got
+        base = os.path.join(t, "Emulation")
+        assert U.copy(v, lambda *a: None, base=base)["copied"] == 4
+        names = sorted(g["name"] for g in R.games_in(os.path.join(base, "roms", "ps2"), "ps2"))
+        assert names == ["God of War", "Ico"], names
+        assert [g["name"] for g in R.games_in(os.path.join(base, "roms", "switch"), "switch")] == ["Zelda"]
+        assert os.path.getsize(os.path.join(base, "roms", "dreamcast", "track02.raw")) == 30
+    finally:
+        shutil.rmtree(t, ignore_errors=True)
+
+
 if __name__ == "__main__":
     sys.exit(run_module(globals()))

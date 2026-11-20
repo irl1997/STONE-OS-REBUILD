@@ -975,8 +975,8 @@ def G29_folder_scan_kept_between_launches_and_forgotten_when_stone_installs():
         calls = []
         real = detect.scan_folder
         detect.scan_folder = lambda folder: (calls.append(folder), real(folder))[1]
-        old = detect.CACHE_S
-        detect.CACHE_S = 120
+        old = detect.CACHE_S, detect.NO_INJECT_S
+        detect.CACHE_S, detect.NO_INJECT_S = 120, 30
         try:
             detect.forget()
             for _ in range(3):
@@ -988,8 +988,12 @@ def G29_folder_scan_kept_between_launches_and_forgotten_when_stone_installs():
             w.write_manifest(CP, "Cyberpunk 2077", "Cyberpunk 2077", build="19000001")   # a new build: looked at again
             detect.facts(w.root, CP)
             assert len(calls) == 3
+            detect.NO_INJECT_S = 0                   # nothing injected: looked at again soon (an author's installer)
+            detect.facts(w.root, CP)
+            assert len(calls) == 4
         finally:
-            detect.scan_folder, detect.CACHE_S = real, old
+            detect.scan_folder = real
+            detect.CACHE_S, detect.NO_INJECT_S = old
             detect.forget()
 
 

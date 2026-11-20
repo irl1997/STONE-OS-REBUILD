@@ -66,6 +66,28 @@ Steam cambió su búsqueda: sin el país de la conexión responde **0 resultados
 - **Juegos de Steam:** «Desinstalar» está ahora en la propia página del juego. Antes solo estaba dentro de Propiedades y en Ajustes → Almacenamiento. Para dejarle sitio, «Experiencia» pasa a GRÁFICOS.
 - **Juegos de emuladores:** ahora también se pueden desinstalar. Se borran de la consola con todas sus partes (pistas, carpeta del juego), y solo dentro de la carpeta de juegos de STONE. Tus partidas guardadas se conservan en el emulador.
 
+## Auditoría de esta versión
+
+Se revisó todo el código nuevo de la rc12 y se corrigieron 4 errores reales y 6 detalles:
+- **Una carpeta con varios juegos** (por ejemplo «PS2/Colección/» con varias ISO) se tomaba como un solo juego y solo se veía el más grande. Ahora cada archivo es un juego. Solo cuentan como un único juego las carpetas con un archivo índice (`.cue`, `.gdi` o `.m3u`) y las de Switch, PS3 y Wii U, que traen el juego junto a sus actualizaciones.
+- **Una ISO dañada o cortada** hacía fallar la búsqueda en todo el USB. Ahora esa imagen simplemente no se reconoce, y los demás juegos del USB se ofrecen igual.
+- **Un `.gdi` suelto en la raíz del USB** se copiaba sin sus pistas. Ahora se copia con ellas.
+- **Los juegos copiados a mano justo después de encender** podían no aparecer hasta reiniciar si la interfaz de Steam aún no respondía. Ahora STONE vuelve a intentarlo hasta que Steam responde.
+- **Detalles corregidos:**
+  - Al cambiar de televisor, el siguiente JUGAR vuelve a leer la pantalla.
+  - Un HelixSR instalado con el instalador de su autor se ve en 30 s como mucho.
+  - Si Steam no indica el país, la búsqueda lo dice en vez de responder que no hay juegos.
+  - Al cancelar una desinstalación, el foco vuelve a «Desinstalar».
+  - Al empezar la sesión, las peticiones viejas se descartan antes de abrir STONE.
+  - El informe ya no ejecuta dos veces la misma consulta del arranque.
+
+Comprobado:
+- las 35 baterías de pruebas;
+- el análisis estático de Python (ruff) y el de la página (ESLint);
+- un recorrido completo en el simulador, sin errores de JavaScript: los dos estilos de Inicio, Explorar, Media, la Biblioteca con el filtro de emuladores, las fichas, GRÁFICOS, Propiedades, la búsqueda, la tienda, Ajustes e Informe.
+
+Tres pruebas solo pueden ejecutarse en GitHub (necesitan GTK o un Python más nuevo que el del Mac).
+
 ## Además
 
 - **Preferencias que se reiniciaban solas.** Guardar cualquier preferencia (un favorito, el volumen…) devolvía a su valor por defecto «Juegos ven», «Meta de imagen» y STONE OPTIMIZED. Ahora se conservan.

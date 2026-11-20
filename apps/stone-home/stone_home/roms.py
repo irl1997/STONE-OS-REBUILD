@@ -94,9 +94,13 @@ def sheet_files(sheet):
     return out
 
 
-def main_file(folder, system, depth=3):
-    """The file an emulator opens for a game kept in its own folder: a sheet the system opens first,
-    then the formats in the system's order (the largest file of the first one found). None if none."""
+# Systems whose games are folders by nature (a Switch game with its updates and DLC, a PS3 or Wii U game):
+# a folder is one game, its main file chosen below. For the others, a folder with several games (a
+# «Colección» folder) is several games, unless a sheet (.cue/.gdi/.m3u) ties them together.
+FOLDER_GAMES = ("switch", "ps3", "wiiu")
+
+
+def _candidates(folder, system, depth=3):
     exts = SYSTEMS[system][3]
     found = []
     base = folder.count(os.sep)
@@ -109,11 +113,41 @@ def main_file(folder, system, depth=3):
                 found.append(os.path.join(d, n))
         if len(found) > 500:
             break
+    return found
+
+
+def _size(p):
+    try:
+        return os.path.getsize(p)
+    except OSError:
+        return -1
+
+
+def main_file(folder, system, depth=3):
+    """The file an emulator opens for a game kept in its own folder: a sheet the system opens first,
+    then the formats in the system's order (the largest file of the first one found). None if none."""
+    exts = SYSTEMS[system][3]
+    found = _candidates(folder, system, depth)
     for e in exts:
-        cand = [p for p in found if _ext_of(os.path.basename(p)) == e]
+        cand = [p for p in found if _ext_of(os.path.basename(p)) == e and _size(p) >= 0]
         if cand:
-            return max(cand, key=lambda p: (os.path.getsize(p), p))
+            return max(cand, key=lambda p: (_size(p), p))
     return None
+
+
+def folder_games(folder, system):
+    """[(name, main file)] of a folder under a system: one game (a sheet in it, a single game file, or a
+    system whose games are folders), or each game file on its own (a folder of several games)."""
+    name = os.path.basename(folder.rstrip(os.sep))
+    try:
+        has_sheet = any(os.path.splitext(n)[1].lower() in SHEETS for n in os.listdir(folder))
+    except OSError:
+        return []
+    found = _candidates(folder, system)
+    if system in FOLDER_GAMES or has_sheet or len(found) <= 1:
+        m = main_file(folder, system)
+        return [(name, m)] if m else []
+    return [(os.path.splitext(os.path.basename(p))[0], p) for p in sorted(found)]
 
 
 _TAGS = re.compile(r"\s*(\[[^\]]*\]|\((?:USA|Europe|Japan|World|En|Es|Fr|De|It|NTSC|PAL|Rev|v\d)[^)]*\))", re.I)
@@ -149,9 +183,7 @@ def games_in(d, system):
         if n.startswith(".") or n.endswith(PART_SUFFIX) or n == "LEEME.txt" or os.path.splitext(n)[1].lower() in SHEETS:
             continue
         if os.path.isdir(p):
-            m = main_file(p, system)
-            if m:
-                out.append({"name": clean_title(n), "path": m})
+            out += [{"name": clean_title(nm), "path": m} for nm, m in folder_games(p, system)]
         elif _ext_of(n) in exts and os.path.realpath(p) not in parts and os.path.isfile(p):
             out.append({"name": clean_title(os.path.splitext(n)[0]), "path": p})
         if len(out) >= MAX_PER_SYSTEM:

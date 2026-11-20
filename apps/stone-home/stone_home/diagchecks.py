@@ -346,7 +346,7 @@ def check_emulators(logs, live):
 
 
 # ---- boot and game start times (rc12) -------------------------------------------------------------
-def check_boot(home, run):
+def check_boot(home, run, blame=None):
     name = "Tiempo de encendido"
     recs = []
     try:
@@ -358,7 +358,8 @@ def check_boot(home, run):
                     pass
     except OSError:
         pass
-    blame = [ln.strip() for ln in run(["systemd-analyze", "blame", "--no-pager"], 30).splitlines()[:6] if ln.strip()]
+    text = blame if blame is not None else run(["systemd-analyze", "blame", "--no-pager"], 30)
+    blame = [ln.strip() for ln in text.splitlines()[:6] if ln.strip()]
     if not recs:
         return _check("boot", name, NODATA, "Aún no hay arranques medidos.", blame)
     r = recs[-1]
@@ -396,7 +397,7 @@ def check_launch_times(ev, names):
 
 
 # ---- all of it --------------------------------------------------------------------------------------
-def run_checks(live, journal, logs, home, run, symptoms=(), events=None, root="/", names=None):
+def run_checks(live, journal, logs, home, run, symptoms=(), events=None, root="/", names=None, blame=None):
     """[check] (most useful first: those tied to the person's symptoms), plus the symptoms' text."""
     from . import events as E
     ev = events if events is not None else E.read()
@@ -405,7 +406,7 @@ def run_checks(live, journal, logs, home, run, symptoms=(), events=None, root="/
     for fn in (lambda: check_filters(ev, logs, home, prefs, names, root), lambda: check_display(journal, live),
                lambda: check_games(ev, logs, names), lambda: check_steam(live, logs, ev), lambda: check_sound(run),
                lambda: check_controllers(root), lambda: check_network(live), lambda: check_disk(live),
-               lambda: check_emulators(logs, live), lambda: check_boot(home, run), lambda: check_launch_times(ev, names)):
+               lambda: check_emulators(logs, live), lambda: check_boot(home, run, blame), lambda: check_launch_times(ev, names)):
         try:
             checks.append(fn())
         except Exception as e:  # noqa: BLE001  (one check that breaks never stops the report)

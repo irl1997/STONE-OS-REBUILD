@@ -140,6 +140,8 @@ def _iso9660_root(f):
         if n == 0:
             i = (i // 2048 + 1) * 2048                      # records never cross a sector
             continue
+        if n < 34 or i + 33 > len(data):                 # a record too short or cut by the read: stop here
+            break
         nl = data[i + 32]
         names.append(data[i + 33:i + 33 + nl].split(b";")[0].decode("ascii", "replace").upper())
         i += n
@@ -164,7 +166,7 @@ def identify(path):
                 if _read(f, at, 20) == b"MICROSOFT*XBOX*MEDIA":
                     return "xbox"
             root = _iso9660_root(f)
-    except OSError:
+    except (OSError, ValueError, IndexError):            # an image STONE cannot read is not recognised, never a failure
         return None
     if "SYSTEM.CNF" in root:
         return "ps2"
@@ -212,16 +214,17 @@ def _system_folder(d, system):
         if n.startswith(".") or os.path.splitext(n)[1].lower() in roms.SHEETS:
             continue
         if os.path.isdir(p):
-            main = roms.main_file(p, system)
-            if not main:
-                continue
-            files = []
-            for dd, dirs, fs in os.walk(p):
-                dirs[:] = [x for x in dirs if not x.startswith(".")]
-                files += [(os.path.join(dd, f), os.path.relpath(os.path.join(dd, f), d)) for f in fs if not f.startswith(".")]
-                if len(files) > 2000:
-                    break
-            out.append(_game(system, n, main, files))
+            games = roms.folder_games(p, system)
+            if len(games) == 1:                          # one game: its whole folder goes with it
+                files = []
+                for dd, dirs, fs in os.walk(p):
+                    dirs[:] = [x for x in dirs if not x.startswith(".")]
+                    files += [(os.path.join(dd, f), os.path.relpath(os.path.join(dd, f), d)) for f in fs if not f.startswith(".")]
+                    if len(files) > 2000:
+                        break
+                out.append(_game(system, n, games[0][1], files))
+            else:                                        # a folder of several games: each one alone
+                out += [_game(system, nm, m, [(m, os.path.relpath(m, d))]) for nm, m in games]
         elif os.path.isfile(p) and roms._ext_of(n) in exts and os.path.realpath(p) not in parts:
             out.append(_game(system, os.path.splitext(n)[0], p, [(p, n)]))
     return out
@@ -247,7 +250,9 @@ def scan_volume(path):
             if os.path.isdir(p) and _key(n) in SYSTEM_OF:
                 found += _system_folder(p, SYSTEM_OF[_key(n)])
             elif os.path.isfile(p) and ext in UNIQUE:
-                found.append(_game(UNIQUE[ext], os.path.splitext(n)[0], p, [(p, n)]))
+                parts = roms.sheet_files(p) if ext in roms.SHEETS else []      # a loose .gdi: its tracks go with it
+                found.append(_game(UNIQUE[ext], os.path.splitext(n)[0], p,
+                                   [(p, n)] + [(r, os.path.relpath(r, os.path.realpath(base))) for r in parts]))
             elif os.path.isfile(p) and ext in IDENTIFIABLE:
                 system = identify(p)                     # a loose disc image: which console, from inside it
                 if system and ext in roms.SYSTEMS[system][3]:

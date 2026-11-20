@@ -197,10 +197,11 @@ def build(out_dir=None, live=None, run=_run, home=None, now=time.time, symptoms=
                 files[f"{sub}/{n}"] = text
     # rc12: the boot, to make it shorter with data: STONE's own marks per boot (first frame, ready) and
     # systemd's (where the seconds go before STONE: the slowest units and the chain that waited)
+    blame = run(["systemd-analyze", "blame", "--no-pager"], 30)
     files["arranque.txt"] = ("== STONE: segundos desde el kernel (boot-metrics.jsonl, últimos arranques) ==\n"
                              + "\n".join(_tail(os.path.join(state, "boot-metrics.jsonl"), 65536).splitlines()[-10:])
                              + "\n\n== systemd-analyze time ==\n" + run(["systemd-analyze", "time"], 20)
-                             + "\n== systemd-analyze blame (los 40 más lentos) ==\n" + "\n".join(run(["systemd-analyze", "blame", "--no-pager"], 30).splitlines()[:40])
+                             + "\n== systemd-analyze blame (los 40 más lentos) ==\n" + "\n".join(blame.splitlines()[:40])
                              + "\n\n== systemd-analyze critical-chain ==\n" + run(["systemd-analyze", "critical-chain", "--no-pager"], 30)
                              + "\n== systemd-analyze --user blame (los 20 más lentos) ==\n" + "\n".join(run(["systemd-analyze", "--user", "blame", "--no-pager"], 30).splitlines()[:20]))
     looks_dir = os.path.join(state, "looks")
@@ -225,7 +226,7 @@ def build(out_dir=None, live=None, run=_run, home=None, now=time.time, symptoms=
     # report, 15-11-2026, counted 184 rejected calls of which none were from the running rc8)
     logs = "\n".join([files.get(k, "") for k in ("stone-home.txt", "stone-home-app.txt", "stoned.txt")]
                       + [steam_since_start(files.get("steam-console_log.txt", ""))])
-    checks = diagchecks.run_checks(live, files["stone-home.txt"], logs, home, run, symptoms, ev, root, names)
+    checks = diagchecks.run_checks(live, files["stone-home.txt"], logs, home, run, symptoms, ev, root, names, blame=blame)
     symptoms = [x for x in symptoms if x in diagchecks.SYMPTOMS]
     files["comprobaciones.txt"] = diagchecks.text(checks, symptoms)
     files["vivo.json"] = json.dumps(live, indent=1, ensure_ascii=False, default=str)

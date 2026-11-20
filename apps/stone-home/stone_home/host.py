@@ -175,7 +175,9 @@ class Host:
                     first = self._roms_sig is None
                     self._roms_sig = sig
                     r = roms.add_to_library(steam_ui=self.steam_ui)
-                    if r.get("new") or not first:
+                    if r.get("queued"):
+                        self._roms_sig = None              # Steam's interface not ready: tried again next tick
+                    if r.get("added") or (first and r.get("new")):
                         print(f"[stone] emulators: games folder changed: {r}", flush=True)
                     if r.get("added") or r.get("queued"):
                         GLib.idle_add(lambda: (self._lib_kick(), self.emit("library", {"reason": "roms"}), False)[2])
@@ -224,6 +226,7 @@ class Host:
         return "steam" if system.load_prefs().get("game_res") == 1 else "native"
 
     def _display_changed(self, why):
+        self._disp_at = None                       # the next launch reads the display again (rc12)
         print(f"[stone] display: DISPLAY_CHANGED ({why})", flush=True)
         self.emit("display", {"changed": True})
         return False
