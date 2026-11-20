@@ -227,6 +227,24 @@ def test_fourth_report_old_heals_and_retried_launches():
     assert C.check_games(retried, "", {})["status"] == C.OK
 
 
+def test_rc12_boot_and_game_start_times():
+    with Box() as b:
+        st = os.path.join(b.home, ".local", "state", "stone")
+        with open(os.path.join(st, "boot-metrics.jsonl"), "w") as f:
+            f.write(json.dumps({"boot_id": "x", "visual_s": 18.2, "ready_s": 21.5,
+                                "systemd": {"firmware": 9.1, "loader": 3.0, "kernel": 2.1, "userspace": 14.0}}) + "\n")
+        run = lambda argv, timeout=20: "5.1s NetworkManager-wait-online.service\n2.0s plymouth-quit-wait.service\n"
+        r = C.check_boot(b.home, run)
+        assert r["status"] == C.OK and "34 s" in r["detail"] and any("NetworkManager-wait-online" in e for e in r["evidence"])
+        assert C.check_boot(os.path.join(b.t, "nadie"), run)["status"] == C.NODATA
+    ev = [{"kind": "game_prepare", "appid": "620", "t": 100.0}, {"kind": "launch_timing", "appid": "620", "env_ms": 300, "prepare_ms": 900},
+          {"kind": "game_started", "appid": "620", "t": 112.0}]
+    r = C.check_launch_times(ev, {"620": "Portal 2"})
+    assert r["status"] == C.OK and "12 s" in r["detail"]
+    ev[1]["prepare_ms"] = 4000
+    assert C.check_launch_times(ev, {})["status"] == C.WARN
+
+
 def test_events_are_kept_small_and_never_fail():
     t = tempfile.mkdtemp(prefix="stone-ev-")
     try:

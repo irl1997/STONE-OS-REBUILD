@@ -25,14 +25,15 @@ async function loadLibrary() {
   /* S.running, S.launching and the open game page are positions in G: each one follows its game */
   const idOf = i => i !== null && i !== undefined && G[i] ? G[i].appid : null;
   const run = idOf(S.running), lau = idOf(S.launching), cur = typeof curG === 'number' ? idOf(curG) : null;
-  G = list.map((x, i) => ({ i, appid: x.appid, n: x.name, o: SRC[x.source] || 'Steam', src: x.source, min: x.playtime_min,
+  G = list.map((x, i) => ({ i, appid: x.appid, n: x.name, o: x.kind === 'rom' ? (x.system_name || 'Emulador') : x.kind === 'emulator' ? 'Emulador' : SRC[x.source] || 'Steam',
+    src: x.source, kind: x.kind || null, sys: x.system_name || null, added: x.added || 0, min: x.playtime_min,
     h: Math.round(x.playtime_min / 60), lastT: x.last_played, last: ago(x.last_played), sz: sizeText(x.size_bytes),
     inst: x.installed, upd: x.updating, art: Object.assign({ capsule: false, hero: false, header: false, hero2x: false }, x.art), fav: favs.has(x.appid), perf: null }));
   const at = a => { const k = a === null ? -1 : G.findIndex(g => g.appid === a); return k < 0 ? null : k; };
   S.running = at(run); S.launching = at(lau);
   S.detailGone = cur !== null && at(cur) === null;
   if (cur !== null && at(cur) !== null) curG = at(cur);
-  recent = G.filter(g => g.inst || g.src === 'shortcut').slice(0, 6).map(g => g.i);
+  recent = homeRow();
   /* nothing installed yet (a new console): the account's games take the first row, ready to install */
   S.libNone = !recent.length;
   if (S.libNone) recent = G.slice(0, 6).map(g => g.i);
@@ -40,6 +41,21 @@ async function loadLibrary() {
   /* "out": nobody is signed in to Steam on this console; "in"; null while Steam has not said */
   S.libLogged = r ? r.logged : null; S.libCached = !!(r && r.owned_cached);
   if (S.st) adopt(S.st);
+}
+/* INICIO's row (3.1.0-rc12): the games, Steam's and the emulators', together, most recently played (or
+   arrived, for an emulator game copied and not played yet) first; the emulator apps themselves stay in
+   the Library. Up to HOME_N; when the person has emulator games and none made it into the row, the
+   latest of them take its last places, so they are always on Inicio with the rest. */
+const HOME_N = 8, HOME_ROMS = 2;
+function homeRow() {
+  const play = G.filter(g => (g.inst || g.src === 'shortcut') && g.kind !== 'emulator');
+  const row = play.slice(0, HOME_N);
+  const roms = play.filter(g => g.kind === 'rom');
+  if (roms.length && !row.some(g => g.kind === 'rom')) {
+    const add = roms.slice(0, Math.min(HOME_ROMS, roms.length));
+    row.splice(Math.max(1, row.length - add.length), add.length, ...add);
+  }
+  return row.slice(0, HOME_N).map(g => g.i);
 }
 /* Artwork: Steam's own cache, or what STONE fetched for games Steam had not shown (host artcache).
    A game with only the store's wide picture shows it at the top of its card, the name under it. */
@@ -62,6 +78,8 @@ function coverText(g) {
   if (m && ROM_SYS.includes(m[2])) return [m[2].toUpperCase(), m[1]];
   if (m && m[2] === 'Switch 2') return ['SWITCH 2 · PORT', m[1]];
   if (m && m[2] === 'emulador de Switch 2') return ['EMULADOR', m[1]];
+  if (g.kind === 'rom' && g.sys) { const sfx = ` (${g.sys})`; return [g.sys.toUpperCase(), g.n.endsWith(sfx) ? g.n.slice(0, -sfx.length) : g.n]; }
+  if (g.kind === 'emulator') return ['EMULADOR', g.n];
   return [(g.src === 'shortcut' ? 'ACCESO DIRECTO' : g.o || 'STEAM').toUpperCase(), g.n];
 }
 const nameTag = g => { const t = coverText(g); return `<span class="ph">${t ? `<span class="pht"><span class="lbl">${esc(t[0])}</span><em>${esc(t[1])}</em></span>` : ''}</span>`; };

@@ -196,8 +196,9 @@ async function launch(g, starter) {
   if (S.launching !== null) return;
   const ok = await (starter ? starter() : sys('launch', g.appid));
   if (!ok) return;
+  if (ok.ok === false) { play('error'); return longToast(ok.error || 'No se pudo abrir', 7000); }   /* rc12: e.g. its emulator is missing */
   S.launching = g.i; S.running = g.i; S.screen = 'transition';
-  recent = [g.i, ...recent.filter(i => i !== g.i)].slice(0, 6);
+  recent = [g.i, ...recent.filter(i => i !== g.i)].slice(0, HOME_N);
   const el = focusEl(), b = el ? stageBox(el) : { x: 960, y: 540, w: 0, h: 0 };
   chrome(false, false); $('#hints').classList.add('hide');
   play('launch');
@@ -397,10 +398,12 @@ function propsDlg(g) {
   const back = () => { closeDlg(); play('back'); enterDetail(curG, { r: 1, c: [...$('#detail').querySelectorAll('.second [data-f]')].length - 1 }); };
   const kv = (k, v) => `<span class="sres">${k}<small>${esc(v)}</small></span>`;
   const canRemove = g.src === 'steam' && g.inst && S.running !== g.i;
-  openDlg(`<h2>PROPIEDADES</h2><div class="slist">${kv('Origen', g.o)}${kv('Tamaño', g.sz || '—')}${kv('Tiempo jugado', playText(g))}${kv('Última sesión', g.last || '—')}${kv('Al iniciarse', g.perf ? profOf(g.perf).n : 'Perfil global')}${g.src === 'steam' ? kv('Steam App ID', g.appid) : ''}</div>
-    <div class="btns">${canRemove ? '<span class="txt-f" data-f data-b="rm">DESINSTALAR</span>' : ''}<span class="txt-f" data-f data-b="no">VOLVER</span></div>`, {
+  const picked = S.picks && S.picks[g.appid] !== undefined;
+  openDlg(`<h2>PROPIEDADES</h2><div class="slist">${kv('Origen', g.o)}${kv('Tamaño', g.sz || '—')}${kv('Tiempo jugado', playText(g))}${kv('Última sesión', g.last || '—')}${kv('Al iniciarse', g.perf ? profOf(g.perf).n : 'Perfil global')}${g.src === 'steam' ? kv('Steam App ID', g.appid) : ''}${g.sys ? kv('Consola', g.sys) : ''}${picked ? kv('Opción de inicio', 'Guardada (empieza sola)') : ''}</div>
+    <div class="btns">${picked ? '<span class="txt-f" data-f data-b="pick">OLVIDAR OPCIÓN DE INICIO</span>' : ''}${canRemove ? '<span class="txt-f" data-f data-b="rm">DESINSTALAR</span>' : ''}<span class="txt-f" data-f data-b="no">VOLVER</span></div>`, {
     onA: el => {
       if (el.dataset.b === 'no') return back();
+      if (el.dataset.b === 'pick') { const p = Object.assign({}, S.picks); delete p[g.appid]; S.picks = p; savePrefs(); play('select'); toast('Steam volverá a preguntar cómo iniciarlo', false); closeDlg(); return propsDlg(g); }
       play('select');
       openDlg(`<h2>DESINSTALAR</h2><p>Se borra ${esc(g.n)} de la consola (${esc(g.sz || 'su tamaño en disco')}). Tus partidas en la nube de Steam se conservan. Puedes volver a instalarlo cuando quieras.</p>
         <div class="btns"><span class="txt-f" data-f data-b="no">CANCELAR</span><span class="txt-f" data-f data-b="yes">DESINSTALAR</span></div>`, {

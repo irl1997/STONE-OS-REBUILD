@@ -203,6 +203,42 @@ def test_emulator_shortcuts_made_with_the_wrong_order_are_repaired_at_the_sessio
         assert "shortcuts_repaired" not in SC.prepare_session(proc=os.path.join(b.t, "noproc"))        # once
 
 
+def test_rc12_emulator_games_in_the_library_with_their_console_and_repaired_when_the_emulator_changes():
+    from stone_home import library as LIB
+    with Box() as b:
+        home = os.environ["HOME"]
+        roms_dir = os.path.join(home, "Emulation", "roms")
+        for rel in ("switch/Zelda.nsp", "ps2/God of War (USA) [!].iso"):
+            p = os.path.join(roms_dir, rel)
+            os.makedirs(os.path.dirname(p), exist_ok=True)
+            open(p, "w").write("x" * 30)
+        acct = os.path.join(b.steam, "userdata", "12345678", "config")
+        os.makedirs(acct)
+        zelda = os.path.join(roms_dir, "switch", "Zelda.nsp")
+        items = {"shortcuts": {
+            "0": {"appid": 3000000001, "AppName": "Zelda (Nintendo Switch)", "Exe": '"/usr/bin/flatpak"', "StartDir": '"/"',
+                  "LaunchOptions": f'run dev.eden_emu.eden -f -g "{zelda}"'},
+            "1": {"appid": 3000000002, "AppName": "God of War (USA) [!] (PlayStation 2)", "Exe": '"/usr/bin/flatpak"', "StartDir": '"/"',
+                  "LaunchOptions": f'run net.pcsx2.PCSX2 -batch -fullscreen -- "{os.path.join(roms_dir, "ps2", "God of War (USA) [!].iso")}"'},
+            "2": {"appid": 3000000003, "AppName": "Borrado (GameCube)", "Exe": '"/usr/bin/flatpak"', "StartDir": '"/"',
+                  "LaunchOptions": f'run org.DolphinEmu.dolphin-emu -b -e "{os.path.join(roms_dir, "gc", "Borrado.iso")}"'},
+            "3": {"appid": 3000000004, "AppName": "PCSX2", "Exe": '"/usr/bin/flatpak"', "StartDir": '"/"', "LaunchOptions": "run net.pcsx2.PCSX2"}}}
+        with open(os.path.join(acct, "shortcuts.vdf"), "wb") as f:
+            f.write(vdf.binary_dumps(items))
+        got = {g["name"]: g for g in LIB.shortcut_games(b.steam).values()}
+        assert set(got) == {"Zelda (Nintendo Switch)", "God of War (PlayStation 2)", "PCSX2"}, got     # the deleted game is not listed
+        assert got["Zelda (Nintendo Switch)"]["kind"] == "rom" and got["Zelda (Nintendo Switch)"]["system_name"] == "Nintendo Switch"
+        assert got["Zelda (Nintendo Switch)"]["source"] == "shortcut" and got["Zelda (Nintendo Switch)"]["added"] > 0
+        assert got["PCSX2"]["kind"] == "emulator"
+        # Eden gone, Ryujinx installed: the Switch game is pointed at Ryujinx (Steam closed, session start)
+        fixed = SC.repair_rom_shortcuts(acct.rsplit(os.sep, 1)[0], {"io.github.ryubing.Ryujinx", "net.pcsx2.PCSX2"})
+        assert fixed == ["Zelda (Nintendo Switch)"], fixed
+        new = vdf.binary_loads(open(os.path.join(acct, "shortcuts.vdf"), "rb").read())["shortcuts"]
+        assert new["0"]["LaunchOptions"] == f'run io.github.ryubing.Ryujinx --fullscreen "{zelda}"'
+        assert new["1"]["LaunchOptions"].startswith("run net.pcsx2.PCSX2")                           # installed: untouched
+        assert SC.repair_rom_shortcuts(acct.rsplit(os.sep, 1)[0], {"io.github.ryubing.Ryujinx", "net.pcsx2.PCSX2"}) == []
+
+
 def test_prepare_session_flags_steam_and_waits_for_the_first_sign_in():
     with Box() as b:
         EM.queue_entries([{"name": "X", "exe": '"/usr/bin/flatpak"', "start": '"/"', "options": "run a.b"}])

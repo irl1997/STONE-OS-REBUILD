@@ -507,6 +507,9 @@ def run():
     home = Child("stone-home", _cmd("STONE_SESSION_HOME", HOME_CMD))
     started = time.time()
     _write_state({"started": started, "fallback": None})
+    home.start()                                  # the interface first: it is what the person waits for
+    # rc12: Steam's preparation (its interface flag, Steam Play, the shortcuts STONE repairs or adds) only
+    # has to happen before STEAM starts; STONE Home used to wait for it too (a boot spent on shortcuts.vdf).
     try:                                          # Steam's interface flag and waiting shortcuts
         from . import shortcuts
         log(f"prepare: {shortcuts.prepare_session()}")
@@ -514,7 +517,6 @@ def run():
         log(f"prepare: {e}")
     take_request()                                # one left by a session that ended is not obeyed
     _take_wanted()                                # nor a wish for Steam left by an earlier session
-    home.start()                                  # the interface first: it is what the person waits for
     held = first_run_pending()                    # a new console: no Steam window over the setup
     if held:
         log("first run: Steam starts when the setup reaches its Steam step, or when the setup ends")

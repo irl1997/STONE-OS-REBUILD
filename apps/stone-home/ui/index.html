@@ -1258,14 +1258,15 @@ async function loadLibrary() {
   /* S.running, S.launching and the open game page are positions in G: each one follows its game */
   const idOf = i => i !== null && i !== undefined && G[i] ? G[i].appid : null;
   const run = idOf(S.running), lau = idOf(S.launching), cur = typeof curG === 'number' ? idOf(curG) : null;
-  G = list.map((x, i) => ({ i, appid: x.appid, n: x.name, o: SRC[x.source] || 'Steam', src: x.source, min: x.playtime_min,
+  G = list.map((x, i) => ({ i, appid: x.appid, n: x.name, o: x.kind === 'rom' ? (x.system_name || 'Emulador') : x.kind === 'emulator' ? 'Emulador' : SRC[x.source] || 'Steam',
+    src: x.source, kind: x.kind || null, sys: x.system_name || null, added: x.added || 0, min: x.playtime_min,
     h: Math.round(x.playtime_min / 60), lastT: x.last_played, last: ago(x.last_played), sz: sizeText(x.size_bytes),
     inst: x.installed, upd: x.updating, art: Object.assign({ capsule: false, hero: false, header: false, hero2x: false }, x.art), fav: favs.has(x.appid), perf: null }));
   const at = a => { const k = a === null ? -1 : G.findIndex(g => g.appid === a); return k < 0 ? null : k; };
   S.running = at(run); S.launching = at(lau);
   S.detailGone = cur !== null && at(cur) === null;
   if (cur !== null && at(cur) !== null) curG = at(cur);
-  recent = G.filter(g => g.inst || g.src === 'shortcut').slice(0, 6).map(g => g.i);
+  recent = homeRow();
   /* nothing installed yet (a new console): the account's games take the first row, ready to install */
   S.libNone = !recent.length;
   if (S.libNone) recent = G.slice(0, 6).map(g => g.i);
@@ -1273,6 +1274,21 @@ async function loadLibrary() {
   /* "out": nobody is signed in to Steam on this console; "in"; null while Steam has not said */
   S.libLogged = r ? r.logged : null; S.libCached = !!(r && r.owned_cached);
   if (S.st) adopt(S.st);
+}
+/* INICIO's row (3.1.0-rc12): the games, Steam's and the emulators', together, most recently played (or
+   arrived, for an emulator game copied and not played yet) first; the emulator apps themselves stay in
+   the Library. Up to HOME_N; when the person has emulator games and none made it into the row, the
+   latest of them take its last places, so they are always on Inicio with the rest. */
+const HOME_N = 8, HOME_ROMS = 2;
+function homeRow() {
+  const play = G.filter(g => (g.inst || g.src === 'shortcut') && g.kind !== 'emulator');
+  const row = play.slice(0, HOME_N);
+  const roms = play.filter(g => g.kind === 'rom');
+  if (roms.length && !row.some(g => g.kind === 'rom')) {
+    const add = roms.slice(0, Math.min(HOME_ROMS, roms.length));
+    row.splice(Math.max(1, row.length - add.length), add.length, ...add);
+  }
+  return row.slice(0, HOME_N).map(g => g.i);
 }
 /* Artwork: Steam's own cache, or what STONE fetched for games Steam had not shown (host artcache).
    A game with only the store's wide picture shows it at the top of its card, the name under it. */
@@ -1295,6 +1311,8 @@ function coverText(g) {
   if (m && ROM_SYS.includes(m[2])) return [m[2].toUpperCase(), m[1]];
   if (m && m[2] === 'Switch 2') return ['SWITCH 2 · PORT', m[1]];
   if (m && m[2] === 'emulador de Switch 2') return ['EMULADOR', m[1]];
+  if (g.kind === 'rom' && g.sys) { const sfx = ` (${g.sys})`; return [g.sys.toUpperCase(), g.n.endsWith(sfx) ? g.n.slice(0, -sfx.length) : g.n]; }
+  if (g.kind === 'emulator') return ['EMULADOR', g.n];
   return [(g.src === 'shortcut' ? 'ACCESO DIRECTO' : g.o || 'STEAM').toUpperCase(), g.n];
 }
 const nameTag = g => { const t = coverText(g); return `<span class="ph">${t ? `<span class="pht"><span class="lbl">${esc(t[0])}</span><em>${esc(t[1])}</em></span>` : ''}</span>`; };
@@ -2679,13 +2697,24 @@ function steamLabel(label, gameName) {
   const k = Object.keys(STEAM_LO).find(x => x.toLowerCase() === m[1].toLowerCase());
   return k ? STEAM_LO[k].replace('%1$s', gameName) : m[1].replace(/_/g, ' ');
 }
-/* list: Steam's choices as rows (the launch options can be long); the buttons below only cancel */
-function lwDlg(g, cap, text, buttons, extra, list) {
+/* list: Steam's choices as rows (the launch options can be long); the buttons below only cancel.
+   remember (rc12): a RECORDAR button, as Steam's «Siempre»: the choice is answered by itself next time. */
+function lwDlg(g, cap, text, buttons, extra, list, remember) {
   play('notify');
+  let keep = false;
   const rows = list ? `<div class="slist">${list.map(([l], i) => `<span class="txt-f sres" data-f data-l="${i}">${esc(l)}</span>`).join('')}</div>` : '';
+  const rem = remember ? '<span class="txt-f" data-f data-r="1">RECORDAR: NO</span>' : '';
   openDlg(`<span class="st-cap">${cap}</span><h2>${esc(g.n.toUpperCase())}</h2>${extra || ''}<p>${esc(text)}</p>${rows}
-    <div class="btns">${buttons.map(([l], i) => `<span class="txt-f" data-f data-i="${i}">${esc(l)}</span>`).join('')}</div>`, {
-    onA: el => { const a = el.dataset.l !== undefined ? list[+el.dataset.l][1] : buttons[+el.dataset.i][1]; closeDlg(); lwAnswer(g, a); },
+    <div class="btns">${rem}${buttons.map(([l], i) => `<span class="txt-f" data-f data-i="${i}">${esc(l)}</span>`).join('')}</div>`, {
+    onA: el => {
+      if (el.dataset.r) { keep = !keep; play('nav'); el.textContent = `RECORDAR: ${keep ? 'SÍ' : 'NO'}`; return; }
+      const a = el.dataset.l !== undefined ? list[+el.dataset.l][1] : buttons[+el.dataset.i][1];
+      if (keep && el.dataset.l !== undefined) {
+        S.picks = Object.assign({}, S.picks, { [g.appid]: +a }); savePrefs();
+        toast('Guardado: la próxima vez empieza solo. Para cambiarlo: Propiedades del juego', false);
+      }
+      closeDlg(); lwAnswer(g, a);
+    },
     onB: () => { closeDlg(); lwAnswer(g, 'cancel'); } });
   if (list) {
     const d = $('#dlg');
@@ -2703,8 +2732,14 @@ function lwAsk(g, st) {
   if (r === 'ShowLaunchOption') {
     const o = st.options || [];
     if (!o.length) return lwAnswer(g, '0');
+    const pick = S.picks && S.picks[g.appid];
+    if (pick !== undefined && o.some(x => x.index === pick)) {
+      const x = o.find(y => y.index === pick);
+      toast(`Iniciando: ${x.label ? steamLabel(x.label, g.n) : 'opción ' + (pick + 1)} (tu elección guardada)`, false);
+      return lwAnswer(g, String(pick));
+    }
     return lwDlg(g, 'OPCIÓN DE INICIO', 'Este juego tiene varias formas de iniciarse. Elige una:', [['CANCELAR', 'cancel']], '',
-      o.slice(0, 6).map(x => [x.label ? steamLabel(x.label, g.n) : `Opción ${x.index + 1}`, String(x.index)]));
+      o.slice(0, 6).map(x => [x.label ? steamLabel(x.label, g.n) : `Opción ${x.index + 1}`, String(x.index)]), true);
   }
   if (r === 'ShowEula') {
     const e = (st.eulas || [])[0], qr = e ? `<div class="qrrow">${qrSvg(e.url, 220)}<div><p class="url">${esc(e.url.slice(8))}</p></div></div>` : '';
@@ -2911,6 +2946,9 @@ Bridge.on('usb', d => {
   if (d.error) { play('error'); toast(d.error, false); }
   else if (d.canceled) toast(`Copia cancelada: ${d.copied} juego${d.copied === 1 ? '' : 's'} copiado${d.copied === 1 ? '' : 's'}`, false);
   else { play('notify'); longToast(`${d.copied} juego${d.copied === 1 ? '' : 's'} copiado${d.copied === 1 ? '' : 's'} y añadido${d.copied === 1 ? '' : 's'} a tu biblioteca. Ya puedes quitar el USB`, 7000); }
+  /* rc12: games of a console whose emulator is not installed wait for it: said, with where to get it */
+  const need = Object.entries(d.need || {});
+  if (need.length) setTimeout(() => longToast(`Para jugar: instala ${need.map(([sys, emu]) => `${emu} (${sys})`).join(', ')} en Ajustes → Emuladores. Los juegos aparecen solos al instalarlo`, 9000), d.error ? 4000 : 7500);
   egScan(true); reloadLibrary();
 });
 /* «Juegos desde el móvil»: the QR code, what arrives, CERRAR adds them to the library */
@@ -3117,7 +3155,7 @@ async function updEnded(u) {
 setTimeout(updWatch, 6000);
 
 /* ---------- LIBRARY ---------- */
-const FILTERS = ['Todos', 'Steam', 'Accesos directos', 'Favoritos', 'Por instalar', 'Sorpréndeme'];
+const FILTERS = ['Todos', 'Steam', 'Emuladores', 'Favoritos', 'Por instalar', 'Sorpréndeme'];
 const FILTER_SURPRISE = FILTERS.length - 1;       /* not a filter: STONE picks a game (surprise()) */
 function libList() {
   const f = S.filter;
@@ -3128,7 +3166,7 @@ function emptyText() {
   if (S.libLogged === 'out') return 'Nadie ha iniciado sesión en Steam en esta consola. En Inicio, elige «Inicia sesión en Steam».';
   if (!S.libFound) return 'Steam todavía no ha creado su biblioteca. Si la consola acaba de encenderse, espera unos segundos.';
   if (S.filter === 3) return 'Aún no hay favoritos. Márcalos desde la ficha de cada juego.';
-  if (S.filter === 2) return 'Sin accesos directos. Los lanzadores y emuladores que añaden sus juegos a Steam aparecen aquí.';
+  if (S.filter === 2) return 'Aún no hay juegos de emuladores. Conecta un USB con tus juegos o añádelos en Ajustes → Emuladores.';
   if (S.filter === 4) return G.length ? 'Todos los juegos de tu cuenta están instalados.' : 'Aún no hay juegos en tu cuenta.';
   return G.length ? 'No hay juegos con este filtro.' : 'Aún no hay juegos. Abre la Tienda (RB) para conseguir el primero.';
 }
@@ -3385,8 +3423,9 @@ async function launch(g, starter) {
   if (S.launching !== null) return;
   const ok = await (starter ? starter() : sys('launch', g.appid));
   if (!ok) return;
+  if (ok.ok === false) { play('error'); return longToast(ok.error || 'No se pudo abrir', 7000); }   /* rc12: e.g. its emulator is missing */
   S.launching = g.i; S.running = g.i; S.screen = 'transition';
-  recent = [g.i, ...recent.filter(i => i !== g.i)].slice(0, 6);
+  recent = [g.i, ...recent.filter(i => i !== g.i)].slice(0, HOME_N);
   const el = focusEl(), b = el ? stageBox(el) : { x: 960, y: 540, w: 0, h: 0 };
   chrome(false, false); $('#hints').classList.add('hide');
   play('launch');
@@ -3587,10 +3626,12 @@ function propsDlg(g) {
   const back = () => { closeDlg(); play('back'); enterDetail(curG, { r: 1, c: [...$('#detail').querySelectorAll('.second [data-f]')].length - 1 }); };
   const kv = (k, v) => `<span class="sres">${k}<small>${esc(v)}</small></span>`;
   const canRemove = g.src === 'steam' && g.inst && S.running !== g.i;
-  openDlg(`<h2>PROPIEDADES</h2><div class="slist">${kv('Origen', g.o)}${kv('Tamaño', g.sz || '—')}${kv('Tiempo jugado', playText(g))}${kv('Última sesión', g.last || '—')}${kv('Al iniciarse', g.perf ? profOf(g.perf).n : 'Perfil global')}${g.src === 'steam' ? kv('Steam App ID', g.appid) : ''}</div>
-    <div class="btns">${canRemove ? '<span class="txt-f" data-f data-b="rm">DESINSTALAR</span>' : ''}<span class="txt-f" data-f data-b="no">VOLVER</span></div>`, {
+  const picked = S.picks && S.picks[g.appid] !== undefined;
+  openDlg(`<h2>PROPIEDADES</h2><div class="slist">${kv('Origen', g.o)}${kv('Tamaño', g.sz || '—')}${kv('Tiempo jugado', playText(g))}${kv('Última sesión', g.last || '—')}${kv('Al iniciarse', g.perf ? profOf(g.perf).n : 'Perfil global')}${g.src === 'steam' ? kv('Steam App ID', g.appid) : ''}${g.sys ? kv('Consola', g.sys) : ''}${picked ? kv('Opción de inicio', 'Guardada (empieza sola)') : ''}</div>
+    <div class="btns">${picked ? '<span class="txt-f" data-f data-b="pick">OLVIDAR OPCIÓN DE INICIO</span>' : ''}${canRemove ? '<span class="txt-f" data-f data-b="rm">DESINSTALAR</span>' : ''}<span class="txt-f" data-f data-b="no">VOLVER</span></div>`, {
     onA: el => {
       if (el.dataset.b === 'no') return back();
+      if (el.dataset.b === 'pick') { const p = Object.assign({}, S.picks); delete p[g.appid]; S.picks = p; savePrefs(); play('select'); toast('Steam volverá a preguntar cómo iniciarlo', false); closeDlg(); return propsDlg(g); }
       play('select');
       openDlg(`<h2>DESINSTALAR</h2><p>Se borra ${esc(g.n)} de la consola (${esc(g.sz || 'su tamaño en disco')}). Tus partidas en la nube de Steam se conservan. Puedes volver a instalarlo cuando quieras.</p>
         <div class="btns"><span class="txt-f" data-f data-b="no">CANCELAR</span><span class="txt-f" data-f data-b="yes">DESINSTALAR</span></div>`, {
@@ -4871,7 +4912,8 @@ let saveT = 0;
 function savePrefs() {
   clearTimeout(saveT);
   saveT = setTimeout(() => Sys.prefsSet({ sound: S.sound, vol: S.vol, hc: S.hc, rm: S.rm, ts: S.ts, safe: S.safe, idle: S.idle,
-    tech: S.tech, adv_ack: S.advAck, engine: S.render, favorites: [...favs], frame: FRAME, wanted: [...WANT], report: S.report, glass: S.glass }).catch(() => {}), 400);
+    tech: S.tech, adv_ack: S.advAck, engine: S.render, favorites: [...favs], frame: FRAME, wanted: [...WANT], report: S.report, glass: S.glass,
+    launch_pick: S.picks || {} }).catch(() => {}), 400);
 }
 function loadPrefs(p) {
   if (!p) return;
@@ -4879,6 +4921,7 @@ function loadPrefs(p) {
   S.tech = p.tech; S.advAck = p.adv_ack; S.render = p.engine === 1 ? 1 : 0; favs.clear(); (p.favorites || []).forEach(a => favs.add(a));
   FRAME = p.frame > 0 && p.frame <= 6 ? p.frame : 0; fit();
   WANT.clear(); (p.wanted || []).forEach(a => WANT.add(a)); S.report = p.report !== false; S.glass = p.glass === 0 ? 0 : 1;
+  S.picks = p.launch_pick && typeof p.launch_pick === 'object' ? Object.assign({}, p.launch_pick) : {};
   applyPrefs();
 }
 

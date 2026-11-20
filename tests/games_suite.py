@@ -18,6 +18,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(HERE)
 BUILTIN = os.path.join(REPO, "modules", "games", "game-profiles")
 os.environ["STONE_GAME_PROFILES"] = BUILTIN
+os.environ["STONE_DETECT_CACHE_S"] = "0"          # tests change game folders between calls; G29 tests the cache
 sys.path[0:0] = [os.path.join(REPO, p) for p in ("services/stoned", "apps/stone-home", "modules/display", "modules/games")]
 
 from stone_games import detect, graphics, metrics, optimizer, schema, score, store  # noqa: E402
@@ -965,6 +966,31 @@ def G28_cancelled_launch_and_probe_again_after_the_launcher():
         assert len([e for e in rows if e["kind"] == "game_effects"]) == 1     # never again once in the game
         w.running_set.discard(CP)
         assert w.e.tick()["reason"] == "exit"
+
+
+@test
+def G29_folder_scan_kept_between_launches_and_forgotten_when_stone_installs():
+    """rc12: the walk of the game folder is not repeated for every launch and game page."""
+    with World() as w:
+        calls = []
+        real = detect.scan_folder
+        detect.scan_folder = lambda folder: (calls.append(folder), real(folder))[1]
+        old = detect.CACHE_S
+        detect.CACHE_S = 120
+        try:
+            detect.forget()
+            for _ in range(3):
+                detect.facts(w.root, CP)
+            assert len(calls) == 1
+            detect.forget(CP)
+            detect.facts(w.root, CP)
+            assert len(calls) == 2
+            w.write_manifest(CP, "Cyberpunk 2077", "Cyberpunk 2077", build="19000001")   # a new build: looked at again
+            detect.facts(w.root, CP)
+            assert len(calls) == 3
+        finally:
+            detect.scan_folder, detect.CACHE_S = real, old
+            detect.forget()
 
 
 @test

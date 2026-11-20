@@ -195,6 +195,14 @@ def build(out_dir=None, live=None, run=_run, home=None, now=time.time, symptoms=
                 except ValueError:
                     pass
                 files[f"{sub}/{n}"] = text
+    # rc12: the boot, to make it shorter with data: STONE's own marks per boot (first frame, ready) and
+    # systemd's (where the seconds go before STONE: the slowest units and the chain that waited)
+    files["arranque.txt"] = ("== STONE: segundos desde el kernel (boot-metrics.jsonl, últimos arranques) ==\n"
+                             + "\n".join(_tail(os.path.join(state, "boot-metrics.jsonl"), 65536).splitlines()[-10:])
+                             + "\n\n== systemd-analyze time ==\n" + run(["systemd-analyze", "time"], 20)
+                             + "\n== systemd-analyze blame (los 40 más lentos) ==\n" + "\n".join(run(["systemd-analyze", "blame", "--no-pager"], 30).splitlines()[:40])
+                             + "\n\n== systemd-analyze critical-chain ==\n" + run(["systemd-analyze", "critical-chain", "--no-pager"], 30)
+                             + "\n== systemd-analyze --user blame (los 20 más lentos) ==\n" + "\n".join(run(["systemd-analyze", "--user", "blame", "--no-pager"], 30).splitlines()[:20]))
     looks_dir = os.path.join(state, "looks")
     try:
         vk = sorted(n for n in os.listdir(looks_dir) if n.startswith("vkbasalt-") and n.endswith(".log"))

@@ -345,6 +345,56 @@ def check_emulators(logs, live):
     return _check("emulators", name, OK, f"{len(emu)} emuladores instalados, sin errores registrados.", ev)
 
 
+# ---- boot and game start times (rc12) -------------------------------------------------------------
+def check_boot(home, run):
+    name = "Tiempo de encendido"
+    recs = []
+    try:
+        with open(os.path.join(home, ".local", "state", "stone", "boot-metrics.jsonl"), encoding="utf-8") as f:
+            for ln in f:
+                try:
+                    recs.append(json.loads(ln))
+                except ValueError:
+                    pass
+    except OSError:
+        pass
+    blame = [ln.strip() for ln in run(["systemd-analyze", "blame", "--no-pager"], 30).splitlines()[:6] if ln.strip()]
+    if not recs:
+        return _check("boot", name, NODATA, "Aún no hay arranques medidos.", blame)
+    r = recs[-1]
+    sd = r.get("systemd") or {}
+    fw = (sd.get("firmware") or 0) + (sd.get("loader") or 0)
+    ev = [f"Pantalla de STONE a los {r.get('visual_s', '—')} s del kernel; lista a los {r.get('ready_s', '—')} s"]
+    if sd:
+        ev.append("systemd: " + ", ".join(f"{k} {v} s" for k, v in sd.items() if v))
+    ev += [f"Más lentos: {b}" for b in blame[:5]]
+    total = (r.get("ready_s") or r.get("visual_s") or 0) + fw
+    st = WARN if (r.get("ready_s") or 0) > 45 else OK
+    return _check("boot", name, st, f"De encendido a STONE listo: unos {round(total)} s" + (" (más BIOS/firmware no medido)" if not fw else "")
+                  + (". Hay servicios del sistema que retrasan el arranque (ver arranque.txt)" if st == WARN else "."), ev)
+
+
+def check_launch_times(ev, names):
+    name = "Tiempo para abrir un juego"
+    prep = {}
+    waits = []
+    for e in ev:
+        if e.get("kind") == "game_prepare":
+            prep[e.get("appid")] = e.get("t")
+        elif e.get("kind") == "game_started" and prep.get(e.get("appid")) and e.get("t"):
+            waits.append((e.get("appid"), round(e["t"] - prep.pop(e.get("appid")))))
+    stone = [e for e in ev if e.get("kind") == "launch_timing"]
+    evidence = [f"{_game(names, a)}: {s} s de JUGAR al juego" for a, s in waits[-6:]]
+    evidence += [f"STONE antes de pedirlo a Steam: {e.get('env_ms', 0) + e.get('prepare_ms', 0)} ms ({_game(names, e.get('appid'))})" for e in stone[-3:]]
+    if not waits:
+        return _check("launch", name, NODATA, "No se ha abierto ningún juego desde que se registra.", evidence)
+    slow_stone = [e for e in stone[-5:] if e.get("env_ms", 0) + e.get("prepare_ms", 0) > 2500]
+    med = sorted(s for _a, s in waits)[len(waits) // 2]
+    if slow_stone:
+        return _check("launch", name, WARN, f"STONE tarda más de 2,5 s en preparar el juego antes de pedírselo a Steam (mediana de JUGAR al juego: {med} s).", evidence)
+    return _check("launch", name, OK, f"Mediana de JUGAR al juego: {med} s (la mayor parte es Steam y el propio juego).", evidence)
+
+
 # ---- all of it --------------------------------------------------------------------------------------
 def run_checks(live, journal, logs, home, run, symptoms=(), events=None, root="/", names=None):
     """[check] (most useful first: those tied to the person's symptoms), plus the symptoms' text."""
@@ -355,7 +405,7 @@ def run_checks(live, journal, logs, home, run, symptoms=(), events=None, root="/
     for fn in (lambda: check_filters(ev, logs, home, prefs, names, root), lambda: check_display(journal, live),
                lambda: check_games(ev, logs, names), lambda: check_steam(live, logs, ev), lambda: check_sound(run),
                lambda: check_controllers(root), lambda: check_network(live), lambda: check_disk(live),
-               lambda: check_emulators(logs, live)):
+               lambda: check_emulators(logs, live), lambda: check_boot(home, run), lambda: check_launch_times(ev, names)):
         try:
             checks.append(fn())
         except Exception as e:  # noqa: BLE001  (one check that breaks never stops the report)

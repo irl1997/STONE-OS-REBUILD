@@ -1,3 +1,58 @@
+# STONE OS (rebuild) 3.1.0-rc12
+
+Juegos de emuladores en el Inicio, carga desde USB a prueba de fallos, un sistema de emuladores más robusto y arranques más rápidos. Decisión D-47.
+
+## Los juegos de emuladores, en el Inicio con los demás
+
+- **En el Inicio.** La fila muestra ahora 8 juegos de Steam y de emuladores juntos, ordenados por la última vez que se jugaron. Un juego de emulador que aún no has jugado se ordena por cuándo llegó a la consola, así que lo que acabas de copiar desde un USB aparece primero. Si tienes juegos de emuladores y ninguno entra en la fila, los últimos ocupan sus dos últimos puestos, para que siempre estén en el Inicio. Los emuladores en sí (Dolphin, PCSX2…) siguen en la Biblioteca, que tiene un filtro «Emuladores».
+- **Con su consola.** Cada juego dice de qué consola es («PlayStation 2», «GameCube»…), en su portada y en su ficha, en vez de «Acceso directo». Los nombres van sin las etiquetas de región: «God of War (USA) [!]» aparece como «God of War».
+- **Un juego cuyo archivo ya no está** (borrado, o en un USB desconectado) **deja de aparecer** en vez de fallar al abrirlo, y vuelve si el archivo vuelve.
+
+## Juegos desde un USB: STONE los reconoce y los copia enteros
+
+- **Reconoce las imágenes de disco sueltas por su contenido.** Una `.iso`, `.rvz`, `.wia` o `.gcz` que esté fuera de una carpeta con el nombre de la consola ya no se ignora: STONE lee las marcas de su formato y sabe si es de GameCube, Wii, PS2, PSP, PS3 o Xbox.
+- **Juegos de varios archivos:**
+  - Un `.cue` con sus `.bin` o un `.gdi` de Dreamcast con sus pistas se copian completos. Las pistas ya no aparecen como juegos sueltos.
+  - Un juego en su propia carpeta se copia con todo lo que tiene. Dentro de esa carpeta, STONE elige el archivo que abre el emulador.
+  - En la consola se reconocen igual: `.cue`/`.gdi`/`.m3u` y carpetas.
+- **Una copia que no puede quedar a medias.**
+  - Cada archivo se escribe aparte, se comprueba su tamaño y se graba en disco antes de tomar su nombre definitivo.
+  - Si se desconecta el USB o se corta la luz, lo que quedó a medias se borra antes de la siguiente copia.
+  - Los juegos que sí se copiaron entran en la biblioteca aunque la copia se cortara después.
+  - Un archivo de índice nunca puede señalar fuera de la carpeta del juego.
+- **Si a un juego le falta su emulador, STONE te dice cuál instalar.** Y cuando lo instalas, los juegos que lo esperaban aparecen solos.
+
+## Emuladores más robustos
+
+- **Los juegos aparecen solos.** Los que pones en `~/Emulation/roms` por cualquier vía (el móvil, un USB, el escritorio) se añaden a la biblioteca sin tener que pulsar «Añadir juegos». STONE revisa esa carpeta cada 30 s, fuera de los juegos.
+- **Al cambiar de emulador, los juegos siguen abriéndose.** Si quitas Eden e instalas Ryujinx, tus juegos de Switch pasan al emulador instalado al empezar la siguiente sesión.
+- **JUGAR con el emulador desinstalado** te dice cuál instalar, en vez de que Steam falle sin explicación.
+
+## Más rápido al abrir un juego
+
+- **La carpeta del juego se revisa una sola vez.** STONE recorría toda la carpeta (anti-cheat y OptiScaler, hasta 4 niveles) en cada JUGAR y cada vez que abrías la ficha. Ahora guarda el resultado del mismo juego y la misma versión, y lo descarta cuando instala o quita algo en el juego.
+- **La tabla de color del aspecto se calcula una sola vez.** Antes costaba unos 0,13 s en un Mac en cada JUGAR, y más en la consola. Ahora solo se recalcula si el aspecto cambia, y el resto de veces tarda 0,0001 s.
+- **La pantalla se lee una vez por lanzamiento**, no dos seguidas.
+- **«Opción de inicio» recuerda tu elección.** Con «RECORDAR: SÍ», un juego con varias formas de iniciarse, como Batman: Arkham City, empieza directamente la próxima vez, igual que con el «Siempre» de Steam. Se olvida en Propiedades.
+- **Cada JUGAR anota cuánto tarda STONE antes de pedírselo a Steam**, y el informe muestra cuántos segundos pasan de JUGAR al juego.
+
+## Encendido más rápido
+
+- **STONE se muestra sin esperar a la preparación de Steam.** Antes, la sesión preparaba a Steam primero (sus ajustes y los accesos directos) y solo después abría la pantalla de STONE. Ahora la pantalla se abre primero, y la preparación sigue en paralelo antes de que arranque Steam.
+- **Sin pasos lentos nuevos antes de la pantalla.** La revisión de emuladores lee directamente las carpetas de Flatpak, que es instantáneo, en vez de ejecutar `flatpak list`.
+- **El informe incluye el arranque** («arranque.txt»):
+  - los tiempos de STONE en cada encendido;
+  - lo que mide systemd: firmware, kernel y sistema;
+  - los 40 servicios más lentos y la cadena que esperó.
+
+  Así el próximo informe dirá qué más se puede quitar del arranque, que hoy está fuera de STONE: BIOS, menú de arranque y servicios del sistema base.
+
+## Además
+
+- **Preferencias que se reiniciaban solas.** Guardar cualquier preferencia (un favorito, el volumen…) devolvía a su valor por defecto «Juegos ven», «Meta de imagen» y STONE OPTIMIZED. Ahora se conservan.
+
+**Todo está probado en software (CODE TESTED) y en el simulador. Nada de esta versión se ha observado todavía en la BC-250.** Pruebas de placa: T-EMU-15 a 18, T-BOOT-11 y T-PERF-02.
+
 # STONE OS (rebuild) 3.1.0-rc11
 
 Hecha con el **cuarto informe de la consola** (19-11-2026, 22:55) y tus fotos: filtros que se notan más, dos filtros nuevos, menos grano, el error de OptiScaler y el diálogo «Opción de inicio». Decisión D-46.

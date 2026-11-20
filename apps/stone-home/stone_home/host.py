@@ -39,6 +39,8 @@ from . import system
 
 
 LIB_FAST_S = 4               # the library is read again this often while something is expected ...
+DISPLAY_FRESH_S = 15        # a display read this recent is used again (one launch reads it once, rc12)
+ROMS_EVERY_S = 30           # emulator games folder looked at this often, outside games (rc12)
 LIB_SLOW_S = 45              # ... and this often the rest of the time (a game bought on the phone)
 LIB_FAST_FOR_S = 150         # "expected": the boot, an install, coming back from Steam's store
 LIB_FRESH_S = 3              # a read this recent is not repeated
@@ -146,13 +148,54 @@ class Host:
                                              on_change=lambda why: GLib.idle_add(self._display_changed, why))
         self.game_env = stone_display.GameEnvironment(cef=cef)
         # STONE OPTIMIZED: game profiles, graphics paths, measured optimization (stone_games/).
-        self.optimized = games_opt.Engine(root=self.root, cef=cef, display=lambda: self.display.status(fresh=True),
+        self.optimized = games_opt.Engine(root=self.root, cef=cef, display=self._display_now,
                                           perf=PerfAsync(self.stoned), log=lambda m: print(m, flush=True),
                                           events=events.record)
         self._opt_busy = False
         GLib.timeout_add_seconds(3, self._opt_monitor)
         GLib.timeout_add_seconds(LIB_FAST_S, self._lib_tick)
         GLib.timeout_add_seconds(8, lambda: (self._opt_work(self.optimized.recover, "recover"), False)[1])
+        self._roms_sig, self._roms_busy, self._emu_ids = None, False, None
+        GLib.timeout_add_seconds(ROMS_EVERY_S, self._roms_tick)
+
+    # ---- emulator games that arrive by any way (rc12) -------------------------------------------
+    def _roms_tick(self):
+        """Games put in ~/Emulation/roms by any means (a file manager, the phone, a USB copy, the desktop)
+        join the library by themselves, without «Añadir juegos»: looked at every ROMS_EVERY_S outside games."""
+        if self._roms_busy or self._game_running():
+            return True
+        self._roms_busy = True
+
+        def work():
+            try:
+                if self._emu_ids is None or time.monotonic() - self._emu_ids[0] > 60:
+                    self._emu_ids = (time.monotonic(), emulators.installed_here())
+                sig = roms.signature()
+                if sig != self._roms_sig:
+                    first = self._roms_sig is None
+                    self._roms_sig = sig
+                    r = roms.add_to_library(steam_ui=self.steam_ui)
+                    if r.get("new") or not first:
+                        print(f"[stone] emulators: games folder changed: {r}", flush=True)
+                    if r.get("added") or r.get("queued"):
+                        GLib.idle_add(lambda: (self._lib_kick(), self.emit("library", {"reason": "roms"}), False)[2])
+            except Exception as e:  # noqa: BLE001  (never take STONE Home down over this)
+                print(f"[stone] emulators: games folder: {e!r}", flush=True)
+            finally:
+                self._roms_busy = False
+        threading.Thread(target=work, daemon=True).start()
+        return True
+
+    def emulator_missing(self, appid):
+        """The emulator an emulator game needs when it is not installed: (name) or None (rc12)."""
+        last = self.lib_last[1] if getattr(self, "lib_last", None) else {}
+        g = next((x for x in (last.get("games") or []) if x.get("appid") == appid), None)
+        if not g or g.get("kind") != "rom" or not g.get("emulator"):
+            return None
+        if self._emu_ids is None:                 # read by _roms_tick off the interface thread
+            return None
+        fid, name, _p = emulators.CATALOG[g["emulator"]]
+        return None if fid in self._emu_ids[1] else name
 
     def game_policy(self):
         """"native": games see the display's own resolution; "steam": whatever Steam defaults to."""
@@ -402,8 +445,19 @@ class Host:
             threading.Thread(target=lambda: self._apply_env(ids + list(shortcuts.shortcut_appids(root))),
                              daemon=True).start()
 
-    def _env_state(self):
+    def _display_now(self, max_age=DISPLAY_FRESH_S):
+        """The display as it is now. rc12: one fresh read per launch, not two (the game environment and
+        the optimizer each read it fresh, back to back, before every game)."""
+        now = time.monotonic()
+        last = self.__dict__.get("_disp_at")
+        if last and now - last[0] < max_age:
+            return last[1]
         snap = self.display.status(fresh=True)
+        self._disp_at = (time.monotonic(), snap)
+        return snap
+
+    def _env_state(self):
+        snap = self._display_now()
         # The size to give games: the display's native one, or the best the link carries when it cannot do native.
         return ({"game_default": snap.get("steam_game_default")} if snap.get("steam_available") else None,
                 snap.get("game_environment") or (snap.get("primary") or {}).get("native_resolution"))
@@ -590,7 +644,16 @@ class Host:
 
         def work():
             try:
-                emulators.install(key, progress, steam_ui=self.steam_ui)
+                if emulators.install(key, progress, steam_ui=self.steam_ui):
+                    # rc12: the games that were waiting for this emulator join the library now
+                    self._emu_ids = None
+                    try:
+                        r = roms.add_to_library(steam_ui=self.steam_ui)
+                        if r.get("new"):
+                            print(f"[stone] emulators: {key} installed, games added: {r}", flush=True)
+                            GLib.idle_add(lambda: (self._lib_kick(), False)[1])
+                    except Exception as e:  # noqa: BLE001
+                        print(f"[stone] emulators: {key}: games not added: {e!r}", flush=True)
             finally:
                 self.emu_busy.discard(key)
         threading.Thread(target=work, daemon=True).start()
@@ -695,6 +758,9 @@ class Host:
     def m_launch(self, args, done):
         if len(args) != 1 or args[0] not in self.games:
             return done(None, "InvalidValue", "unknown game")
+        need = self.emulator_missing(args[0])
+        if need:                                  # rc12: said plainly, instead of Steam failing silently
+            return done({"ok": False, "error": f"Este juego se abre con {need}, que no está instalado. Instálalo en Ajustes → Emuladores"})
         url = self.games[args[0]]
         gid = url.rsplit("/", 1)[-1]
         if not gid.isdigit():
@@ -702,8 +768,10 @@ class Host:
         appid = args[0]
 
         def launch():
+            t0 = time.monotonic()
             if self.game_policy() == "native":
                 self._apply_env([appid])          # a game installed since the last scan, too
+            t_env = time.monotonic()
             if gid == appid and self.optimized_on():
                 # GAME -> STONE RECOMMENDED -> PLAY. Any failure here launches the game as it is.
                 try:
@@ -712,6 +780,11 @@ class Host:
                           f"graphics={r.get('graphics_applied')} performance={r.get('performance')}", flush=True)
                 except Exception as e:  # noqa: BLE001
                     print(f"[stone] optimized: {appid} not prepared ({e!r}); launching unchanged", flush=True)
+            # rc12: how long STONE took before asking Steam (in the diagnostic report: events, home.log)
+            t_prep = time.monotonic()
+            events.record("launch_timing", appid=appid, env_ms=round((t_env - t0) * 1000), prepare_ms=round((t_prep - t_env) * 1000))
+            print(f"[stone] launch {appid}: STONE ready in {round((t_prep - t0) * 1000)} ms "
+                  f"(display {round((t_env - t0) * 1000)}, optimized {round((t_prep - t_env) * 1000)})", flush=True)
             # Steam's steps are followed from the start (steamcef.launch): what it asks comes back to
             # STONE Home (launch.state / launch.answer). Without that listener, the old call.
             fn = getattr(self.steam_ui, "launch", None)
@@ -1561,11 +1634,15 @@ class Host:
         def work():
             try:
                 r = usbgames.copy(usbgames.scan_volume(path), progress, cancel=lambda: self._usb_cancel)
-                if r["copied"] and not r["error"]:
+                if r["copied"]:
+                    # rc12: what arrived goes to the library even when the copy stopped later (an error, the
+                    # drive pulled out); and the person is told which emulator the rest is waiting for
                     try:
                         r["added"] = roms.add_to_library(steam_ui=self.steam_ui)
+                        r["need"] = roms.waiting()
                     except Exception as e:  # noqa: BLE001
                         r["added"] = {"error": repr(e)}
+                    self._roms_sig = roms.signature()
                 r["canceled"] = bool(self._usb_cancel)
             except Exception as e:  # noqa: BLE001
                 r = {"copied": 0, "skipped": 0, "error": f"No se pudo copiar: {e!r}"}
@@ -1874,7 +1951,12 @@ class Host:
         if len(args) != 1 or not isinstance(args[0], dict):
             return done(None, "InvalidValue", "prefs")
         try:
-            done(system.save_prefs(args[0]))
+            # rc12: merged with what is saved. STONE Home sends only the preferences it holds; the rest
+            # («Juegos ven», «Meta de imagen», STONE OPTIMIZED, set through their own calls) were reset to
+            # their defaults every time a favourite or the volume was saved.
+            cur = system.load_prefs()
+            cur.update(args[0])
+            done(system.save_prefs(cur))
         except OSError as e:
             done(None, "HardwareError", str(e))
 

@@ -31,7 +31,10 @@ const Bridge = (() => {
     { appid: '367520', name: 'Hollow Knight', source: 'steam', installed: true, last: now - DAY * 45, min: 1500, size: 2.1e9, kind: 'plain' },
     { appid: '2668430', name: 'The Legend of Heroes: Trails through Daybreak II · Deluxe Edition', source: 'steam', installed: true, last: now - DAY * 1, min: 1500, size: 2.1e9, kind: 'plain' },
     { appid: '1086940', name: "Baldur's Gate 3", source: 'steam', installed: false, last: 0, min: 0, size: 150e9, kind: 'upscaler' },
-    { appid: '620', name: 'Portal 2', source: 'steam', installed: false, last: now - DAY * 200, min: 600, size: 12e9, kind: 'plain' }
+    { appid: '620', name: 'Portal 2', source: 'steam', installed: false, last: now - DAY * 200, min: 600, size: 12e9, kind: 'plain' },
+    /* rc12: emulator games (Steam shortcuts made by STONE) and an emulator itself */
+    { appid: '3100000100', name: 'Metroid Prime (GameCube)', source: 'shortcut', installed: true, last: now - DAY * 90, min: 300, size: 1.4e9, kind: 'plain', rom: 'GameCube', added: now - DAY * 120 },
+    { appid: '3100000101', name: 'Dolphin', source: 'shortcut', installed: true, last: now - DAY * 3, min: 0, size: 0, kind: 'plain', emu: true }
   ];
   function simFinish(g) {
     const left = Math.max(0, 24000 - (Date.now() - g.dl.at));
@@ -190,9 +193,10 @@ const Bridge = (() => {
       const live = !(/late/.test(location.search)) || Date.now() - SIM.t0 > 6000;
       const list = GAMES.filter(g => (live || g.installed) && !g.hidden);
       return { root_found: true, owned_known: live, owned_cached: false, logged: live ? 'in' : null, account: true,
-        games: list.slice().sort((x, y) => y.installed - x.installed || y.last - x.last).map(g => ({
+        games: list.slice().sort((x, y) => y.installed - x.installed || Math.max(y.last, y.added || 0) - Math.max(x.last, x.added || 0)).map(g => ({
           appid: g.appid, name: g.name, source: g.source, installed: g.installed, updating: !!g.updating, playtime_min: g.min, last_played: g.last,
           size_bytes: g.size, art: g.source === 'shortcut' && /^3/.test(g.appid) ? { capsule: false, hero: false, header: false } : g.installed || SIM.art || !/noart/.test(location.search) ? { capsule: !g.wide, hero: !g.wide, header: !!g.wide, hero2x: !!(SIM.big && SIM.big[g.appid]) } : { capsule: false, hero: false, header: false },
+          kind: g.rom ? 'rom' : g.emu ? 'emulator' : undefined, system_name: g.rom || undefined, added: g.added || 0,
           launch: g.installed ? 'steam://rungameid/' + g.appid : null })) };
     },
     /* starting (Steam's steps): ?askcloud / ?askopt / ?launcherr make Steam ask about the cloud, a launch option, or fail */
@@ -248,10 +252,10 @@ const Bridge = (() => {
     },
     openSteam: async () => ({ ok: true }), openSteamSettings: async () => ({ ok: true }), restart: async () => ({ ok: true }),
     power: async ([a]) => { toast(`Simulación: «${a === 'off' ? 'Apagar' : 'Reiniciar'}» no hace nada aquí`, false); return { ok: true }; },
-    systemInfo: () => ({ session: 'stone', release: { STONE_VERSION: '3.1.0-rc11 (simulación)', STONE_BASE_IMAGE: 'bazzite-deck', STONE_KERNEL: 'simulado', STONE_MESA: 'simulado', STONE_GOVERNOR_VERSION: 'simulado' },
+    systemInfo: () => ({ session: 'stone', release: { STONE_VERSION: '3.1.0-rc12 (simulación)', STONE_BASE_IMAGE: 'bazzite-deck', STONE_KERNEL: 'simulado', STONE_MESA: 'simulado', STONE_GOVERNOR_VERSION: 'simulado' },
       boot_time: Math.round(now - 3600),
-      deployments: { booted: { image: 'simulación', version: '3.1.0-rc11', timestamp: now },
-        staged: SIM.updUntil && Date.now() > SIM.updUntil ? { image: 'simulación', version: '3.1.0-rc11', timestamp: now } : null,
+      deployments: { booted: { image: 'simulación', version: '3.1.0-rc12', timestamp: now },
+        staged: SIM.updUntil && Date.now() > SIM.updUntil ? { image: 'simulación', version: '3.1.0-rc12', timestamp: now } : null,
         rollback: { image: 'simulación', version: '3.0.0-rc1', timestamp: now - 86400 } },
       updates: { unit: 'uupd.timer', enabled: true, last: Math.round(now - 3600 * 15), next: Math.round(now + 3600 * 9) },
       updating: { unit: 'uupd-manual.service', running: !!SIM.updUntil && Date.now() < SIM.updUntil, result: 'success' } }),
@@ -292,7 +296,7 @@ const Bridge = (() => {
     'usb.copy': () => { const total = 5.2 * 2 ** 30, t0 = Date.now(); const names = ['Shadow of the Colossus.iso', 'God of War II.iso', 'Metroid Fusion.gba'];
       const tick = () => { const f = Math.min(1, (Date.now() - t0) / 9000);
         if (f < 1) { emit('usb', { state: 'copying', done: f * total, total, name: names[Math.min(2, Math.floor(f * 3))] }); setTimeout(tick, 500); }
-        else { SIM.usbDone = true; ['Shadow of the Colossus (PlayStation 2)', 'God of War II (PlayStation 2)', 'Metroid Fusion (Game Boy Advance)'].forEach((n, k) => GAMES.push({ appid: String(3100000000 + k), name: n, source: 'shortcut', installed: true, last: 0, min: 0, size: 0, kind: 'plain', wide: false }));
+        else { SIM.usbDone = true; ['Shadow of the Colossus (PlayStation 2)', 'God of War II (PlayStation 2)', 'Metroid Fusion (Game Boy Advance)'].forEach((n, k) => GAMES.push({ appid: String(3100000000 + k), name: n, source: 'shortcut', installed: true, last: 0, min: 0, size: 0, kind: 'plain', wide: false, rom: /\(([^()]+)\)$/.exec(n)[1], added: Date.now() / 1000 }));
           emit('usb', { state: 'done', copied: 3, skipped: 0, error: null }); emit('library', { reason: 'changed' }); } };
       setTimeout(tick, 300); return { ok: true }; },
     'usb.cancel': () => ({ ok: true }),
@@ -309,7 +313,7 @@ const Bridge = (() => {
         { id: 'controllers', name: 'Mandos', status: 'ok', detail: '1 mando conectado.' },
         { id: 'network', name: 'Wi-Fi e internet', status: 'ok', detail: 'Conectado y con internet.' },
         { id: 'emulators', name: 'Emuladores', status: 'nodata', detail: 'No hay emuladores instalados.' }].map(c => ({ ...c, symptom: tie(c.id) }));
-      return { name: 'stone-informe-20261114-1830.zip', size: 412000, summary: { version: '3.1.0-rc11 (simulación)', errors: 3,
+      return { name: 'stone-informe-20261114-1830.zip', size: 412000, summary: { version: '3.1.0-rc12 (simulación)', errors: 3,
         previous_boot_errors: 0, failed_services: [], steam_functions: { have: 27, missing: [] }, findings: [], last_errors: [], checks,
         symptoms: (symptoms || []).map(k => sym[k] || k), failing: 1 } };
     },
