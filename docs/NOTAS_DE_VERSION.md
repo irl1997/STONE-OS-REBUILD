@@ -71,6 +71,14 @@ El servidor de carátulas de libretro, del que STONE baja las portadas de los ju
 
 Las portadas de estos juegos son cajas verticales y, en las tarjetas anchas (la primera del Inicio y todas las de Panorama), se recortaba una franja del medio. Ahora la caja se ve entera, centrada sobre una copia oscurecida de sí misma. En la ficha del juego, la caja aparece nítida a la derecha. El fondo difuminado de estos juegos (y de todos los que lo usan) se hacía agrandando 30 veces una copia de 64 × 36 píxeles, y se veían manchas cuadradas. Ahora es una copia de 240 × 135 desenfocada una sola vez al crearla: es suave y no tiene bloques.
 
+## Repaso de la interfaz
+
+Recorrimos cada sección en el simulador (Inicio, Biblioteca, Explorar, Media, Tienda, la ficha de un juego y sus ventanas, y las 15 secciones de Ajustes) y buscamos de forma automática textos cortados o que se salen de la pantalla. No apareció ninguno. Lo que se corrigió:
+
+- **Propiedades** de un juego se abría con «Desinstalar» ya elegido: un A de más llevaba a la pregunta de desinstalar. Ahora tiene solo «Volver» (y «Olvidar opción de inicio» si hay una), porque «Desinstalar» ya está en la página del juego.
+- **Explorar** escribía dos veces qué hace cada tarjeta, en la tarjeta y debajo de la fila, y en la tarjeta elegida el texto se partía en dos líneas. Ahora la tarjeta lleva solo su nombre y la explicación va una vez, debajo.
+- **El fundido de la imagen del juego** con su copia suave dejaba una línea horizontal en algunos juegos (Cyberpunk 2077). Ahora el fundido es más largo y gradual.
+
 ## Desinstalar juegos
 
 - **Juegos de Steam:** «Desinstalar» está ahora en la propia página del juego. Antes solo estaba dentro de Propiedades y en Ajustes → Almacenamiento. Para dejarle sitio, «Experiencia» pasa a GRÁFICOS.

@@ -20,7 +20,9 @@ function homeHTML() {
   } else if (S.section === 2) {
     [['Tienda', 'Ofertas, novedades y lo más vendido en Steam', 'store'], ['Buscar juegos', 'Tu biblioteca y la tienda de Steam', 'search'],
       ['Sorpréndeme', 'STONE elige uno de tus juegos instalados', 'surprise'], ['Descargas', 'Descargas y actualizaciones de juegos', 'downloads'], ['Emuladores', 'Juegos de otras consolas', 'emu']]
-      .forEach(([t, s, k]) => { cards += `<div class="card wide" data-f data-act="${k}">${cover(k)}<b>${t}</b><span>${s}</span></div>`; });
+      /* the card says what it is; what it does is written once, under the row (3.1.0-rc12: it was written
+         twice, in the card and under it, and the chosen card's text wrapped) */
+      .forEach(([t, _s, k]) => { cards += `<div class="card wide" data-f data-act="${k}">${cover(k)}<b>${t}</b></div>`; });
   } else {
     if (!SHOTS) loadShots();
     if (SHOTS && SHOTS.length) SHOTS.slice(0, 12).forEach((sh, k) => { cards += `<div class="card cap shot" data-f data-act="shot" data-k="${k}" style="background-image:url(&quot;${Bridge.artUrl(sh.appid === '0' ? '0' : '0', sh.kind)}&quot;)"></div>`; });
@@ -66,7 +68,7 @@ function homeContext(el) {
   } else {
     const a = el.dataset.act;
     const label = { login: ['Steam', 'Con el código QR de Steam y tu móvil, sin escribir contraseñas'], store: ['Tienda', 'Ofertas, novedades y lo más vendido en Steam'],
-      surprise: ['Sorpréndeme', 'Para cuando no sabes a qué jugar'], search: ['Buscar', 'Tus juegos y la tienda de Steam (Y)'], library: ['Biblioteca', S.libReady ? `${G.length} juego${G.length === 1 ? '' : 's'}` : 'Leyendo…'], explore: ['Explorar', 'Tienda, descargas y emuladores'], settings: ['Ajustes', 'Pantalla, audio, rendimiento y más'], power: ['Apagar', 'Apagar o reiniciar'],
+      surprise: ['Sorpréndeme', 'STONE elige uno de tus juegos instalados'], search: ['Buscar', 'Tus juegos y la tienda de Steam (Y)'], library: ['Biblioteca', S.libReady ? `${G.length} juego${G.length === 1 ? '' : 's'}` : 'Leyendo…'], explore: ['Explorar', 'Tienda, descargas y emuladores'], settings: ['Ajustes', 'Pantalla, audio, rendimiento y más'], power: ['Apagar', 'Apagar o reiniciar'],
       downloads: ['Descargas', 'Lo que se descarga y el espacio libre'], emu: ['Emuladores', 'Juegos de otras consolas'], noshots: ['Capturas', 'Durante el juego: botón STEAM + R1'],
       shot: (() => { const sh = SHOTS && SHOTS[+el.dataset.k], g = sh && G.find(x => x.appid === sh.appid); return ['Captura', sh ? `${g ? g.n : 'Juego ' + sh.appid} · ${new Date(sh.time * 1000).toLocaleDateString('es-CL')}` : '']; })() }[a] || ['', ''];
     hk.textContent = S.section === 2 ? 'EXPLORAR' : S.section === 3 ? 'MEDIA' : 'SISTEMA';

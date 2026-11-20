@@ -426,14 +426,15 @@ function uninstallAsk(g, back) {
 function propsDlg(g) {
   const back = () => { closeDlg(); play('back'); enterDetail(curG, { r: 1, c: [...$('#detail').querySelectorAll('.second [data-f]')].length - 1 }); };
   const kv = (k, v) => `<span class="sres">${k}<small>${esc(v)}</small></span>`;
-  const canRemove = g.src === 'steam' && g.inst && S.running !== g.i;
+  /* no DESINSTALAR here (3.1.0-rc12): it is on the game's page, and here it was the first button, the
+     one chosen when the window opens (a press of A too many and the uninstall question came up) */
   const picked = S.picks && S.picks[g.appid] !== undefined;
   openDlg(`<h2>PROPIEDADES</h2><div class="slist">${kv('Origen', g.o)}${kv('Tamaño', g.sz || '—')}${kv('Tiempo jugado', playText(g))}${kv('Última sesión', g.last || '—')}${kv('Al iniciarse', g.perf ? profOf(g.perf).n : 'Perfil global')}${g.src === 'steam' ? kv('Steam App ID', g.appid) : ''}${g.sys ? kv('Consola', g.sys) : ''}${picked ? kv('Opción de inicio', 'Guardada (empieza sola)') : ''}</div>
-    <div class="btns">${picked ? '<span class="txt-f" data-f data-b="pick">OLVIDAR OPCIÓN DE INICIO</span>' : ''}${canRemove || g.kind === 'rom' ? '<span class="txt-f" data-f data-b="rm">DESINSTALAR</span>' : ''}<span class="txt-f" data-f data-b="no">VOLVER</span></div>`, {
+    <div class="btns">${picked ? '<span class="txt-f" data-f data-b="pick">OLVIDAR OPCIÓN DE INICIO</span>' : ''}<span class="txt-f" data-f data-b="no">VOLVER</span></div>`, {
     onA: el => {
       if (el.dataset.b === 'no') return back();
       if (el.dataset.b === 'pick') { const p = Object.assign({}, S.picks); delete p[g.appid]; S.picks = p; savePrefs(); play('select'); toast('Steam volverá a preguntar cómo iniciarlo', false); closeDlg(); return propsDlg(g); }
-      return uninstallAsk(g, () => { closeDlg(); play('back'); propsDlg(g); });
+      return back();
     }, onB: back });
 }
 

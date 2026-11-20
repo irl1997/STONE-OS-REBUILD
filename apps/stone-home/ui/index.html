@@ -928,8 +928,8 @@ body.dormant *,body.dormant *::before,body.dormant *::after{animation-play-state
    (1920 × 620), fading into the soft copy under it */
 .bg::before{content:"";position:absolute;left:0;right:0;top:0;aspect-ratio:1920/620;display:none;
   background:var(--top,none) center top/100% auto no-repeat;
-  -webkit-mask-image:linear-gradient(180deg,#000 0%,#000 58%,rgba(0,0,0,.55) 80%,transparent 100%);
-  mask-image:linear-gradient(180deg,#000 0%,#000 58%,rgba(0,0,0,.55) 80%,transparent 100%)}
+  -webkit-mask-image:linear-gradient(180deg,#000 0%,#000 44%,rgba(0,0,0,.62) 64%,rgba(0,0,0,.22) 84%,transparent 98%);
+  mask-image:linear-gradient(180deg,#000 0%,#000 44%,rgba(0,0,0,.62) 64%,rgba(0,0,0,.22) 84%,transparent 98%)}
 .bg.band::before{display:block}
 .bg.box::before{display:block;left:auto;right:calc(9% + 16px);top:calc(13% + 16px);height:58%;aspect-ratio:5/7;
   background:var(--top,none) center/contain no-repeat;-webkit-mask-image:none;mask-image:none;
@@ -1705,7 +1705,9 @@ function homeHTML() {
   } else if (S.section === 2) {
     [['Tienda', 'Ofertas, novedades y lo más vendido en Steam', 'store'], ['Buscar juegos', 'Tu biblioteca y la tienda de Steam', 'search'],
       ['Sorpréndeme', 'STONE elige uno de tus juegos instalados', 'surprise'], ['Descargas', 'Descargas y actualizaciones de juegos', 'downloads'], ['Emuladores', 'Juegos de otras consolas', 'emu']]
-      .forEach(([t, s, k]) => { cards += `<div class="card wide" data-f data-act="${k}">${cover(k)}<b>${t}</b><span>${s}</span></div>`; });
+      /* the card says what it is; what it does is written once, under the row (3.1.0-rc12: it was written
+         twice, in the card and under it, and the chosen card's text wrapped) */
+      .forEach(([t, _s, k]) => { cards += `<div class="card wide" data-f data-act="${k}">${cover(k)}<b>${t}</b></div>`; });
   } else {
     if (!SHOTS) loadShots();
     if (SHOTS && SHOTS.length) SHOTS.slice(0, 12).forEach((sh, k) => { cards += `<div class="card cap shot" data-f data-act="shot" data-k="${k}" style="background-image:url(&quot;${Bridge.artUrl(sh.appid === '0' ? '0' : '0', sh.kind)}&quot;)"></div>`; });
@@ -1751,7 +1753,7 @@ function homeContext(el) {
   } else {
     const a = el.dataset.act;
     const label = { login: ['Steam', 'Con el código QR de Steam y tu móvil, sin escribir contraseñas'], store: ['Tienda', 'Ofertas, novedades y lo más vendido en Steam'],
-      surprise: ['Sorpréndeme', 'Para cuando no sabes a qué jugar'], search: ['Buscar', 'Tus juegos y la tienda de Steam (Y)'], library: ['Biblioteca', S.libReady ? `${G.length} juego${G.length === 1 ? '' : 's'}` : 'Leyendo…'], explore: ['Explorar', 'Tienda, descargas y emuladores'], settings: ['Ajustes', 'Pantalla, audio, rendimiento y más'], power: ['Apagar', 'Apagar o reiniciar'],
+      surprise: ['Sorpréndeme', 'STONE elige uno de tus juegos instalados'], search: ['Buscar', 'Tus juegos y la tienda de Steam (Y)'], library: ['Biblioteca', S.libReady ? `${G.length} juego${G.length === 1 ? '' : 's'}` : 'Leyendo…'], explore: ['Explorar', 'Tienda, descargas y emuladores'], settings: ['Ajustes', 'Pantalla, audio, rendimiento y más'], power: ['Apagar', 'Apagar o reiniciar'],
       downloads: ['Descargas', 'Lo que se descarga y el espacio libre'], emu: ['Emuladores', 'Juegos de otras consolas'], noshots: ['Capturas', 'Durante el juego: botón STEAM + R1'],
       shot: (() => { const sh = SHOTS && SHOTS[+el.dataset.k], g = sh && G.find(x => x.appid === sh.appid); return ['Captura', sh ? `${g ? g.n : 'Juego ' + sh.appid} · ${new Date(sh.time * 1000).toLocaleDateString('es-CL')}` : '']; })() }[a] || ['', ''];
     hk.textContent = S.section === 2 ? 'EXPLORAR' : S.section === 3 ? 'MEDIA' : 'SISTEMA';
@@ -3754,14 +3756,15 @@ function uninstallAsk(g, back) {
 function propsDlg(g) {
   const back = () => { closeDlg(); play('back'); enterDetail(curG, { r: 1, c: [...$('#detail').querySelectorAll('.second [data-f]')].length - 1 }); };
   const kv = (k, v) => `<span class="sres">${k}<small>${esc(v)}</small></span>`;
-  const canRemove = g.src === 'steam' && g.inst && S.running !== g.i;
+  /* no DESINSTALAR here (3.1.0-rc12): it is on the game's page, and here it was the first button, the
+     one chosen when the window opens (a press of A too many and the uninstall question came up) */
   const picked = S.picks && S.picks[g.appid] !== undefined;
   openDlg(`<h2>PROPIEDADES</h2><div class="slist">${kv('Origen', g.o)}${kv('Tamaño', g.sz || '—')}${kv('Tiempo jugado', playText(g))}${kv('Última sesión', g.last || '—')}${kv('Al iniciarse', g.perf ? profOf(g.perf).n : 'Perfil global')}${g.src === 'steam' ? kv('Steam App ID', g.appid) : ''}${g.sys ? kv('Consola', g.sys) : ''}${picked ? kv('Opción de inicio', 'Guardada (empieza sola)') : ''}</div>
-    <div class="btns">${picked ? '<span class="txt-f" data-f data-b="pick">OLVIDAR OPCIÓN DE INICIO</span>' : ''}${canRemove || g.kind === 'rom' ? '<span class="txt-f" data-f data-b="rm">DESINSTALAR</span>' : ''}<span class="txt-f" data-f data-b="no">VOLVER</span></div>`, {
+    <div class="btns">${picked ? '<span class="txt-f" data-f data-b="pick">OLVIDAR OPCIÓN DE INICIO</span>' : ''}<span class="txt-f" data-f data-b="no">VOLVER</span></div>`, {
     onA: el => {
       if (el.dataset.b === 'no') return back();
       if (el.dataset.b === 'pick') { const p = Object.assign({}, S.picks); delete p[g.appid]; S.picks = p; savePrefs(); play('select'); toast('Steam volverá a preguntar cómo iniciarlo', false); closeDlg(); return propsDlg(g); }
-      return uninstallAsk(g, () => { closeDlg(); play('back'); propsDlg(g); });
+      return back();
     }, onB: back });
 }
 

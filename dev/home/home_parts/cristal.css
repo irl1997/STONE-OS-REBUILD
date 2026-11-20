@@ -474,8 +474,8 @@
    (1920 × 620), fading into the soft copy under it */
 .bg::before{content:"";position:absolute;left:0;right:0;top:0;aspect-ratio:1920/620;display:none;
   background:var(--top,none) center top/100% auto no-repeat;
-  -webkit-mask-image:linear-gradient(180deg,#000 0%,#000 58%,rgba(0,0,0,.55) 80%,transparent 100%);
-  mask-image:linear-gradient(180deg,#000 0%,#000 58%,rgba(0,0,0,.55) 80%,transparent 100%)}
+  -webkit-mask-image:linear-gradient(180deg,#000 0%,#000 44%,rgba(0,0,0,.62) 64%,rgba(0,0,0,.22) 84%,transparent 98%);
+  mask-image:linear-gradient(180deg,#000 0%,#000 44%,rgba(0,0,0,.62) 64%,rgba(0,0,0,.22) 84%,transparent 98%)}
 .bg.band::before{display:block}
 .bg.box::before{display:block;left:auto;right:calc(9% + 16px);top:calc(13% + 16px);height:58%;aspect-ratio:5/7;
   background:var(--top,none) center/contain no-repeat;-webkit-mask-image:none;mask-image:none;
