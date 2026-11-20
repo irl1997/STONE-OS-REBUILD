@@ -97,6 +97,9 @@ python3 -c "import gi; gi.require_version('Gio', '2.0'); from gi.repository impo
     || { echo "ERROR: python3-gobject missing; stoned cannot run"; exit 1; }
 ## Stability test workload (vkmark). Without it stoned reports the test as unsupported.
 dnf5 -y install --skip-unavailable vkmark
+# drm_info: read-only, for the diagnostic report (the connection's colour depth and colour space;
+# 3.1.0-rc12: grain on the whole picture, STONE Home included, with the TV identified without HDMI)
+dnf5 -y install --skip-unavailable drm_info
 command -v vkmark >/dev/null 2>&1 || echo "WARNING: vkmark not available; no stability test on this image"
 python3 -m compileall -q /usr/lib/stone/stoned
 systemctl enable stoned-recover.service stoned.service

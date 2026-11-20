@@ -913,7 +913,9 @@ body.dormant *,body.dormant *::before,body.dormant *::after{animation-play-state
 /* ACTIVIDAD (3.1.0-rc10, activity.js): a turning ring and what STONE is doing, on every screen */
 #actv{display:inline-flex;align-items:center;gap:10px;max-width:520px;font-variant-numeric:tabular-nums}
 #actv[hidden]{display:none}
-#actv .lbl{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:18px;letter-spacing:.02em}
+#actv .lbl{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:18px;letter-spacing:.02em}
+#actv .spin{flex:none}
+#actv .pct{flex:none;white-space:pre;font-size:18px;letter-spacing:.02em;margin-left:-10px}
 .spin{display:inline-block;flex:none;width:18px;height:18px;box-sizing:border-box;border-radius:50%;border:2.5px solid currentColor;
   border-right-color:transparent;opacity:.9;animation:stone-spin .9s linear infinite;vertical-align:-3px}
 .srow .v .spin{margin-right:12px}
@@ -1631,6 +1633,7 @@ function chrome(on, tabsOn) {
   $('#hdr').classList.toggle('hide', !on);
   $('#tabs').classList.toggle('hide', !tabsOn);
   [...$('#tabs').children].forEach((s, k) => s.classList.toggle('cur', k === S.section));
+  if (typeof actFit === 'function') actFit();       /* the sections came or went: the notice gets its room */
 }
 function clock() { const d = new Date(); $('#clock').textContent = d.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' }); }
 /* one wake-up per minute, aligned to the minute change */
@@ -3226,13 +3229,28 @@ function actPaint() {
   if (!chip) {
     if (!it.length) return;
     chip = document.createElement('span'); chip.id = 'actv';
-    chip.innerHTML = '<i class="spin" aria-hidden="true"></i><span class="lbl"></span>';
+    chip.innerHTML = '<i class="spin" aria-hidden="true"></i><span class="lbl"></span><span class="pct"></span>';
     st.insertBefore(chip, $('#clock'));
   }
   chip.hidden = !it.length;
   if (!it.length) return;
-  const a = it[0], txt = `${a.t}${a.p != null ? ` · ${a.p} %` : ''}${it.length > 1 ? ` · +${it.length - 1}` : ''}`;
-  if (chip.lastChild.textContent !== txt) chip.lastChild.textContent = txt;
+  /* what is cut when room is short is the name, never how far it got */
+  const a = it[0], pct = `${a.p != null ? ` · ${a.p} %` : ''}${it.length > 1 ? ` · +${it.length - 1}` : ''}`;
+  const lbl = chip.querySelector('.lbl'), pc = chip.querySelector('.pct');
+  if (lbl.textContent !== a.t) lbl.textContent = a.t;
+  if (pc.textContent !== pct) pc.textContent = pct;
+  actFit();
+}
+/* The notice lives in the status pill, which grows to the left: a long one ("Descargando EA SPORTS FC™
+   26 · 12 %") ran under the sections (board, 20-11-2026). It is cut (…) so the pill always ends at
+   least 24 px right of the sections; with no room at all only the spinning ring stays. */
+function actFit() {
+  const chip = $('#actv'), tabs = $('#tabs'), st = $('#status');
+  if (!chip || chip.hidden || !tabs || !st) return;
+  chip.style.maxWidth = '';
+  if (tabs.classList.contains('hide') || !tabs.getBoundingClientRect().width) return;
+  const over = (tabs.getBoundingClientRect().right - st.getBoundingClientRect().left) / SCALE + 24;
+  if (over > 0) chip.style.maxWidth = `${Math.max(30, chip.getBoundingClientRect().width / SCALE - over)}px`;
 }
 /* STONE OS's update: looked at every 30 s (every 3 s while uupd works). Bazzite's own timer can start it
    too, so it is followed whoever started it; the end says whether a new version is ready. */
@@ -4331,9 +4349,13 @@ function audioRows() {
   const A = CX.audio;
   if (!A) { cxLoad('audio', () => Bridge.call('audio.status'), 'Audio'); return [{ l: 'Leyendo…', s: 'Salidas de sonido', v: '' }]; }
   if (A.error) return [{ l: 'Audio no disponible', s: A.error, v: '' }];
-  return [
+  /* 3.1.0-rc12 (board, 20-11-2026): the only output was PipeWire's "Dummy Output", a sink that goes
+     nowhere, shown as if it were the TV. It is said for what it is, with what to do. */
+  const real = A.outputs.filter(o => !/^Dummy Output$/i.test(o.name));
+  const none = !real.length ? [{ l: 'Sin salida de sonido', s: 'La TV no avisó a la consola que acepta sonido. Con la TV encendida y en la entrada de la consola, reinicia la consola; si sigue, vuelve a conectar el adaptador o el cable', v: 'Sin sonido', act: 'info', where: 'Reinicia con la TV encendida en la entrada de la consola' }] : [];
+  return [...none,
     { l: 'Volumen', s: A.muted ? 'Silenciado' : 'Salida actual', v: A.volume == null ? '—' : `${Math.round(A.volume * 100)} %`, key: 'sysvol' },
-    ...A.outputs.map(o => ({ l: o.name, s: o.default ? 'Salida en uso' : 'Otra salida disponible', v: o.default ? 'En uso' : 'Usar', act: o.default ? 'info' : 'audio-out', id: o.id, where: 'Ya es la salida en uso' }))];
+    ...real.map(o => ({ l: o.name, s: o.default ? 'Salida en uso' : 'Otra salida disponible', v: o.default ? 'En uso' : 'Usar', act: o.default ? 'info' : 'audio-out', id: o.id, where: 'Ya es la salida en uso' }))];
 }
 function setSysVol(d, ri) {
   const A = CX.audio; if (!A || A.error || A.volume == null) return bump(d);
@@ -4510,6 +4532,13 @@ function romAct(r, ri) {
   return Bridge.call('roms.add').then(x => toast(x.new === 0 ? 'Ya estaban todos en la biblioteca' : x.queued ? `${x.added} añadidos ahora; ${x.queued} aparecerán al reiniciar la consola` : `${x.added} juegos añadidos a la biblioteca`, false),
     e => toast((e && e.message) || 'No se pudo', false)).then(() => { cxReset('roms', 'Emuladores', ri); loadLibrary(); });
 }
+/* At start, once: a console with no real sound output says so, instead of being silent (3.1.0-rc12; board,
+   20-11-2026: only "Dummy Output", and nothing on screen said why the TV was mute). */
+setTimeout(() => Bridge.call('audio.status').then(A => {
+  if (!A || A.error || !Array.isArray(A.outputs) || A.outputs.some(o => !/^Dummy Output$/i.test(o.name))) return;
+  if (S.screen === 'game' || S.screen === 'off') return;
+  play('error'); toast('Sin sonido: la TV no avisó que acepta sonido. Ajustes → Audio', false);
+}).catch(() => {}), 12000);
 function enterSettings(opts = {}) {
   const was = $('#settings').classList.contains('on');     /* on screen already (a dialog may be over it) */
   S.screen = 'settings';

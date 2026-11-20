@@ -65,7 +65,10 @@ def test_rc11_looks_are_noticeable_and_do_not_sharpen_grain():
         assert all(e in ("dls", "deband", "smaa", "lut", "fxaa") for e in effects), (look, effects)
         if "dls" in effects:
             assert "dlsDenoise = " in text
-    assert L.conf("clean").split("effects = ")[1].splitlines()[0] == "deband:dls" and "dlsDenoise = 1.0" in L.conf("clean")
+    assert L.conf("clean").split("effects = ")[1].splitlines()[0] == "dls:deband" and "dlsDenoise = 1.0" in L.conf("clean")
+    for look in L.LOOKS:                    # rc12: deband last, so nothing sharpens or grades its dither into grain
+        effects = L.conf(look, "/x/l.cube").split("effects = ")[1].splitlines()[0].split(":")
+        assert "deband" not in effects or effects[-1] == "deband", (look, effects)
     assert "smaa" in L.conf("nextgen", "/x/n.cube") and "lut" not in L.conf("natural")
     assert [k for k in L.LOOKS] == ["natural", "clarity", "cinema", "vivid", "retro", "nextgen", "realistic", "clean"]
     assert all(L.DESCRIPTIONS[k] and L.LABELS[k] for k in L.LOOKS)
@@ -79,7 +82,7 @@ def test_choice_per_game_and_launch_variables():
         env = L.env_for_game("1001", facts, game)
         assert env["ENABLE_VKBASALT"] == "1" and env["STONE_LOOK"] == "cinema"
         text = open(env["VKBASALT_CONFIG_FILE"]).read()
-        assert "effects = deband:dls:lut" in text and os.path.exists(text.split("lutFile = ")[1].strip())
+        assert "effects = dls:lut:deband" in text and os.path.exists(text.split("lutFile = ")[1].strip())
         assert L.env_for_game("1001", facts, game, measuring=True) == {}          # numbers stay clean
         assert L.env_for_game("1001", {"anti_cheat": ["EasyAntiCheat"]}, game) == {}
         assert L.env_for_game("1001", facts, {"online_only": True}) == {}

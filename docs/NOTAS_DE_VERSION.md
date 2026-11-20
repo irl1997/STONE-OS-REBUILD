@@ -1,3 +1,26 @@
+# STONE OS (rebuild) 3.1.0-rc13
+
+Sonido, grano en la imagen y el aviso de descargas, desde la prueba de la rc12 en la consola (20-11-2026).
+
+## Sin sonido: el informe ahora dice por qué
+
+En la consola, la única salida de sonido era «Dummy Output», una salida vacía que el sistema crea cuando no encuentra ninguna real. El informe decía «Sonido: FUNCIONA» porque esa salida estaba al 100 %. Ahora:
+
+- **El informe marca FALLA** cuando no hay ninguna salida real y explica la causa. Sus datos muestran que la TV no le dijo a la consola que acepta sonido: no llegó la información de audio por HDMI/DisplayPort. En la misma prueba, la TV se identificó sin su parte HDMI y sin HDR. En la rc10 la misma consola, con el mismo núcleo, tenía «Digital Stereo (HDMI) [Beyond TV]» y HDR. Por eso apunta a cómo arrancó la conexión con la TV (TV apagada o en otra entrada al arrancar, o el adaptador DisplayPort→HDMI), no a STONE.
+- **Ajustes → Audio** muestra «Sin salida de sonido» con qué hacer, y al arrancar aparece un aviso si no hay sonido.
+- **El informe guarda** lo que la TV dijo de su sonido (ELD) y su identificación (EDID, con el número de serie tapado), y la profundidad de color de la conexión (drm_info, que entra en la imagen). Así el próximo informe confirma la causa.
+
+Qué hacer: con la TV encendida y en la entrada de la consola, reinicia la consola. Si sigue sin sonido, desconecta y vuelve a conectar el adaptador o el cable, y en la TV revisa que esa entrada HDMI tenga activada la señal mejorada (HDMI UHD Color, Enhanced o similar).
+
+## Grano en la imagen
+
+- **En los juegos, con los aspectos NEXT-GEN, REALISTA, NATURAL y CINEMA.** El filtro que suaviza las bandas de vkBasalt termina con un tramado muy fino a propósito. STONE lo aplicaba primero, y la nitidez y la curva de color lo agrandaban hasta verse como grano (Batman: Arkham Asylum con NEXT-GEN). Ahora ese filtro va al final, sobre la imagen terminada, y NEXT-GEN da un poco menos de nitidez y frena más el ruido.
+- **En toda la imagen, también en el Inicio de STONE.** Las fotos muestran grano donde los aspectos no actúan. Coincide con la TV identificada sin su parte HDMI (lo mismo que dejó la consola sin sonido), y una conexión con menos bits de color se ve con grano. El informe ahora guarda la profundidad de color de la conexión para confirmarlo. Con el sonido de vuelta (TV encendida al arrancar), revisa si el grano del Inicio también desaparece.
+
+## El aviso de descargas ya no tapa las secciones
+
+«Descargando EA SPORTS FC™ 26 · 1…» agrandaba la cápsula de la hora hacia la izquierda hasta quedar debajo de MEDIA y TIENDA. Ahora el aviso se acorta («…») para dejar siempre espacio a las secciones, y el porcentaje no se corta nunca.
+
 # STONE OS (rebuild) 3.1.0-rc12
 
 Juegos de emuladores en el Inicio, carga desde USB a prueba de fallos, un sistema de emuladores más robusto y arranques más rápidos. Decisión D-47.

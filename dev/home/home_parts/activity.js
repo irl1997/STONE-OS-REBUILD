@@ -42,13 +42,28 @@ function actPaint() {
   if (!chip) {
     if (!it.length) return;
     chip = document.createElement('span'); chip.id = 'actv';
-    chip.innerHTML = '<i class="spin" aria-hidden="true"></i><span class="lbl"></span>';
+    chip.innerHTML = '<i class="spin" aria-hidden="true"></i><span class="lbl"></span><span class="pct"></span>';
     st.insertBefore(chip, $('#clock'));
   }
   chip.hidden = !it.length;
   if (!it.length) return;
-  const a = it[0], txt = `${a.t}${a.p != null ? ` · ${a.p} %` : ''}${it.length > 1 ? ` · +${it.length - 1}` : ''}`;
-  if (chip.lastChild.textContent !== txt) chip.lastChild.textContent = txt;
+  /* what is cut when room is short is the name, never how far it got */
+  const a = it[0], pct = `${a.p != null ? ` · ${a.p} %` : ''}${it.length > 1 ? ` · +${it.length - 1}` : ''}`;
+  const lbl = chip.querySelector('.lbl'), pc = chip.querySelector('.pct');
+  if (lbl.textContent !== a.t) lbl.textContent = a.t;
+  if (pc.textContent !== pct) pc.textContent = pct;
+  actFit();
+}
+/* The notice lives in the status pill, which grows to the left: a long one ("Descargando EA SPORTS FC™
+   26 · 12 %") ran under the sections (board, 20-11-2026). It is cut (…) so the pill always ends at
+   least 24 px right of the sections; with no room at all only the spinning ring stays. */
+function actFit() {
+  const chip = $('#actv'), tabs = $('#tabs'), st = $('#status');
+  if (!chip || chip.hidden || !tabs || !st) return;
+  chip.style.maxWidth = '';
+  if (tabs.classList.contains('hide') || !tabs.getBoundingClientRect().width) return;
+  const over = (tabs.getBoundingClientRect().right - st.getBoundingClientRect().left) / SCALE + 24;
+  if (over > 0) chip.style.maxWidth = `${Math.max(30, chip.getBoundingClientRect().width / SCALE - over)}px`;
 }
 /* STONE OS's update: looked at every 30 s (every 3 s while uupd works). Bazzite's own timer can start it
    too, so it is followed whoever started it; the end says whether a new version is ready. */

@@ -126,5 +126,36 @@ def test_the_phone_downloads_only_the_report_offered():
     assert d.offered is None
 
 
+def test_the_report_keeps_what_the_display_said_about_sound_without_its_serial():
+    """3.1.0-rc12 (board, 20-11-2026): no sound and HDR gone; the EDID and the ELD say why."""
+    t = tempfile.mkdtemp(prefix="stone-edid-")
+    try:
+        drm = os.path.join(t, "sys", "class", "drm", "card0-DP-1")
+        os.makedirs(drm)
+        edid = bytearray(256)
+        edid[0:8] = bytes([0, 255, 255, 255, 255, 255, 255, 0])
+        edid[12:16] = b"\x12\x34\x56\x78"                        # serial in the header
+        edid[54:59] = bytes([0, 0, 0, 0xFF, 0]); edid[59:72] = b"SERIAL123456\n"
+        edid[126] = 1
+        with open(os.path.join(drm, "edid"), "wb") as f:
+            f.write(bytes(edid))
+        with open(os.path.join(drm, "status"), "w") as f:
+            f.write("connected\n")
+        os.makedirs(os.path.join(t, "sys", "class", "drm", "card0-DP-2"))
+        with open(os.path.join(t, "sys", "class", "drm", "card0-DP-2", "status"), "w") as f:
+            f.write("disconnected\n")
+        snd = os.path.join(t, "proc", "asound", "card0")
+        os.makedirs(snd)
+        with open(os.path.join(snd, "eld#0.0"), "w") as f:
+            f.write("monitor_present\t\t0\neld_valid\t\t0\n")
+        text = D._edids_text(t)
+        assert "card0-DP-1: 256 bytes, 2 bloque(s), 1 extensión(es)" in text and "DP-2" not in text
+        assert "12345678" not in text and b"SERIAL123456".hex() not in text and "00ffffffffffff00" in text
+        assert "eld#0.0" in D._elds_text(t) and "monitor_present" in D._elds_text(t)
+        assert "ninguna pantalla" in D._edids_text(os.path.join(t, "nada"))
+    finally:
+        shutil.rmtree(t, ignore_errors=True)
+
+
 if __name__ == "__main__":
     sys.exit(run_module(globals()))

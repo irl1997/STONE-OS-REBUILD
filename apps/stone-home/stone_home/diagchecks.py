@@ -276,12 +276,59 @@ def check_steam(live, logs, ev):
 
 
 # ---- sound, controllers, network, disk, emulators -----------------------------------------------
-def check_sound(run):
+def _elds(root):
+    """[(card file, monitor_present, eld_valid, monitor_name)] from /proc/asound/card*/eld#*: what the
+    display told the graphics card about its sound (HDMI/DisplayPort audio)."""
+    out = []
+    base = os.path.join(root, "proc", "asound")
+    try:
+        cards = sorted(n for n in os.listdir(base) if n.startswith("card"))
+    except OSError:
+        return out
+    for c in cards:
+        try:
+            names = sorted(n for n in os.listdir(os.path.join(base, c)) if n.startswith("eld#"))
+        except OSError:
+            continue
+        for n in names:
+            try:
+                with open(os.path.join(base, c, n), encoding="utf-8", errors="replace") as f:
+                    text = f.read(4096)
+            except OSError:
+                continue
+            kv = dict(re.findall(r"^(\w+)\s+(.*)$", text, re.M))
+            out.append((f"{c}/{n}", kv.get("monitor_present", "?").strip(), kv.get("eld_valid", "?").strip(), kv.get("monitor_name", "").strip()))
+    return out
+
+
+def check_sound(run, root="/", live=None):
+    """3.1.0-rc12 (board, 20-11-2026: no sound, and the report said FUNCIONA): the default output was
+    PipeWire's "Dummy Output", a sink that goes nowhere, at 100 %. With no real output the check fails and
+    says why: the display did not tell the console it takes sound (ELD), which comes with an identification
+    of the TV without its HDMI part (the same report had lost HDR too)."""
     name = "Sonido"
     vol = run(["wpctl", "get-volume", "@DEFAULT_AUDIO_SINK@"], 5)
     st = run(["wpctl", "status"], 5)
     sinks = re.search(r"Sinks:\n(.*?)\n\s*│?\s*\n", st, re.S)
-    evidence = [vol.strip()[:120]] + ([ln.strip(" │├└─") for ln in sinks.group(1).splitlines()][:6] if sinks else [])
+    lines = [ln.strip(" │├└─") for ln in sinks.group(1).splitlines()] if sinks else []
+    evidence = [vol.strip()[:120]] + lines[:6]
+    real = [ln for ln in lines if ln and "Dummy Output" not in ln]
+    elds = _elds(root)
+    evidence += [f"{c}: pantalla presente {p}, datos de sonido válidos {v}{(' · ' + n) if n else ''}" for c, p, v, n in elds[:4]]
+    disp = ((live or {}).get("display") or {}).get("summary")
+    if disp:
+        evidence.append(f"Pantalla: {disp}")
+    if sinks is not None and not real and "Audio" in st:
+        told = any(p == "1" and v == "1" for _c, p, v, _n in elds)
+        why = ("La pantalla sí dice que acepta sonido, pero no hay salida para ella: reinicia la consola."
+               if told else
+               "La TV no le dijo a la consola que acepta sonido (por HDMI/DisplayPort no llegó la información de audio). "
+               "Suele pasar cuando la consola arranca con la TV apagada o en otra entrada, o con el adaptador "
+               "DisplayPort→HDMI mal conectado.")
+        return _check("sound", name, FAIL, "No hay ninguna salida de sonido real: solo la salida vacía («Dummy Output»). " + why, evidence,
+                      "Con la TV encendida y en la entrada de la consola, reinicia la consola. Si sigue sin sonido, desconecta "
+                      "y vuelve a conectar el adaptador o el cable, y en la TV revisa que esa entrada HDMI tenga activada la "
+                      "señal mejorada (HDMI UHD Color, Enhanced o similar).")
     m = re.search(r"Volume:\s*([\d.]+)(.*MUTED)?", vol)
     if not m:
         return _check("sound", name, FAIL if "wpctl" not in vol.lower() else NODATA, "No hay salida de sonido por defecto (PipeWire no da ninguna).", evidence)
@@ -404,7 +451,7 @@ def run_checks(live, journal, logs, home, run, symptoms=(), events=None, root="/
     prefs = _json(os.path.join(home, ".config", "stone", "home.json"))
     checks = []
     for fn in (lambda: check_filters(ev, logs, home, prefs, names, root), lambda: check_display(journal, live),
-               lambda: check_games(ev, logs, names), lambda: check_steam(live, logs, ev), lambda: check_sound(run),
+               lambda: check_games(ev, logs, names), lambda: check_steam(live, logs, ev), lambda: check_sound(run, root, live),
                lambda: check_controllers(root), lambda: check_network(live), lambda: check_disk(live),
                lambda: check_emulators(logs, live), lambda: check_boot(home, run, blame), lambda: check_launch_times(ev, names)):
         try:
@@ -431,6 +478,6 @@ def text(checks, symptoms=()):
         out.append(f"    {c['detail']}")
         out += [f"    · {e}" for e in c["evidence"]]
         if c.get("how"):
-            out.append(f"    Para tener datos: {c['how']}")
+            out.append(f"    {'Qué hacer' if c['status'] in (FAIL, WARN) else 'Para tener datos'}: {c['how']}")
         out.append("")
     return "\n".join(out)
