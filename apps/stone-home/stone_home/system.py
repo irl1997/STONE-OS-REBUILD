@@ -85,7 +85,8 @@ PREFS = {
     "wanted": (_favs, []),
     "report": (_bool, True),              # PARTE DE SESIÓN: the summary shown when a game ends
     "glass": (_intr(0, 1), 1),            # CRISTAL: glass with blur (1) or without (0, «Ligeros»)
-    "launch_pick": (_picks, {}),          # rc12: «Opción de inicio» remembered per game (Steam's «Siempre»)
+    "launch_pick": (_picks, {}),
+    "home_style": (_intr(0, 1), 0),       # rc12: Inicio 0 Cristal, 1 Panorama (Ajustes → Pantalla)          # rc12: «Opción de inicio» remembered per game (Steam's «Siempre»)
 }
 
 

@@ -109,7 +109,7 @@ function savePrefs() {
   clearTimeout(saveT);
   saveT = setTimeout(() => Sys.prefsSet({ sound: S.sound, vol: S.vol, hc: S.hc, rm: S.rm, ts: S.ts, safe: S.safe, idle: S.idle,
     tech: S.tech, adv_ack: S.advAck, engine: S.render, favorites: [...favs], frame: FRAME, wanted: [...WANT], report: S.report, glass: S.glass,
-    launch_pick: S.picks || {} }).catch(() => {}), 400);
+    launch_pick: S.picks || {}, home_style: S.homeStyle }).catch(() => {}), 400);
 }
 function loadPrefs(p) {
   if (!p) return;
@@ -118,6 +118,7 @@ function loadPrefs(p) {
   FRAME = p.frame > 0 && p.frame <= 6 ? p.frame : 0; fit();
   WANT.clear(); (p.wanted || []).forEach(a => WANT.add(a)); S.report = p.report !== false; S.glass = p.glass === 0 ? 0 : 1;
   S.picks = p.launch_pick && typeof p.launch_pick === 'object' ? Object.assign({}, p.launch_pick) : {};
+  S.homeStyle = p.home_style === 1 ? 1 : 0;
   applyPrefs();
 }
 

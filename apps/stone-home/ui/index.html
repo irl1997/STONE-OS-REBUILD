@@ -956,6 +956,24 @@ body.dormant *,body.dormant *::before,body.dormant *::after{animation-play-state
 #stage #dlg .sres.look{flex-direction:column;align-items:flex-start;justify-content:flex-start;gap:4px;padding:12px 18px;margin:0 -18px;border-radius:14px}
 #stage #dlg .sres.look .lbl{letter-spacing:.14em;font-size:20px}
 #stage #dlg .sres.look small{white-space:normal;text-align:left;font-size:17px;line-height:24px}
+/* PANORAMA (3.1.0-rc12, Ajustes → Pantalla → Estilo de inicio): Inicio as a big screen. The focused game's
+   art fills the screen, its name sits large over it on the left, and every game is one landscape card in
+   a single row along the lower third; the line of stats goes, the system row stays at the bottom. */
+#stage.pano #home::before{content:"";position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(90deg,rgba(5,6,10,.62) 0%,rgba(5,6,10,.28) 38%,rgba(5,6,10,0) 62%),
+             linear-gradient(0deg,rgba(5,6,10,.82) 0%,rgba(5,6,10,.45) 30%,rgba(5,6,10,0) 55%)}
+#stage.pano #home .clip{height:892px}
+#stage.pano #home .track{height:892px;padding-bottom:34px;gap:28px}
+#stage.pano .card.land{width:420px;height:236px;background-size:cover;background-position:center}
+#stage.pano #home .card.tile{width:236px;height:236px}
+#stage.pano #home .card.wide{width:420px;height:236px}
+#stage.pano #home .st-label.l1{top:574px}
+#stage.pano #home .ctx{top:286px;gap:14px;max-width:1080px}
+#stage.pano #home .ctx-title{font-size:calc(66px * min(var(--ts), 1.25));line-height:1.08;letter-spacing:.06em;white-space:normal;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;max-width:1080px}
+#stage.pano #home .ctx .meta{font-size:calc(23px * min(var(--ts), 1.3));max-width:1000px}
+#stage.pano #home .strata,#stage.pano #home .st-label.l2,#stage.pano #home .horizon{display:none}
+#stage.pano #home .sys{top:996px}
 </style>
 
 <!-- LIQUID GLASS (cristal.css): the lens of the section bar and the status. Chromium bends what is behind them
@@ -1029,7 +1047,10 @@ const S = {
   /* 3.0: who is signed in to Steam ("in", "out", null: not known yet), Steam's own window in front, the session report */
   libLogged: null, libCached: false, libNone: false, steamFront: null, report: true,
   /* CRISTAL: glass with blur (1) or without (0, «Ligeros»; always without GPU) */
-  glass: 1
+  glass: 1,
+  /* rc12: Inicio's style: 0 Cristal (a big first card and portrait covers), 1 Panorama (the game's art over the whole
+     screen, its name large, landscape covers in one row) */
+  homeStyle: 0
 };
 /* Performance profiles: all values stay inside the range documented as stable on every BC-250 (≤ 2000 MHz at 1000 mV, ≤ 85 °C).
    stoned holds the same table (profiles.py) and is the one that applies it; these are for display. */
@@ -1601,7 +1622,10 @@ function homeHTML() {
   if (S.section === 0) {
     /* Nobody signed in to Steam on this console: the first thing Home offers */
     if (S.libLogged === 'out') cards += `<div class="card wide vein" data-f data-act="login">${cover('login')}<b>Inicia sesión en Steam</b><span>Tus juegos vienen de tu cuenta de Steam</span></div>`;
-    if (G.length && recent.length) {
+    if (G.length && recent.length && S.homeStyle === 1) {
+      /* PANORAMA (rc12): every game the same landscape card (its wide art), the first one too */
+      recent.forEach(i => { const g = G[i], u = landUrl(g); cards += `<div class="card land${g.inst || g.src === 'shortcut' ? '' : ' dim'}" data-f data-g="${i}" style="background-image:${u ? `url(&quot;${u}&quot;)` : 'none'}">${u ? '' : nameTag(g)}${runTag(i)}</div>`; });
+    } else if (G.length && recent.length) {
       const g0 = G[recent[0]], hu = heroUrl(g0);
       cards += `<div class="card hero${g0.inst || g0.src === 'shortcut' ? '' : ' dim'}" data-f data-g="${g0.i}" style="background-image:${hu ? `url(&quot;${hu}&quot;)` : 'none'};background-color:var(--shale)">${hu ? '' : nameTag(g0)}${runTag(g0.i)}</div>`;
       recent.slice(1).forEach(i => { const g = G[i]; cards += `<div class="card cap${g.inst || g.src === 'shortcut' ? '' : ' dim'}${capWide(g) ? ' hdr' : ''}" data-f data-g="${i}" style="background-image:${capUrl(g).replace(/"/g, '&quot;')}">${g.art.capsule || g.art.header ? '' : nameTag(g)}${runTag(i)}</div>`; });
@@ -1647,7 +1671,7 @@ function homeContext(el) {
   hm.classList.remove('on'); clearTimeout(metaT);
   const gi = el.dataset.g;
   if (gi !== undefined) {
-    const g = G[+gi], first = el.classList.contains('hero'), playable = g.inst || g.src === 'shortcut';
+    const g = G[+gi], first = el.classList.contains('hero') || (S.homeStyle === 1 && +gi === recent[0]), playable = g.inst || g.src === 'shortcut';
     hk.innerHTML = !playable ? 'EN TU CUENTA · SIN INSTALAR' : first ? `CONTINUAR${S.running === g.i ? ' · <span class="now">EN CURSO</span>' : ''}` : 'RECIENTE';
     ht.textContent = g.n;
     hm.textContent = !playable ? `${g.upd ? 'Instalándose' : 'Pulsa A para instalarlo'} · ${playText(g)}`
@@ -1678,6 +1702,9 @@ function focusInPlace() {
   if (el) el.classList.add('f');          /* before any layout read: no transition from "not focused" */
   applyFocus();
 }
+/* PANORAMA's cards: Steam's wide picture of the game (its header, with the game's logo), else its big
+   picture (cut to 16:9), else its cover */
+const landUrl = g => g.art.header ? Bridge.artUrl(g.appid, 'header') : heroUrl(g);
 function enterHome(opts = {}) {
   S.screen = 'home'; S.from = 'home';
   if (S.section === 1 || S.section === 4) S.section = 0;
@@ -1694,7 +1721,7 @@ function enterHome(opts = {}) {
   if (opts.sys) { opts.r = 1; opts.c = Math.max(0, rows[1].findIndex(e => e.dataset.act === opts.sys)); }
   NAV = mkNav(rows, {
     r: opts.r ?? (prev ? prev.r : 0), c: opts.c ?? (prev ? prev.c : 0),
-    place: (el, b, r) => r === 0 ? { x: b.x, y: 668, w: b.w * (S.rm ? 1 : 1.06) } : { x: b.x, y: b.y + b.h + 14, w: b.w },
+    place: (el, b, r) => r === 0 ? { x: b.x, y: S.homeStyle === 1 ? b.y + b.h + 18 : 668, w: b.w * (S.rm ? 1 : 1.06) } : { x: b.x, y: b.y + b.h + 14, w: b.w },
     scroll: el => {
       if (!el.closest('.track')) return;
       let sx = +track.dataset.sx; const l = el.offsetLeft, r = l + el.offsetWidth * 1.06, view = 1728;
@@ -4084,6 +4111,9 @@ function healthRows() {
   rows.push({ l: 'Informe de diagnóstico', s: 'Si algo falla: marca qué y STONE comprueba cada función. Un archivo sin datos personales para el móvil o un USB', v: 'Hacer', act: 'diag' });
   return rows;
 }
+/* rc12: Inicio's two styles (home.js homeHTML, cristal.css #stage.pano) */
+const HOME_STYLES = ['Cristal', 'Panorama'];
+const HOME_STYLE_TXT = ['Portada grande del juego y carátulas verticales', 'El arte del juego a pantalla completa, su nombre en grande y carátulas apaisadas'];
 function catRows() {
   /* Settings Steam already handles open in Steam's own settings; if that fails, STONE says where. */
   const steam = (t, d, where) => ({ l: t, s: d, v: 'Abrir en Steam', act: 'steam', where, sec: STEAM_SEC[CATS[cat]] });
@@ -4093,6 +4123,7 @@ function catRows() {
       ...displayRows(),
       steam('Resolución y frecuencia', 'Las fija Steam para todo el sistema', 'Botón STEAM → Ajustes → Pantalla'),
       steam('HDR', 'Según el televisor y el juego', 'Botón STEAM → Ajustes → Pantalla'),
+      { l: 'Estilo de inicio', s: HOME_STYLE_TXT[S.homeStyle], v: HOME_STYLES[S.homeStyle], key: 'homestyle' },
       { l: 'Tamaño del texto', s: 'Se aplica a STONE Home', v: SIZES[S.ts], key: 'ts' },
       { l: 'Modo de imagen', s: RENDER_TXT[S.render], v: RENDER[S.render], key: 'render' },
       { l: 'Efectos de cristal', s: S.render === 1 ? 'Sin GPU se usan siempre los ligeros' : 'Paneles translúcidos con desenfoque. «Ligeros» los dibuja sin desenfoque y gasta menos GPU',
@@ -4459,6 +4490,7 @@ function applyPrefs() {
   stage.classList.toggle('hc', S.hc);
   stage.classList.toggle('rm', S.rm);
   stage.classList.toggle('lite', !S.glass || S.render === 1);
+  stage.classList.toggle('pano', S.homeStyle === 1);
   const k = S.rm ? .3 : 1, r = document.documentElement.style;
   [['--d-step', 220], ['--d-settle', 360], ['--d-exit', 450], ['--d-enter', 600], ['--d-light', 900], ['--d-cer', 1200]].forEach(([n, v]) => r.setProperty(n, Math.round(v * k) + 'ms'));
   r.setProperty('--fscale', S.rm ? 1 : 1.06);
@@ -4477,6 +4509,7 @@ function adjust(key, d, ri) {
   else if (key === 'tech') { S.tech = !S.tech; }
   else if (key === 'report') { S.report = !S.report; }
   else if (key === 'glass') { if (S.render === 1) return toast('Sin GPU se usan siempre los efectos ligeros', false); S.glass = S.glass ? 0 : 1; }
+  else if (key === 'homestyle') { S.homeStyle = S.homeStyle ? 0 : 1; }
   else if (key === 'sysvol') { return setSysVol(d, ri); }
   else if (key === 'frame') { const n = FRAME + d; if (n < 0 || n > 6) return bump(d); FRAME = n; fit(); }
   else if (key === 'render') { S.render = (S.render + d + RENDER.length) % RENDER.length; play('select'); return applyRender(); }
@@ -4932,7 +4965,7 @@ function savePrefs() {
   clearTimeout(saveT);
   saveT = setTimeout(() => Sys.prefsSet({ sound: S.sound, vol: S.vol, hc: S.hc, rm: S.rm, ts: S.ts, safe: S.safe, idle: S.idle,
     tech: S.tech, adv_ack: S.advAck, engine: S.render, favorites: [...favs], frame: FRAME, wanted: [...WANT], report: S.report, glass: S.glass,
-    launch_pick: S.picks || {} }).catch(() => {}), 400);
+    launch_pick: S.picks || {}, home_style: S.homeStyle }).catch(() => {}), 400);
 }
 function loadPrefs(p) {
   if (!p) return;
@@ -4941,6 +4974,7 @@ function loadPrefs(p) {
   FRAME = p.frame > 0 && p.frame <= 6 ? p.frame : 0; fit();
   WANT.clear(); (p.wanted || []).forEach(a => WANT.add(a)); S.report = p.report !== false; S.glass = p.glass === 0 ? 0 : 1;
   S.picks = p.launch_pick && typeof p.launch_pick === 'object' ? Object.assign({}, p.launch_pick) : {};
+  S.homeStyle = p.home_style === 1 ? 1 : 0;
   applyPrefs();
 }
 

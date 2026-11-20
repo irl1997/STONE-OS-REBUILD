@@ -6,7 +6,10 @@ function homeHTML() {
   if (S.section === 0) {
     /* Nobody signed in to Steam on this console: the first thing Home offers */
     if (S.libLogged === 'out') cards += `<div class="card wide vein" data-f data-act="login">${cover('login')}<b>Inicia sesión en Steam</b><span>Tus juegos vienen de tu cuenta de Steam</span></div>`;
-    if (G.length && recent.length) {
+    if (G.length && recent.length && S.homeStyle === 1) {
+      /* PANORAMA (rc12): every game the same landscape card (its wide art), the first one too */
+      recent.forEach(i => { const g = G[i], u = landUrl(g); cards += `<div class="card land${g.inst || g.src === 'shortcut' ? '' : ' dim'}" data-f data-g="${i}" style="background-image:${u ? `url(&quot;${u}&quot;)` : 'none'}">${u ? '' : nameTag(g)}${runTag(i)}</div>`; });
+    } else if (G.length && recent.length) {
       const g0 = G[recent[0]], hu = heroUrl(g0);
       cards += `<div class="card hero${g0.inst || g0.src === 'shortcut' ? '' : ' dim'}" data-f data-g="${g0.i}" style="background-image:${hu ? `url(&quot;${hu}&quot;)` : 'none'};background-color:var(--shale)">${hu ? '' : nameTag(g0)}${runTag(g0.i)}</div>`;
       recent.slice(1).forEach(i => { const g = G[i]; cards += `<div class="card cap${g.inst || g.src === 'shortcut' ? '' : ' dim'}${capWide(g) ? ' hdr' : ''}" data-f data-g="${i}" style="background-image:${capUrl(g).replace(/"/g, '&quot;')}">${g.art.capsule || g.art.header ? '' : nameTag(g)}${runTag(i)}</div>`; });
@@ -52,7 +55,7 @@ function homeContext(el) {
   hm.classList.remove('on'); clearTimeout(metaT);
   const gi = el.dataset.g;
   if (gi !== undefined) {
-    const g = G[+gi], first = el.classList.contains('hero'), playable = g.inst || g.src === 'shortcut';
+    const g = G[+gi], first = el.classList.contains('hero') || (S.homeStyle === 1 && +gi === recent[0]), playable = g.inst || g.src === 'shortcut';
     hk.innerHTML = !playable ? 'EN TU CUENTA · SIN INSTALAR' : first ? `CONTINUAR${S.running === g.i ? ' · <span class="now">EN CURSO</span>' : ''}` : 'RECIENTE';
     ht.textContent = g.n;
     hm.textContent = !playable ? `${g.upd ? 'Instalándose' : 'Pulsa A para instalarlo'} · ${playText(g)}`
@@ -83,6 +86,9 @@ function focusInPlace() {
   if (el) el.classList.add('f');          /* before any layout read: no transition from "not focused" */
   applyFocus();
 }
+/* PANORAMA's cards: Steam's wide picture of the game (its header, with the game's logo), else its big
+   picture (cut to 16:9), else its cover */
+const landUrl = g => g.art.header ? Bridge.artUrl(g.appid, 'header') : heroUrl(g);
 function enterHome(opts = {}) {
   S.screen = 'home'; S.from = 'home';
   if (S.section === 1 || S.section === 4) S.section = 0;
@@ -99,7 +105,7 @@ function enterHome(opts = {}) {
   if (opts.sys) { opts.r = 1; opts.c = Math.max(0, rows[1].findIndex(e => e.dataset.act === opts.sys)); }
   NAV = mkNav(rows, {
     r: opts.r ?? (prev ? prev.r : 0), c: opts.c ?? (prev ? prev.c : 0),
-    place: (el, b, r) => r === 0 ? { x: b.x, y: 668, w: b.w * (S.rm ? 1 : 1.06) } : { x: b.x, y: b.y + b.h + 14, w: b.w },
+    place: (el, b, r) => r === 0 ? { x: b.x, y: S.homeStyle === 1 ? b.y + b.h + 18 : 668, w: b.w * (S.rm ? 1 : 1.06) } : { x: b.x, y: b.y + b.h + 14, w: b.w },
     scroll: el => {
       if (!el.closest('.track')) return;
       let sx = +track.dataset.sx; const l = el.offsetLeft, r = l + el.offsetWidth * 1.06, view = 1728;
