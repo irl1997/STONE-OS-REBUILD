@@ -1,3 +1,25 @@
+# STONE OS (rebuild) 3.1.0-rc14
+
+La imagen sin alta definición y con grano, desde el informe de la rc13 en la consola (20-11-2026, 23:20).
+
+## Por qué la imagen no se ve en alta definición
+
+Con la rc13 volvieron el sonido y la identificación completa de la TV (reiniciando con la TV encendida). Los datos nuevos del informe muestran la causa del grano que queda:
+
+- **La TV es 4K, pero esa entrada funciona en modo HDMI 1.4.** Solo acepta hasta 300 MHz: 4K a 30 Hz como máximo, y 4K a 60 Hz necesita unos 594 MHz.
+- **Por eso STONE envía 2560 × 1440 a 60 Hz**, lo mejor a 60 Hz que acepta esa entrada, y la TV lo agranda 1,5 veces a su pantalla 4K. Esa escala no es exacta, y el realce de bordes que la TV aplica al agrandar se ve como grano. Pasa en todo: en el Inicio, en EA SPORTS FC 26 (sin ningún aspecto) y en Batman.
+- **Los aspectos de la rc13 ya se aplicaron**: vkBasalt corre con el suavizado de bandas al final. El grano que queda no viene de ellos.
+
+Qué hacer para verlo en 4K a 60 Hz:
+1. En la TV, activa el modo HDMI mejorado de esa entrada (HDMI UHD Color, Input Signal Plus, HDMI 2.0 o similar).
+2. Usa un adaptador ACTIVO DisplayPort 1.4 → HDMI 2.0 que diga «4K 60 Hz» y un cable HDMI de alta velocidad.
+3. Mientras tanto, en la TV usa el modo Juego o PC y baja la Nitidez y la reducción de ruido.
+4. Para ver la interfaz en 4K ya: Ajustes → Pantalla → Meta de imagen → Máxima resolución (4K a 30 Hz; para jugar es mejor Fluidez).
+
+Lo que cambia en STONE:
+- **Ajustes → Pantalla → Conexión** dice «TV 4K: esta entrada solo acepta 4K a 30 Hz (modo HDMI 1.4)» y, al elegirla, todo lo anterior.
+- **El informe tiene una comprobación nueva, «Resolución (alta definición)»**: qué se envía, qué acepta la TV y la conexión, y qué hacer. También hay un síntoma nuevo para marcar: «Imagen borrosa o con grano».
+
 # STONE OS (rebuild) 3.1.0-rc13
 
 Sonido, grano en la imagen y el aviso de descargas, desde la prueba de la rc12 en la consola (20-11-2026).

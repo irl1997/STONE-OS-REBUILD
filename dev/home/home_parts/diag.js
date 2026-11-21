@@ -6,7 +6,7 @@
    sends it anywhere by itself.
    rc8: first the person ticks what they saw go wrong; the report then checks every function STONE has
    (diagchecks.py: FUNCIONA / FALLA / ATENCIÓN / SIN DATOS, with the reason) and puts the ticked ones first. */
-const DIAG_SYMPTOMS = [['filters', 'Filtros de imagen'], ['colors', 'Colores desvaídos'], ['game', 'Un juego no abre'],
+const DIAG_SYMPTOMS = [['filters', 'Filtros de imagen'], ['colors', 'Colores desvaídos'], ['picture', 'Imagen borrosa o con grano'], ['game', 'Un juego no abre'],
   ['downloads', 'Descargas'], ['sound', 'Sonido'], ['controller', 'Mando'], ['network', 'Wi-Fi o internet'],
   ['steam', 'Steam'], ['emulators', 'Emuladores'], ['other', 'Otra cosa']];
 const DIAG_MARK = { ok: 'FUNCIONA', fail: 'FALLA', warn: 'ATENCIÓN', nodata: 'SIN DATOS' };

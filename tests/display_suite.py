@@ -496,6 +496,19 @@ def D17_link_300mhz_cannot_carry_4k60_and_says_what_to_buy():
 
 
 @test
+def D17b_4k_tv_in_hdmi_14_mode_says_why_the_picture_is_soft():
+    """3.1.0-rc13 (board, 20-11-2026): a 4K TV whose input offered only 4K30 (VICs 93-95) and 300 MHz."""
+    from stone_display import link
+    tv = [_mode(2560, 1440, 60), _mode(3840, 2160, 30), _mode(3840, 2160, 24), _mode(1920, 1080, 60)]
+    p = link.plan(_cap(tv, tmds=300))
+    assert p["display_offers_4k"] and not p["display_offers_4k60"] and (p["best_fluid"]["w"], p["best_fluid"]["hz"]) == (2560, 60), p
+    assert "HDMI 1.4" in p["advice"] and "300 MHz" in p["advice"] and "2560x1440@60" in p["advice"] and "Máxima resolución" in p["advice"]
+    s = link.plan(_cap(tv, source="steam"))                    # Steam's own list: no budget figure, same advice
+    assert "HDMI 1.4" in s["advice"] and "MHz" not in s["advice"].split(")")[0], s["advice"]
+    assert link.plan(_cap([_mode(1920, 1080, 60)], tmds=300))["advice"] is None          # a 1080p TV: nothing to say
+
+
+@test
 def D18_link_600mhz_and_frl_reach_4k60_and_4k120():
     from stone_display import link
     assert link.plan(_cap(ALL, tmds=600))["reaches_4k60"]

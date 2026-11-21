@@ -89,6 +89,7 @@ def plan(cap, goal="fluid"):
     out["best_max_res"] = best(fits)
     wants = [m for m in modes if m["w"] >= 3840 and m["hz"] >= 50]
     out["display_offers_4k60"] = bool(wants)
+    out["display_offers_4k"] = any(m["w"] >= 3840 for m in modes)
     out["reaches_4k60"] = any(m["w"] >= 3840 and m["hz"] >= 50 for m in fits)
     lost = [m for m in modes if m not in fits]
     out["limited_by_link"] = bool(lost) and bud is not None
@@ -105,6 +106,19 @@ def advice(p, bud):
         return (f"La pantalla acepta 4K a 60 Hz, pero esta conexión solo lleva {round(bud)} MHz y 4K60 necesita unos 600. "
                 "Para 4K a 60 Hz usa un adaptador ACTIVO DisplayPort 1.4 → HDMI 2.0 (que diga «4K 60 Hz») y un cable HDMI de alta velocidad. "
                 "Mientras tanto STONE usa " + (_fmt(p["best_fluid"]) or "la mejor salida disponible") + ".")
+    if p["display_offers_4k"] and not p["display_offers_4k60"] and (p["best_fluid"] or {}).get("w", 0) < 3840:
+        # 3.1.0-rc13 (board, 20-11-2026: "la imagen se ve granulada, no se ve en alta definición"): a 4K TV
+        # whose input announced only 4K at 30 Hz and a 300 MHz HDMI 1.4 limit. STONE sends 2560x1440 at
+        # 60 Hz and the TV enlarges it 1.5 times to its 4K panel, which looks soft and grainy. The display
+        # itself does not offer 4K60 there, so the advice is about the TV's input and the adapter.
+        fluid = _fmt(p["best_fluid"]) or "la mejor salida a 60 Hz"
+        return ("La TV es 4K, pero esta entrada solo acepta 4K a 30 Hz (modo HDMI 1.4"
+                + (f", {round(bud)} MHz" if bud else "") + f"). STONE envía {fluid} y la TV lo agranda a su pantalla 4K, "
+                "por eso se ve menos nítido y con grano. Para 4K a 60 Hz: en la TV activa el modo HDMI mejorado de esa entrada "
+                "(HDMI UHD Color, Input Signal Plus, HDMI 2.0 o similar) y usa un adaptador ACTIVO DisplayPort 1.4 → HDMI 2.0 "
+                "(que diga «4K 60 Hz»). Mientras tanto, en la TV usa el modo Juego o PC y baja la Nitidez y la reducción de "
+                "ruido: el realce que la TV aplica al agrandar es lo que se ve como grano. Para ver la interfaz en 4K ya: "
+                "Meta de imagen → Máxima resolución (4K a 30 Hz).")
     if p["limited_by_link"] and not p["reaches_4k60"]:
         return "Algunos modos de la pantalla no caben en esta conexión; STONE usa solo los que sí caben."
     return None
