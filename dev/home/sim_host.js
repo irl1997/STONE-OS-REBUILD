@@ -277,7 +277,8 @@ const Bridge = (() => {
       GAMES.splice(k, 1); emit('library', { reason: 'rom removed' }); return { ok: true, removed: 1, bytes: 0 }; },
     'game.setLook': ([, k]) => { SIM.look = k; return { ok: true, look: k }; },
     'game.frameGen': () => ({ available: false, reason: 'Solo con FSR (OptiScaler) instalado por STONE en este juego', on: false, experimental: true }), 'game.setFrameGen': ([, on]) => ({ ok: true, on }),
-    'audio.status': () => ({ outputs: [{ id: 51, name: 'HDMI · Televisor', default: true }, { id: 52, name: 'Auriculares USB', default: false }], volume: 0.6, muted: false }),
+    'audio.status': () => /nosound/.test(location.search) ? { outputs: [{ id: 56, name: 'Dummy Output', default: true }], volume: 1, muted: false }   /* ?nosound: the TV gave no sound */
+      : ({ outputs: [{ id: 51, name: 'HDMI · Televisor', default: true }, { id: 52, name: 'Auriculares USB', default: false }], volume: 0.6, muted: false }),
     'audio.volume': () => ({ ok: true }), 'audio.default': () => ({ ok: true }),
     /* the network (nmcli): ?nocable = no cable, so Wi-Fi is the only way; ?nonet = the router has no internet */
     'net.status': () => { const N = SIM.net, q = location.search, cable = !/nocable/.test(q);

@@ -15,9 +15,13 @@ function audioRows() {
   const A = CX.audio;
   if (!A) { cxLoad('audio', () => Bridge.call('audio.status'), 'Audio'); return [{ l: 'Leyendo…', s: 'Salidas de sonido', v: '' }]; }
   if (A.error) return [{ l: 'Audio no disponible', s: A.error, v: '' }];
-  return [
+  /* 3.1.0-rc12 (board, 20-11-2026): the only output was PipeWire's "Dummy Output", a sink that goes
+     nowhere, shown as if it were the TV. It is said for what it is, with what to do. */
+  const real = A.outputs.filter(o => !/^Dummy Output$/i.test(o.name));
+  const none = !real.length ? [{ l: 'Sin salida de sonido', s: 'La TV no avisó a la consola que acepta sonido. Con la TV encendida y en la entrada de la consola, reinicia la consola; si sigue, vuelve a conectar el adaptador o el cable', v: 'Sin sonido', act: 'info', where: 'Reinicia con la TV encendida en la entrada de la consola' }] : [];
+  return [...none,
     { l: 'Volumen', s: A.muted ? 'Silenciado' : 'Salida actual', v: A.volume == null ? '—' : `${Math.round(A.volume * 100)} %`, key: 'sysvol' },
-    ...A.outputs.map(o => ({ l: o.name, s: o.default ? 'Salida en uso' : 'Otra salida disponible', v: o.default ? 'En uso' : 'Usar', act: o.default ? 'info' : 'audio-out', id: o.id, where: 'Ya es la salida en uso' }))];
+    ...real.map(o => ({ l: o.name, s: o.default ? 'Salida en uso' : 'Otra salida disponible', v: o.default ? 'En uso' : 'Usar', act: o.default ? 'info' : 'audio-out', id: o.id, where: 'Ya es la salida en uso' }))];
 }
 function setSysVol(d, ri) {
   const A = CX.audio; if (!A || A.error || A.volume == null) return bump(d);
@@ -194,3 +198,10 @@ function romAct(r, ri) {
   return Bridge.call('roms.add').then(x => toast(x.new === 0 ? 'Ya estaban todos en la biblioteca' : x.queued ? `${x.added} añadidos ahora; ${x.queued} aparecerán al reiniciar la consola` : `${x.added} juegos añadidos a la biblioteca`, false),
     e => toast((e && e.message) || 'No se pudo', false)).then(() => { cxReset('roms', 'Emuladores', ri); loadLibrary(); });
 }
+/* At start, once: a console with no real sound output says so, instead of being silent (3.1.0-rc12; board,
+   20-11-2026: only "Dummy Output", and nothing on screen said why the TV was mute). */
+setTimeout(() => Bridge.call('audio.status').then(A => {
+  if (!A || A.error || !Array.isArray(A.outputs) || A.outputs.some(o => !/^Dummy Output$/i.test(o.name))) return;
+  if (S.screen === 'game' || S.screen === 'off') return;
+  play('error'); toast('Sin sonido: la TV no avisó que acepta sonido. Ajustes → Audio', false);
+}).catch(() => {}), 12000);

@@ -120,6 +120,26 @@ def test_games_steam_sound_controllers_network():
     assert C.check_sound(run("Volume: 0.70\n"))["status"] == C.OK
     assert C.check_sound(run("Volume: 0.70 [MUTED]\n"))["status"] == C.WARN
     assert C.check_sound(run("[wpctl no está instalado]\n"))["status"] == C.NODATA
+    # rc12 (board, 20-11-2026): only "Dummy Output" at 100 % was FUNCIONA; it is no sound at all
+    dummy = (" ├─ Devices:\n │      43. HD-Audio Generic                    [alsa]\n │  \n"
+             " ├─ Sinks:\n │  *   56. Dummy Output                        [vol: 1.00]\n │  \n ├─ Sources:\n")
+    real = dummy.replace("56. Dummy Output                       ", "50. HD-Audio Generic Digital Stereo (HDMI) [Beyond TV]")
+
+    def run2(status):
+        return lambda argv, timeout=20: "Volume: 1.00\n" if "get-volume" in argv else "Audio\n" + status
+    with Box() as b:
+        d = os.path.join(b.root, "proc", "asound", "card0")
+        os.makedirs(d)
+        with open(os.path.join(d, "eld#0.0"), "w") as f:
+            f.write("monitor_present\t\t0\neld_valid\t\t0\n")
+        r = C.check_sound(run2(dummy), b.root, {"display": {"summary": "Beyond TV por DisplayPort, HDR admitido: False"}})
+        assert r["status"] == C.FAIL and "Dummy Output" in r["detail"] and "no le dijo" in r["detail"], r
+        assert any("datos de sonido válidos 0" in e for e in r["evidence"]) and any("HDR admitido" in e for e in r["evidence"])
+        assert r["how"] and "reinicia la consola" in r["how"]
+        assert C.check_sound(run2(real), b.root)["status"] == C.OK
+        with open(os.path.join(d, "eld#0.0"), "w") as f:
+            f.write("monitor_present\t\t1\neld_valid\t\t1\nmonitor_name\t\tBeyond TV\n")
+        assert "sí dice que acepta sonido" in C.check_sound(run2(dummy), b.root)["detail"]
     with Box() as b:
         os.makedirs(os.path.join(b.root, "proc", "bus", "input"))
         with open(os.path.join(b.root, "proc", "bus", "input", "devices"), "w") as f:

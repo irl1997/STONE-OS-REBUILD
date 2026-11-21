@@ -27,6 +27,7 @@ authorization is left out. Wi-Fi passwords are never read (NetworkManager does n
 leaves the console unless the person takes the file: STONE does not send it anywhere.
 """
 
+import glob
 import io
 import json
 import os
@@ -102,6 +103,41 @@ def _tail(path, limit=MAX_FILE):
         return ("[…principio recortado]\n" + text.split("\n", 1)[-1]) if size > limit else text
     except OSError as e:
         return f"[no se pudo leer {os.path.basename(path)}: {e.strerror or e}]\n"
+
+
+def _elds_text(root):
+    """What each display told the graphics card about its sound (3.1.0-rc12: no sound on the board)."""
+    out, base = [], os.path.join(root, "proc", "asound")
+    for card in sorted(glob.glob(os.path.join(base, "card*"))):
+        for p in sorted(glob.glob(os.path.join(card, "eld#*"))):
+            out.append(f"-- {os.path.relpath(p, base)}\n" + _read_proc(p, 4096).strip())
+    return "\n".join(out) + "\n" if out else "(no hay datos de sonido de pantallas)\n"
+
+
+def _edids_text(root):
+    """The EDID of each connected display, in hex, with its serial numbers hidden: the header's serial
+    (bytes 12-15) and any serial-number descriptor (tag 0xFF). Audio, HDR and the HDMI block are read
+    from here; an identification that lost them explains a console without sound and HDR."""
+    out = []
+    for d in sorted(glob.glob(os.path.join(root, "sys", "class", "drm", "card*-*"))):
+        try:
+            with open(os.path.join(d, "status"), encoding="ascii", errors="replace") as f:
+                if f.read().strip() != "connected":
+                    continue
+            with open(os.path.join(d, "edid"), "rb") as f:
+                e = bytearray(f.read(32768))
+        except OSError:
+            continue
+        if len(e) >= 16:
+            e[12:16] = b"\0\0\0\0"
+        for off in (54, 72, 90, 108):
+            if len(e) >= off + 18 and e[off:off + 3] == b"\0\0\0" and e[off + 3] == 0xFF:
+                e[off + 5:off + 18] = b" " * 13
+        blocks = len(e) // 128
+        out.append(f"-- {os.path.basename(d)}: {len(e)} bytes, {blocks} bloque(s)"
+                   + (f", {e[126]} extensión(es) anunciadas" if len(e) >= 128 else "") + "\n"
+                   + "\n".join(e[i:i + 32].hex() for i in range(0, len(e), 32)))
+    return "\n".join(out) + "\n" if out else "(ninguna pantalla conectada con EDID legible)\n"
 
 
 def _read_proc(path, limit=131072):
@@ -213,11 +249,19 @@ def build(out_dir=None, live=None, run=_run, home=None, now=time.time, symptoms=
         files[f"juegos/{n[:-4]}.txt"] = _tail(os.path.join(looks_dir, n), 256 * 1024)
     files["dispositivos.txt"] = ("== /proc/bus/input/devices ==\n" + _read_proc(os.path.join(root, "proc/bus/input/devices"))
                                  + "\n== wpctl status ==\n" + run(["wpctl", "status"], 10)
+                                 + "\n== sonido por HDMI/DisplayPort (/proc/asound/card*/eld#*) ==\n" + _elds_text(root)
+                                 + "\n== identificación de las pantallas (EDID; número de serie tapado) ==\n" + _edids_text(root)
                                  + "\n== nmcli device status ==\n" + run(["nmcli", "-t", "device", "status"], 10))
     live = dict(live or {})
     if "steam_probe" in live:
         live["steam_functions"] = steam_functions(live.pop("steam_probe"))
     names = live.pop("names", None) or {}
+    # the connection's colour depth and colour space (max bpc, Colorspace, link-status), read only: a link
+    # that fell to fewer bits shows grain everywhere, STONE Home included (3.1.0-rc12, board, 20-11-2026)
+    drm = run(["drm_info"], 15)
+    if drm and "not installed" not in drm and "no está instalado" not in drm:
+        keep = [ln for ln in drm.splitlines() if re.search(r"Connector|max bpc|Colorspace|link-status|HDR_OUTPUT|content type|Broadcast RGB|Status|Mode:|CRTC", ln)]
+        files["pantalla/conexion.txt"] = "\n".join(keep[:400]) + "\n"
     if live.get("gamescope_atoms"):
         files["pantalla/gamescope.json"] = json.dumps(live["gamescope_atoms"], indent=1, ensure_ascii=False, default=str)
     ev = events_rows if events_rows is not None else E.read(file=os.path.join(state, "events.jsonl"))

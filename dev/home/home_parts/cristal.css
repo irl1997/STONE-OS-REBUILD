@@ -459,7 +459,9 @@
 /* ACTIVIDAD (3.1.0-rc10, activity.js): a turning ring and what STONE is doing, on every screen */
 #actv{display:inline-flex;align-items:center;gap:10px;max-width:520px;font-variant-numeric:tabular-nums}
 #actv[hidden]{display:none}
-#actv .lbl{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:18px;letter-spacing:.02em}
+#actv .lbl{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:18px;letter-spacing:.02em}
+#actv .spin{flex:none}
+#actv .pct{flex:none;white-space:pre;font-size:18px;letter-spacing:.02em;margin-left:-10px}
 .spin{display:inline-block;flex:none;width:18px;height:18px;box-sizing:border-box;border-radius:50%;border:2.5px solid currentColor;
   border-right-color:transparent;opacity:.9;animation:stone-spin .9s linear infinite;vertical-align:-3px}
 .srow .v .spin{margin-right:12px}

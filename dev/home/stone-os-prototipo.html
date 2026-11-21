@@ -1050,6 +1050,7 @@ function chrome(on, tabsOn) {
   $('#hdr').classList.toggle('hide', !on);
   $('#tabs').classList.toggle('hide', !tabsOn);
   [...$('#tabs').children].forEach((s, k) => s.classList.toggle('cur', k === S.section));
+  if (typeof actFit === 'function') actFit();       /* the sections came or went: the notice gets its room */
 }
 function clock() { const d = new Date(); $('#clock').textContent = d.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' }); }
 /* one wake-up per minute, aligned to the minute change */

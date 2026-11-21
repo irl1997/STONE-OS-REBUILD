@@ -45,18 +45,24 @@ DESCRIPTIONS = {"natural": "El juego tal cual, más limpio: nitidez sin realzar 
                 "clean": "Para juegos que se ven granulados: quita ruido y bandas, sin tocar el color"}
 # vkBasalt effects per look, in the order they run: (name, {option: value}). DLS sharpens luma only and
 # holds back where the picture is noisy (dlsDenoise); deband smooths 8-bit steps in skies and fog.
+# 3.1.0-rc12 (board, 20-11-2026: "las imágenes se ven granuladas", Batman Arkham Asylum with NEXT-GEN):
+# vkBasalt's deband ends with an ordered dither and samples at random angles (src/shader/deband.frag.glsl);
+# running first, that pattern was then sharpened by DLS and stretched by the colour curve into visible grain.
+# Deband now runs LAST, on the finished picture, so nothing after it enlarges its dither; and NEXT-GEN
+# sharpens less and holds back more on noise.
 FX = {
-    "natural": [("deband", {}), ("dls", {"dlsSharpness": 0.35, "dlsDenoise": 0.30})],
+    "natural": [("dls", {"dlsSharpness": 0.35, "dlsDenoise": 0.30}), ("deband", {})],
     "clarity": [("dls", {"dlsSharpness": 0.70, "dlsDenoise": 0.25})],
-    "cinema": [("deband", {}), ("dls", {"dlsSharpness": 0.25, "dlsDenoise": 0.35}), ("lut", {})],
+    "cinema": [("dls", {"dlsSharpness": 0.25, "dlsDenoise": 0.35}), ("lut", {}), ("deband", {})],
     "vivid": [("dls", {"dlsSharpness": 0.40, "dlsDenoise": 0.25}), ("lut", {})],
     "retro": [("lut", {})],
-    "nextgen": [("deband", {}), ("smaa", {"smaaEdgeDetection": "luma", "smaaThreshold": 0.05, "smaaMaxSearchSteps": 24,
-                                          "smaaMaxSearchStepsDiag": 8, "smaaCornerRounding": 25}),
-                ("dls", {"dlsSharpness": 0.55, "dlsDenoise": 0.30}), ("lut", {})],
-    "realistic": [("deband", {}), ("dls", {"dlsSharpness": 0.30, "dlsDenoise": 0.40}), ("lut", {})],
-    "clean": [("deband", {"debandAvgdiff": 3.4, "debandMaxdiff": 6.8, "debandMiddiff": 3.3, "debandRange": 16.0,
-                          "debandIterations": 4}), ("dls", {"dlsSharpness": 0.10, "dlsDenoise": 1.0})],
+    "nextgen": [("smaa", {"smaaEdgeDetection": "luma", "smaaThreshold": 0.05, "smaaMaxSearchSteps": 24,
+                          "smaaMaxSearchStepsDiag": 8, "smaaCornerRounding": 25}),
+                ("dls", {"dlsSharpness": 0.42, "dlsDenoise": 0.45}), ("lut", {}), ("deband", {})],
+    "realistic": [("dls", {"dlsSharpness": 0.30, "dlsDenoise": 0.40}), ("lut", {}), ("deband", {})],
+    "clean": [("dls", {"dlsSharpness": 0.10, "dlsDenoise": 1.0}),
+              ("deband", {"debandAvgdiff": 3.4, "debandMaxdiff": 6.8, "debandMiddiff": 3.3, "debandRange": 16.0,
+                          "debandIterations": 4})],
 }
 LAYER_JSONS = ("/usr/share/vulkan/implicit_layer.d/vkBasalt.json", "/usr/share/vulkan/implicit_layer.d/vkBasalt.x86_64.json",
                "/etc/vulkan/implicit_layer.d/vkBasalt.json")
