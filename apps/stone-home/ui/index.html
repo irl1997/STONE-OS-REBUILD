@@ -3107,7 +3107,7 @@ setTimeout(() => egScan(true), 4000);
    sends it anywhere by itself.
    rc8: first the person ticks what they saw go wrong; the report then checks every function STONE has
    (diagchecks.py: FUNCIONA / FALLA / ATENCIÓN / SIN DATOS, with the reason) and puts the ticked ones first. */
-const DIAG_SYMPTOMS = [['filters', 'Filtros de imagen'], ['colors', 'Colores desvaídos'], ['game', 'Un juego no abre'],
+const DIAG_SYMPTOMS = [['filters', 'Filtros de imagen'], ['colors', 'Colores desvaídos'], ['picture', 'Imagen borrosa o con grano'], ['game', 'Un juego no abre'],
   ['downloads', 'Descargas'], ['sound', 'Sonido'], ['controller', 'Mando'], ['network', 'Wi-Fi o internet'],
   ['steam', 'Steam'], ['emulators', 'Emuladores'], ['other', 'Otra cosa']];
 const DIAG_MARK = { ok: 'FUNCIONA', fail: 'FALLA', warn: 'ATENCIÓN', nodata: 'SIN DATOS' };
@@ -3948,7 +3948,8 @@ function linkRows(D) {
   const f = m => m ? `${m.w} × ${m.h} · ${m.hz} Hz${m.hz_assumed ? ' (supuesto)' : ''}` : 'ninguna';
   const goalMax = D.goal === 'max_res';
   return [
-    { l: 'Conexión', s: L.reaches_4k60 ? 'Lleva 4K a 60 Hz o más' : (L.display_offers_4k60 ? '4K a 60 Hz no cabe en esta conexión' : 'Lo máximo que lleva la conexión'),
+    { l: 'Conexión', s: L.reaches_4k60 ? 'Lleva 4K a 60 Hz o más' : (L.display_offers_4k60 ? '4K a 60 Hz no cabe en esta conexión'
+        : L.display_offers_4k ? 'TV 4K: esta entrada solo acepta 4K a 30 Hz (modo HDMI 1.4). Elige para saber cómo tener 4K a 60 Hz' : 'Lo máximo que lleva la conexión'),
       v: f(L.target), act: 'info', where: L.advice || `Fluida: ${f(L.best_fluid)}. Máxima resolución: ${f(L.best_max_res)}.` },
     { l: 'Meta de imagen', s: goalMax ? 'La resolución más alta, aunque sean menos Hz' : 'La más alta a 60 Hz o más (recomendado para jugar)',
       v: goalMax ? 'Máxima resolución' : 'Fluidez', key: 'dispgoal' }];

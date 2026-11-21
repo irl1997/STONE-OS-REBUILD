@@ -30,6 +30,7 @@ LABEL = {OK: "FUNCIONA", FAIL: "FALLA", WARN: "ATENCIÓN", NODATA: "SIN DATOS"}
 SYMPTOMS = {
     "filters": ("Los filtros de imagen (Aspecto) no cambian nada", ("filters",)),
     "colors": ("Los colores se ven desvaídos o cambian solos", ("display",)),
+    "picture": ("La imagen se ve borrosa o granulada", ("resolution", "filters")),
     "game": ("Un juego no abre o se cierra solo", ("games", "filters")),
     "downloads": ("Las descargas o instalaciones no avanzan", ("steam", "network", "disk")),
     "sound": ("No hay sonido", ("sound",)),
@@ -212,6 +213,32 @@ def check_display(journal, live):
                       "Para probarlo: Ajustes → Steam → «HDR en la salida de vídeo» en No, y mira si los colores dejan de cambiar.")
     return _check("display", name, OK, "La salida está en SDR ahora mismo (lo dice gamescope)" if live is not None
                   else "La salida está en SDR: la interfaz se ve con sus colores.", evidence)
+
+
+def check_resolution(live):
+    """3.1.0-rc13 (board, 20-11-2026: "la imagen se ve granulada, no se ve en alta definición"): what the
+    picture is sent at, what the TV is, and what the connection allows (stone_display/link.py)."""
+    name = "Resolución (alta definición)"
+    d = (live or {}).get("display") or {}
+    lk = d.get("link") or {}
+    if not lk or not lk.get("target"):
+        return _check("resolution", name, NODATA, "No se pudo leer la pantalla ni lo que lleva la conexión.", [d.get("summary") or "sin pantalla"],
+                      "Haz el informe con la TV encendida y conectada.")
+    f = lambda m: f"{m['w']}×{m['h']} a {m['hz']} Hz" if m and m.get("w") else "—"   # noqa: E731
+    evidence = [f"Se envía: {f(lk.get('target'))} (meta: {'máxima resolución' if lk.get('goal') == 'max_res' else 'fluidez'})",
+                f"Lo mejor a 60 Hz: {f(lk.get('best_fluid'))} · la mayor resolución: {f(lk.get('best_max_res'))}",
+                f"La TV ofrece 4K: {'sí' if lk.get('display_offers_4k') else 'no'}, 4K a 60 Hz: {'sí' if lk.get('display_offers_4k60') else 'no'}"]
+    if d.get("hdmi_max_tmds_mhz"):
+        evidence.append(f"La TV acepta por HDMI hasta {d['hdmi_max_tmds_mhz']} MHz (4K a 60 Hz necesita unos 594)")
+    if lk.get("budget_source"):
+        evidence.append(f"Límite de la conexión: {lk['budget_source']}")
+    t = lk.get("target") or {}
+    if lk.get("advice") and lk.get("display_offers_4k") and t.get("w", 0) < 3840:
+        return _check("resolution", name, WARN, f"La TV es 4K y recibe {f(t)}: la agranda ella misma, por eso se ve menos nítido y con grano.",
+                      evidence, lk["advice"])
+    if lk.get("advice"):
+        return _check("resolution", name, WARN, lk["advice"], evidence)
+    return _check("resolution", name, OK, f"Se envía {f(t)}, lo mejor que esta TV y esta conexión aceptan.", evidence)
 
 
 # ---- games ----------------------------------------------------------------------------------------
@@ -450,7 +477,7 @@ def run_checks(live, journal, logs, home, run, symptoms=(), events=None, root="/
     ev = events if events is not None else E.read()
     prefs = _json(os.path.join(home, ".config", "stone", "home.json"))
     checks = []
-    for fn in (lambda: check_filters(ev, logs, home, prefs, names, root), lambda: check_display(journal, live),
+    for fn in (lambda: check_filters(ev, logs, home, prefs, names, root), lambda: check_display(journal, live), lambda: check_resolution(live),
                lambda: check_games(ev, logs, names), lambda: check_steam(live, logs, ev), lambda: check_sound(run, root, live),
                lambda: check_controllers(root), lambda: check_network(live), lambda: check_disk(live),
                lambda: check_emulators(logs, live), lambda: check_boot(home, run, blame), lambda: check_launch_times(ev, names)):

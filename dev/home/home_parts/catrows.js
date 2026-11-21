@@ -30,7 +30,8 @@ function linkRows(D) {
   const f = m => m ? `${m.w} × ${m.h} · ${m.hz} Hz${m.hz_assumed ? ' (supuesto)' : ''}` : 'ninguna';
   const goalMax = D.goal === 'max_res';
   return [
-    { l: 'Conexión', s: L.reaches_4k60 ? 'Lleva 4K a 60 Hz o más' : (L.display_offers_4k60 ? '4K a 60 Hz no cabe en esta conexión' : 'Lo máximo que lleva la conexión'),
+    { l: 'Conexión', s: L.reaches_4k60 ? 'Lleva 4K a 60 Hz o más' : (L.display_offers_4k60 ? '4K a 60 Hz no cabe en esta conexión'
+        : L.display_offers_4k ? 'TV 4K: esta entrada solo acepta 4K a 30 Hz (modo HDMI 1.4). Elige para saber cómo tener 4K a 60 Hz' : 'Lo máximo que lleva la conexión'),
       v: f(L.target), act: 'info', where: L.advice || `Fluida: ${f(L.best_fluid)}. Máxima resolución: ${f(L.best_max_res)}.` },
     { l: 'Meta de imagen', s: goalMax ? 'La resolución más alta, aunque sean menos Hz' : 'La más alta a 60 Hz o más (recomendado para jugar)',
       v: goalMax ? 'Máxima resolución' : 'Fluidez', key: 'dispgoal' }];

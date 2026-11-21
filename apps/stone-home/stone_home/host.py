@@ -1887,9 +1887,16 @@ class Host:
             except Exception as e:  # noqa: BLE001
                 out["gamescope_atoms_error"] = repr(e)[:200]
             try:
-                p = (self.display.status() or {}).get("primary") or {}
+                snap = self.display.status() or {}
+                p = snap.get("primary") or {}
+                lk = snap.get("link") or {}
                 out["display"] = {"summary": f"{p.get('display_name') or '?'} por {p.get('connection_type') or '?'}, "
-                                             f"HDR admitido: {p.get('hdr_supported')}", "hdr_supported": p.get("hdr_supported")}
+                                             f"HDR admitido: {p.get('hdr_supported')}", "hdr_supported": p.get("hdr_supported"),
+                                  # what the picture is sent at and why (3.1.0-rc13: "no se ve en alta definición")
+                                  "native": p.get("native_resolution"), "current": p.get("current_resolution"),
+                                  "hdmi_max_tmds_mhz": p.get("hdmi_max_tmds_mhz"),
+                                  "link": {k: lk.get(k) for k in ("target", "best_fluid", "best_max_res", "budget_mhz", "budget_source",
+                                                                  "display_offers_4k", "display_offers_4k60", "reaches_4k60", "goal", "advice")}}
             except Exception as e:  # noqa: BLE001
                 out["display"] = {"error": repr(e)}
             try:

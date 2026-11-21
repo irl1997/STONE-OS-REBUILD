@@ -284,5 +284,21 @@ def test_events_are_kept_small_and_never_fail():
         shutil.rmtree(t, ignore_errors=True)
 
 
+
+def test_a_4k_tv_fed_1440p_says_why_it_is_not_high_definition():
+    """3.1.0-rc13 (board, 20-11-2026): "la imagen se ve granulada, no se ve en alta definición"."""
+    m = lambda w, h, hz: {"w": w, "h": h, "hz": hz}   # noqa: E731
+    advice = "La TV es 4K, pero esta entrada solo acepta 4K a 30 Hz (modo HDMI 1.4, 300 MHz)."
+    live = {"display": {"summary": "Beyond TV", "hdmi_max_tmds_mhz": 300, "link": {
+        "target": m(2560, 1440, 60), "best_fluid": m(2560, 1440, 60), "best_max_res": m(3840, 2160, 30),
+        "display_offers_4k": True, "display_offers_4k60": False, "goal": "fluid", "advice": advice, "budget_source": "HDMI hasta 300 MHz TMDS"}}}
+    r = C.check_resolution(live)
+    assert r["status"] == C.WARN and "2560×1440 a 60 Hz" in r["detail"] and r["how"] == advice, r
+    assert any("300 MHz" in e for e in r["evidence"]) and any("4K a 60 Hz: no" in e for e in r["evidence"])
+    live["display"]["link"].update(target=m(3840, 2160, 60), best_fluid=m(3840, 2160, 60), display_offers_4k60=True, advice=None)
+    assert C.check_resolution(live)["status"] == C.OK
+    assert C.check_resolution({})["status"] == C.NODATA
+    assert "resolution" in C.SYMPTOMS["picture"][1]
+
 if __name__ == "__main__":
     run_module(globals())
