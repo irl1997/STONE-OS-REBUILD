@@ -32,7 +32,7 @@ import json
 import os
 import time
 
-from . import detect, experience, framegen, graphics, look, metrics, schema, score, store
+from . import detect, experience, framegen, graphics, look, metrics, scaling, schema, score, store
 
 ENGINE_VERSION = 1
 ABNORMAL_S = 60          # a game gone this soon after it appeared did not end normally
@@ -254,12 +254,14 @@ class Engine:
         watch           .running(appid) -> bool  (Steam's reaper for this AppId exists)
     """
 
-    def __init__(self, root, cef, display, perf, watch=None, clock=time.time, log=print, events=None, probe=None):
+    def __init__(self, root, cef, display, perf, watch=None, clock=time.time, log=print, events=None, probe=None,
+                 injected_probe=None):
         self.root, self.cef, self.display_fn, self.perf = root, cef, display, perf
         self.watch = watch or ProcWatch()
         self.clock, self.log = clock, log
         self.events = events or (lambda kind, **data: None)   # events.record (STONE Home's event log)
         self.probe = probe or effects_probe
+        self.injected_probe = injected_probe or files_loaded
         self.lo = graphics.LaunchOptions(cef)
         self.ov = graphics.Overrides(self.lo)
         self.session_path = os.path.join(graphics.state_dir(), "game-session.json")
@@ -475,6 +477,53 @@ class Engine:
             c["gamescope"]["scaling_filter"] = "fsr" if key == "gamescope" else c["gamescope"]["scaling_filter"]
         return self.apply(appid, "custom", c)
 
+    # -- STONE SCALING (rc15): upscaling and frame generation as one simple choice (scaling.py) --
+    def scaling(self, appid):
+        p = self.profile(appid)
+        return scaling.options(appid, self.image_options(appid), p["facts"], p["game"], p["availability"],
+                               framegen.status(appid, p["facts"], p["game"]))
+
+    def set_scaling(self, appid, key, preset=None):
+        """The person's upscaler (and quality). FSR 3.1 is downloaded and installed when needed; leaving
+        it turns frame generation off (it only runs inside OptiScaler)."""
+        if key not in dict((k, 1) for k, _l, _d in scaling.UPSCALERS):
+            raise schema.ProfileError("reescalado no válido")
+        if preset is not None and preset not in self.IMAGE_PRESETS:
+            raise schema.ProfileError("calidad no válida")
+        p = self.profile(appid)
+        note = None
+        if key == "optiscaler":
+            if scaling.ensure_optiscaler(appid, p["facts"], p["game"], log=self.log):
+                note = "FSR 3.1 (OptiScaler) instalado en el juego"
+        elif framegen.status(appid, p["facts"], p["game"]).get("on"):
+            framegen.set_on(appid, p["facts"], p["game"], False)
+            note = "La generación de fotogramas se apagó: solo funciona con FSR 3.1 (OptiScaler)"
+        r = self.set_image(appid, key, preset)
+        return {"ok": True, "note": note, "result": r, "scaling": self.scaling(appid)}
+
+    def set_scaling_framegen(self, appid, key):
+        """"off" or "fsr3". FSR 3 frame generation needs OptiScaler: installed and chosen when needed."""
+        if key not in ("off", "fsr3"):
+            raise schema.ProfileError("generación de fotogramas no válida")
+        p = self.profile(appid)
+        note = None
+        if key == "fsr3":
+            why = framegen.blocked(p["facts"], p["game"])
+            if why:
+                raise schema.ProfileError(why)
+            installed = scaling.ensure_optiscaler(appid, p["facts"], p["game"], log=self.log)
+            img = self.image_options(appid)
+            if img["mode"] != "custom" or img["path"] != "optiscaler":
+                self.set_image(appid, "optiscaler", img.get("preset"))
+                note = "El reescalado pasó a FSR 3.1 (OptiScaler), que hace funcionar la generación de fotogramas"
+            elif installed:
+                note = "FSR 3.1 (OptiScaler) instalado en el juego"
+            p = self.profile(appid)
+        r = framegen.set_on(appid, p["facts"], p["game"], key == "fsr3")
+        if "error" in r:
+            raise schema.ProfileError(r["error"])
+        return {"ok": True, "note": note, "scaling": self.scaling(appid)}
+
     def experience(self, appid):
         """EXPERIENCE ENGINE report of one game (experience.py)."""
         p = self.profile(appid)
@@ -564,7 +613,16 @@ class Engine:
                 perf_ok, perf_err = self.perf.set_game_profile(appid, pid)
             perf_set = perf_ok
             pid = pid if perf_ok else None
-        sess = {"appid": appid, "mode": mode, "config": c, "key": schema.config_key(c), "gkey": gkey(c),
+        # STONE SCALING (rc15): with OptiScaler, the file STONE installed is looked for inside the game
+        watch = None
+        if c["graphics"]["path"] == "optiscaler" and graphics_ok and not mstate:
+            from . import install
+            inst = install.installed_by_stone(appid)
+            if inst and inst.get("kind") == "optiscaler":
+                watch = {"tool": "optiscaler", "files": [os.path.join(inst["exe_dir"], install.PROXY_NAME)],
+                         "log": os.path.join(inst["exe_dir"], "OptiScaler.log"),
+                         "framegen": bool(framegen.status(appid, p["facts"], p["game"]).get("on"))}
+        sess = {"appid": appid, "mode": mode, "config": c, "key": schema.config_key(c), "gkey": gkey(c), "watch": watch,
                 "t_prepared": self.clock(), "t_started": None, "measure": mstate, "graphics_applied": graphics_ok,
                 "perf_profile": pid, "perf_set": perf_set, "display": p["display"], "environment": p["environment"],
                 "look": lenv.get("STONE_LOOK"),
@@ -618,6 +676,19 @@ class Engine:
                 pr = self.probe(s["appid"])
             except Exception as e:  # noqa: BLE001  (a probe never disturbs the game)
                 pr = {"error": repr(e)[:200]}
+            if s.get("watch"):
+                try:
+                    pr["injected_loaded"] = bool(self.injected_probe(s["appid"], s["watch"]["files"]))
+                except Exception as e:  # noqa: BLE001
+                    pr["injected_error"] = repr(e)[:200]
+                # second proof, so a mapping the probe cannot see never turns a working OptiScaler off:
+                # its own log written since the game started [VERIFICAR EN PLACA: which one the board shows]
+                if not pr.get("injected_loaded"):
+                    try:
+                        if os.path.getmtime(s["watch"].get("log") or "") >= (s.get("t_started") or now) - 2:
+                            pr["injected_loaded"], pr["injected_by"] = True, "log"
+                    except OSError:
+                        pass
             s["probed"], s["probe_n"] = pr, n + 1
             last = not (pr.get("processes") and not pr.get("vulkan_loaded") and n + 1 < len(due))
             s["probe_rec"] = last
@@ -654,6 +725,33 @@ class Engine:
             if not m.get("error"):
                 self._add_measurement(auto, s, m)
                 changed = True
+        # STONE SCALING (rc15): was OptiScaler really loaded in the game? Recorded per game; when it was
+        # not, the next launch falls back (FALLBACK) exactly as after a crash, and it is said on screen.
+        w, pr = s.get("watch"), s.get("probed")
+        if w and isinstance(pr, dict) and pr.get("processes") and (pr.get("wine") or pr.get("vulkan_loaded")) \
+                and "injected_loaded" in pr and not abnormal:
+            ok = bool(pr["injected_loaded"])
+            why = None if ok else "OptiScaler no se cargó dentro del juego"
+            try:
+                scaling.record(s["appid"], w["tool"], ok, why, now=self.clock())
+                if w.get("framegen"):
+                    scaling.record(s["appid"], "framegen", ok, None if ok else "sin OptiScaler no hay generación de fotogramas", now=self.clock())
+            except OSError:
+                pass
+            result["scaling_check"] = {"tool": w["tool"], "ok": ok}
+            self._event("scaling_check", appid=s["appid"], tool=w["tool"], ok=ok, framegen=bool(w.get("framegen")))
+            if not ok:
+                f = auto.setdefault("failures", {})
+                f["g:" + s["gkey"]] = f.get("g:" + s["gkey"], 0) + 1
+                auto["safety"]["next_safe"] = s["gkey"]
+                result["scaling_failed"] = w["tool"]
+                changed = True
+        elif w and abnormal:
+            try:
+                scaling.record(s["appid"], w["tool"], False, "el juego se cerró nada más empezar", now=self.clock())
+            except OSError:
+                pass
+            result["scaling_failed"] = w["tool"]
         if abnormal:
             # Graphics and performance are blamed (and rolled back) apart: graphics only for what
             # STONE injected, performance only for a profile above BALANCED that STONE set.
@@ -686,7 +784,7 @@ class Engine:
             result["collected"] = {"config": s["config"], "graphics_applied": s["graphics_applied"],
                                    "performance": s.get("perf_profile"), "environment": s.get("environment"),
                                    "blamed": [x for x, b in (("graphics", g_blame), ("performance", p_blame)) if b]}
-        elif reason == "exit" and (auto["safety"]["next_safe"] or auto["safety"]["next_safe_perf"]):
+        elif reason == "exit" and not result.get("scaling_failed") and (auto["safety"]["next_safe"] or auto["safety"]["next_safe_perf"]):
             auto["safety"] = {"next_safe": None, "next_safe_perf": None}   # one clean run: back to normal
             changed = True
         if not abnormal and reason == "exit" and s.get("look"):
@@ -704,6 +802,7 @@ class Engine:
         self._save_session(None)
         self._event("game_end", appid=s["appid"], reason=reason, seconds=result["seconds"], abnormal=abnormal,
                     look=s.get("look"), healed=result.get("healed"), probed=bool(s.get("probed")),
+                    scaling_failed=result.get("scaling_failed"),
                     graphics_restored=str(result["graphics_restored"]))
         self.log(f"[stone] optimized: {s['appid']} {reason}{' (abnormal)' if abnormal else ''}: "
                  f"graphics {result['graphics_restored']}")
@@ -935,6 +1034,37 @@ def effects_probe(appid, sysroot=None):
         out["vulkan_loaded"] = out["vulkan_loaded"] or b"libvulkan" in maps
         out["wine"] = out["wine"] or b"wine" in maps or b"ntdll.so" in maps
     return out
+
+
+def files_loaded(appid, files, sysroot=None):
+    """True when any of these files (absolute paths, e.g. the winmm.dll STONE installed in the game's
+    folder) is mapped in a process Steam started for this AppId. Wine maps a game's own DLLs from
+    their files, so a loaded OptiScaler shows up in /proc/<pid>/maps by its path. Read-only."""
+    appid = str(appid)
+    want = [f.lower().encode("utf-8", "replace") for f in files if f]
+    if not want:
+        return False
+    root = os.path.join(sysroot or os.environ.get("STONE_SYSFS_ROOT", "/"), "proc")
+    try:
+        pids = [p for p in os.listdir(root) if p.isdigit()]
+    except OSError:
+        return False
+    for pid in pids:
+        try:
+            with open(os.path.join(root, pid, "environ"), "rb") as f:
+                env = f.read(256 * 1024)
+        except OSError:
+            continue
+        if b"SteamAppId=" + appid.encode() + b"\0" not in env + b"\0" and b"SteamGameId=" + appid.encode() + b"\0" not in env + b"\0":
+            continue
+        try:
+            with open(os.path.join(root, pid, "maps"), "rb") as f:
+                maps = f.read(16 * 1024 * 1024).lower()
+        except OSError:
+            continue
+        if any(w in maps for w in want):
+            return True
+    return False
 
 
 class ProcWatch:

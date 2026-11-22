@@ -999,6 +999,26 @@ class Host:
         appid, _ = self._game_args(args, 1, 1)
         self._opt_call(done, lambda: self.optimized.experience(appid))
 
+    def m_game_scaling(self, args, done):
+        """scaling(appid): upscaling and frame generation of one game, as one choice each (scaling.py)."""
+        appid, _ = self._game_args(args, 1, 1)
+        self._opt_call(done, lambda: self.optimized.scaling(appid))
+
+    def m_game_setScaling(self, args, done):
+        """setScaling(appid, key, preset?): may download and install OptiScaler (in a worker thread)."""
+        if len(args) not in (2, 3) or not isinstance(args[1], str) or (len(args) == 3 and args[2] is not None and not isinstance(args[2], str)):
+            return done(None, "InvalidValue", "arguments")
+        appid, _ = self._game_args(args[:1], 1, 1)
+        preset = args[2] if len(args) == 3 else None
+        self._opt_call(done, lambda: self.optimized.set_scaling(appid, args[1], preset))
+
+    def m_game_setScalingFg(self, args, done):
+        """setScalingFg(appid, "off" | "fsr3")."""
+        if len(args) != 2 or args[1] not in ("off", "fsr3"):
+            return done(None, "InvalidValue", "arguments")
+        appid, _ = self._game_args(args[:1], 1, 1)
+        self._opt_call(done, lambda: self.optimized.set_scaling_framegen(appid, args[1]))
+
     def m_game_frameGen(self, args, done):
         appid, _ = self._game_args(args, 1, 1)
         self._opt_call(done, lambda: self.optimized.frame_generation(appid))

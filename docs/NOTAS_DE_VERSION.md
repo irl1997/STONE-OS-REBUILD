@@ -1,3 +1,37 @@
+# STONE OS (rebuild) 3.1.0-rc15
+
+Reescalado y generación de fotogramas, ordenados en una elección simple por juego, con STONE comprobando que de verdad funcionan.
+
+## Gráficos de un juego: dos elecciones claras
+
+Hasta la rc14, en GRÁFICOS había cuatro filas sueltas: «Imagen», «Ajuste de FSR», «Fotogramas» e «Instalar FSR (OptiScaler)». OptiScaler había que instalarlo aparte antes de poder elegirlo, y la generación de fotogramas solo funcionaba si además estaba elegido OptiScaler como imagen. Ahora hay dos elecciones:
+
+- **Reescalado:** Automático · Nativo · FSR del juego · FSR 3.1 (OptiScaler) · HelixSR (si lo instalaste tú). Debajo, la calidad: Calidad, Equilibrado, Rendimiento o Ultra rendimiento.
+- **Generación de fotogramas:** Desactivada · FSR 3 (OptiScaler).
+
+Cada opción dice en una línea qué hace y su estado:
+- **Lista**, se puede usar ya.
+- **Se instala al elegirla:** STONE descarga OptiScaler de la página de su autor, revisa que el archivo no venga alterado (SHA-256) y lo instala en el juego, sin nada que hacer a mano.
+- **No disponible**, con el motivo: anti-cheat, juego en línea, el juego no trae DLSS, FSR 2/3 ni XeSS para reemplazar, u otro reescalador ya instalado. Se muestra igual, para que se sepa por qué.
+
+Si eliges generación de fotogramas, el reescalado pasa solo a FSR 3.1 (OptiScaler), que es lo que la hace funcionar. Si después cambias a otro reescalado, la generación de fotogramas se apaga y STONE lo dice.
+
+## STONE comprueba que funcionan
+
+- **En cada partida con FSR 3.1,** STONE mira dentro de los procesos del juego si el archivo que instaló (winmm.dll, en la carpeta del juego) de verdad se cargó. También acepta como prueba el registro que escribe el propio OptiScaler durante la partida, para que un fallo de esa lectura nunca le quite FSR 3.1 a un juego donde sí funciona. Cuál de las dos pruebas ve la consola falta comprobarlo en ella.
+- **Lo recuerda por juego:** bajo cada opción aparece «Funcionó en la última partida (fecha)» o «No se activó en la última partida: …».
+- **Si no se cargó, o el juego se cerró nada más empezar,** al volver a STONE aparece un aviso, y la siguiente partida usa sola una opción segura (FSR del juego o Nativo).
+- **Nunca en juegos con anti-cheat ni en línea.**
+
+Lo que STONE no puede hacer es que una herramienta funcione en un juego que no la admite. Por eso esas opciones salen como «No disponible», con su motivo. La generación de fotogramas se comprueba hasta donde se puede ver desde fuera: OptiScaler cargado y configurado para generar fotogramas. Si el juego le da o no lo que necesita depende del juego, y el contador de FPS cuenta también los fotogramas generados.
+
+## APEX Neural Rendering (ANR)
+
+Lo revisamos el 22-11-2026 y por ahora no se agrega:
+- Hoy solo existe su generación de fotogramas (ANR FG), en beta, que funciona a través de OptiScaler y solo en juegos con la generación de fotogramas de NVIDIA (DLSS-G).
+- Su reescalado (ANR SR) no ha salido y su código fuente no está publicado.
+- La BC-250 no aparece en su lista de GPU.
+
 # STONE OS (rebuild) 3.1.0-rc14
 
 La imagen sin alta definición y con grano, desde el informe de la rc13 en la consola (20-11-2026, 23:20).

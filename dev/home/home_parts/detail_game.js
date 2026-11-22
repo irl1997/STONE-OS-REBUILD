@@ -41,7 +41,9 @@ const imgLabel = g => 'Imagen: ' + (g.img ? (imgSel(g) ? imgSel(g).label : 'STON
 /* STONE IMAGE (look.py): a look per game through vkBasalt; Original = none. */
 const lookLabel = g => 'Aspecto: ' + (g.look ? (g.look.chosen ? g.look.looks.find(l => l.key === g.look.chosen).label : 'Original') : '…');
 /* D-22 frame generation (framegen.py): EXPERIMENTAL, only with OptiScaler installed by STONE. */
-const fgLabel = g => 'Fotogramas: ' + (g.fg ? (g.fg.on ? 'Generados (experimental)' : 'Normales') : '…');
+const fgLabel = g => 'Fotogramas: ' + (g.sc ? (g.sc.framegen === 'fsr3' ? 'FSR 3 (generados)' : 'Desactivada') : g.fg ? (g.fg.on ? 'Generados (experimental)' : 'Normales') : '…');
+/* STONE SCALING (3.1.0-rc15): upscaling as one choice with its quality, from the host (scaling.py) */
+const scaleLabel = g => 'Reescalado: ' + (g.sc ? g.sc.summary : '…');
 const optzLabel = g => 'Optimizar' + (g.opz ? ` (${g.opz.done}/${g.opz.total})` : '');
 const optLabel = g => g.img && g.img.by_stone ? 'Quitar FSR (OptiScaler)' : 'Instalar FSR (OptiScaler)';
 const preLabel = g => 'Ajuste de FSR: ' + (g.img && g.img.preset ? PRESET_TXT[g.img.preset] || g.img.preset : 'El del juego');
@@ -64,6 +66,7 @@ async function imgLoad(g, i) {
   try { g.opz = await Sys.gameOptStatus(g.appid); } catch (e) { g.opz = null; }
   try { g.look = await Sys.gameLook(g.appid); } catch (e) { g.look = null; }
   try { g.fg = await Sys.gameFrameGen(g.appid); } catch (e) { g.fg = null; }
+  try { g.sc = await Sys.gameScaling(g.appid); } catch (e) { g.sc = null; }
   if (curG === i && S.screen === 'detail') imgRefresh(g);
 }
 async function imgSet(g, key, preset) {
@@ -378,8 +381,90 @@ function lookPicker(g) {
   NAV = mkNav(rows.concat([[...d.querySelectorAll('.btns [data-f]')]]), { r: Math.floor(at / 2), c: at % 2, place: (el, b) => ({ x: b.x, y: b.y + b.h + 4, w: b.w }) });
   NAV.id = 'dlg'; requestAnimationFrame(() => applyFocus());
 }
+/* REESCALADO and FOTOGRAMAS (3.1.0-rc15): each choice with what it does and its state, as ASPECTO.
+   ready: usable now; install: STONE downloads OptiScaler from its author and installs it when chosen;
+   blocked: it cannot work in this game, and why (shown, never hidden). Under each one, what STONE saw in
+   the last game: "Funcionó…" or "No se activó…" (the host checks OptiScaler is really loaded). */
+const SC_STATE = { ready: '', install: 'Se instala al elegirla', blocked: 'No disponible' };
+function scCard(c, i) {
+  const st = [c.state !== 'ready' ? (c.reason || SC_STATE[c.state]) : (c.reason || ''), c.check || ''].filter(Boolean).join(' · ');
+  return `<span class="txt-f sres look${c.state === 'blocked' ? ' blk' : ''}" data-f data-i="${i}"><span class="lbl">${esc(c.label.toUpperCase())}${c.selected ? ' ✓' : ''}</span>`
+    + `<small>${esc(c.description)}${st ? `<br><span class="scst${c.check_ok === false ? ' bad' : c.state === 'blocked' ? ' bad' : c.check_ok ? ' good' : ''}">${esc(st)}</span>` : ''}</small></span>`;
+}
+async function scApply(g, call, wait) {
+  const t = setTimeout(() => { busy('scale', wait); toast(wait + '… puede tardar un minuto', false); }, 700);
+  let r = null;
+  try { r = await call(); } catch (e) { clearTimeout(t); busy('scale'); play('error'); toast('No se pudo: ' + ((e && e.message) || 'sin respuesta'), false); return null; }
+  clearTimeout(t); busy('scale');
+  g.sc = r && r.scaling ? r.scaling : g.sc;
+  await imgLoad(g, curG); experience(g, curG);
+  play('select');
+  return r;
+}
+function scalePicker(g, at) {
+  play('select');
+  const back = () => gfxPanel(g, 0);
+  const S2 = g.sc;
+  if (!S2) { toast('Leyendo las opciones de este juego…', false); imgLoad(g, curG).then(() => { if (g.sc) scalePicker(g); }); return; }
+  const ups = S2.upscalers, pres = S2.presets;
+  openDlg(`<span class="st-cap">GRÁFICOS · ${esc(g.n.toUpperCase())}</span><h2>REESCALADO</h2>
+    <div class="slist two looks">${ups.map(scCard).join('')}</div>
+    ${S2.preset_applies ? `<p class="scq">Calidad del reescalado</p><div class="btns scq">${pres.map((p, i) => `<span class="txt-f" data-f data-p="${i}">${esc(p.label.toUpperCase())}${p.key === S2.preset ? ' ✓' : ''}</span>`).join('')}</div>` : ''}
+    <div class="btns"><span class="txt-f" data-f data-b="no">VOLVER</span></div>`, {
+    onA: el => {
+      if (el.dataset.b === 'no') { play('back'); return back(); }
+      if (el.dataset.p !== undefined) {
+        const p = pres[+el.dataset.p], cur = S2.upscaler;
+        return scApply(g, () => Sys.gameSetScaling(g.appid, cur, p.key), 'Cambiando la calidad').then(r => {
+          if (r) toast(`Calidad: ${p.label} · se aplica la próxima vez que juegues`, false);
+          scalePicker(g, { p: +el.dataset.p });
+        });
+      }
+      const c = ups[+el.dataset.i];
+      if (c.state === 'blocked') { play('error'); return longToast(`${c.label}: ${c.reason || 'no disponible en este juego'}`, 6000); }
+      if (c.selected) { play('back'); return back(); }
+      return scApply(g, () => Sys.gameSetScaling(g.appid, c.key, S2.preset), c.state === 'install' ? 'Descargando e instalando FSR 3.1 (OptiScaler)' : 'Cambiando el reescalado').then(r => {
+        if (r) longToast(`${r.note || c.label} · se aplica la próxima vez que juegues`, 6000);
+        scalePicker(g, { i: +el.dataset.i });
+      });
+    }, onB: () => { play('back'); back(); } });
+  const d = $('#dlg'), cells = [...d.querySelectorAll('.slist [data-f]')], rows = [];
+  for (let i = 0; i < cells.length; i += 2) rows.push(cells.slice(i, i + 2));
+  const q = [...d.querySelectorAll('.btns.scq [data-f]')];
+  if (q.length) rows.push(q);
+  rows.push([...d.querySelectorAll('.btns:not(.scq) [data-f]')]);
+  const sel = Math.max(0, ups.findIndex(u => u.selected));
+  const pos = at && at.p !== undefined ? { r: Math.ceil(ups.length / 2), c: at.p } : { r: Math.floor((at && at.i !== undefined ? at.i : sel) / 2), c: (at && at.i !== undefined ? at.i : sel) % 2 };
+  NAV = mkNav(rows, { r: pos.r, c: pos.c, place: (el, b) => ({ x: b.x, y: b.y + b.h + 4, w: b.w }) });
+  NAV.id = 'dlg'; requestAnimationFrame(() => applyFocus());
+}
+function fgPicker(g) {
+  play('select');
+  const back = () => gfxPanel(g, 1);
+  const S2 = g.sc;
+  if (!S2) { toast('Leyendo las opciones de este juego…', false); imgLoad(g, curG).then(() => { if (g.sc) fgPicker(g); }); return; }
+  const fgs = S2.framegens;
+  openDlg(`<span class="st-cap">GRÁFICOS · ${esc(g.n.toUpperCase())}</span><h2>GENERACIÓN DE FOTOGRAMAS</h2>
+    <div class="slist two looks">${fgs.map(scCard).join('')}</div>
+    <div class="btns"><span class="txt-f" data-f data-b="no">VOLVER</span></div>`, {
+    onA: el => {
+      if (el.dataset.b === 'no') { play('back'); return back(); }
+      const c = fgs[+el.dataset.i];
+      if (c.state === 'blocked') { play('error'); return longToast(`${c.label}: ${c.reason || 'no disponible en este juego'}`, 6000); }
+      if (c.selected) { play('back'); return back(); }
+      return scApply(g, () => Sys.gameSetScalingFg(g.appid, c.key), c.state === 'install' ? 'Descargando e instalando FSR 3.1 (OptiScaler)' : 'Cambiando la generación de fotogramas').then(r => {
+        if (r) longToast(`${r.note || c.label} · se aplica la próxima vez que juegues`, 6000);
+        fgPicker(g);
+      });
+    }, onB: () => { play('back'); back(); } });
+  const d = $('#dlg'), cells = [...d.querySelectorAll('.slist [data-f]')];
+  NAV = mkNav([cells, [...d.querySelectorAll('.btns [data-f]')]], { r: 0, c: Math.max(0, fgs.findIndex(f => f.selected)), place: (el, b) => ({ x: b.x, y: b.y + b.h + 4, w: b.w }) });
+  NAV.id = 'dlg'; requestAnimationFrame(() => applyFocus());
+}
 /* GRÁFICOS: the image options of one game in a list, each line with its value; A changes it in place. */
-const GFX = [['img', g => imgLabel(g)], ['pre', g => preLabel(g)], ['look', g => lookLabel(g)], ['fg', g => fgLabel(g)], ['ins', g => optLabel(g)], ['opz', g => optzLabel(g)],
+/* rc15: Imagen, Ajuste de FSR, Fotogramas and Instalar FSR became two choices: Reescalado (with its quality)
+   and Fotogramas. OptiScaler installs itself when it is chosen; each choice says whether it worked. */
+const GFX = [['up', g => scaleLabel(g)], ['fg', g => fgLabel(g)], ['look', g => lookLabel(g)], ['opz', g => optzLabel(g)],
   ['xp', () => 'Experiencia: qué usa STONE y por qué']];
 function gfxPanel(g, at = 0) {
   const row = ([k, f]) => { const [l, v] = f(g).split(/: (.*)/s); return `<span class="txt-f sres" data-f data-act="${k}">${esc(l)}<small>${esc(v || '')}</small></span>`; };
@@ -391,6 +476,8 @@ function gfxPanel(g, at = 0) {
       const k = el.dataset.act, r = NAV.r;
       if (k === 'opz') { closeDlg(); enterDetail(curG, { r: 1, c: 2 }); return detailA({ dataset: { act: 'opz' } }); }
       if (k === 'xp') { closeDlg(); enterDetail(curG, { r: 1, c: 2 }); return detailA({ dataset: { act: 'xp' } }); }
+      if (k === 'up') return scalePicker(g);
+      if (k === 'fg') return fgPicker(g);
       Promise.resolve(detailA({ dataset: { act: k } })).then(() => { if (S.screen === 'dlg' && $('#dlg h2') && $('#dlg h2').textContent === 'GRÁFICOS') gfxPanel(g, r); });
     }, onB: back });
   const d = $('#dlg');
