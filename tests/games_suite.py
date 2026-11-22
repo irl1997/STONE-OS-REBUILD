@@ -997,6 +997,126 @@ def G29_folder_scan_kept_between_launches_and_forgotten_when_stone_installs():
             detect.forget()
 
 
+
+@test
+def G30_scaling_one_choice_installs_optiscaler_and_checks_it_really_loaded():
+    """3.1.0-rc15 (owner, 22-11-2026: "una manera fácil e intuitiva" and "asegurar que funcionen")."""
+    from stone_games import install, scaling
+    opti = {"OptiScaler/OptiScaler.dll": b"MZ" + bytes(50), "OptiScaler/OptiScaler.ini": "[Upscalers]\n[FrameGen]\nFGType=nofg\n"}
+    with World() as w:
+        gdir = os.path.join(w.game_dir, "bin", "x64")
+        with open(os.path.join(gdir, "Cyberpunk2077.exe"), "wb") as f:
+            f.write(bytes(5000))
+        loaded = [True]
+        w.e = optimizer.Engine(root=lambda: w.root, cef=w, display=w.display, perf=w.perf, watch=w, clock=lambda: w.now,
+                               log=lambda m: None, probe=lambda a: {"processes": 4, "vulkan_loaded": True, "env": {}},
+                               injected_probe=lambda a, files: loaded[0] and all(f.endswith("winmm.dll") for f in files))
+        sc = w.e.scaling(CP)
+        keys = {u["key"]: u for u in sc["upscalers"]}
+        assert sc["upscaler"] == "auto" and keys["auto"]["selected"] and sc["framegen"] == "off", sc
+        assert keys["optiscaler"]["state"] == "install" and "helixsr" not in keys, keys["optiscaler"]
+        assert [p["key"] for p in sc["presets"]] == ["quality", "balanced", "performance", "ultra_performance"]
+        # choosing FSR 3.1 downloads (the author's release, checked) and installs it: nothing by hand
+        gj, dl = _fake_net("optiscaler", opti)
+        real_fetch = install.fetch
+        install.fetch = lambda kind, log=None: real_fetch(kind, gj, dl)
+        try:
+            r = w.e.set_scaling(CP, "optiscaler", "balanced")
+        finally:
+            install.fetch = real_fetch
+        assert r["ok"] and "instalado" in r["note"] and os.path.isfile(os.path.join(gdir, "winmm.dll")), r
+        sc = r["scaling"]
+        assert sc["upscaler"] == "optiscaler" and sc["preset"] == "balanced" and sc["preset_applies"], sc
+        assert "Equilibrado" in sc["summary"]
+        # frame generation: needs OptiScaler, which is there and chosen
+        r = w.e.set_scaling_framegen(CP, "fsr3")
+        assert r["ok"] and r["scaling"]["framegen"] == "fsr3", r
+        assert "FGType=optifg" in open(os.path.join(gdir, "OptiScaler.ini")).read()
+        # a launch where OptiScaler WAS loaded: recorded as working
+        w.e.launch(CP)
+        w.running_set.add(CP)
+        w.now += 5
+        assert w.e.tick() == "started"
+        w.now += 30
+        w.e.tick()
+        w.running_set.discard(CP)
+        w.now += 300
+        end = w.e.tick()
+        assert end["scaling_check"] == {"tool": "optiscaler", "ok": True} and not end.get("scaling_failed"), end
+        v = scaling.verified(CP)
+        assert v["optiscaler"]["ok"] and v["framegen"]["ok"]
+        assert "Funcionó" in {u["key"]: u for u in w.e.scaling(CP)["upscalers"]}["optiscaler"]["check"]
+        # not seen in the processes but its own log written during the game: it ran (never turned off for nothing)
+        loaded[0] = False
+        w.e.launch(CP)
+        w.running_set.add(CP)
+        w.now += 5
+        w.e.tick()
+        logf = os.path.join(gdir, "OptiScaler.log")
+        with open(logf, "w") as f:
+            f.write("loaded\n")
+        os.utime(logf, (w.now, w.now))
+        w.now += 30
+        w.e.tick()
+        w.running_set.discard(CP)
+        w.now += 300
+        end = w.e.tick()
+        assert end["scaling_check"]["ok"] and not end.get("scaling_failed"), end
+        os.remove(logf)
+        # a launch where it was NOT loaded: failed, said, and the next launch falls back on its own
+        w.e.launch(CP)
+        w.running_set.add(CP)
+        w.now += 5
+        w.e.tick()
+        w.now += 30
+        w.e.tick()
+        w.running_set.discard(CP)
+        w.now += 300
+        end = w.e.tick()
+        assert end["scaling_failed"] == "optiscaler" and not end["scaling_check"]["ok"], end
+        assert "No se activó" in {u["key"]: u for u in w.e.scaling(CP)["upscalers"]}["optiscaler"]["check"]
+        nxt = w.e.recommended(CP)
+        assert nxt["config"]["graphics"]["path"] != "optiscaler", nxt["config"]["graphics"]
+        # leaving FSR 3.1 turns frame generation off (it only runs inside OptiScaler), and says so
+        r = w.e.set_scaling(CP, "native")
+        assert r["scaling"]["framegen"] == "off" and "fotogramas" in r["note"], r
+        assert "FGType=nofg" in open(os.path.join(gdir, "OptiScaler.ini")).read()
+        try:
+            w.e.set_scaling(CP, "dlss")
+            raise AssertionError("unknown upscaler accepted")
+        except schema.ProfileError:
+            pass
+    # the real check: the winmm.dll STONE installed, mapped in a process of this AppId (and only of this one)
+    root = tempfile.mkdtemp(prefix="stone-proc-")
+    try:
+        for pid, appid, maps in (("101", CP, "7f00-7f10 r-xp 0 00:00 1 /games/Cyberpunk 2077/bin/x64/winmm.dll\n"),
+                                 ("102", "4242", "7f00-7f10 r-xp 0 00:00 1 /games/Other/winmm.dll\n"),
+                                 ("103", CP + "0", "7f00-7f10 r-xp 0 00:00 1 /games/Cyberpunk 2077/bin/x64/winmm.dll\n")):
+            d = os.path.join(root, "proc", pid)
+            os.makedirs(d)
+            with open(os.path.join(d, "environ"), "wb") as f:
+                f.write(b"HOME=/x\0SteamAppId=" + appid.encode() + b"\0")
+            with open(os.path.join(d, "maps"), "w") as f:
+                f.write(maps)
+        want = ["/games/Cyberpunk 2077/bin/x64/winmm.dll"]
+        assert optimizer.files_loaded(CP, want, sysroot=root)
+        assert not optimizer.files_loaded("4242", want, sysroot=root)                 # another game's process
+        assert not optimizer.files_loaded(CP, ["/games/Cyberpunk 2077/bin/x64/version.dll"], sysroot=root)
+        assert not optimizer.files_loaded(CP, [], sysroot=root)
+    finally:
+        shutil.rmtree(root, ignore_errors=True)
+    with World(anti_cheat=True) as w:                    # anti-cheat: shown, never offered
+        sc = w.e.scaling(CP)
+        o = {u["key"]: u for u in sc["upscalers"]}["optiscaler"]
+        f = {x["key"]: x for x in sc["framegens"]}["fsr3"]
+        assert o["state"] == "blocked" and "anti-cheat" in o["reason"] and f["state"] == "blocked", (o, f)
+        try:
+            w.e.set_scaling(CP, "optiscaler")
+            raise AssertionError("anti-cheat game accepted")
+        except schema.ProfileError as e:
+            assert "anti-cheat" in str(e)
+        assert not os.path.exists(os.path.join(w.game_dir, "bin", "x64", "winmm.dll"))
+
 @test
 def G25_optiscaler_release_names_in_any_letter_case():
     """3.1.0-rc8 on the console: OptiScaler v0.9.4 publishes "Optiscaler_0.9.4-final.20260718._MM.7z"

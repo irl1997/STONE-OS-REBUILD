@@ -536,3 +536,9 @@
    cell edge to edge and pushed it wider than the other three) */
 #quick .opts{gap:6px}
 #quick .opts span{flex:1 1 0;min-width:0;padding:12px 4px;font-size:17px;letter-spacing:.04em;white-space:nowrap}
+/* REESCALADO and FOTOGRAMAS (3.1.0-rc15): the state under each choice; blocked ones dimmed but shown */
+#stage #dlg .sres.look.blk{opacity:.55}
+#stage #dlg .sres.look .scst{display:inline-block;margin-top:4px;color:var(--text-2)}
+#stage #dlg .sres.look .scst.good{color:#7fd69a}
+#stage #dlg .sres.look .scst.bad{color:#f0a23b}
+#stage #dlg p.scq{margin:14px 0 -4px;font-size:16px;letter-spacing:.14em;text-transform:uppercase;color:var(--text-2)}

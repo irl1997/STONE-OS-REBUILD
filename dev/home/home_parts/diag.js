@@ -80,6 +80,12 @@ async function diagUsb(r, ri, back) {
 /* A look STONE turned off (optimizer.finish, rc8: only after two early ends in a row) is said, never silent. */
 Bridge.on('game', d => {
   const e = d && d.ended;
+  /* rc15: OptiScaler chosen but not loaded in the game (or the game closed at once): said, and the next
+     launch already falls back (optimizer.FALLBACK) */
+  if (e && e.scaling_failed) {
+    const g = G.find(x => String(x.appid) === String(e.appid));
+    play('notify'); longToast(`FSR 3.1 (OptiScaler) no se activó en ${g ? g.n : 'el juego'}. La próxima vez STONE usa una opción segura. Gráficos → Reescalado dice qué pasó`, 8000);
+  }
   if (!e || !e.healed) return;
   const g = G.find(x => String(x.appid) === String(e.appid));
   toast(`STONE quitó el aspecto de ${g ? g.n : 'un juego'}: se cerró dos veces nada más empezar. Puedes volver a elegirlo en su página`, false);

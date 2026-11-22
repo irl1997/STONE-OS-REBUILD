@@ -53,6 +53,8 @@ const Sys = {
   sessionResume: () => Bridge.call('session.resume'), sessionDesktop: () => Bridge.call('session.desktop'),
   health: () => Bridge.call('health.status'), cu40: op => Bridge.call('gpu.cu40', op),
   bootRollback: () => Bridge.call('boot.rollback'),
+  gameScaling: appid => Bridge.call('game.scaling', appid), gameSetScaling: (appid, key, preset) => Bridge.call('game.setScaling', appid, key, preset || null),
+  gameSetScalingFg: (appid, key) => Bridge.call('game.setScalingFg', appid, key),
   gameFrameGen: appid => Bridge.call('game.frameGen', appid), gameSetFrameGen: (appid, on) => Bridge.call('game.setFrameGen', appid, on),
   gameExperience: appid => Bridge.call('game.experience', appid), gameLook: appid => Bridge.call('game.look', appid), gameSetLook: (appid, k) => Bridge.call('game.setLook', appid, k),
   /* Steam asking something (steamcef.dialog), answered from STONE; STONE MEDIA */

@@ -162,6 +162,31 @@ const Bridge = (() => {
   const comps = { helixsr: null, optiscaler: null };            /* what STONE has downloaded */
   const gs = {};                                                /* per game: { mode, path, preset, opti (installed by STONE), helix, done } */
   const st = appid => gs[appid] || (gs[appid] = { mode: 'recommended', path: null, preset: null, opti: false, helix: false, done: 0 });
+  /* rc15 STONE SCALING in the simulation: Cyberpunk worked with OptiScaler last time, Forza did not load it */
+  const SC_SEEN = { '1091500': { optiscaler: { ok: true, at: Date.now() / 1000 - 86400 } }, '1551360': { optiscaler: { ok: false, at: Date.now() / 1000 - 3600, why: 'OptiScaler no se cargó dentro del juego' } } };
+  function simScaling(appid) {
+    const g = gameOf(appid), s = st(appid), prot = protectedGame(g);
+    if (SC_SEEN[appid] && SC_SEEN[appid].optiscaler) s.opti = true;      /* it ran with OptiScaler: installed */
+    const seen = SC_SEEN[appid] || {}, day = v => new Date(v.at * 1000).toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit' });
+    const chk = v => v ? (v.ok ? `Funcionó en la última partida (${day(v)})` : `No se activó en la última partida (${day(v)}): ${v.why}`) : null;
+    const noUps = g.kind === 'plain';
+    const opt = prot ? ['blocked', g.kind === 'online' ? 'No se usa en juegos en línea' : 'No se usa en juegos con anti-cheat (una DLL inyectada puede costar la cuenta)']
+      : s.opti ? ['ready', null] : noUps ? ['blocked', 'El juego no trae DLSS, FSR 2/3 ni XeSS: no hay nada que reemplazar'] : ['install', 'Se descarga del autor y se instala al elegirla (un minuto)'];
+    const cur = s.mode !== 'custom' ? 'auto' : s.path;
+    const U = [['auto', 'Automático', 'STONE elige lo mejor que midió para esta consola', ['ready', null]],
+      ['native', 'Nativo', 'Sin reescalar: la imagen más nítida, con menos FPS', ['ready', null]],
+      ['game_upscaler', 'FSR del juego', 'El FSR o XeSS que trae el juego; se activa en su menú de gráficos', noUps ? ['blocked', 'El juego no trae su propio FSR ni XeSS'] : ['ready', null]],
+      ['optiscaler', 'FSR 3.1 (OptiScaler)', 'Pone FSR 3.1 en juegos que traen DLSS, FSR 2 o XeSS: más FPS con buena imagen', opt]];
+    const ups = U.map(([key, label, description, [state, reason]]) => ({ key, label, description, state, reason, selected: cur === key, check: chk(seen[key]), check_ok: seen[key] ? seen[key].ok : null }));
+    const P = [['quality', 'Calidad'], ['balanced', 'Equilibrado'], ['performance', 'Rendimiento'], ['ultra_performance', 'Ultra rendimiento']];
+    const c = ups.find(u => u.selected) || ups[0], preset = s.preset || (cur === 'auto' || cur === 'native' ? null : 'quality');
+    const fgOpt = prot ? ['blocked', g.kind === 'online' ? 'No se usa en juegos en línea' : 'No se usa en juegos con anti-cheat'] : opt[0] === 'ready' && cur !== 'optiscaler' ? ['ready', 'Al elegirla, el reescalado pasa a FSR 3.1 (OptiScaler), que la hace funcionar'] : opt;
+    const fgs = [{ key: 'off', label: 'Desactivada', description: 'Solo los fotogramas que dibuja el juego', state: 'ready', reason: null, selected: !s.fg },
+      { key: 'fsr3', label: 'FSR 3 (OptiScaler)', description: 'Genera un fotograma entre cada dos: más fluidez; el contador de FPS cuenta también los generados', state: fgOpt[0], reason: fgOpt[1], selected: !!s.fg, check: null, check_ok: null }];
+    const pl = P.find(p => p[0] === preset);
+    return { upscaler: c.key, upscalers: ups, preset, presets: P.map(([key, label]) => ({ key, label })), preset_applies: !['auto', 'native'].includes(c.key),
+      framegen: s.fg ? 'fsr3' : 'off', framegens: fgs, summary: [c.label, !['auto', 'native'].includes(c.key) && pl ? pl[1] : null, s.fg ? 'fotogramas generados' : null].filter(Boolean).join(' · ') };
+  }
   const LABEL = { native: 'Sin mejora (nativo)', game_upscaler: 'FSR del juego', gamescope: 'FSR de pantalla (Gamescope)', helixsr: 'HelixSR', optiscaler: 'OptiScaler' };
   const PRESETS = ['quality', 'balanced', 'performance', 'ultra_performance'];
   const PRESET_ES = { quality: 'Calidad', balanced: 'Equilibrado', performance: 'Rendimiento', ultra_performance: 'Ultra rendimiento' };
@@ -441,6 +466,27 @@ const Bridge = (() => {
       return { ok: true, needs_download: false, tag: comps[kind].tag, component: { tag: comps[kind].tag }, folder: `…/steamapps/common/${g.name}/`, files: kind === 'optiscaler' ? 14 : 6 };
     },
     'game.install': async ([appid]) => { await wait(900); st(appid).opti = true; return { ok: true }; },
+    /* STONE SCALING (rc15, scaling.py): the same shape the host gives */
+    'game.scaling': ([appid]) => simScaling(appid),
+    'game.setScaling': async ([appid, key, preset]) => {
+      const g = gameOf(appid), s = st(appid), sc = simScaling(appid), c = sc.upscalers.find(u => u.key === key);
+      if (!c || c.state === 'blocked') bad('InvalidValue', (c && c.reason) || 'no disponible');
+      let note = null;
+      if (c.state === 'install') { await wait(2200); s.opti = true; note = 'FSR 3.1 (OptiScaler) instalado en el juego'; }
+      if (key !== 'optiscaler' && s.fg) { s.fg = false; note = 'La generación de fotogramas se apagó: solo funciona con FSR 3.1 (OptiScaler)'; }
+      if (key === 'auto') { s.mode = 'recommended'; s.path = s.preset = null; } else { s.mode = 'custom'; s.path = key; s.preset = key === 'native' ? null : (preset || s.preset || 'quality'); }
+      void g; return { ok: true, note, scaling: simScaling(appid) };
+    },
+    'game.setScalingFg': async ([appid, key]) => {
+      const s = st(appid), sc = simScaling(appid), c = sc.framegens.find(f => f.key === key);
+      if (!c || c.state === 'blocked') bad('InvalidValue', (c && c.reason) || 'no disponible');
+      let note = null;
+      if (key === 'fsr3') {
+        if (!s.opti) { await wait(2200); s.opti = true; }
+        if (s.mode !== 'custom' || s.path !== 'optiscaler') { s.mode = 'custom'; s.path = 'optiscaler'; s.preset = s.preset || 'quality'; note = 'El reescalado pasó a FSR 3.1 (OptiScaler), que hace funcionar la generación de fotogramas'; }
+      }
+      s.fg = key === 'fsr3'; return { ok: true, note, scaling: simScaling(appid) };
+    },
     'game.uninstallImage': async ([appid]) => { const s = st(appid); s.opti = false; if (s.path === 'optiscaler') { s.mode = 'recommended'; s.path = s.preset = null; } return { ok: true }; },
     'game.optimizeStatus': ([appid]) => {
       const g = gameOf(appid), s = st(appid), total = MATRIX(g), done = Math.min(s.done, total);
