@@ -15,13 +15,18 @@ Desde el informe de la rc15 en la consola (22-11-2026, 19:42): FSR 3.1 que no se
 - **Apagado:** la imagen se cierra como un televisor al apagarse: se pliega en una línea de luz blanca, la línea en un punto, y el punto se apaga (0,75 s). Sobre el negro queda «STONE» con su línea, que se vacía desde los extremos mientras la consola se apaga, y debajo «Apagando…» o «Reiniciando…». La orden de apagar sale apenas se cierra la imagen.
 - Con «Reducir movimiento» (Ajustes → Accesibilidad), ambos son fundidos simples.
 
-## HelixSR siempre aparece
+## HelixSR: lo eliges y juegas
 
-Hasta la rc15, HelixSR solo aparecía si ya estaba instalado en el juego. Ahora siempre está en Gráficos → Reescalado:
-- **Si no está instalado:** dice «Lo instalas tú», y al elegirlo explica cómo. HelixSR se instala con HelixSR Desktop, la app de su autor, en el Modo escritorio. La primera vez descarga archivos de NVIDIA y AMD y te pide aceptar sus licencias. STONE nunca acepta una licencia por nadie ni ejecuta instaladores descargados, por eso ese paso lo haces tú.
-- **Para que STONE pueda activarlo y quitarlo en cada partida,** el archivo tiene que quedar como winmm.dll y no como dxgi.dll (la guía de HelixSR lo permite).
-- **Ya instalado,** se elige como cualquier otra opción, y STONE comprueba después de cada partida si funcionó.
-- En juegos de 32 bits, con anti-cheat o en línea aparece «No disponible», con el motivo.
+HelixSR (hecho y probado en la BC-250) ejecuta las redes de DLSS de NVIDIA y de FSR 4 de AMD como sombreadores normales. Ahora siempre aparece en Gráficos → Reescalado, y basta con elegirlo:
+
+1. **La primera vez, STONE muestra la licencia de NVIDIA completa.** Se lee con ↑ ↓ y «NO ACEPTO» es el botón elegido de entrada. HelixSR construye su red en la consola a partir de la DLL de DLSS 310.7.0, que se descarga del GitHub de NVIDIA. Esa DLL es de NVIDIA y se usa bajo su licencia: **la aceptas tú**. STONE nunca acepta una licencia por nadie, y sin tu «ACEPTO» no se descarga nada de NVIDIA.
+2. **Con «ACEPTO Y PREPARAR»,** STONE descarga HelixSR de su autor (revisando su SHA-256) y ejecuta su propio instalador en segundo plano, sin preguntar nada y sin tocar ningún juego. Construye la red una sola vez y tarda unos minutos. Mientras tanto puedes seguir usando la consola: arriba aparece «Preparando HelixSR».
+3. **Al terminar,** STONE instala HelixSR en ese juego con la herramienta del propio HelixSR, como winmm.dll, y lo deja elegido. Aparece «HelixSR listo en …: ya puedes jugar».
+4. **En los demás juegos,** después basta con elegirlo: se instala en un momento.
+5. **En cada partida,** STONE comprueba que se cargó, igual que con FSR 3.1. Si no se cargó, lo avisa y la siguiente partida usa una opción segura. Si la preparación falla, lo avisa con el motivo, y el informe de diagnóstico guarda su registro.
+
+Nunca en juegos de 32 bits, con anti-cheat o en línea: STONE los bloquea aunque la herramienta de HelixSR los permita.
+
 
 # STONE OS (rebuild) 3.1.0-rc15
 

@@ -162,6 +162,19 @@ const Bridge = (() => {
   const comps = { helixsr: null, optiscaler: null };            /* what STONE has downloaded */
   const gs = {};                                                /* per game: { mode, path, preset, opti (installed by STONE), helix, done } */
   const st = appid => gs[appid] || (gs[appid] = { mode: 'recommended', path: null, preset: null, opti: false, helix: false, done: 0 });
+  /* rc16 HelixSR in one press, simulated: NVIDIA's license, a build of ~8 s, then the waiting game gets it */
+  const HX = { building: false, ready: false, step: '', pending: null };
+  const HX_STEPS = ['descargando HelixSR del autor', 'descargando la DLL de NVIDIA', 'construyendo la red (shaders)', 'comprobando'];
+  function hxBuild(appid) {
+    HX.building = true; HX.pending = appid; let i = 0;
+    const next = () => {
+      if (i < HX_STEPS.length) { HX.step = HX_STEPS[i++]; emit('helixsr', { state: 'building', step: HX.step }); return setTimeout(next, 2000); }
+      HX.building = false; HX.ready = true;
+      const s = st(HX.pending); s.helix = true; s.mode = 'custom'; s.path = 'helixsr'; s.preset = s.preset || 'quality';
+      emit('helixsr', { state: 'ready', installed: HX.pending }); HX.pending = null;
+    };
+    next();
+  }
   /* rc15 STONE SCALING in the simulation: Cyberpunk worked with OptiScaler last time, Forza did not load it */
   const SC_SEEN = { '1091500': { optiscaler: { ok: true, at: Date.now() / 1000 - 86400 } }, '1551360': { optiscaler: { ok: false, at: Date.now() / 1000 - 3600, why: 'OptiScaler no se cargó dentro del juego' } } };
   function simScaling(appid) {
@@ -177,15 +190,18 @@ const Bridge = (() => {
       ['native', 'Nativo', 'Sin reescalar: la imagen más nítida, con menos FPS', ['ready', null]],
       ['game_upscaler', 'FSR del juego', 'El FSR o XeSS que trae el juego; se activa en su menú de gráficos', noUps ? ['blocked', 'El juego no trae su propio FSR ni XeSS'] : ['ready', null]],
       ['optiscaler', 'FSR 3.1 (OptiScaler)', 'Pone FSR 3.1 en juegos que traen DLSS, FSR 2 o XeSS: más FPS con buena imagen', opt],
-      ['helixsr', 'HelixSR', 'FSR 4 y DLSS como sombreadores normales, hecho y probado en la BC-250', prot ? opt : s.helix ? ['ready', null] : ['manual', 'Lo instalas tú con HelixSR Desktop (pide aceptar licencias de NVIDIA y AMD). Elige para ver cómo']]];
-    const ups = U.map(([key, label, description, [state, reason]]) => ({ key, label, description, state, reason, selected: cur === key, check: chk(seen[key]), check_ok: seen[key] ? seen[key].ok : null }));
+      ['helixsr', 'HelixSR', 'FSR 4 y DLSS como sombreadores normales, hecho y probado en la BC-250', prot ? opt : s.helix ? ['ready', null]
+        : HX.building ? ['preparing', 'Preparando HelixSR en la consola: ' + HX.step] : HX.ready ? ['install', 'Se instala al elegirla']
+        : ['install', 'La primera vez STONE lo prepara en la consola (unos minutos, con la licencia de NVIDIA que aceptas tú) y lo instala; después solo eliges y juegas']]];
+    const ups = U.map(([key, label, description, [state, reason]]) => ({ key, label, description, state, reason, selected: cur === key, check: chk(seen[key]), check_ok: seen[key] ? seen[key].ok : null,
+      prepare: key === 'helixsr' && state === 'install' && !HX.ready }));
     const P = [['quality', 'Calidad'], ['balanced', 'Equilibrado'], ['performance', 'Rendimiento'], ['ultra_performance', 'Ultra rendimiento']];
     const c = ups.find(u => u.selected) || ups[0], preset = s.preset || (cur === 'auto' || cur === 'native' ? null : 'quality');
     const fgOpt = prot ? ['blocked', g.kind === 'online' ? 'No se usa en juegos en línea' : 'No se usa en juegos con anti-cheat'] : opt[0] === 'ready' && cur !== 'optiscaler' ? ['ready', 'Al elegirla, el reescalado pasa a FSR 3.1 (OptiScaler), que la hace funcionar'] : opt;
     const fgs = [{ key: 'off', label: 'Desactivada', description: 'Solo los fotogramas que dibuja el juego', state: 'ready', reason: null, selected: !s.fg },
       { key: 'fsr3', label: 'FSR 3 (OptiScaler)', description: 'Genera un fotograma entre cada dos: más fluidez; el contador de FPS cuenta también los generados', state: fgOpt[0], reason: fgOpt[1], selected: !!s.fg, check: null, check_ok: null }];
     const pl = P.find(p => p[0] === preset);
-    return { upscaler: c.key, upscalers: ups, helixsr_how: 'HelixSR se instala con HelixSR Desktop, la app de su autor (github.com/lonewolf0622/HelixSR): la primera vez descarga archivos de NVIDIA y AMD y te pide aceptar sus licencias, por eso lo instalas tú, en el Modo escritorio, eligiendo este juego y «HelixSR Scaler». Si queda como dxgi.dll se carga en cada partida; para que STONE pueda activarlo y quitarlo cuando elijas, en la carpeta del juego cambia el nombre de dxgi.dll a winmm.dll (la guía de HelixSR lo permite). Al volver, HelixSR aparece aquí listo para elegir.', preset, presets: P.map(([key, label]) => ({ key, label })), preset_applies: !['auto', 'native'].includes(c.key),
+    return { upscaler: c.key, upscalers: ups, preset, presets: P.map(([key, label]) => ({ key, label })), preset_applies: !['auto', 'native'].includes(c.key),
       framegen: s.fg ? 'fsr3' : 'off', framegens: fgs, summary: [c.label, !['auto', 'native'].includes(c.key) && pl ? pl[1] : null, s.fg ? 'fotogramas generados' : null].filter(Boolean).join(' · ') };
   }
   const LABEL = { native: 'Sin mejora (nativo)', game_upscaler: 'FSR del juego', gamescope: 'FSR de pantalla (Gamescope)', helixsr: 'HelixSR', optiscaler: 'OptiScaler' };
@@ -473,11 +489,17 @@ const Bridge = (() => {
       const g = gameOf(appid), s = st(appid), sc = simScaling(appid), c = sc.upscalers.find(u => u.key === key);
       if (!c || c.state === 'blocked') bad('InvalidValue', (c && c.reason) || 'no disponible');
       let note = null;
-      if (c.state === 'install') { await wait(2200); s.opti = true; note = 'FSR 3.1 (OptiScaler) instalado en el juego'; }
+      if (c.state === 'install' && key === 'optiscaler') { await wait(2200); s.opti = true; note = 'FSR 3.1 (OptiScaler) instalado en el juego'; }
+      if (c.state === 'install' && key === 'helixsr') { if (!HX.ready) bad('InvalidValue', 'HELIXSR_PREPARE'); await wait(1500); s.helix = true; note = 'HelixSR instalado en el juego'; }
       if (key !== 'optiscaler' && s.fg) { s.fg = false; note = 'La generación de fotogramas se apagó: solo funciona con FSR 3.1 (OptiScaler)'; }
       if (key === 'auto') { s.mode = 'recommended'; s.path = s.preset = null; } else { s.mode = 'custom'; s.path = key; s.preset = key === 'native' ? null : (preset || s.preset || 'quality'); }
       void g; return { ok: true, note, scaling: simScaling(appid) };
     },
+    'game.helixsrLicense': async () => { await wait(500); return { key: 'nvidia-dlss-310.7.0', page: 'https://github.com/NVIDIA/DLSS/blob/v310.7.0/LICENSE.txt',
+      text: 'SIMULACIÓN: aquí va el texto completo de la licencia de NVIDIA (NVIDIA RTX SDKs LICENSE), leído de NVIDIA/DLSS v310.7.0.\n\n' + Array.from({ length: 30 }, (_, i) => `${i + 1}. Cláusula de ejemplo de la licencia, con su texto completo para leer con ↑ ↓ antes de aceptar.`).join('\n') };
+    },
+    'game.helixsrPrepare': async ([appid]) => { await wait(600); if (!HX.building && !HX.ready) hxBuild(appid); return { state: 'building', pending: appid }; },
+    'game.helixsrState': () => ({ state: HX.ready ? 'ready' : HX.building ? 'building' : 'none', step: HX.step }),
     'game.setScalingFg': async ([appid, key]) => {
       const s = st(appid), sc = simScaling(appid), c = sc.framegens.find(f => f.key === key);
       if (!c || c.state === 'blocked') bad('InvalidValue', (c && c.reason) || 'no disponible');

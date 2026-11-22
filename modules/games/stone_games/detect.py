@@ -119,7 +119,9 @@ def scan_folder(folder):
         lower = {f.lower(): f for f in files}
         if "optiscaler.ini" in lower and out["injected"] is None:
             proxy = next((p for p in PROXIES if p in lower), None)
-            helix = os.path.isfile(os.path.join(d, "HelixSR", "helixsr.dll")) or os.path.isfile(os.path.join(d, "helixsr", "helixsr.dll"))
+            # HelixSR: its DLL next to OptiScaler (up to 2.x), or HelixSR Scaler's own install record (3.x, the bridge)
+            helix = os.path.isfile(os.path.join(d, "HelixSR", "helixsr.dll")) or os.path.isfile(os.path.join(d, "helixsr", "helixsr.dll")) \
+                or "helixsr-scaler.files" in lower
             files_fp = [os.path.join(d, lower["optiscaler.ini"])] + ([os.path.join(d, lower[proxy])] if proxy else []) + \
                 glob.glob(os.path.join(d, "[Hh]elix[Ss][Rr]", "*.dll"))
             out["injected"] = {"kind": "helixsr" if helix else "optiscaler", "dir": d, "proxy": proxy[:-4] if proxy else None,

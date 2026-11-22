@@ -1002,7 +1002,13 @@ class Host:
     def m_game_scaling(self, args, done):
         """scaling(appid): upscaling and frame generation of one game, as one choice each (scaling.py)."""
         appid, _ = self._game_args(args, 1, 1)
-        self._opt_call(done, lambda: self.optimized.scaling(appid))
+
+        def get():
+            r = self.optimized.scaling(appid)
+            if any(u.get("state") == "preparing" for u in r.get("upscalers", [])):
+                GLib.idle_add(lambda: (self._helixsr_watch(), False)[1])     # a build that outlived STONE Home
+            return r
+        self._opt_call(done, get)
 
     def m_game_setScaling(self, args, done):
         """setScaling(appid, key, preset?): may download and install OptiScaler (in a worker thread)."""
@@ -1011,6 +1017,47 @@ class Host:
         appid, _ = self._game_args(args[:1], 1, 1)
         preset = args[2] if len(args) == 3 else None
         self._opt_call(done, lambda: self.optimized.set_scaling(appid, args[1], preset))
+
+    # ---- HelixSR in one press (stone_games/helixsr.py) -----------------------------------------------
+    def m_game_helixsrLicense(self, args, done):
+        """helixsrLicense(): NVIDIA's license text, shown whole before HelixSR is prepared."""
+        if args:
+            return done(None, "InvalidValue", "arguments")
+        self._opt_call(done, self.optimized.helixsr_license)
+
+    def m_game_helixsrPrepare(self, args, done):
+        """helixsrPrepare(appid): sent only by the ACEPTO button under NVIDIA's license. Downloads HelixSR from its
+        author and starts its own setup in the background; the game gets HelixSR when it is ready."""
+        appid, _ = self._game_args(args, 1, 1)
+
+        def go():
+            r = self.optimized.helixsr_prepare(appid)
+            events.record("helixsr", state=r.get("state"), appid=appid, accepted=True)
+            GLib.idle_add(lambda: (self._helixsr_watch(), False)[1])
+            return r
+        self._opt_call(done, go)
+
+    def m_game_helixsrState(self, args, done):
+        self._opt_call(done, self.optimized.helixsr_tick)
+
+    def _helixsr_watch(self):
+        """Every 15 s while HelixSR's setup builds: its step to the page (event "helixsr"), and the end."""
+        if getattr(self, "_hx_timer", None):
+            return
+
+        def tick():
+            def work():
+                try:
+                    st = self.optimized.helixsr_tick()
+                except Exception as e:  # noqa: BLE001  (a check never takes anything down)
+                    st = {"state": "failed", "why": repr(e)[:200]}
+                if st.get("state") != "building":
+                    self._hx_timer = None
+                    events.record("helixsr", state=st.get("state"), installed=st.get("installed"), why=st.get("why") or st.get("install_error"))
+                GLib.idle_add(lambda: (self.emit("helixsr", st), False)[1])
+            threading.Thread(target=work, daemon=True).start()
+            return bool(getattr(self, "_hx_timer", None))
+        self._hx_timer = GLib.timeout_add_seconds(15, tick)
 
     def m_game_setScalingFg(self, args, done):
         """setScalingFg(appid, "off" | "fsr3")."""

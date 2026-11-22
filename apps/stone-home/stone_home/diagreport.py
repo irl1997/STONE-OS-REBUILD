@@ -240,6 +240,10 @@ def build(out_dir=None, live=None, run=_run, home=None, now=time.time, symptoms=
                              + "\n== systemd-analyze blame (los 40 más lentos) ==\n" + "\n".join(blame.splitlines()[:40])
                              + "\n\n== systemd-analyze critical-chain ==\n" + run(["systemd-analyze", "critical-chain", "--no-pager"], 30)
                              + "\n== systemd-analyze --user blame (los 20 más lentos) ==\n" + "\n".join(run(["systemd-analyze", "--user", "blame", "--no-pager"], 30).splitlines()[:20]))
+    # HelixSR's own setup, run by STONE after the person accepted NVIDIA's license (rc16, stone_games/helixsr.py)
+    hx = os.path.join(state, "helixsr-setup.log")
+    if os.path.isfile(hx):
+        files["juegos/helixsr-setup.txt"] = _tail(hx, 256 * 1024)
     looks_dir = os.path.join(state, "looks")
     try:
         vk = sorted(n for n in os.listdir(looks_dir) if n.startswith("vkbasalt-") and n.endswith(".log"))

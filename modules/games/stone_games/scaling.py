@@ -11,9 +11,9 @@ e intuitiva" and "STONE OS tiene que asegurar que estas herramientas funcionen".
 
 Each choice says in one line what it does and its state:
   ready      it can be used now
-  manual     HelixSR: the person installs it with HelixSR Desktop (its setup downloads NVIDIA's and AMD's
-             files after the person accepts their licenses; STONE never accepts a license for anyone),
-             and STONE then switches it per launch like OptiScaler
+  preparing  HelixSR's own setup is building on the console (helixsr.py), the first time only
+HelixSR (rc16, one press): chosen the first time, NVIDIA's license is shown and only the person's ACEPTO lets
+STONE download HelixSR and run its setup (helixsr.py); then it is installed in the game and chosen by itself.
   install    STONE downloads OptiScaler from its author's GitHub (SHA-256 checked, install.fetch) and
              installs it in the game when it is chosen: nothing to do by hand
   blocked    it cannot work in this game, and why (anti-cheat, online game, no DLSS/FSR 2/3/XeSS to
@@ -147,20 +147,35 @@ def optiscaler_state(appid, facts, game, avail):
     return "install", "Se descarga del autor y se instala al elegirla (un minuto)"
 
 
-HELIXSR_HOW = ("HelixSR se instala con HelixSR Desktop, la app de su autor (github.com/lonewolf0622/HelixSR): la primera vez descarga archivos de NVIDIA y AMD y te pide aceptar sus licencias, por eso lo instalas tú, en el Modo escritorio, eligiendo este juego y «HelixSR Scaler». Si queda como dxgi.dll se carga en cada partida; para que STONE pueda activarlo y quitarlo cuando elijas, en la carpeta del juego cambia el nombre de dxgi.dll a winmm.dll (la guía de HelixSR lo permite). Al volver, HelixSR aparece aquí listo para elegir.")
+def helixsr_block(facts, game):
+    """Why HelixSR can never be used in this game (words for the screen), or None."""
+    if facts.get("exe_bits") == 32:
+        return human("32-bit")
+    why = graphics.safe_reason(game, facts)
+    if why:
+        return human(why)
+    if not facts.get("installed") or not facts.get("install_dir"):
+        return "El juego no está instalado"
+    return None
 
 
 def helixsr_state(facts, game):
-    """HelixSR when it is not installed in the game: the person installs it (its setup asks to accept NVIDIA's
-    and AMD's licenses, which STONE never does for anyone), unless it could never work here."""
-    if facts.get("exe_bits") == 32:
-        return "blocked", human("32-bit")
-    why = graphics.safe_reason(game, facts)
+    """HelixSR when it is not installed in the game (rc16: one press). ("install", reason) with what choosing it
+    will do: the first time STONE prepares HelixSR on the console (NVIDIA's license, accepted by the person),
+    afterwards it only installs it in the game; ("preparing", step) while HelixSR's setup builds."""
+    from . import helixsr
+    why = helixsr_block(facts, game)
     if why:
-        return "blocked", human(why)
+        return "blocked", why
     if (facts.get("injected") or {}).get("kind") == "optiscaler":
-        return "manual", "Instálalo tú con HelixSR Desktop (reemplaza el OptiScaler de este juego). Elige para ver cómo"
-    return "manual", "Lo instalas tú con HelixSR Desktop (pide aceptar licencias de NVIDIA y AMD). Elige para ver cómo"
+        return "blocked", "Ya hay OptiScaler en este juego: quítalo antes (Gráficos → Reescalado → otra opción)"
+    if helixsr.ready():
+        return "install", "Se instala al elegirla"
+    b = helixsr.build_state()
+    if b["state"] == "building":
+        return "preparing", "Preparando HelixSR en la consola: " + (b.get("step") or "unos minutos")
+    return "install", ("La primera vez STONE lo prepara en la consola (unos minutos, con la licencia de NVIDIA que "
+                       "aceptas tú) y lo instala; después solo eliges y juegas")
 
 
 def options(appid, img, facts, game, avail, fg):
@@ -169,6 +184,7 @@ def options(appid, img, facts, game, avail, fg):
     by_key = {c["key"]: c for c in img["choices"]}
     ups = []
     for key, label, desc in UPSCALERS:
+        prepare = False
         if key == "optiscaler":
             state, why = optiscaler_state(appid, facts, game, avail)
         elif key == "auto":
@@ -177,12 +193,19 @@ def options(appid, img, facts, game, avail, fg):
             c = by_key.get(key)
             if c is None and key == "helixsr":
                 state, why = helixsr_state(facts, game)
+                prepare = True
             elif c is None:
                 continue
             else:
                 state, why = ("ready", None) if c["available"] else ("blocked", human(c.get("reason")))
         sel = (img["mode"] != "custom") if key == "auto" else (img["mode"] == "custom" and img["path"] == key)
+        if prepare and state == "install":
+            from . import helixsr
+            prepare = not helixsr.ready()
+        else:
+            prepare = False
         ups.append({"key": key, "label": label, "description": desc, "state": state, "reason": why, "selected": sel,
+                    "prepare": prepare,
                     "check": _check_text(seen.get(key)), "check_ok": (seen.get(key) or {}).get("ok")})
     cur = next((u for u in ups if u["selected"]), ups[0])
     fg_on = bool(fg.get("on"))
@@ -198,7 +221,7 @@ def options(appid, img, facts, game, avail, fg):
             why = "Al elegirla, el reescalado pasa a FSR 3.1 (OptiScaler), que la hace funcionar"
         fgs.append({"key": key, "label": label, "description": desc, "state": state, "reason": why, "selected": fg_on,
                     "check": _check_text(seen.get("framegen")), "check_ok": (seen.get("framegen") or {}).get("ok")})
-    return {"upscaler": cur["key"], "upscalers": ups, "helixsr_how": HELIXSR_HOW,
+    return {"upscaler": cur["key"], "upscalers": ups,
             "preset": img.get("preset"), "presets": [{"key": k, "label": lbl} for k, lbl in PRESETS],
             "preset_applies": cur["key"] not in ("auto", "native"),
             "framegen": "fsr3" if fg_on else "off", "framegens": fgs,

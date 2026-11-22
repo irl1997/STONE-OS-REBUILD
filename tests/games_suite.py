@@ -1014,8 +1014,8 @@ def G30_scaling_one_choice_installs_optiscaler_and_checks_it_really_loaded():
         sc = w.e.scaling(CP)
         keys = {u["key"]: u for u in sc["upscalers"]}
         assert sc["upscaler"] == "auto" and keys["auto"]["selected"] and sc["framegen"] == "off", sc
-        assert keys["optiscaler"]["state"] == "install" and keys["helixsr"]["state"] == "manual", (keys["optiscaler"], keys["helixsr"])
-        assert "NVIDIA" in sc["helixsr_how"] and "winmm.dll" in sc["helixsr_how"]
+        assert keys["optiscaler"]["state"] == "install" and keys["helixsr"]["state"] == "install", (keys["optiscaler"], keys["helixsr"])
+        assert keys["helixsr"]["prepare"] and "NVIDIA" in keys["helixsr"]["reason"] and not keys["optiscaler"]["prepare"]
         assert [p["key"] for p in sc["presets"]] == ["quality", "balanced", "performance", "ultra_performance"]
         # choosing FSR 3.1 downloads (the author's release, checked) and installs it: nothing by hand
         gj, dl = _fake_net("optiscaler", opti)
@@ -1166,6 +1166,117 @@ def G31_32bit_games_never_get_optiscaler_or_helixsr():
         p = w.e.profile(CP)
         assert not p["availability"]["optiscaler"]["available"] and "32-bit" in p["availability"]["optiscaler"]["reason"]
         assert w.e.recommended(CP)["config"]["graphics"]["path"] != "optiscaler"
+
+
+@test
+def G32_helixsr_in_one_press_license_build_install():
+    """3.1.0-rc16 (owner, 22-11-2026): "que el usuario lo seleccione y solo juegue". NVIDIA's license is accepted
+    only by the person; HelixSR's own setup builds in the background into no game; the bridge installs it in the
+    chosen game as winmm.dll; STONE then sees it, chooses it and checks it after the game."""
+    import subprocess as sp
+    from stone_games import detect, helixsr, install
+    with World() as w:
+        x64 = os.path.join(w.game_dir, "bin", "x64")
+        with open(os.path.join(x64, "Cyberpunk2077.exe"), "wb") as f:
+            f.write(_pe(0x8664) + bytes(5000))
+        detect.forget()
+        # the release, as install.fetch leaves it (no download: a fake component)
+        rel = os.path.join(install.components_dir(), "helixsr", "v3.4.1", "x", "HelixSR-3.4.1")
+        os.makedirs(os.path.join(rel, "setup"))
+        os.makedirs(os.path.join(rel, "helixsr-scaler"))
+        for n in ("helixsr-setup.sh", os.path.join("setup", "helixsr_bridge.py")):
+            with open(os.path.join(rel, n), "w") as f:
+                f.write("# fake\n")
+        with open(os.path.join(install.components_dir(), "helixsr", "v3.4.1", "component.json"), "w") as f:
+            json.dump({"kind": "helixsr", "tag": "v3.4.1", "time": 1}, f)
+        assert helixsr.release_dir() == rel
+        k = {u["key"]: u for u in w.e.scaling(CP)["upscalers"]}["helixsr"]
+        assert k["state"] == "install" and k["prepare"] and "licencia de NVIDIA" in k["reason"], k
+        # choosing it before the license: refused with the code the page answers with the license screen
+        try:
+            w.e.set_scaling(CP, "helixsr")
+            raise AssertionError("HelixSR without its preparation")
+        except schema.ProfileError as e:
+            assert str(e) == "HELIXSR_PREPARE"
+        # the license: fetched whole; only the person accepts it (nothing is built without it)
+        lic = helixsr.license_text(get=lambda u: "NVIDIA RTX SDKs LICENSE\n" + "x" * 300)
+        assert lic["text"].startswith("NVIDIA") and "v310.7.0" in lic["page"]
+        try:
+            helixsr.accept("yes")
+            raise AssertionError("a license accepted by something else than the person")
+        except helixsr.HelixError:
+            pass
+        try:
+            helixsr.build_start(rel, popen=lambda *a, **k: None)
+            raise AssertionError("built without the license")
+        except helixsr.HelixError:
+            pass
+        # ACEPTO: the setup starts in the background, unattended, into no game
+        started = []
+
+        class P:
+            pid = os.getpid()                              # "running" while it is this test's own process
+        real_popen = sp.Popen
+        sp.Popen = lambda argv, **kw: started.append((argv, kw)) or P()
+        try:
+            st = w.e.helixsr_prepare(CP)
+        finally:
+            sp.Popen = real_popen
+        argv, kw = started[0]
+        assert argv[0] == "bash" and argv[1].endswith("helixsr-setup.sh") and argv[2:] == ["--yes"], argv
+        assert kw["cwd"] == rel and kw["stdin"] == sp.DEVNULL and kw["start_new_session"]
+        assert helixsr.accepted() and helixsr.pending() == CP
+        assert st["state"] == "building", st
+        d = json.load(open(helixsr.state_path()))
+        d["build"]["pid"] = 999999999                       # the setup ended: its process is gone
+        json.dump(d, open(helixsr.state_path(), "w"))
+        # the bridge says the network is built -> ready -> the game gets it
+        calls = []
+
+        def fake_run(argv, **kw):
+            calls.append(argv[3:])
+            class R:
+                stdout = ""
+            if argv[3] == "status":
+                R.stdout = json.dumps({"ok": True, "network_ready": True})
+            elif argv[3] == "install":
+                with open(os.path.join(x64, "OptiScaler.ini"), "w") as f:
+                    f.write("[Upscalers]\n")
+                with open(os.path.join(x64, "winmm.dll"), "wb") as f:
+                    f.write(b"MZ" + bytes(100))
+                with open(os.path.join(x64, "HelixSR-Scaler.files"), "w") as f:
+                    f.write("winmm.dll\n")
+                R.stdout = json.dumps({"ok": True, "game": {"installed": "scaler", "exe_folder": x64, "scaler_dll": "winmm.dll",
+                                                            "version": "3.4.1"}})
+            return R()
+        real_run = sp.run
+        sp.run = fake_run
+        try:
+            st = w.e.helixsr_tick()
+        finally:
+            sp.run = real_run
+        assert st["state"] == "ready" and st.get("installed") == CP, st
+        inst = [c for c in calls if c[0] == "install"][0]
+        assert inst[inst.index("--scaler-name") + 1] == "winmm.dll" and inst[inst.index("--way") + 1] == "scaler"
+        assert os.path.realpath(inst[inst.index("--game") + 1]) == os.path.realpath(w.game_dir)
+        assert helixsr.pending() is None and install.installed_by_stone(CP)["kind"] == "helixsr"
+        detect.forget()
+        sc = w.e.scaling(CP)
+        assert sc["upscaler"] == "helixsr", sc["upscaler"]
+        assert detect.facts(w.root, CP)["injected"]["kind"] == "helixsr"
+        # the launch loads it through STONE's switch, and STONE looks for its winmm.dll in the game
+        w.e.launch(CP)
+        s = w.e._session()
+        assert s["watch"]["tool"] == "helixsr" and s["watch"]["files"][0].endswith("winmm.dll"), s["watch"]
+        assert 'winmm=n,b' in w.options[CP], w.options[CP]
+    with World(anti_cheat=True) as w:                    # anti-cheat: never, whatever HelixSR's own bridge allows
+        k = {u["key"]: u for u in w.e.scaling(CP)["upscalers"]}["helixsr"]
+        assert k["state"] == "blocked" and "anti-cheat" in k["reason"]
+        try:
+            w.e.helixsr_prepare(CP)
+            raise AssertionError("anti-cheat game accepted")
+        except schema.ProfileError:
+            pass
 
 @test
 def G25_optiscaler_release_names_in_any_letter_case():

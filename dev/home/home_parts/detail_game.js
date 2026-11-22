@@ -385,14 +385,56 @@ function lookPicker(g) {
    ready: usable now; install: STONE downloads OptiScaler from its author and installs it when chosen;
    blocked: it cannot work in this game, and why (shown, never hidden). Under each one, what STONE saw in
    the last game: "Funcionó…" or "No se activó…" (the host checks OptiScaler is really loaded). */
-const SC_STATE = { ready: '', install: 'Se instala al elegirla', manual: 'Lo instalas tú', blocked: 'No disponible' };
-/* HelixSR (rc16): its setup downloads NVIDIA's and AMD's files after the person accepts their licenses, so the
-   person installs it with HelixSR Desktop; STONE says how and switches it per game once it is there. */
-function helixHow(g, then) {
-  play('select');
-  openDlg(`<span class="st-cap">GRÁFICOS · ${esc(g.n.toUpperCase())}</span><h2>HELIXSR</h2><p>${esc((g.sc && g.sc.helixsr_how) || '')}</p>
-    <div class="btns"><span class="txt-f" data-f data-b="no">ENTENDIDO</span></div>`, { onA: () => { play('back'); then(); }, onB: () => { play('back'); then(); } });
+const SC_STATE = { ready: '', install: 'Se instala al elegirla', preparing: 'Preparando…', blocked: 'No disponible' };
+/* HelixSR in one press (rc16, helixsr.py). The first time, NVIDIA's license is shown whole (scrolled with the
+   controller); NO ACEPTO is the chosen button. Only ACEPTO sends helixsrPrepare: STONE downloads HelixSR from its
+   author, runs its own setup in the background (minutes, once) and installs it in this game when it is ready. */
+function helixLicense(g, then) {
+  play('select'); toast('Leyendo la licencia de NVIDIA…', false);
+  Sys.helixsrLicense().then(L => {
+    openDlg(`<span class="st-cap">HELIXSR · ${esc(g.n.toUpperCase())}</span><h2>LICENCIA DE NVIDIA</h2>
+      <p>Para que HelixSR funcione, STONE descarga de NVIDIA su DLSS 310.7.0 y construye la red de HelixSR en esta consola (unos minutos, una sola vez). Esa DLL es de NVIDIA y se usa bajo su licencia, que aceptas tú:</p>
+      <div class="lic" data-f tabindex="-1">${esc(L.text)}</div><p class="licp">${esc(L.page)} · ↑ ↓ para leerla</p>
+      <div class="btns"><span class="txt-f" data-f data-def data-b="no">NO ACEPTO</span><span class="txt-f" data-f data-b="yes">ACEPTO Y PREPARAR</span></div>`, {
+      onDir: a => {
+        const box = $('#dlg .lic'); if (!box || focusEl() !== box || (a !== 'up' && a !== 'down')) return false;
+        const before = box.scrollTop; box.scrollTop += a === 'down' ? 260 : -260;
+        return box.scrollTop !== before;               /* at the end: the move goes on to the buttons */
+      },
+      onA: el => {
+        if (el.dataset.b !== 'yes') { play('back'); return then(); }
+        play('select'); closeDlg();
+        Sys.helixsrPrepare(g.appid).then(st => {
+          busy('helixsr', 'Preparando HelixSR');
+          longToast('Preparando HelixSR en la consola (unos minutos, una sola vez). Puedes seguir usando STONE; te aviso cuando esté listo', 7000);
+          g.sc = null; then();
+          if (st && st.state === 'ready') helixDone(st);
+        }, e => { play('error'); toast('No se pudo: ' + ((e && e.message) || 'sin respuesta'), false); then(); });
+      }, onB: () => { play('back'); then(); } });
+    const d = $('#dlg');
+    NAV = mkNav([[d.querySelector('.lic')], [...d.querySelectorAll('.btns [data-f]')]], { r: 1, c: 0, place: (el, b) => ({ x: b.x, y: b.y + b.h + 4, w: b.w }) });
+    NAV.id = 'dlg'; requestAnimationFrame(() => applyFocus());
+  }, e => { play('error'); toast('No se pudo leer la licencia de NVIDIA: ' + ((e && e.message) || 'sin internet'), false); });
 }
+/* the REESCALADO window of the game being looked at, if it is open, shows the new state at once */
+function scRefresh() {
+  const g = G[curG];
+  if (!g || S.screen !== 'dlg' || !$('#dlg h2') || $('#dlg h2').textContent !== 'REESCALADO') return;
+  imgLoad(g, curG).then(() => { if (S.screen === 'dlg' && $('#dlg h2') && $('#dlg h2').textContent === 'REESCALADO') scalePicker(g); });
+}
+function helixDone(st) {
+  busy('helixsr');
+  const g = st.installed && G.find(x => String(x.appid) === String(st.installed));
+  if (st.state === 'ready' && g) { play('notify'); longToast(`HelixSR listo en ${g.n}: ya puedes jugar`, 7000); g.sc = null; if (curG === g.i && S.screen === 'detail') imgLoad(g, g.i); scRefresh(); }
+  else if (st.state === 'ready' && st.install_error) { play('error'); longToast(`HelixSR está preparado, pero no se pudo instalar en el juego: ${st.install_error}`, 8000); }
+  else if (st.state === 'failed') { play('error'); longToast(`La preparación de HelixSR se detuvo: ${st.why || 'sin detalle'}. El informe de diagnóstico guarda su registro`, 9000); }
+}
+Bridge.on('helixsr', st => {
+  if (!st) return;
+  if (st.state === 'building') { busy('helixsr', 'Preparando HelixSR'); return scRefresh(); }
+  helixDone(st);
+});
+
 function scCard(c, i) {
   const st = [c.state !== 'ready' ? (c.reason || SC_STATE[c.state]) : (c.reason || ''), c.check || ''].filter(Boolean).join(' · ');
   return `<span class="txt-f sres look${c.state === 'blocked' ? ' blk' : ''}" data-f data-i="${i}"><span class="lbl">${esc(c.label.toUpperCase())}${c.selected ? ' ✓' : ''}</span>`
@@ -429,7 +471,8 @@ function scalePicker(g, at) {
       }
       const c = ups[+el.dataset.i];
       if (c.state === 'blocked') { play('error'); return longToast(`${c.label}: ${c.reason || 'no disponible en este juego'}`, 6000); }
-      if (c.state === 'manual') return helixHow(g, () => scalePicker(g, { i: +el.dataset.i }));
+      if (c.state === 'preparing') { play('select'); return longToast('HelixSR se está preparando en la consola. Te aviso cuando esté listo; después se instala solo en este juego', 6000); }
+      if (c.key === 'helixsr' && c.prepare) return helixLicense(g, () => scalePicker(g, { i: +el.dataset.i }));
       if (c.selected) { play('back'); return back(); }
       return scApply(g, () => Sys.gameSetScaling(g.appid, c.key, S2.preset), c.state === 'install' ? 'Descargando e instalando FSR 3.1 (OptiScaler)' : 'Cambiando el reescalado').then(r => {
         if (r) longToast(`${r.note || c.label} · se aplica la próxima vez que juegues`, 6000);

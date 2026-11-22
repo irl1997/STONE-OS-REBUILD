@@ -561,3 +561,9 @@
   42%{transform:scale(1,.006);filter:brightness(2.4) saturate(.4);opacity:1}
   78%{transform:scale(.02,.006);filter:brightness(3.2) saturate(0);opacity:1}
   100%{transform:scale(0,0);filter:brightness(4);opacity:0}}
+/* NVIDIA's license for HelixSR (rc16): the whole text, scrolled with the controller */
+#stage #dlg .box:has(.lic){width:1180px}
+#stage #dlg .lic{max-height:330px;overflow:auto;white-space:pre-wrap;font-size:15px;line-height:22px;color:var(--text-2);
+  padding:14px 18px;border-radius:12px;background:rgba(255,255,255,.04);scroll-behavior:smooth}
+#stage #dlg .lic.f{outline:2px solid rgba(255,255,255,.7)}
+#stage #dlg p.licp{font-size:15px;color:var(--text-2);margin-top:-4px}
