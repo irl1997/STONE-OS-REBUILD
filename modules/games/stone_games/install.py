@@ -316,6 +316,8 @@ def install_plan(appid, facts, game):
     why = graphics.safe_reason(game, facts)
     if why:
         return {"ok": False, "error": f"not for this game ({why})"}
+    if facts.get("exe_bits") == 32:
+        return {"ok": False, "error": "32-bit game: OptiScaler only loads in 64-bit games"}
     if facts.get("injected"):
         return {"ok": False, "error": "an upscaler is already installed in this game"}
     comp = have("optiscaler")

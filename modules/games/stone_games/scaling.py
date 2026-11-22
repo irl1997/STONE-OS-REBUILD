@@ -11,6 +11,9 @@ e intuitiva" and "STONE OS tiene que asegurar que estas herramientas funcionen".
 
 Each choice says in one line what it does and its state:
   ready      it can be used now
+  preparing  HelixSR's own setup is building on the console (helixsr.py), the first time only
+HelixSR (rc16, one press): chosen the first time, NVIDIA's license is shown and only the person's ACEPTO lets
+STONE download HelixSR and run its setup (helixsr.py); then it is installed in the game and chosen by itself.
   install    STONE downloads OptiScaler from its author's GitHub (SHA-256 checked, install.fetch) and
              installs it in the game when it is chosen: nothing to do by hand
   blocked    it cannot work in this game, and why (anti-cheat, online game, no DLSS/FSR 2/3/XeSS to
@@ -23,6 +26,8 @@ WHAT STONE GUARANTEES (and what it cannot):
   - If it was not loaded, or the game closed right after starting, the next launch falls back on its
     own (optimizer.FALLBACK: OptiScaler -> FSR del juego -> Nativo) and STONE says so on screen.
   - Never in games with anti-cheat or online-only (an injected DLL can get an account banned).
+  - Never in 32-bit games (rc16, detect.exe_bits): OptiScaler and HelixSR are 64-bit DLLs and are never
+    loaded there (Batman Arkham City on the board, 22-11-2026).
   - It cannot make a tool work in a game that does not support it: that is why such a choice is shown
     as blocked with its reason instead of being offered.
 Frame generation runs inside OptiScaler: it is verified as far as OptiScaler being loaded with
@@ -41,7 +46,7 @@ UPSCALERS = (
     ("native", "Nativo", "Sin reescalar: la imagen más nítida, con menos FPS"),
     ("game_upscaler", "FSR del juego", "El FSR o XeSS que trae el juego; se activa en su menú de gráficos"),
     ("optiscaler", "FSR 3.1 (OptiScaler)", "Pone FSR 3.1 en juegos que traen DLSS, FSR 2 o XeSS: más FPS con buena imagen"),
-    ("helixsr", "HelixSR", "Reescalador para la BC-250 basado en OptiScaler, instalado por ti"),
+    ("helixsr", "HelixSR", "FSR 4 y DLSS como sombreadores normales, hecho y probado en la BC-250"),
 )
 PRESETS = (("quality", "Calidad"), ("balanced", "Equilibrado"), ("performance", "Rendimiento"),
            ("ultra_performance", "Ultra rendimiento"))
@@ -56,6 +61,8 @@ def human(reason):
     r = (reason or "").lower()
     if not r:
         return None
+    if "32-bit" in r:
+        return "Juego de 32 bits: FSR 3.1 (OptiScaler) y HelixSR solo funcionan en juegos de 64 bits"
     if "anti-cheat" in r:
         return "No se usa en juegos con anti-cheat (una DLL inyectada puede costar la cuenta)"
     if "online" in r:
@@ -122,6 +129,8 @@ def optiscaler_state(appid, facts, game, avail):
     a = avail.get("optiscaler") or {}
     if a.get("available"):
         return "ready", None
+    if facts.get("exe_bits") == 32:
+        return "blocked", human("32-bit")
     if install.installed_by_stone(appid):                # installed by STONE but not usable now
         return "blocked", human(a.get("reason"))
     why = graphics.safe_reason(game, facts)
@@ -129,11 +138,44 @@ def optiscaler_state(appid, facts, game, avail):
         return "blocked", human(why)
     if not facts.get("installed") or not facts.get("install_dir"):
         return "blocked", "El juego no está instalado"
+    if facts.get("exe_bits") == 32:
+        return "blocked", human("32-bit")
     if (facts.get("injected") or {}).get("kind"):
         return "blocked", human("installed instead")
     if not (game.get("native_upscalers") or install.game_upscalers(facts["install_dir"])):
         return "blocked", human("no_upscaler")
     return "install", "Se descarga del autor y se instala al elegirla (un minuto)"
+
+
+def helixsr_block(facts, game):
+    """Why HelixSR can never be used in this game (words for the screen), or None."""
+    if facts.get("exe_bits") == 32:
+        return human("32-bit")
+    why = graphics.safe_reason(game, facts)
+    if why:
+        return human(why)
+    if not facts.get("installed") or not facts.get("install_dir"):
+        return "El juego no está instalado"
+    return None
+
+
+def helixsr_state(facts, game):
+    """HelixSR when it is not installed in the game (rc16: one press). ("install", reason) with what choosing it
+    will do: the first time STONE prepares HelixSR on the console (NVIDIA's license, accepted by the person),
+    afterwards it only installs it in the game; ("preparing", step) while HelixSR's setup builds."""
+    from . import helixsr
+    why = helixsr_block(facts, game)
+    if why:
+        return "blocked", why
+    if (facts.get("injected") or {}).get("kind") == "optiscaler":
+        return "blocked", "Ya hay OptiScaler en este juego: quítalo antes (Gráficos → Reescalado → otra opción)"
+    if helixsr.ready():
+        return "install", "Se instala al elegirla"
+    b = helixsr.build_state()
+    if b["state"] == "building":
+        return "preparing", "Preparando HelixSR en la consola: " + (b.get("step") or "unos minutos")
+    return "install", ("La primera vez STONE lo prepara en la consola (unos minutos, con la licencia de NVIDIA que "
+                       "aceptas tú) y lo instala; después solo eliges y juegas")
 
 
 def options(appid, img, facts, game, avail, fg):
@@ -142,17 +184,28 @@ def options(appid, img, facts, game, avail, fg):
     by_key = {c["key"]: c for c in img["choices"]}
     ups = []
     for key, label, desc in UPSCALERS:
+        prepare = False
         if key == "optiscaler":
             state, why = optiscaler_state(appid, facts, game, avail)
         elif key == "auto":
             state, why = "ready", None
         else:
             c = by_key.get(key)
-            if c is None:                                  # HelixSR not installed: not listed
+            if c is None and key == "helixsr":
+                state, why = helixsr_state(facts, game)
+                prepare = True
+            elif c is None:
                 continue
-            state, why = ("ready", None) if c["available"] else ("blocked", human(c.get("reason")))
+            else:
+                state, why = ("ready", None) if c["available"] else ("blocked", human(c.get("reason")))
         sel = (img["mode"] != "custom") if key == "auto" else (img["mode"] == "custom" and img["path"] == key)
+        if prepare and state == "install":
+            from . import helixsr
+            prepare = not helixsr.ready()
+        else:
+            prepare = False
         ups.append({"key": key, "label": label, "description": desc, "state": state, "reason": why, "selected": sel,
+                    "prepare": prepare,
                     "check": _check_text(seen.get(key)), "check_ok": (seen.get(key) or {}).get("ok")})
     cur = next((u for u in ups if u["selected"]), ups[0])
     fg_on = bool(fg.get("on"))

@@ -148,7 +148,9 @@ def build(src):
                      "let SCALE = 1, FRAME = 0;\nfunction fit() {\n  const vp = $('#viewport'), w = vp.clientWidth, h = vp.clientHeight;\n  SCALE = Math.min(w / 1920, h / 1080) * (1 - FRAME / 50);", "fit frame")
     # LEFT/RIGHT can adjust a value in a dialog or the SETUP (volume, framing) instead of moving.
     t = replace_once(t, "  if (S.screen === 'dlg') {\n    if (!DLG) return dlgRecover();\n    if (dirs.includes(a)) return move(a);",
-                     "  if (S.screen === 'dlg') {\n    if (!DLG) return dlgRecover();\n    if ((a === 'left' || a === 'right') && DLG.onLR && DLG.onLR(a === 'left' ? -1 : 1, focusEl())) return;\n    if (dirs.includes(a)) return move(a);", "dlg lr")
+                     "  if (S.screen === 'dlg') {\n    if (!DLG) return dlgRecover();\n    if ((a === 'left' || a === 'right') && DLG.onLR && DLG.onLR(a === 'left' ? -1 : 1, focusEl())) return;\n"
+                     "    if (dirs.includes(a) && DLG.onDir && DLG.onDir(a)) return;      /* a window that scrolls its own text first (rc16) */\n"
+                     "    if (dirs.includes(a)) return move(a);", "dlg lr")
     t = replace_once(t, "Si la pantalla no funciona, también se puede activar desde una terminal con <b>sudo stonectl safe-mode on</b>.",
                      "Si la pantalla no funciona, el menú de arranque de la consola también ofrece Safe Mode.", "safe mode terminal")
     t = replace_once(t, "/* Gamepad (standard mapping) */\n", part("dormant.js") + "\n/* Gamepad (standard mapping) */\n", "dormant")

@@ -184,7 +184,10 @@ def availability(game, facts, original_options=""):
     else:
         out["game_upscaler"] = {"available": False, "reason": "no upscaler of the game known (STONE profile database)"}
     for kind in INJECTED:
-        if inj.get("kind") != kind:
+        if facts.get("exe_bits") == 32:
+            # OptiScaler and HelixSR are 64-bit DLLs: a 32-bit game never loads them (3.1.0-rc16)
+            out[kind] = {"available": False, "reason": "32-bit game: OptiScaler and HelixSR only load in 64-bit games"}
+        elif inj.get("kind") != kind:
             other = inj.get("kind")
             out[kind] = {"available": False, "reason": f"{other} installed instead" if other else "not installed in the game folder"}
         elif safe:

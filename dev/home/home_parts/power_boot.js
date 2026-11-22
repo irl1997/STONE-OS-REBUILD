@@ -68,22 +68,37 @@ async function toDesktop() {
     play('error'); toast(`No se pudo abrir el escritorio (${ERR_TEXT[e.code] || e.message})`, false);
   }
 }
-/* The animation plays, then logind powers off. stoned's clean-shutdown marker is written by
-   systemd when its unit stops, whatever started the shutdown. */
+/* POWER OFF (3.1.0-rc16, the owner: "mejorar las animaciones de encendido y de apagado"). The picture
+   closes like a television switching off: it folds into a line of white light, the line into a point,
+   and the point goes out (0.75 s). On the black that stays, STONE's wordmark with its light line under
+   it, the line draining from both ends while the machine powers off. logind is asked as soon as the
+   picture is closed: the rest plays while the system stops. stoned's clean-shutdown marker is written
+   by systemd when its unit stops, whatever started the shutdown. Reduced motion: a plain fade. */
+const OFF_CLOSE_MS = 750;
 async function shutdown(reboot) {
   S.screen = 'transition'; $('#hints').classList.add('hide'); play('stop');
   chrome(false, false);
-  $('#black').classList.remove('fast'); $('#black').classList.add('on');
-  setLine(720, 886, 480, { slow: true }); await wait(1000);
-  setLine(960, 886, 0, { slow: true }); await wait(1300);
   line.classList.add('off');
+  const vp = $('#viewport');
+  if (!S.rm) { vp.classList.add('pw-close'); await wait(OFF_CLOSE_MS); }
+  const black = $('#black');
+  black.style.transition = 'none'; black.classList.add('fast', 'on'); void black.offsetWidth;   /* black at once: nothing shows again */
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('on')); setBg('', 'none');
+  vp.classList.remove('pw-close');
+  requestAnimationFrame(() => { black.style.transition = ''; });
+  const word = $('#bootword');
+  word.classList.remove('fly'); word.style.transform = '';
+  word.classList.add('on', 'pw-off');
+  $('#offmsg').textContent = reboot ? 'Reiniciando…' : 'Apagando…'; $('#offmsg').classList.add('on');
+  setLine(830, 528, 260); line.classList.remove('off'); line.classList.add('boot');
+  line.style.transition = 'transform 2600ms cubic-bezier(.4,0,.2,1), opacity 600ms linear';
+  requestAnimationFrame(() => requestAnimationFrame(() => setLine(960, 528, 0)));   /* the light drains to its middle */
   try {
     await Sys.power(reboot ? 'reboot' : 'off');
     setMetrics(false); NAV = null;
-    document.querySelectorAll('.screen').forEach(s => s.classList.remove('on')); setBg('', 'none');
-    $('#offmsg').textContent = reboot ? 'Reiniciando…' : 'Apagando…'; $('#offmsg').classList.add('on');
   } catch (e) {
-    $('#black').classList.remove('on'); line.classList.remove('off');
+    word.classList.remove('on', 'pw-off'); $('#offmsg').classList.remove('on'); line.classList.remove('boot'); line.style.transition = '';
+    $('#black').classList.remove('on', 'fast'); line.classList.remove('off');
     S.section = 0; if (NAV) NAV.id = ''; enterHome({ sys: 'power' });
     play('error'); toast(`No se pudo ${reboot ? 'reiniciar' : 'apagar'} (${ERR_TEXT[e.code] || e.message}). Usa el botón STEAM → Energía`, false);
   }
@@ -129,10 +144,31 @@ function loadPrefs(p) {
    needs. The library is answered from Steam's files and the list kept from the last boot (the host
    does not wait for Steam, which starts after STONE Home); the system's versions (rpm-ostree, slow)
    are read behind, no screen needs them at the start. */
-const BOOT_WORD_MS = 350, BOOT_MIN_MS = 650, BOOT_OUT_MS = 250, BOOT_MAX_MS = 5000;
+/* POWER ON (3.1.0-rc16): Plymouth's line opens across the whole screen, the wordmark arrives in its
+   place (its letters close in, from a soft glow to sharp) and the line settles under it as STONE's light
+   line. When Home is ready the wordmark flies to its corner, where Home's own STONE is, while Home
+   appears behind: the same mark, from the boot screen to the top of Home. Nothing is waited for beyond
+   what was there (BOOT_MIN_MS): the flight happens with Home already on screen. */
+const BOOT_WORD_MS = 180, BOOT_MIN_MS = 900, BOOT_OUT_MS = 0, BOOT_MAX_MS = 5000, BOOT_FLY_MS = 700;
+function bootFly() {
+  const word = $('#bootword'), to = $('#hdr .brand');
+  if (S.rm || !to || $('#hdr').classList.contains('hide')) { word.classList.remove('on'); return; }
+  const a = word.querySelector('span') || word, ra = a.getBoundingClientRect(), rb = to.getBoundingClientRect();
+  if (!ra.width || !rb.width) { word.classList.remove('on'); return; }
+  const k = rb.height / ra.height;
+  const dx = (rb.left + rb.width / 2 - (ra.left + ra.width / 2)) / SCALE, dy = (rb.top + rb.height / 2 - (ra.top + ra.height / 2)) / SCALE;
+  to.classList.add('pw-wait');                        /* Home's own mark stays hidden until the flying one lands */
+  word.classList.add('fly');
+  word.style.transform = `translate(${dx}px, ${dy}px) scale(${k})`;
+  setTimeout(() => {                                  /* landed: Home's mark shows, the flying one goes at once */
+    to.classList.remove('pw-wait');
+    word.style.transition = 'none'; word.classList.remove('on', 'fly', 'in'); void word.offsetWidth; word.style.transform = '';
+    requestAnimationFrame(() => { word.style.transition = ''; });
+  }, BOOT_FLY_MS);
+}
 async function boot() {
   S.screen = 'transition';
-  $('#black').classList.add('on'); line.classList.add('boot');
+  $('#black').classList.add('on'); line.classList.add('boot'); line.style.transition = '';
   Sys.bootMark('visual').catch(() => {});          /* BOOT TO VISUAL: STONE Home's first frame */
   const first = Sys.firstrunStatus().catch(() => ({ done: true }));
   const prefs = Sys.prefsGet().then(loadPrefs).catch(() => {});
@@ -143,20 +179,27 @@ async function boot() {
   const home = prep.then(() => PerfAPI.homeReady()).then(st => { adopt(st); return st; })
     .catch(e => { if (e && e.code === 'ServiceUnavailable') S.actual = { error: 'ServiceUnavailable' }; return null; });
   /* The frame before this one (Plymouth) is black with the full line at 82 % of the height and
-     25 % of the width: STONE Home starts on that same frame. */
+     25 % of the width: STONE Home starts on that same frame, and the line opens to the whole width. */
   setLine(720, 886, 480); line.classList.remove('off');
   play('start');
+  requestAnimationFrame(() => setLine(0, 886, 1920, { slow: true }));
   await wait(BOOT_WORD_MS);
-  $('#bootword').classList.add('on');
-  await Promise.all([Promise.race([prep, wait(BOOT_MAX_MS)]), wait(BOOT_MIN_MS)]);
-  $('#bootword').classList.remove('on');
+  const word = $('#bootword');
+  word.classList.remove('pw-off');
+  word.classList.add('on', 'in');
+  await wait(420);
+  line.style.transition = 'transform 420ms cubic-bezier(.2,0,0,1), opacity 300ms linear';
+  setLine(830, 528, 260);                           /* the line rises under the wordmark: its light line */
+  await Promise.all([Promise.race([prep, wait(BOOT_MAX_MS)]), wait(BOOT_MIN_MS - 600)]);
   await wait(BOOT_OUT_MS);
+  line.classList.add('off');
+  setTimeout(() => { line.style.transition = ''; }, 320);
   $('#black').classList.remove('on');
   S.section = 0; if (NAV) NAV.id = ''; NAV = null;
   const fr = await Promise.race([first, wait(3000).then(() => ({ done: true }))]);
-  if (S.running !== null && S.game) { showGame(G[S.running], true); }
-  else if (!fr.done) { await home; Sys.bootMark('ready').catch(() => {}); return firstRun(fr); }
-  else enterHome({ r: 0, c: 0, slow: true });
+  if (S.running !== null && S.game) { word.classList.remove('on', 'in'); showGame(G[S.running], true); }
+  else if (!fr.done) { word.classList.remove('on', 'in'); await home; Sys.bootMark('ready').catch(() => {}); return firstRun(fr); }
+  else { enterHome({ r: 0, c: 0, slow: true }); requestAnimationFrame(bootFly); }
   Sys.bootMark('ready').catch(() => {});           /* BOOT TO READY: Home answers the controller */
   setTimeout(() => line.classList.remove('boot'), 1300);
   armIdleOff();

@@ -1,3 +1,33 @@
+# STONE OS (rebuild) 3.1.0-rc16
+
+Desde el informe de la rc15 en la consola (22-11-2026, 19:42): FSR 3.1 que no se activó en Batman: Arkham City, y HelixSR, que no aparecía.
+
+## FSR 3.1 no se activó en Batman: Arkham City: por qué, y que no vuelva a pasar
+
+- **STONE hizo lo que tenía que hacer:** vio que OptiScaler no se cargó dentro del juego, lo marcó como «No se activó», lo avisó y la siguiente partida usó una opción segura.
+- **El error fue ofrecerlo en ese juego.** Arkham City es un juego de **32 bits**, y OptiScaler y HelixSR son de 64 bits: un juego de 32 bits no puede cargarlos nunca. Además, Arkham City no trae DLSS, FSR ni XeSS para reemplazar.
+- **Ahora STONE lee si el juego es de 32 o 64 bits** (en la cabecera de su ejecutable, sin contar instaladores ni lanzadores). En los juegos de 32 bits, FSR 3.1, HelixSR y la generación de fotogramas aparecen como «No disponible: juego de 32 bits». STONE no los instala ni los elige, ni siquiera si ya estaban instalados de antes.
+- Para Batman: Arkham Asylum y Arkham City quedan Nativo y los aspectos (vkBasalt), que sí funcionan.
+
+## Encendido y apagado nuevos
+
+- **Encendido:** la línea de luz de Plymouth se abre hasta cubrir el ancho de la pantalla, y aparece «STONE»: sus letras se juntan desde un brillo suave hasta quedar nítidas. La línea sube y queda bajo la palabra como su línea de luz. Cuando el Inicio está listo, la palabra vuela a su rincón, donde está el STONE del Inicio, mientras el Inicio aparece detrás. No se agrega espera: el vuelo ocurre con el Inicio ya en pantalla.
+- **Apagado:** la imagen se cierra como un televisor al apagarse: se pliega en una línea de luz blanca, la línea en un punto, y el punto se apaga (0,75 s). Sobre el negro queda «STONE» con su línea, que se vacía desde los extremos mientras la consola se apaga, y debajo «Apagando…» o «Reiniciando…». La orden de apagar sale apenas se cierra la imagen.
+- Con «Reducir movimiento» (Ajustes → Accesibilidad), ambos son fundidos simples.
+
+## HelixSR: lo eliges y juegas
+
+HelixSR (hecho y probado en la BC-250) ejecuta las redes de DLSS de NVIDIA y de FSR 4 de AMD como sombreadores normales. Ahora siempre aparece en Gráficos → Reescalado, y basta con elegirlo:
+
+1. **La primera vez, STONE muestra la licencia de NVIDIA completa.** Se lee con ↑ ↓ y «NO ACEPTO» es el botón elegido de entrada. HelixSR construye su red en la consola a partir de la DLL de DLSS 310.7.0, que se descarga del GitHub de NVIDIA. Esa DLL es de NVIDIA y se usa bajo su licencia: **la aceptas tú**. STONE nunca acepta una licencia por nadie, y sin tu «ACEPTO» no se descarga nada de NVIDIA.
+2. **Con «ACEPTO Y PREPARAR»,** STONE descarga HelixSR de su autor (revisando su SHA-256) y ejecuta su propio instalador en segundo plano, sin preguntar nada y sin tocar ningún juego. Construye la red una sola vez y tarda unos minutos. Mientras tanto puedes seguir usando la consola: arriba aparece «Preparando HelixSR».
+3. **Al terminar,** STONE instala HelixSR en ese juego con la herramienta del propio HelixSR, como winmm.dll, y lo deja elegido. Aparece «HelixSR listo en …: ya puedes jugar».
+4. **En los demás juegos,** después basta con elegirlo: se instala en un momento.
+5. **En cada partida,** STONE comprueba que se cargó, igual que con FSR 3.1. Si no se cargó, lo avisa y la siguiente partida usa una opción segura. Si la preparación falla, lo avisa con el motivo, y el informe de diagnóstico guarda su registro.
+
+Nunca en juegos de 32 bits, con anti-cheat o en línea: STONE los bloquea aunque la herramienta de HelixSR los permita.
+
+
 # STONE OS (rebuild) 3.1.0-rc15
 
 Reescalado y generación de fotogramas, ordenados en una elección simple por juego, con STONE comprobando que de verdad funcionan.

@@ -412,6 +412,13 @@ class Engine:
 
     def uninstall_image(self, appid):
         from . import install
+        rec = install.installed_by_stone(appid)
+        if rec and rec.get("kind") == "helixsr":                     # through HelixSR's own bridge (puts everything back)
+            from . import helixsr
+            try:
+                return helixsr.remove_game(appid)
+            except helixsr.HelixError as e:
+                return {"ok": False, "error": str(e)}
         return install.uninstall(appid)
 
     # -- guided optimization: the measurement matrix, one launch at a time --
@@ -495,11 +502,80 @@ class Engine:
         if key == "optiscaler":
             if scaling.ensure_optiscaler(appid, p["facts"], p["game"], log=self.log):
                 note = "FSR 3.1 (OptiScaler) instalado en el juego"
+        if key == "helixsr" and not p["availability"].get("helixsr", {}).get("available"):
+            self._helixsr_into(appid, p)
+            note = "HelixSR instalado en el juego"
         elif framegen.status(appid, p["facts"], p["game"]).get("on"):
             framegen.set_on(appid, p["facts"], p["game"], False)
             note = "La generación de fotogramas se apagó: solo funciona con FSR 3.1 (OptiScaler)"
         r = self.set_image(appid, key, preset)
         return {"ok": True, "note": note, "result": r, "scaling": self.scaling(appid)}
+
+    # -- HelixSR in one press (helixsr.py): NVIDIA's license accepted by the person, then STONE does the rest --
+    def _helixsr_into(self, appid, p):
+        from . import helixsr
+        why = scaling.helixsr_block(p["facts"], p["game"])
+        if why:
+            raise schema.ProfileError(why)
+        if not helixsr.ready():
+            raise schema.ProfileError("HELIXSR_PREPARE")         # the page shows NVIDIA's license first
+        try:
+            helixsr.install_game(appid, p["facts"])
+        except helixsr.HelixError as e:
+            raise schema.ProfileError(str(e)) from e
+        self.log(f"[stone] scaling: HelixSR installed in {appid}")
+
+    def helixsr_license(self):
+        from . import helixsr
+        try:
+            return helixsr.license_text()
+        except (helixsr.HelixError, OSError) as e:
+            raise schema.ProfileError(f"No se pudo leer la licencia de NVIDIA: {e}") from e
+
+    def helixsr_prepare(self, appid):
+        """After the person's ACEPTO: download HelixSR from its author and start its own setup in the
+        background (into no game); `appid` gets HelixSR when it is ready (helixsr_tick)."""
+        from . import helixsr, install
+        p = self.profile(appid)
+        why = scaling.helixsr_block(p["facts"], p["game"])
+        if why:
+            raise schema.ProfileError(why)
+        helixsr.accept(True)
+        if not install.have("helixsr"):
+            try:
+                install.fetch("helixsr", log=self.log)
+            except install.InstallError as e:
+                raise schema.ProfileError(f"No se pudo descargar HelixSR: {e}") from e
+            except OSError as e:
+                raise schema.ProfileError("No se pudo descargar HelixSR: ¿hay conexión a internet?") from e
+        release = helixsr.release_dir()
+        if not release:
+            raise schema.ProfileError("La descarga de HelixSR no trae su instalador")
+        try:
+            b = helixsr.build_start(release) if not helixsr.ready() else {"state": "ready"}
+        except helixsr.HelixError as e:
+            raise schema.ProfileError(str(e)) from e
+        helixsr.set_pending(appid)
+        self.log(f"[stone] scaling: HelixSR setup started for {appid} ({b.get('state')})")
+        return self.helixsr_tick()
+
+    def helixsr_tick(self):
+        """How the preparation goes; when ready, the waiting game gets HelixSR and has it chosen."""
+        from . import helixsr
+        st = helixsr.build_state()
+        pend = helixsr.pending()
+        st["pending"] = pend
+        if st["state"] == "ready" and pend:
+            helixsr.set_pending(None)
+            try:
+                p = self.profile(pend)
+                if not p["availability"].get("helixsr", {}).get("available"):
+                    self._helixsr_into(pend, p)
+                self.set_image(pend, "helixsr", None)
+                st["installed"] = pend
+            except schema.ProfileError as e:
+                st["install_error"] = str(e)
+        return st
 
     def set_scaling_framegen(self, appid, key):
         """"off" or "fsr3". FSR 3 frame generation needs OptiScaler: installed and chosen when needed."""
@@ -615,11 +691,11 @@ class Engine:
             pid = pid if perf_ok else None
         # STONE SCALING (rc15): with OptiScaler, the file STONE installed is looked for inside the game
         watch = None
-        if c["graphics"]["path"] == "optiscaler" and graphics_ok and not mstate:
+        if c["graphics"]["path"] in graphics.INJECTED and graphics_ok and not mstate:
             from . import install
             inst = install.installed_by_stone(appid)
-            if inst and inst.get("kind") == "optiscaler":
-                watch = {"tool": "optiscaler", "files": [os.path.join(inst["exe_dir"], install.PROXY_NAME)],
+            if inst and inst.get("kind") == c["graphics"]["path"]:
+                watch = {"tool": inst["kind"], "files": [os.path.join(inst["exe_dir"], install.PROXY_NAME)],
                          "log": os.path.join(inst["exe_dir"], "OptiScaler.log"),
                          "framegen": bool(framegen.status(appid, p["facts"], p["game"]).get("on"))}
         sess = {"appid": appid, "mode": mode, "config": c, "key": schema.config_key(c), "gkey": gkey(c), "watch": watch,
@@ -731,7 +807,7 @@ class Engine:
         if w and isinstance(pr, dict) and pr.get("processes") and (pr.get("wine") or pr.get("vulkan_loaded")) \
                 and "injected_loaded" in pr and not abnormal:
             ok = bool(pr["injected_loaded"])
-            why = None if ok else "OptiScaler no se cargó dentro del juego"
+            why = None if ok else ("HelixSR" if w["tool"] == "helixsr" else "OptiScaler") + " no se cargó dentro del juego"
             try:
                 scaling.record(s["appid"], w["tool"], ok, why, now=self.clock())
                 if w.get("framegen"):
