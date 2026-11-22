@@ -1014,7 +1014,8 @@ def G30_scaling_one_choice_installs_optiscaler_and_checks_it_really_loaded():
         sc = w.e.scaling(CP)
         keys = {u["key"]: u for u in sc["upscalers"]}
         assert sc["upscaler"] == "auto" and keys["auto"]["selected"] and sc["framegen"] == "off", sc
-        assert keys["optiscaler"]["state"] == "install" and "helixsr" not in keys, keys["optiscaler"]
+        assert keys["optiscaler"]["state"] == "install" and keys["helixsr"]["state"] == "manual", (keys["optiscaler"], keys["helixsr"])
+        assert "NVIDIA" in sc["helixsr_how"] and "winmm.dll" in sc["helixsr_how"]
         assert [p["key"] for p in sc["presets"]] == ["quality", "balanced", "performance", "ultra_performance"]
         # choosing FSR 3.1 downloads (the author's release, checked) and installs it: nothing by hand
         gj, dl = _fake_net("optiscaler", opti)
@@ -1116,6 +1117,55 @@ def G30_scaling_one_choice_installs_optiscaler_and_checks_it_really_loaded():
         except schema.ProfileError as e:
             assert "anti-cheat" in str(e)
         assert not os.path.exists(os.path.join(w.game_dir, "bin", "x64", "winmm.dll"))
+
+
+def _pe(machine):
+    head = bytearray(b"MZ" + bytes(62))
+    head[0x3C:0x40] = (64).to_bytes(4, "little")
+    return bytes(head) + b"PE\0\0" + machine.to_bytes(2, "little") + bytes(200)
+
+
+@test
+def G31_32bit_games_never_get_optiscaler_or_helixsr():
+    """3.1.0-rc16 (board, 22-11-2026): Batman Arkham City (32-bit) was offered FSR 3.1; STONE then saw it not loaded."""
+    from stone_games import detect, install
+    d = tempfile.mkdtemp(prefix="stone-pe-")
+    try:
+        for name, m in (("a64.exe", 0x8664), ("a32.exe", 0x14C), ("x.exe", 0x1234)):
+            with open(os.path.join(d, name), "wb") as f:
+                f.write(_pe(m))
+        assert detect.pe_bits(os.path.join(d, "a64.exe")) == 64 and detect.pe_bits(os.path.join(d, "a32.exe")) == 32
+        assert detect.pe_bits(os.path.join(d, "x.exe")) is None and detect.pe_bits(os.path.join(d, "nada.exe")) is None
+    finally:
+        shutil.rmtree(d, ignore_errors=True)
+    with World() as w:
+        x64 = os.path.join(w.game_dir, "bin", "x64")
+        with open(os.path.join(x64, "Cyberpunk2077.exe"), "wb") as f:
+            f.write(_pe(0x14C) + bytes(5000))                          # the game, 32-bit
+        os.makedirs(os.path.join(w.game_dir, "_CommonRedist"))
+        with open(os.path.join(w.game_dir, "_CommonRedist", "big.exe"), "wb") as f:
+            f.write(_pe(0x8664) + bytes(90000))                        # a bigger installer: not the game
+        detect.forget()
+        facts = detect.facts(w.root, CP)
+        assert facts["exe_bits"] == 32, facts
+        sc = w.e.scaling(CP)
+        k = {u["key"]: u for u in sc["upscalers"]}
+        assert k["optiscaler"]["state"] == "blocked" and "32 bits" in k["optiscaler"]["reason"], k["optiscaler"]
+        assert k["helixsr"]["state"] == "blocked" and "32 bits" in k["helixsr"]["reason"], k["helixsr"]
+        assert {f["key"]: f for f in sc["framegens"]}["fsr3"]["state"] == "blocked"
+        assert "32-bit" in install.install_plan(CP, facts, {})["error"]
+        try:
+            w.e.set_scaling(CP, "optiscaler")
+            raise AssertionError("32-bit game accepted")
+        except schema.ProfileError as e:
+            assert "32 bits" in str(e), e
+    with World(injected="optiscaler") as w:                            # installed before: still never chosen
+        with open(os.path.join(w.game_dir, "bin", "x64", "Cyberpunk2077.exe"), "wb") as f:
+            f.write(_pe(0x14C) + bytes(5000))
+        detect.forget()
+        p = w.e.profile(CP)
+        assert not p["availability"]["optiscaler"]["available"] and "32-bit" in p["availability"]["optiscaler"]["reason"]
+        assert w.e.recommended(CP)["config"]["graphics"]["path"] != "optiscaler"
 
 @test
 def G25_optiscaler_release_names_in_any_letter_case():

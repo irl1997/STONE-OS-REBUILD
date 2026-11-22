@@ -9,6 +9,10 @@
                  with the proxy DLL name (dxgi, winmm, version, ...) and a fingerprint of the
                  files (size + mtime) so an update of HelixSR/OptiScaler invalidates measurements
   proton         the compatibility tool Steam uses for this game (config.vdf), or None (default)
+  exe_bits       32 or 64: the game's executable (the largest .exe that is not an installer or a
+                 launcher), from its PE header. OptiScaler and HelixSR are 64-bit DLLs: a 32-bit game
+                 can never load them (3.1.0-rc16; board, 22-11-2026: Batman Arkham City, 32-bit, was
+                 offered FSR 3.1 and STONE then saw it was not loaded). None: unknown
 
 STONE bundles neither. On the person's request only (install.py) it downloads them from their authors
 and installs OptiScaler in a game; this module just reads what is there, whoever installed it.
@@ -17,6 +21,8 @@ and installs OptiScaler in a game; this module just reads what is there, whoever
 import glob
 import hashlib
 import os
+import re
+import struct
 import time
 
 from stone_home import library, vdf
@@ -27,6 +33,31 @@ ANTI_CHEAT = (("EasyAntiCheat", "EasyAntiCheat"), ("EasyAntiCheat_EOS.sys", "Eas
               ("mhyprot2.sys", "mhyprot"), ("xigncode", "XIGNCODE"), ("nProtect", "nProtect"),
               ("EAAntiCheat.GameServiceLauncher.exe", "EA Anti-Cheat"))
 MAX_DEPTH = 4
+# not the game: installers, redistributables, launchers, crash reporters (as install.SKIP_EXE)
+NOT_GAME_EXE = re.compile(r"(unins|crash|launcher|redist|setup|install|dxsetup|vc_|dotnet|ue4prereq|epicweb|eac|battleye|updater|"
+                          r"helper|report|physx)", re.I)
+NOT_GAME_DIR = re.compile(r"^(_?commonredist|redist|redistributables?|directx|dxsetup|vcredist.*|physx.*|support|installers?|"
+                          r"__installer|_installer|prereq.*|dotnet.*|easyanticheat|battleye|eac)$", re.I)
+
+
+def pe_bits(path):
+    """32 or 64 from a Windows executable's PE header (machine i386 / AMD64), else None."""
+    try:
+        with open(path, "rb") as f:
+            head = f.read(64)
+            if len(head) < 64 or head[:2] != b"MZ":
+                return None
+            off = struct.unpack_from("<I", head, 0x3C)[0]
+            if not 0 < off < 64 * 1024:
+                return None
+            f.seek(off)
+            pe = f.read(6)
+    except OSError:
+        return None
+    if len(pe) < 6 or pe[:4] != b"PE\0\0":
+        return None
+    machine = struct.unpack_from("<H", pe, 4)[0]
+    return 64 if machine in (0x8664, 0xAA64) else 32 if machine == 0x14C else None
 
 
 def manifest(root, appid):
@@ -64,11 +95,23 @@ def _fp(paths):
 
 
 def scan_folder(folder):
-    out = {"anti_cheat": [], "injected": None}
+    out = {"anti_cheat": [], "injected": None, "exe_bits": None}
     if not folder or not os.path.isdir(folder):
         return out
     found_ac = set()
+    biggest = None
+    top = os.path.realpath(folder)
     for d, dirs, files in _walk(folder):
+        # every folder is still looked at for anti-cheat; only the executable search skips installer folders
+        in_installer = any(NOT_GAME_DIR.match(x) for x in os.path.relpath(d, top).split(os.sep) if x != ".")
+        for f in files if not in_installer else ():
+            if f.lower().endswith(".exe") and not NOT_GAME_EXE.search(f):
+                try:
+                    sz = os.path.getsize(os.path.join(d, f))
+                except OSError:
+                    continue
+                if biggest is None or sz > biggest[0]:
+                    biggest = (sz, os.path.join(d, f))
         names = set(dirs) | set(files)
         for marker, name in ANTI_CHEAT:
             if any(n.lower() == marker.lower() or (marker.lower() in n.lower() and len(marker) > 8) for n in names):
@@ -82,6 +125,7 @@ def scan_folder(folder):
             out["injected"] = {"kind": "helixsr" if helix else "optiscaler", "dir": d, "proxy": proxy[:-4] if proxy else None,
                                "fingerprint": _fp(files_fp)}
     out["anti_cheat"] = sorted(found_ac)
+    out["exe_bits"] = pe_bits(biggest[1]) if biggest else None
     return out
 
 
@@ -144,4 +188,5 @@ def facts(root, appid):
         _SCANS[str(appid)] = (key, now, scan, mt)
     return {"appid": str(appid), "installed": bool(folder and os.path.isdir(folder)), "install_dir": folder,
             "build": m.get("build") if m else None, "anti_cheat": scan["anti_cheat"], "injected": scan["injected"],
+            "exe_bits": scan.get("exe_bits"),
             "proton": proton_tool(root, appid)}

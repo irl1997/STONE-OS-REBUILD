@@ -176,7 +176,8 @@ const Bridge = (() => {
     const U = [['auto', 'Automático', 'STONE elige lo mejor que midió para esta consola', ['ready', null]],
       ['native', 'Nativo', 'Sin reescalar: la imagen más nítida, con menos FPS', ['ready', null]],
       ['game_upscaler', 'FSR del juego', 'El FSR o XeSS que trae el juego; se activa en su menú de gráficos', noUps ? ['blocked', 'El juego no trae su propio FSR ni XeSS'] : ['ready', null]],
-      ['optiscaler', 'FSR 3.1 (OptiScaler)', 'Pone FSR 3.1 en juegos que traen DLSS, FSR 2 o XeSS: más FPS con buena imagen', opt]];
+      ['optiscaler', 'FSR 3.1 (OptiScaler)', 'Pone FSR 3.1 en juegos que traen DLSS, FSR 2 o XeSS: más FPS con buena imagen', opt],
+      ['helixsr', 'HelixSR', 'FSR 4 y DLSS como sombreadores normales, hecho y probado en la BC-250', prot ? opt : s.helix ? ['ready', null] : ['manual', 'Lo instalas tú con HelixSR Desktop (pide aceptar licencias de NVIDIA y AMD). Elige para ver cómo']]];
     const ups = U.map(([key, label, description, [state, reason]]) => ({ key, label, description, state, reason, selected: cur === key, check: chk(seen[key]), check_ok: seen[key] ? seen[key].ok : null }));
     const P = [['quality', 'Calidad'], ['balanced', 'Equilibrado'], ['performance', 'Rendimiento'], ['ultra_performance', 'Ultra rendimiento']];
     const c = ups.find(u => u.selected) || ups[0], preset = s.preset || (cur === 'auto' || cur === 'native' ? null : 'quality');
@@ -184,7 +185,7 @@ const Bridge = (() => {
     const fgs = [{ key: 'off', label: 'Desactivada', description: 'Solo los fotogramas que dibuja el juego', state: 'ready', reason: null, selected: !s.fg },
       { key: 'fsr3', label: 'FSR 3 (OptiScaler)', description: 'Genera un fotograma entre cada dos: más fluidez; el contador de FPS cuenta también los generados', state: fgOpt[0], reason: fgOpt[1], selected: !!s.fg, check: null, check_ok: null }];
     const pl = P.find(p => p[0] === preset);
-    return { upscaler: c.key, upscalers: ups, preset, presets: P.map(([key, label]) => ({ key, label })), preset_applies: !['auto', 'native'].includes(c.key),
+    return { upscaler: c.key, upscalers: ups, helixsr_how: 'HelixSR se instala con HelixSR Desktop, la app de su autor (github.com/lonewolf0622/HelixSR): la primera vez descarga archivos de NVIDIA y AMD y te pide aceptar sus licencias, por eso lo instalas tú, en el Modo escritorio, eligiendo este juego y «HelixSR Scaler». Si queda como dxgi.dll se carga en cada partida; para que STONE pueda activarlo y quitarlo cuando elijas, en la carpeta del juego cambia el nombre de dxgi.dll a winmm.dll (la guía de HelixSR lo permite). Al volver, HelixSR aparece aquí listo para elegir.', preset, presets: P.map(([key, label]) => ({ key, label })), preset_applies: !['auto', 'native'].includes(c.key),
       framegen: s.fg ? 'fsr3' : 'off', framegens: fgs, summary: [c.label, !['auto', 'native'].includes(c.key) && pl ? pl[1] : null, s.fg ? 'fotogramas generados' : null].filter(Boolean).join(' · ') };
   }
   const LABEL = { native: 'Sin mejora (nativo)', game_upscaler: 'FSR del juego', gamescope: 'FSR de pantalla (Gamescope)', helixsr: 'HelixSR', optiscaler: 'OptiScaler' };

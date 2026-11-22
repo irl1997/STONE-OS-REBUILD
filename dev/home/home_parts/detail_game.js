@@ -385,7 +385,14 @@ function lookPicker(g) {
    ready: usable now; install: STONE downloads OptiScaler from its author and installs it when chosen;
    blocked: it cannot work in this game, and why (shown, never hidden). Under each one, what STONE saw in
    the last game: "Funcionó…" or "No se activó…" (the host checks OptiScaler is really loaded). */
-const SC_STATE = { ready: '', install: 'Se instala al elegirla', blocked: 'No disponible' };
+const SC_STATE = { ready: '', install: 'Se instala al elegirla', manual: 'Lo instalas tú', blocked: 'No disponible' };
+/* HelixSR (rc16): its setup downloads NVIDIA's and AMD's files after the person accepts their licenses, so the
+   person installs it with HelixSR Desktop; STONE says how and switches it per game once it is there. */
+function helixHow(g, then) {
+  play('select');
+  openDlg(`<span class="st-cap">GRÁFICOS · ${esc(g.n.toUpperCase())}</span><h2>HELIXSR</h2><p>${esc((g.sc && g.sc.helixsr_how) || '')}</p>
+    <div class="btns"><span class="txt-f" data-f data-b="no">ENTENDIDO</span></div>`, { onA: () => { play('back'); then(); }, onB: () => { play('back'); then(); } });
+}
 function scCard(c, i) {
   const st = [c.state !== 'ready' ? (c.reason || SC_STATE[c.state]) : (c.reason || ''), c.check || ''].filter(Boolean).join(' · ');
   return `<span class="txt-f sres look${c.state === 'blocked' ? ' blk' : ''}" data-f data-i="${i}"><span class="lbl">${esc(c.label.toUpperCase())}${c.selected ? ' ✓' : ''}</span>`
@@ -422,6 +429,7 @@ function scalePicker(g, at) {
       }
       const c = ups[+el.dataset.i];
       if (c.state === 'blocked') { play('error'); return longToast(`${c.label}: ${c.reason || 'no disponible en este juego'}`, 6000); }
+      if (c.state === 'manual') return helixHow(g, () => scalePicker(g, { i: +el.dataset.i }));
       if (c.selected) { play('back'); return back(); }
       return scApply(g, () => Sys.gameSetScaling(g.appid, c.key, S2.preset), c.state === 'install' ? 'Descargando e instalando FSR 3.1 (OptiScaler)' : 'Cambiando el reescalado').then(r => {
         if (r) longToast(`${r.note || c.label} · se aplica la próxima vez que juegues`, 6000);

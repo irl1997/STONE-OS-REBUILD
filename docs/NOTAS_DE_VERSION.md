@@ -1,3 +1,22 @@
+# STONE OS (rebuild) 3.1.0-rc16
+
+Desde el informe de la rc15 en la consola (22-11-2026, 19:42): FSR 3.1 que no se activó en Batman: Arkham City, y HelixSR, que no aparecía.
+
+## FSR 3.1 no se activó en Batman: Arkham City: por qué, y que no vuelva a pasar
+
+- **STONE hizo lo que tenía que hacer:** vio que OptiScaler no se cargó dentro del juego, lo marcó como «No se activó», lo avisó y la siguiente partida usó una opción segura.
+- **El error fue ofrecerlo en ese juego.** Arkham City es un juego de **32 bits**, y OptiScaler y HelixSR son de 64 bits: un juego de 32 bits no puede cargarlos nunca. Además, Arkham City no trae DLSS, FSR ni XeSS para reemplazar.
+- **Ahora STONE lee si el juego es de 32 o 64 bits** (en la cabecera de su ejecutable, sin contar instaladores ni lanzadores). En los juegos de 32 bits, FSR 3.1, HelixSR y la generación de fotogramas aparecen como «No disponible: juego de 32 bits». STONE no los instala ni los elige, ni siquiera si ya estaban instalados de antes.
+- Para Batman: Arkham Asylum y Arkham City quedan Nativo y los aspectos (vkBasalt), que sí funcionan.
+
+## HelixSR siempre aparece
+
+Hasta la rc15, HelixSR solo aparecía si ya estaba instalado en el juego. Ahora siempre está en Gráficos → Reescalado:
+- **Si no está instalado:** dice «Lo instalas tú», y al elegirlo explica cómo. HelixSR se instala con HelixSR Desktop, la app de su autor, en el Modo escritorio. La primera vez descarga archivos de NVIDIA y AMD y te pide aceptar sus licencias. STONE nunca acepta una licencia por nadie ni ejecuta instaladores descargados, por eso ese paso lo haces tú.
+- **Para que STONE pueda activarlo y quitarlo en cada partida,** el archivo tiene que quedar como winmm.dll y no como dxgi.dll (la guía de HelixSR lo permite).
+- **Ya instalado,** se elige como cualquier otra opción, y STONE comprueba después de cada partida si funcionó.
+- En juegos de 32 bits, con anti-cheat o en línea aparece «No disponible», con el motivo.
+
 # STONE OS (rebuild) 3.1.0-rc15
 
 Reescalado y generación de fotogramas, ordenados en una elección simple por juego, con STONE comprobando que de verdad funcionan.

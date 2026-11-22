@@ -11,6 +11,9 @@ e intuitiva" and "STONE OS tiene que asegurar que estas herramientas funcionen".
 
 Each choice says in one line what it does and its state:
   ready      it can be used now
+  manual     HelixSR: the person installs it with HelixSR Desktop (its setup downloads NVIDIA's and AMD's
+             files after the person accepts their licenses; STONE never accepts a license for anyone),
+             and STONE then switches it per launch like OptiScaler
   install    STONE downloads OptiScaler from its author's GitHub (SHA-256 checked, install.fetch) and
              installs it in the game when it is chosen: nothing to do by hand
   blocked    it cannot work in this game, and why (anti-cheat, online game, no DLSS/FSR 2/3/XeSS to
@@ -23,6 +26,8 @@ WHAT STONE GUARANTEES (and what it cannot):
   - If it was not loaded, or the game closed right after starting, the next launch falls back on its
     own (optimizer.FALLBACK: OptiScaler -> FSR del juego -> Nativo) and STONE says so on screen.
   - Never in games with anti-cheat or online-only (an injected DLL can get an account banned).
+  - Never in 32-bit games (rc16, detect.exe_bits): OptiScaler and HelixSR are 64-bit DLLs and are never
+    loaded there (Batman Arkham City on the board, 22-11-2026).
   - It cannot make a tool work in a game that does not support it: that is why such a choice is shown
     as blocked with its reason instead of being offered.
 Frame generation runs inside OptiScaler: it is verified as far as OptiScaler being loaded with
@@ -41,7 +46,7 @@ UPSCALERS = (
     ("native", "Nativo", "Sin reescalar: la imagen más nítida, con menos FPS"),
     ("game_upscaler", "FSR del juego", "El FSR o XeSS que trae el juego; se activa en su menú de gráficos"),
     ("optiscaler", "FSR 3.1 (OptiScaler)", "Pone FSR 3.1 en juegos que traen DLSS, FSR 2 o XeSS: más FPS con buena imagen"),
-    ("helixsr", "HelixSR", "Reescalador para la BC-250 basado en OptiScaler, instalado por ti"),
+    ("helixsr", "HelixSR", "FSR 4 y DLSS como sombreadores normales, hecho y probado en la BC-250"),
 )
 PRESETS = (("quality", "Calidad"), ("balanced", "Equilibrado"), ("performance", "Rendimiento"),
            ("ultra_performance", "Ultra rendimiento"))
@@ -56,6 +61,8 @@ def human(reason):
     r = (reason or "").lower()
     if not r:
         return None
+    if "32-bit" in r:
+        return "Juego de 32 bits: FSR 3.1 (OptiScaler) y HelixSR solo funcionan en juegos de 64 bits"
     if "anti-cheat" in r:
         return "No se usa en juegos con anti-cheat (una DLL inyectada puede costar la cuenta)"
     if "online" in r:
@@ -122,6 +129,8 @@ def optiscaler_state(appid, facts, game, avail):
     a = avail.get("optiscaler") or {}
     if a.get("available"):
         return "ready", None
+    if facts.get("exe_bits") == 32:
+        return "blocked", human("32-bit")
     if install.installed_by_stone(appid):                # installed by STONE but not usable now
         return "blocked", human(a.get("reason"))
     why = graphics.safe_reason(game, facts)
@@ -129,11 +138,29 @@ def optiscaler_state(appid, facts, game, avail):
         return "blocked", human(why)
     if not facts.get("installed") or not facts.get("install_dir"):
         return "blocked", "El juego no está instalado"
+    if facts.get("exe_bits") == 32:
+        return "blocked", human("32-bit")
     if (facts.get("injected") or {}).get("kind"):
         return "blocked", human("installed instead")
     if not (game.get("native_upscalers") or install.game_upscalers(facts["install_dir"])):
         return "blocked", human("no_upscaler")
     return "install", "Se descarga del autor y se instala al elegirla (un minuto)"
+
+
+HELIXSR_HOW = ("HelixSR se instala con HelixSR Desktop, la app de su autor (github.com/lonewolf0622/HelixSR): la primera vez descarga archivos de NVIDIA y AMD y te pide aceptar sus licencias, por eso lo instalas tú, en el Modo escritorio, eligiendo este juego y «HelixSR Scaler». Si queda como dxgi.dll se carga en cada partida; para que STONE pueda activarlo y quitarlo cuando elijas, en la carpeta del juego cambia el nombre de dxgi.dll a winmm.dll (la guía de HelixSR lo permite). Al volver, HelixSR aparece aquí listo para elegir.")
+
+
+def helixsr_state(facts, game):
+    """HelixSR when it is not installed in the game: the person installs it (its setup asks to accept NVIDIA's
+    and AMD's licenses, which STONE never does for anyone), unless it could never work here."""
+    if facts.get("exe_bits") == 32:
+        return "blocked", human("32-bit")
+    why = graphics.safe_reason(game, facts)
+    if why:
+        return "blocked", human(why)
+    if (facts.get("injected") or {}).get("kind") == "optiscaler":
+        return "manual", "Instálalo tú con HelixSR Desktop (reemplaza el OptiScaler de este juego). Elige para ver cómo"
+    return "manual", "Lo instalas tú con HelixSR Desktop (pide aceptar licencias de NVIDIA y AMD). Elige para ver cómo"
 
 
 def options(appid, img, facts, game, avail, fg):
@@ -148,9 +175,12 @@ def options(appid, img, facts, game, avail, fg):
             state, why = "ready", None
         else:
             c = by_key.get(key)
-            if c is None:                                  # HelixSR not installed: not listed
+            if c is None and key == "helixsr":
+                state, why = helixsr_state(facts, game)
+            elif c is None:
                 continue
-            state, why = ("ready", None) if c["available"] else ("blocked", human(c.get("reason")))
+            else:
+                state, why = ("ready", None) if c["available"] else ("blocked", human(c.get("reason")))
         sel = (img["mode"] != "custom") if key == "auto" else (img["mode"] == "custom" and img["path"] == key)
         ups.append({"key": key, "label": label, "description": desc, "state": state, "reason": why, "selected": sel,
                     "check": _check_text(seen.get(key)), "check_ok": (seen.get(key) or {}).get("ok")})
@@ -168,7 +198,7 @@ def options(appid, img, facts, game, avail, fg):
             why = "Al elegirla, el reescalado pasa a FSR 3.1 (OptiScaler), que la hace funcionar"
         fgs.append({"key": key, "label": label, "description": desc, "state": state, "reason": why, "selected": fg_on,
                     "check": _check_text(seen.get("framegen")), "check_ok": (seen.get("framegen") or {}).get("ok")})
-    return {"upscaler": cur["key"], "upscalers": ups,
+    return {"upscaler": cur["key"], "upscalers": ups, "helixsr_how": HELIXSR_HOW,
             "preset": img.get("preset"), "presets": [{"key": k, "label": lbl} for k, lbl in PRESETS],
             "preset_applies": cur["key"] not in ("auto", "native"),
             "framegen": "fsr3" if fg_on else "off", "framegens": fgs,
