@@ -9,6 +9,12 @@ Desde el informe de la rc15 en la consola (22-11-2026, 19:42): FSR 3.1 que no se
 - **Ahora STONE lee si el juego es de 32 o 64 bits** (en la cabecera de su ejecutable, sin contar instaladores ni lanzadores). En los juegos de 32 bits, FSR 3.1, HelixSR y la generación de fotogramas aparecen como «No disponible: juego de 32 bits». STONE no los instala ni los elige, ni siquiera si ya estaban instalados de antes.
 - Para Batman: Arkham Asylum y Arkham City quedan Nativo y los aspectos (vkBasalt), que sí funcionan.
 
+## Encendido y apagado nuevos
+
+- **Encendido:** la línea de luz de Plymouth se abre hasta cubrir el ancho de la pantalla, y aparece «STONE»: sus letras se juntan desde un brillo suave hasta quedar nítidas. La línea sube y queda bajo la palabra como su línea de luz. Cuando el Inicio está listo, la palabra vuela a su rincón, donde está el STONE del Inicio, mientras el Inicio aparece detrás. No se agrega espera: el vuelo ocurre con el Inicio ya en pantalla.
+- **Apagado:** la imagen se cierra como un televisor al apagarse: se pliega en una línea de luz blanca, la línea en un punto, y el punto se apaga (0,75 s). Sobre el negro queda «STONE» con su línea, que se vacía desde los extremos mientras la consola se apaga, y debajo «Apagando…» o «Reiniciando…». La orden de apagar sale apenas se cierra la imagen.
+- Con «Reducir movimiento» (Ajustes → Accesibilidad), ambos son fundidos simples.
+
 ## HelixSR siempre aparece
 
 Hasta la rc15, HelixSR solo aparecía si ya estaba instalado en el juego. Ahora siempre está en Gráficos → Reescalado:

@@ -542,3 +542,22 @@
 #stage #dlg .sres.look .scst.good{color:#7fd69a}
 #stage #dlg .sres.look .scst.bad{color:#f0a23b}
 #stage #dlg p.scq{margin:14px 0 -4px;font-size:16px;letter-spacing:.14em;text-transform:uppercase;color:var(--text-2)}
+/* POWER ON and POWER OFF (3.1.0-rc16, power_boot.js) */
+#bootword{transform-origin:50% 50%;will-change:transform,opacity}
+#bootword.in{animation:pw-word-in 900ms cubic-bezier(.2,0,0,1) both}
+@keyframes pw-word-in{
+  0%{opacity:0;letter-spacing:1.05em;filter:blur(10px);text-shadow:0 0 0 rgba(255,255,255,0)}
+  55%{opacity:1;filter:blur(0);text-shadow:0 0 38px rgba(255,255,255,.55)}
+  100%{opacity:1;letter-spacing:.45em;filter:blur(0);text-shadow:0 0 18px rgba(255,255,255,.22)}}
+#bootword.fly{transition:transform 700ms cubic-bezier(.45,0,.15,1),opacity 700ms ease;animation:none;letter-spacing:.45em}
+#hdr .brand.pw-wait{opacity:0}
+#hdr .brand{transition:opacity 180ms linear}
+#bootword.pw-off{animation:pw-word-off 2600ms ease-out both}
+@keyframes pw-word-off{0%{opacity:0;letter-spacing:.45em}20%{opacity:.92}70%{opacity:.75}100%{opacity:.35;letter-spacing:.6em}}
+/* the picture closing like a television: to a line of light, to a point, out */
+#viewport.pw-close{animation:pw-close 750ms cubic-bezier(.5,0,.2,1) forwards;transform-origin:50% 50%}
+@keyframes pw-close{
+  0%{transform:none;filter:none;opacity:1}
+  42%{transform:scale(1,.006);filter:brightness(2.4) saturate(.4);opacity:1}
+  78%{transform:scale(.02,.006);filter:brightness(3.2) saturate(0);opacity:1}
+  100%{transform:scale(0,0);filter:brightness(4);opacity:0}}
